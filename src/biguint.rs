@@ -944,6 +944,11 @@ impl Integer for BigUint {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
+        #[inline]
+        fn twos(x: &BigUint) -> usize {
+            trailing_zeros(x).unwrap_or(0)
+        }
+
         // Stein's algorithm
         if self.is_zero() {
             return other.clone();
@@ -955,17 +960,14 @@ impl Integer for BigUint {
         let mut n = other.clone();
 
         // find common factors of 2
-        let shift = cmp::min(
-            n.trailing_zeros(),
-            m.trailing_zeros()
-        );
+        let shift = cmp::min(twos(&n), twos(&m));
 
         // divide m and n by 2 until odd
         // m inside loop
-        n >>= n.trailing_zeros();
+        n >>= twos(&n);
 
         while !m.is_zero() {
-            m >>= m.trailing_zeros();
+            m >>= twos(&m);
             if n > m { mem::swap(&mut n, &mut m) }
             m -= &n;
         }
@@ -1628,16 +1630,6 @@ impl BigUint {
         return self.data.len() * big_digit::BITS - zeros as usize;
     }
 
-    // self is assumed to be normalized
-    fn trailing_zeros(&self) -> usize {
-        self.data
-            .iter()
-            .enumerate()
-            .find(|&(_, &digit)| digit != 0)
-            .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
-            .unwrap_or(0)
-    }
-
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
     /// be nonzero.
     #[inline]
@@ -1687,6 +1679,16 @@ impl BigUint {
         }
         acc
     }
+}
+
+/// Returns the number of least-significant bits that are zero,
+/// or `None` if the entire number is zero.
+pub fn trailing_zeros(u: &BigUint) -> Option<usize> {
+    u.data
+        .iter()
+        .enumerate()
+        .find(|&(_, &digit)| digit != 0)
+        .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
 }
 
 #[cfg(feature = "serde")]
