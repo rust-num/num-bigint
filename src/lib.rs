@@ -1,4 +1,4 @@
-// Copyright 2014-2016 The Rust Project Developers. See the COPYRIGHT
+// Copyright 2013-2014 The Rust Project Developers. See the COPYRIGHT
 // file at the top-level directory of this distribution and at
 // http://rust-lang.org/COPYRIGHT.
 //
@@ -8,104 +8,145 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A collection of numeric types and traits for Rust.
+//! A Big integer (signed version: `BigInt`, unsigned version: `BigUint`).
 //!
-//! This includes new types for big integers, rationals, and complex numbers,
-//! new traits for generic programming on numeric properties like `Integer`,
-//! and generic range iterators.
+//! A `BigUint` is represented as a vector of `BigDigit`s.
+//! A `BigInt` is a combination of `BigUint` and `Sign`.
+//!
+//! Common numerical operations are overloaded, so we can treat them
+//! the same way we treat other numbers.
 //!
 //! ## Example
 //!
-//! This example uses the BigRational type and [Newton's method][newt] to
-//! approximate a square root to arbitrary precision:
+//! ```rust
+//! extern crate num_bigint;
+//! extern crate num_traits;
 //!
-//! ```
-//! extern crate num;
-//! # #[cfg(all(feature = "bigint", feature="rational"))]
-//! # mod test {
+//! # fn main() {
+//! use num_bigint::BigUint;
+//! use num_traits::{Zero, One};
+//! use std::mem::replace;
 //!
-//! use num::FromPrimitive;
-//! use num::bigint::BigInt;
-//! use num::rational::{Ratio, BigRational};
-//!
-//! # pub
-//! fn approx_sqrt(number: u64, iterations: usize) -> BigRational {
-//!     let start: Ratio<BigInt> = Ratio::from_integer(FromPrimitive::from_u64(number).unwrap());
-//!     let mut approx = start.clone();
-//!
-//!     for _ in 0..iterations {
-//!         approx = (&approx + (&start / &approx)) /
-//!             Ratio::from_integer(FromPrimitive::from_u64(2).unwrap());
+//! // Calculate large fibonacci numbers.
+//! fn fib(n: usize) -> BigUint {
+//!     let mut f0: BigUint = Zero::zero();
+//!     let mut f1: BigUint = One::one();
+//!     for _ in 0..n {
+//!         let f2 = f0 + &f1;
+//!         // This is a low cost way of swapping f0 with f1 and f1 with f2.
+//!         f0 = replace(&mut f1, f2);
 //!     }
-//!
-//!     approx
+//!     f0
 //! }
+//!
+//! // This is a very large number.
+//! println!("fib(1000) = {}", fib(1000));
 //! # }
-//! # #[cfg(not(all(feature = "bigint", feature="rational")))]
-//! # mod test { pub fn approx_sqrt(n: u64, _: usize) -> u64 { n } }
-//! # use test::approx_sqrt;
-//!
-//! fn main() {
-//!     println!("{}", approx_sqrt(10, 4)); // prints 4057691201/1283082416
-//! }
-//!
 //! ```
 //!
-//! [newt]: https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method
-#![doc(html_logo_url = "https://rust-num.github.io/num/rust-logo-128x128-blk-v2.png",
-       html_favicon_url = "https://rust-num.github.io/num/favicon.ico",
-       html_root_url = "https://rust-num.github.io/num/",
-       html_playground_url = "http://play.integer32.com/")]
+//! It's easy to generate large random numbers:
+//!
+//! ```rust
+//! extern crate rand;
+//! extern crate num_bigint as bigint;
+//!
+//! # #[cfg(feature = "rand")]
+//! # fn main() {
+//! use bigint::{ToBigInt, RandBigInt};
+//!
+//! let mut rng = rand::thread_rng();
+//! let a = rng.gen_bigint(1000);
+//!
+//! let low = -10000.to_bigint().unwrap();
+//! let high = 10000.to_bigint().unwrap();
+//! let b = rng.gen_bigint_range(&low, &high);
+//!
+//! // Probably an even larger number.
+//! println!("{}", a * b);
+//! # }
+//!
+//! # #[cfg(not(feature = "rand"))]
+//! # fn main() {
+//! # }
+//! ```
 
-extern crate num_traits;
-extern crate num_integer;
-extern crate num_iter;
-#[cfg(feature = "num-complex")]
-extern crate num_complex;
-#[cfg(feature = "num-bigint")]
-extern crate num_bigint;
-#[cfg(feature = "num-rational")]
-extern crate num_rational;
+#![doc(html_root_url = "https://docs.rs/num-bigint/0.1")]
 
-#[cfg(feature = "num-bigint")]
-pub use num_bigint::{BigInt, BigUint};
-#[cfg(feature = "num-rational")]
-pub use num_rational::Rational;
-#[cfg(all(feature = "num-rational", feature="num-bigint"))]
-pub use num_rational::BigRational;
-#[cfg(feature = "num-complex")]
-pub use num_complex::Complex;
-pub use num_integer::Integer;
-pub use num_iter::{range, range_inclusive, range_step, range_step_inclusive};
-pub use num_traits::{Num, Zero, One, Signed, Unsigned, Bounded,
-                     one, zero, abs, abs_sub, signum,
-                     Saturating, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv,
-                     PrimInt, Float, ToPrimitive, FromPrimitive, NumCast, cast,
-                     pow, checked_pow, clamp};
+#[cfg(any(feature = "rand", test))]
+extern crate rand;
+#[cfg(feature = "rustc-serialize")]
+extern crate rustc_serialize;
+#[cfg(feature = "serde")]
+extern crate serde;
 
-#[cfg(feature = "num-bigint")]
-pub mod bigint {
-    pub use num_bigint::*;
+extern crate num_integer as integer;
+extern crate num_traits as traits;
+
+use std::error::Error;
+use std::num::ParseIntError;
+use std::fmt;
+
+#[cfg(target_pointer_width = "32")]
+type UsizePromotion = u32;
+#[cfg(target_pointer_width = "64")]
+type UsizePromotion = u64;
+
+#[cfg(target_pointer_width = "32")]
+type IsizePromotion = i32;
+#[cfg(target_pointer_width = "64")]
+type IsizePromotion = i64;
+
+#[derive(Debug, PartialEq)]
+pub enum ParseBigIntError {
+    ParseInt(ParseIntError),
+    Other,
 }
 
-#[cfg(feature = "num-complex")]
-pub mod complex {
-    pub use num_complex::*;
+impl fmt::Display for ParseBigIntError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &ParseBigIntError::ParseInt(ref e) => e.fmt(f),
+            &ParseBigIntError::Other => "failed to parse provided string".fmt(f),
+        }
+    }
 }
 
-pub mod integer {
-    pub use num_integer::*;
+impl Error for ParseBigIntError {
+    fn description(&self) -> &str {
+        "failed to parse bigint/biguint"
+    }
 }
 
-pub mod iter {
-    pub use num_iter::*;
+impl From<ParseIntError> for ParseBigIntError {
+    fn from(err: ParseIntError) -> ParseBigIntError {
+        ParseBigIntError::ParseInt(err)
+    }
 }
 
-pub mod traits {
-    pub use num_traits::*;
+#[cfg(test)]
+use std::hash;
+
+#[cfg(test)]
+fn hash<T: hash::Hash>(x: &T) -> u64 {
+    use std::hash::{BuildHasher, Hasher};
+    use std::collections::hash_map::RandomState;
+    let mut hasher = <RandomState as BuildHasher>::Hasher::new();
+    x.hash(&mut hasher);
+    hasher.finish()
 }
 
-#[cfg(feature = "num-rational")]
-pub mod rational {
-    pub use num_rational::*;
-}
+#[macro_use]
+mod macros;
+
+mod biguint;
+mod bigint;
+
+pub use biguint::BigUint;
+pub use biguint::ToBigUint;
+pub use biguint::big_digit;
+pub use biguint::big_digit::{BigDigit, DoubleBigDigit, ZERO_BIG_DIGIT};
+
+pub use bigint::Sign;
+pub use bigint::BigInt;
+pub use bigint::ToBigInt;
+pub use bigint::RandBigInt;

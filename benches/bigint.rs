@@ -1,13 +1,14 @@
 #![feature(test)]
 
 extern crate test;
-extern crate num;
+extern crate num_bigint;
+extern crate num_traits;
 extern crate rand;
 
 use std::mem::replace;
 use test::Bencher;
-use num::{BigInt, BigUint, Zero, One, FromPrimitive, Num};
-use num::bigint::RandBigInt;
+use num_bigint::{BigInt, BigUint, RandBigInt};
+use num_traits::{Zero, One, FromPrimitive, Num};
 use rand::{SeedableRng, StdRng};
 
 fn get_rng() -> StdRng {
@@ -177,7 +178,6 @@ fn to_str_radix_36(b: &mut Bencher) {
 }
 
 fn from_str_radix_bench(b: &mut Bencher, radix: u32) {
-    use num::Num;
     let mut rng = get_rng();
     let x = rng.gen_bigint(1009);
     let s = x.to_str_radix(radix);
@@ -250,7 +250,7 @@ fn pow_bench(b: &mut Bencher) {
         for i in 2..upper + 1 {
             for j in 2..upper + 1 {
                 let i_big = BigUint::from_usize(i).unwrap();
-                num::pow(i_big, j);
+                num_traits::pow(i_big, j);
             }
         }
     });

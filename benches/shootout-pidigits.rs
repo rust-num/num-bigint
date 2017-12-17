@@ -38,13 +38,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern crate num;
+extern crate num_bigint;
+extern crate num_integer;
+extern crate num_traits;
 
 use std::str::FromStr;
 use std::io;
 
-use num::traits::{FromPrimitive, ToPrimitive};
-use num::{BigInt, Integer, One, Zero};
+use num_bigint::BigInt;
+use num_integer::Integer;
+use num_traits::{FromPrimitive, ToPrimitive, One, Zero};
 
 struct Context {
     numer: BigInt,
