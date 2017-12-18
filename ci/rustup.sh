@@ -5,7 +5,7 @@
 set -ex
 
 export TRAVIS_RUST_VERSION
-for TRAVIS_RUST_VERSION in 1.8.0 1.15.0 beta nightly; do
+for TRAVIS_RUST_VERSION in 1.8.0 stable beta nightly; do
     run="rustup run $TRAVIS_RUST_VERSION"
     if [ "$TRAVIS_RUST_VERSION" = 1.8.0 ]; then
       # libc 0.2.34 started using #[deprecated]
