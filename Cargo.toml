@@ -11,6 +11,13 @@ repository = "https://github.com/rust-num/num-bigint"
 version = "0.1.41"
 readme = "README.md"
 
+[[bench]]
+name = "bigint"
+
+[[bench]]
+harness = false
+name = "shootout-pidigits"
+
 [dependencies]
 
 [dependencies.num-integer]
