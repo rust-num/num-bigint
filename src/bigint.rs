@@ -1540,6 +1540,42 @@ impl BigInt {
         BigUint::from_radix_le(buf, radix).map(|u| BigInt::from_biguint(sign, u))
     }
 
+    /// Returns the representation of the `BigInt` in little-endian base 2<sup>32</sup>.
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// use num_bigint::{Sign, BigInt, BigDigit};
+    ///
+    /// let sign = Sign::Plus;
+    /// let slice: &[BigDigit] = &[1, 2, 3, 4];
+    /// let i = BigInt::from_slice(sign, slice);
+    /// assert_eq!(i.to_slice(), (sign, slice));
+    /// ```
+    #[inline]
+    pub fn to_slice(&self) -> (Sign, &[BigDigit]) {
+        (self.sign, self.data.to_slice())
+    }
+
+    /// Returns the representation of the `BigInt` in little-endian base 2<sup>32</sup>.
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// use num_bigint::{Sign, BigInt};
+    ///
+    /// let sign = Sign::Plus;
+    /// let vec = vec![1, 2, 3, 4];
+    /// let i = BigInt::from_slice(sign, &vec);
+    /// assert_eq!(i.to_vec(), (sign, vec));
+    /// ```
+    #[inline]
+    pub fn to_vec(self) -> (Sign, Vec<BigDigit>) {
+        (self.sign, self.data.to_vec())
+    }
+
     /// Returns the sign and the byte representation of the `BigInt` in big-endian byte order.
     ///
     /// # Examples
