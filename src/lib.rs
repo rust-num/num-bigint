@@ -78,6 +78,7 @@ extern crate rand;
 extern crate rustc_serialize;
 #[cfg(feature = "serde")]
 extern crate serde;
+extern crate core;
 
 extern crate num_integer as integer;
 extern crate num_traits as traits;

@@ -941,16 +941,38 @@ impl Integer for BigUint {
     ///
     /// The result is always positive.
     #[inline]
-    fn gcd(&self, other: &BigUint) -> BigUint {
-        // Use Euclid's algorithm
+    fn gcd(&self, other: &Self) -> Self {
+        // Stein's algorithm
+        if self.is_zero() {
+            return (*other).clone();
+        }
+        if other.is_zero() {
+            return (*self).clone();
+        }
         let mut m = (*self).clone();
         let mut n = (*other).clone();
-        while !m.is_zero() {
-            let temp = m;
-            m = n % &temp;
-            n = temp;
+
+        // find common factors of 2
+        let shift = ::core::cmp::min(
+            n.trailing_zeros(),
+            m.trailing_zeros()
+        );
+
+        // divide m and n by 2 until odd
+        // m inside loop
+        n >>= n.trailing_zeros();
+
+        loop {
+            m >>= m.trailing_zeros();
+            if n > m { ::core::mem::swap(&mut n, &mut m) }
+            m -= &n;
+
+            if m.is_zero() {
+                break
+            }
         }
-        return n;
+
+        n << shift
     }
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
@@ -1606,6 +1628,18 @@ impl BigUint {
         }
         let zeros = self.data.last().unwrap().leading_zeros();
         return self.data.len() * big_digit::BITS - zeros as usize;
+    }
+
+    // self is assumed to be normalized
+    fn trailing_zeros(&self) -> usize {
+        let mut zeros = 0;
+        for &bigdigit in self.data.iter() {
+            zeros += bigdigit.trailing_zeros() as usize;
+            if bigdigit != 0 {
+                break
+            }
+        }
+        zeros
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
