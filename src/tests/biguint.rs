@@ -1569,6 +1569,7 @@ fn test_from_str_radix() {
 
 #[test]
 fn test_all_str_radix() {
+    #[allow(unused)]
     use std::ascii::AsciiExt;
 
     let n = BigUint::new((0..10).collect());

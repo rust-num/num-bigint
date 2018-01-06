@@ -10,6 +10,7 @@ use std::cmp;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{f32, f64};
 use std::{u8, u64};
+#[allow(unused)]
 use std::ascii::AsciiExt;
 
 #[cfg(feature = "serde")]
