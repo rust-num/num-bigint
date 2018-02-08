@@ -1735,6 +1735,33 @@ impl BigInt {
         }
         return Some(self.div(v));
     }
+
+    /// Returns `(self ^ exponent) mod modulus`
+    ///
+    /// Note that this rounds like `mod_floor`, not like the `%` operator,
+    /// which makes a difference when given a negative `self` or `modulus`.
+    /// The result will be in the interval `[0, modulus)` for `modulus > 0`,
+    /// or in the interval `(modulus, 0]` for `modulus < 0`
+    ///
+    /// Panics if the exponent is negative or the modulus is zero.
+    pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
+        assert!(!exponent.is_negative(), "negative exponentiation is not supported!");
+        assert!(!modulus.is_zero(), "divide by zero!");
+
+        let result = self.data.modpow(&exponent.data, &modulus.data);
+        if result.is_zero() {
+            return BigInt::zero();
+        }
+
+        // The sign of the result follows the modulus, like `mod_floor`.
+        let (sign, mag) = match (self.is_negative(), modulus.is_negative()) {
+            (false, false) => (Plus, result),
+            (true, false) => (Plus, &modulus.data - result),
+            (false, true) => (Minus, &modulus.data - result),
+            (true, true) => (Minus, result),
+        };
+        BigInt::from_biguint(sign, mag)
+    }
 }
 
 /// Perform in-place two's complement of the given binary representation,

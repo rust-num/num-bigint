@@ -1655,6 +1655,8 @@ impl BigUint {
     }
 
     /// Returns `(self ^ exponent) % modulus`.
+    ///
+    /// Panics if the modulus is zero.
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
         assert!(!modulus.is_zero(), "divide by zero!");
 
