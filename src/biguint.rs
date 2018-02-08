@@ -1633,14 +1633,12 @@ impl BigUint {
 
     // self is assumed to be normalized
     fn trailing_zeros(&self) -> usize {
-        let mut zeros = 0;
-        for &bigdigit in self.data.iter() {
-            zeros += bigdigit.trailing_zeros() as usize;
-            if bigdigit != 0 {
-                break
-            }
-        }
-        zeros
+        self.data
+            .iter()
+            .enumerate()
+            .find(|&(_, &digit)| digit != 0)
+            .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
+            .unwrap_or(0)
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
