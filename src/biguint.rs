@@ -7,6 +7,7 @@ use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub,
 use std::str::{self, FromStr};
 use std::fmt;
 use std::cmp;
+use std::mem;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{f32, f64};
 use std::{u8, u64};
@@ -953,7 +954,7 @@ impl Integer for BigUint {
         let mut n = (*other).clone();
 
         // find common factors of 2
-        let shift = ::core::cmp::min(
+        let shift = cmp::min(
             n.trailing_zeros(),
             m.trailing_zeros()
         );
@@ -964,7 +965,7 @@ impl Integer for BigUint {
 
         loop {
             m >>= m.trailing_zeros();
-            if n > m { ::core::mem::swap(&mut n, &mut m) }
+            if n > m { mem::swap(&mut n, &mut m) }
             m -= &n;
 
             if m.is_zero() {
