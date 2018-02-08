@@ -945,13 +945,13 @@ impl Integer for BigUint {
     fn gcd(&self, other: &Self) -> Self {
         // Stein's algorithm
         if self.is_zero() {
-            return (*other).clone();
+            return other.clone();
         }
         if other.is_zero() {
-            return (*self).clone();
+            return self.clone();
         }
-        let mut m = (*self).clone();
-        let mut n = (*other).clone();
+        let mut m = self.clone();
+        let mut n = other.clone();
 
         // find common factors of 2
         let shift = cmp::min(
@@ -963,14 +963,10 @@ impl Integer for BigUint {
         // m inside loop
         n >>= n.trailing_zeros();
 
-        loop {
+        while !m.is_zero() {
             m >>= m.trailing_zeros();
             if n > m { mem::swap(&mut n, &mut m) }
             m -= &n;
-
-            if m.is_zero() {
-                break
-            }
         }
 
         n << shift
