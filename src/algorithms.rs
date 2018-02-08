@@ -591,9 +591,12 @@ pub fn biguint_shr(n: Cow<BigUint>, bits: usize) -> BigUint {
     if n_unit >= n.data.len() {
         return Zero::zero();
     }
-    let mut data = match n_unit {
-        0 => n.into_owned().data,
-        _ => n.data[n_unit..].to_vec(),
+    let mut data = match n {
+        Cow::Borrowed(n) => n.data[n_unit..].to_vec(),
+        Cow::Owned(mut n) => {
+            n.data.drain(..n_unit);
+            n.data
+        }
     };
 
     let n_bits = bits % big_digit::BITS;

@@ -7,9 +7,11 @@ use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub,
 use std::str::{self, FromStr};
 use std::fmt;
 use std::cmp;
+use std::mem;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{f32, f64};
 use std::{u8, u64};
+#[allow(unused)]
 use std::ascii::AsciiExt;
 
 #[cfg(feature = "serde")]
@@ -396,7 +398,8 @@ impl<'a> Shr<usize> for &'a BigUint {
 impl ShrAssign<usize> for BigUint {
     #[inline]
     fn shr_assign(&mut self, rhs: usize) {
-        *self = biguint_shr(Cow::Borrowed(&*self), rhs);
+        let n = mem::replace(self, BigUint::zero());
+        *self = n >> rhs;
     }
 }
 
@@ -940,16 +943,34 @@ impl Integer for BigUint {
     ///
     /// The result is always positive.
     #[inline]
-    fn gcd(&self, other: &BigUint) -> BigUint {
-        // Use Euclid's algorithm
-        let mut m = (*self).clone();
-        let mut n = (*other).clone();
-        while !m.is_zero() {
-            let temp = m;
-            m = n % &temp;
-            n = temp;
+    fn gcd(&self, other: &Self) -> Self {
+        // Stein's algorithm
+        if self.is_zero() {
+            return other.clone();
         }
-        return n;
+        if other.is_zero() {
+            return self.clone();
+        }
+        let mut m = self.clone();
+        let mut n = other.clone();
+
+        // find common factors of 2
+        let shift = cmp::min(
+            n.trailing_zeros(),
+            m.trailing_zeros()
+        );
+
+        // divide m and n by 2 until odd
+        // m inside loop
+        n >>= n.trailing_zeros();
+
+        while !m.is_zero() {
+            m >>= m.trailing_zeros();
+            if n > m { mem::swap(&mut n, &mut m) }
+            m -= &n;
+        }
+
+        n << shift
     }
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
@@ -1605,6 +1626,16 @@ impl BigUint {
         }
         let zeros = self.data.last().unwrap().leading_zeros();
         return self.data.len() * big_digit::BITS - zeros as usize;
+    }
+
+    // self is assumed to be normalized
+    fn trailing_zeros(&self) -> usize {
+        self.data
+            .iter()
+            .enumerate()
+            .find(|&(_, &digit)| digit != 0)
+            .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
+            .unwrap_or(0)
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
