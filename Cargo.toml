@@ -15,6 +15,9 @@ readme = "README.md"
 name = "bigint"
 
 [[bench]]
+name = "gcd"
+
+[[bench]]
 harness = false
 name = "shootout-pidigits"
 
