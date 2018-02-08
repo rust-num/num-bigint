@@ -4,7 +4,7 @@ use std::str::{self, FromStr};
 use std::fmt;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{i64, u64};
-#[allow(unused)]
+#[allow(unused_imports)]
 use std::ascii::AsciiExt;
 
 #[cfg(feature = "serde")]
