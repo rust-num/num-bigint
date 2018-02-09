@@ -39,10 +39,9 @@ table offers a brief comparison to a few alternatives.
 | Crate            | License        | Min rustc | Implementation |
 | :--------------- | :------------- | :-------- | :------------- |
 | **`num-bigint`** | MIT/Apache-2.0 | 1.8       | pure rust |
-| [`gmp-mpfr-sys`] | LGPL-3.0+      | 1.13      | unsafe bindings for [GMP] |
 | [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly |
-| [`rug`]          | LGPL-3.0+      | 1.18      | safe interface using `gmp-mpfr-sys` |
-| [`rust-gmp`]     | MIT            | stable?   | safe bindings for [GMP] |
+| [`rug`]          | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |
+| [`rust-gmp`]     | MIT            | stable?   | links to [GMP] |
 
 [GMP]: https://gmplib.org/
 [`gmp-mpfr-sys`]: https://crates.io/crates/gmp-mpfr-sys
