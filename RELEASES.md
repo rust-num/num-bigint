@@ -1,3 +1,12 @@
+# Release 0.1.43
+
+- [The new `BigInt::modpow`][18] performs signed modular exponentiation, using
+  the existing `BigUint::modpow` and rounding negatives similar to `mod_floor`.
+
+**Contributors**: @cuviper
+
+[18]: https://github.com/rust-num/num-bigint/pull/18
+
 # Release 0.1.42
 
 - [num-bigint now has its own source repository][num-356] at [rust-num/num-bigint][home].
