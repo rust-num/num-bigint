@@ -29,3 +29,22 @@ Release notes are available in [RELEASES.md](RELEASES.md).
 ## Compatibility
 
 The `num-bigint` crate is tested for rustc 1.8 and greater.
+
+## Alternatives
+
+While `num-bigint` strives for good performance in pure Rust code, other
+crates may offer better performance with different trade-offs.  The following
+table offers a brief comparison to a few alternatives.
+
+| Crate            | License        | Min rustc | Implementation |
+| :--------------- | :------------- | :-------- | :------------- |
+| **`num-bigint`** | MIT/Apache-2.0 | 1.8       | pure rust |
+| [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly |
+| [`rug`]          | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |
+| [`rust-gmp`]     | MIT            | stable?   | links to [GMP] |
+
+[GMP]: https://gmplib.org/
+[`gmp-mpfr-sys`]: https://crates.io/crates/gmp-mpfr-sys
+[`rug`]: https://crates.io/crates/rug
+[`rust-gmp`]: https://crates.io/crates/rust-gmp
+[`ramp`]: https://crates.io/crates/ramp
