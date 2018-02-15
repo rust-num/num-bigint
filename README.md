@@ -42,9 +42,11 @@ table offers a brief comparison to a few alternatives.
 | [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly |
 | [`rug`]          | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |
 | [`rust-gmp`]     | MIT            | stable?   | links to [GMP] |
+| [`apint`]        | MIT/Apache-2.0 | nightly   | pure rust (unfinished) |
 
 [GMP]: https://gmplib.org/
 [`gmp-mpfr-sys`]: https://crates.io/crates/gmp-mpfr-sys
 [`rug`]: https://crates.io/crates/rug
 [`rust-gmp`]: https://crates.io/crates/rust-gmp
 [`ramp`]: https://crates.io/crates/ramp
+[`apint`]: https://crates.io/crates/apint
