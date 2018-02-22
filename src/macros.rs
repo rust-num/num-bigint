@@ -317,42 +317,32 @@ macro_rules! promote_all_scalars {
 
 macro_rules! impl_sum_iter_type {
     ($res:ty) => {
-        impl Sum for $res {
-            impl_sum_iter_type!($res, $res);
-        }
-
-        impl<'a> Sum<&'a $res> for $res {
-            impl_sum_iter_type!($res, &'a $res);
-        }
-    };
-
-    ($res:ty, $item:ty) => {
-        fn sum<I>(iter: I) -> Self
+        impl<T> Sum<T> for $res
         where
-            I: Iterator<Item = $item>
+            $res: Add<T, Output=Self>
         {
-            iter.fold(Zero::zero(), <$res>::add)
+            fn sum<I>(iter: I) -> Self
+            where
+                I: Iterator<Item = T>
+            {
+                iter.fold(Zero::zero(), <$res>::add)
+            }
         }
     };
 }
 
 macro_rules! impl_product_iter_type {
     ($res:ty) => {
-        impl Product for $res {
-            impl_product_iter_type!($res, $res);
-        }
-
-        impl<'a> Product<&'a $res> for $res {
-            impl_product_iter_type!($res, &'a $res);
-        }
-    };
-
-    ($res:ty, $item:ty) => {
-        fn product<I>(iter: I) -> Self
+        impl<T> Product<T> for $res
         where
-            I: Iterator<Item = $item>
+            $res: Mul<T, Output=Self>
         {
-            iter.fold(One::one(), <$res>::mul)
+            fn product<I>(iter: I) -> Self
+            where
+                I: Iterator<Item = T>
+            {
+                iter.fold(One::one(), <$res>::mul)
+            }
         }
     };
 }

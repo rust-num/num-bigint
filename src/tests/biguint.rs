@@ -1709,3 +1709,23 @@ fn test_iter_product() {
     assert_eq!(result, data.iter().product());
     assert_eq!(result, data.into_iter().product());
 }
+
+#[test]
+fn test_iter_sum_generic() {
+    let result: BigUint = FromPrimitive::from_isize(1234567).unwrap();
+    let data = vec![1000000_u32, 200000, 30000, 4000, 500, 60, 7];
+
+    assert_eq!(result, data.iter().sum());
+    assert_eq!(result, data.into_iter().sum());
+}
+
+#[test]
+fn test_iter_product_generic() {
+    let data = vec![1001_u32, 1002, 1003, 1004, 1005];
+    let result = data[0].to_biguint().unwrap() * data[1].to_biguint().unwrap()
+        * data[2].to_biguint().unwrap() * data[3].to_biguint().unwrap()
+        * data[4].to_biguint().unwrap();
+
+    assert_eq!(result, data.iter().product());
+    assert_eq!(result, data.into_iter().product());
+}
