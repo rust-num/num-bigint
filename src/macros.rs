@@ -314,3 +314,45 @@ macro_rules! promote_all_scalars {
         promote_signed_scalars!(impl $imp for $res, $method);
     }
 }
+
+macro_rules! impl_sum_iter_type {
+    ($res:ty) => {
+        impl Sum for $res {
+            impl_sum_iter_type!($res, $res);
+        }
+
+        impl<'a> Sum<&'a $res> for $res {
+            impl_sum_iter_type!($res, &'a $res);
+        }
+    };
+
+    ($res:ty, $item:ty) => {
+        fn sum<I>(iter: I) -> Self
+        where
+            I: Iterator<Item = $item>
+        {
+            iter.fold(Zero::zero(), <$res>::add)
+        }
+    };
+}
+
+macro_rules! impl_product_iter_type {
+    ($res:ty) => {
+        impl Product for $res {
+            impl_product_iter_type!($res, $res);
+        }
+
+        impl<'a> Product<&'a $res> for $res {
+            impl_product_iter_type!($res, &'a $res);
+        }
+    };
+
+    ($res:ty, $item:ty) => {
+        fn product<I>(iter: I) -> Self
+        where
+            I: Iterator<Item = $item>
+        {
+            iter.fold(One::one(), <$res>::mul)
+        }
+    };
+}
