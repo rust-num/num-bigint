@@ -47,7 +47,6 @@ mod biguint_tests;
 /// A `BigUint`-typed value `BigUint { data: vec!(a, b, c) }` represents a number
 /// `(a + b * big_digit::BASE + c * big_digit::BASE^2)`.
 #[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
 pub struct BigUint {
     data: Vec<BigDigit>,
 }
@@ -1691,7 +1690,7 @@ impl BigUint {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigUint {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
     {
         self.data.serialize(serializer)
@@ -1699,9 +1698,9 @@ impl serde::Serialize for BigUint {
 }
 
 #[cfg(feature = "serde")]
-impl serde::Deserialize for BigUint {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
-        where D: serde::Deserializer
+impl<'de> serde::Deserialize<'de> for BigUint {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: serde::Deserializer<'de>
     {
         let data = try!(Vec::deserialize(deserializer));
         Ok(BigUint { data: data })
