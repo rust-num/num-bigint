@@ -72,7 +72,7 @@
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.8 and greater.
+//! The `num-bigint` crate is tested for rustc 1.15 and greater.
 
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.1")]
 
