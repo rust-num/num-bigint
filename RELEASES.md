@@ -1,9 +1,12 @@
 # Release 0.2.0 (pending)
 
 - :warning: [num-bigint now requires rustc 1.15 or greater][23].
+- :warning: [`Shr for BigInt` now rounds down][8] rather than toward zero,
+  matching the behavior of the primitive integers for negative values.
 
 **Contributors**: @cuviper
 
+[8]: https://github.com/rust-num/num-bigint/pull/8
 [23]: https://github.com/rust-num/num-bigint/pull/23
 
 
