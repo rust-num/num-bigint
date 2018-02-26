@@ -21,6 +21,9 @@ pub mod big_digit {
     /// size is the double of the size of `BigDigit`.
     pub type DoubleBigDigit = u64;
 
+    /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
+    pub type SignedDoubleBigDigit = i64;
+
     pub const ZERO_BIG_DIGIT: BigDigit = 0;
 
     // `DoubleBigDigit` size dependent
@@ -51,47 +54,44 @@ pub mod big_digit {
     }
 }
 
-use big_digit::{BigDigit, DoubleBigDigit};
+use big_digit::{BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 
 // Generic functions for add/subtract/multiply with carry/borrow:
 
 // Add with carry:
 #[inline]
-fn adc(a: BigDigit, b: BigDigit, carry: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit((a as DoubleBigDigit) + (b as DoubleBigDigit) +
-                                                  (*carry as DoubleBigDigit));
-
-    *carry = hi;
+fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += a as DoubleBigDigit;
+    *acc += b as DoubleBigDigit;
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
 // Subtract with borrow:
 #[inline]
-fn sbb(a: BigDigit, b: BigDigit, borrow: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit(big_digit::BASE + (a as DoubleBigDigit) -
-                                                  (b as DoubleBigDigit) -
-                                                  (*borrow as DoubleBigDigit));
-    // hi * (base) + lo == 1*(base) + ai - bi - borrow
-    // => ai - bi - borrow < 0 <=> hi == 0
-    *borrow = (hi == 0) as BigDigit;
+fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
+    *acc += a as SignedDoubleBigDigit;
+    *acc -= b as SignedDoubleBigDigit;
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
 #[inline]
-pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, carry: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit((a as DoubleBigDigit) +
-                                                  (b as DoubleBigDigit) * (c as DoubleBigDigit) +
-                                                  (*carry as DoubleBigDigit));
-    *carry = hi;
+pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += a as DoubleBigDigit;
+    *acc += (b as DoubleBigDigit) * (c as DoubleBigDigit);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
 #[inline]
-pub fn mul_with_carry(a: BigDigit, b: BigDigit, carry: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit((a as DoubleBigDigit) * (b as DoubleBigDigit) +
-                                                  (*carry as DoubleBigDigit));
-
-    *carry = hi;
+pub fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += (a as DoubleBigDigit) * (b as DoubleBigDigit);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
@@ -141,7 +141,7 @@ pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
         }
     }
 
-    carry
+    carry as BigDigit
 }
 
 /// /Two argument addition of raw slices:
@@ -446,7 +446,7 @@ pub fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     for a in a.iter_mut() {
         *a = mul_with_carry(*a, b, &mut carry);
     }
-    carry
+    carry as BigDigit
 }
 
 pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
