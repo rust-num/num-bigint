@@ -1,7 +1,12 @@
-use integer::Integer;
-use {BigDigit, BigUint, ToBigUint, big_digit};
-use {BigInt, RandBigInt, ToBigInt};
-use Sign::Plus;
+extern crate num_bigint;
+extern crate num_integer;
+extern crate num_traits;
+extern crate rand;
+
+use num_integer::Integer;
+use num_bigint::{BigDigit, BigUint, ToBigUint, big_digit};
+use num_bigint::{BigInt, ToBigInt};
+use num_bigint::Sign::Plus;
 
 use std::cmp::Ordering::{Less, Equal, Greater};
 use std::{f32, f64};
@@ -9,79 +14,17 @@ use std::i64;
 use std::iter::repeat;
 use std::str::FromStr;
 use std::{u8, u16, u32, u64, usize};
+use std::hash::{BuildHasher, Hasher, Hash};
+use std::collections::hash_map::RandomState;
 
-use rand::thread_rng;
-use traits::{Num, Zero, One, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv, ToPrimitive,
-             FromPrimitive, Float};
+use num_traits::{Num, Zero, One, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv, ToPrimitive,
+                 FromPrimitive, Float};
 
+mod consts;
+use consts::*;
 
-/// Assert that an op works for all val/ref combinations
-macro_rules! assert_op {
-    ($left:ident $op:tt $right:ident == $expected:expr) => {
-        assert_eq!((&$left) $op (&$right), $expected);
-        assert_eq!((&$left) $op $right.clone(), $expected);
-        assert_eq!($left.clone() $op (&$right), $expected);
-        assert_eq!($left.clone() $op $right.clone(), $expected);
-    };
-}
-/// Assert that an assign-op works for all val/ref combinations
-macro_rules! assert_assign_op {
-    ($left:ident $op:tt $right:ident == $expected:expr) => {
-        {
-            let mut tmp12384 = $left.clone();
-            assert_eq!({ tmp12384 $op &$right; tmp12384}, $expected);
-
-            let mut tmp12384 = $left.clone();
-            assert_eq!({ tmp12384 $op $right.clone(); tmp12384}, $expected);
-        }
-    };
-}
-
-/// Assert that an op works for scalar left or right
-macro_rules! assert_scalar_op {
-    (($($to:ident),*) $left:ident $op:tt $right:ident == $expected:expr) => {
-        $(
-            if let Some(left) = $left.$to() {
-                assert_op!(left $op $right == $expected);
-            }
-            if let Some(right) = $right.$to() {
-                assert_op!($left $op right == $expected);
-            }
-        )*
-    };
-    ($left:ident $op:tt $right:ident == $expected:expr) => {
-        assert_scalar_op!((to_u8, to_u16, to_u32, to_u64, to_usize)
-                          $left $op $right == $expected);
-    };
-}
-
-#[test]
-fn test_from_slice() {
-    fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        assert!(BigUint::from_slice(slice).data == data);
-    }
-    check(&[1], &[1]);
-    check(&[0, 0, 0], &[]);
-    check(&[1, 2, 0, 0], &[1, 2]);
-    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
-    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
-    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
-}
-
-#[test]
-fn test_assign_from_slice() {
-    fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        let mut p = BigUint::from_slice(&[2627_u32, 0_u32, 9182_u32, 42_u32]);
-        p.assign_from_slice(slice);
-        assert!(p.data == data);
-    }
-    check(&[1], &[1]);
-    check(&[0, 0, 0], &[]);
-    check(&[1, 2, 0, 0], &[1, 2]);
-    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
-    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
-    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
-}
+#[macro_use]
+mod macros;
 
 #[test]
 fn test_from_bytes_be() {
@@ -180,6 +123,12 @@ fn test_cmp() {
             }
         }
     }
+}
+
+fn hash<T: Hash>(x: &T) -> u64 {
+    let mut hasher = <RandomState as BuildHasher>::Hasher::new();
+    x.hash(&mut hasher);
+    hasher.finish()
 }
 
 #[test]
@@ -510,9 +459,6 @@ fn test_shr() {
           "88887777666655554444333322221111");
 }
 
-const N1: BigDigit = -1i32 as BigDigit;
-const N2: BigDigit = -2i32 as BigDigit;
-
 // `DoubleBigDigit` size dependent
 #[test]
 fn test_convert_i64() {
@@ -527,9 +473,9 @@ fn test_convert_i64() {
     check(i64::MAX.to_biguint().unwrap(), i64::MAX);
 
     check(BigUint::new(vec![]), 0);
-    check(BigUint::new(vec![1]), (1 << (0 * big_digit::BITS)));
+    check(BigUint::new(vec![1]), 1 << (0 * big_digit::BITS));
     check(BigUint::new(vec![N1]), (1 << (1 * big_digit::BITS)) - 1);
-    check(BigUint::new(vec![0, 1]), (1 << (1 * big_digit::BITS)));
+    check(BigUint::new(vec![0, 1]), 1 << (1 * big_digit::BITS));
     check(BigUint::new(vec![N1, N1 >> 1]), i64::MAX);
 
     assert_eq!(i64::MIN.to_biguint(), None);
@@ -553,9 +499,9 @@ fn test_convert_u64() {
     check(u64::MAX.to_biguint().unwrap(), u64::MAX);
 
     check(BigUint::new(vec![]), 0);
-    check(BigUint::new(vec![1]), (1 << (0 * big_digit::BITS)));
+    check(BigUint::new(vec![1]), 1 << (0 * big_digit::BITS));
     check(BigUint::new(vec![N1]), (1 << (1 * big_digit::BITS)) - 1);
-    check(BigUint::new(vec![0, 1]), (1 << (1 * big_digit::BITS)));
+    check(BigUint::new(vec![0, 1]), 1 << (1 * big_digit::BITS));
     check(BigUint::new(vec![N1, N1]), u64::MAX);
 
     assert_eq!(BigUint::new(vec![0, 0, 1]).to_u64(), None);
@@ -728,18 +674,6 @@ fn test_convert_from_uint() {
     check!(usize, BigUint::from(usize::MAX as u64));
 }
 
-const SUM_TRIPLES: &'static [(&'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit])] = &[(&[], &[], &[]),
-                                     (&[], &[1], &[1]),
-                                     (&[1], &[1], &[2]),
-                                     (&[1], &[1, 1], &[2, 1]),
-                                     (&[1], &[N1], &[0, 1]),
-                                     (&[1], &[N1, N1], &[0, 0, 1]),
-                                     (&[N1, N1], &[N1, N1], &[N2, N1, 1]),
-                                     (&[1, 1, 1], &[N1, N1], &[0, 1, 2]),
-                                     (&[2, 2, 1], &[N1, N2], &[1, 1, 2])];
-
 #[test]
 fn test_add() {
     for elm in SUM_TRIPLES.iter() {
@@ -752,19 +686,6 @@ fn test_add() {
         assert_op!(b + a == c);
         assert_assign_op!(a += b == c);
         assert_assign_op!(b += a == c);
-    }
-}
-
-#[test]
-fn test_scalar_add() {
-    for elm in SUM_TRIPLES.iter() {
-        let (a_vec, b_vec, c_vec) = *elm;
-        let a = BigUint::from_slice(a_vec);
-        let b = BigUint::from_slice(b_vec);
-        let c = BigUint::from_slice(c_vec);
-
-        assert_scalar_op!(a + b == c);
-        assert_scalar_op!(b + a == c);
     }
 }
 
@@ -784,61 +705,11 @@ fn test_sub() {
 }
 
 #[test]
-fn test_scalar_sub() {
-    for elm in SUM_TRIPLES.iter() {
-        let (a_vec, b_vec, c_vec) = *elm;
-        let a = BigUint::from_slice(a_vec);
-        let b = BigUint::from_slice(b_vec);
-        let c = BigUint::from_slice(c_vec);
-
-        assert_scalar_op!(c - a == b);
-        assert_scalar_op!(c - b == a);
-    }
-}
-
-#[test]
 #[should_panic]
 fn test_sub_fail_on_underflow() {
     let (a, b): (BigUint, BigUint) = (Zero::zero(), One::one());
     a - b;
 }
-
-const M: u32 = ::std::u32::MAX;
-const MUL_TRIPLES: &'static [(&'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit])] = &[(&[], &[], &[]),
-                                     (&[], &[1], &[]),
-                                     (&[2], &[], &[]),
-                                     (&[1], &[1], &[1]),
-                                     (&[2], &[3], &[6]),
-                                     (&[1], &[1, 1, 1], &[1, 1, 1]),
-                                     (&[1, 2, 3], &[3], &[3, 6, 9]),
-                                     (&[1, 1, 1], &[N1], &[N1, N1, N1]),
-                                     (&[1, 2, 3], &[N1], &[N1, N2, N2, 2]),
-                                     (&[1, 2, 3, 4], &[N1], &[N1, N2, N2, N2, 3]),
-                                     (&[N1], &[N1], &[1, N2]),
-                                     (&[N1, N1], &[N1], &[1, N1, N2]),
-                                     (&[N1, N1, N1], &[N1], &[1, N1, N1, N2]),
-                                     (&[N1, N1, N1, N1], &[N1], &[1, N1, N1, N1, N2]),
-                                     (&[M / 2 + 1], &[2], &[0, 1]),
-                                     (&[0, M / 2 + 1], &[2], &[0, 0, 1]),
-                                     (&[1, 2], &[1, 2, 3], &[1, 4, 7, 6]),
-                                     (&[N1, N1], &[N1, N1, N1], &[1, 0, N1, N2, N1]),
-                                     (&[N1, N1, N1],
-                                      &[N1, N1, N1, N1],
-                                      &[1, 0, 0, N1, N2, N1, N1]),
-                                     (&[0, 0, 1], &[1, 2, 3], &[0, 0, 1, 2, 3]),
-                                     (&[0, 0, 1], &[0, 0, 0, 1], &[0, 0, 0, 0, 0, 1])];
-
-const DIV_REM_QUADRUPLES: &'static [(&'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit])] = &[(&[1], &[2], &[], &[1]),
-                                     (&[3], &[2], &[1], &[1]),
-                                     (&[1, 1], &[2], &[M / 2 + 1], &[1]),
-                                     (&[1, 1, 1], &[2], &[M / 2 + 1, M / 2 + 1], &[1]),
-                                     (&[0, 1], &[N1], &[1], &[1]),
-                                     (&[N1, N1], &[N2], &[2, 1], &[3])];
 
 #[test]
 fn test_mul() {
@@ -863,19 +734,6 @@ fn test_mul() {
 
         assert!(a == &b * &c + &d);
         assert!(a == &c * &b + &d);
-    }
-}
-
-#[test]
-fn test_scalar_mul() {
-    for elm in MUL_TRIPLES.iter() {
-        let (a_vec, b_vec, c_vec) = *elm;
-        let a = BigUint::from_slice(a_vec);
-        let b = BigUint::from_slice(b_vec);
-        let c = BigUint::from_slice(c_vec);
-
-        assert_scalar_op!(a * b == c);
-        assert_scalar_op!(b * a == c);
     }
 }
 
@@ -916,39 +774,6 @@ fn test_div_rem() {
             assert_assign_op!(a /= b == c);
             assert_assign_op!(a %= b == d);
             assert!(a.div_rem(&b) == (c, d));
-        }
-    }
-}
-
-#[test]
-fn test_scalar_div_rem() {
-    for elm in MUL_TRIPLES.iter() {
-        let (a_vec, b_vec, c_vec) = *elm;
-        let a = BigUint::from_slice(a_vec);
-        let b = BigUint::from_slice(b_vec);
-        let c = BigUint::from_slice(c_vec);
-
-        if !a.is_zero() {
-            assert_scalar_op!(c / a == b);
-            assert_scalar_op!(c % a == Zero::zero());
-        }
-
-        if !b.is_zero() {
-            assert_scalar_op!(c / b == a);
-            assert_scalar_op!(c % b == Zero::zero());
-        }
-    }
-
-    for elm in DIV_REM_QUADRUPLES.iter() {
-        let (a_vec, b_vec, c_vec, d_vec) = *elm;
-        let a = BigUint::from_slice(a_vec);
-        let b = BigUint::from_slice(b_vec);
-        let c = BigUint::from_slice(c_vec);
-        let d = BigUint::from_slice(d_vec);
-
-        if !b.is_zero() {
-            assert_scalar_op!(a / b == c);
-            assert_scalar_op!(a % b == d);
         }
     }
 }
@@ -1593,88 +1418,6 @@ fn test_bits() {
     assert_eq!(n.bits(), 39);
     let one: BigUint = One::one();
     assert_eq!((one << 426).bits(), 427);
-}
-
-#[test]
-fn test_rand() {
-    let mut rng = thread_rng();
-    let _n: BigUint = rng.gen_biguint(137);
-    assert!(rng.gen_biguint(0).is_zero());
-}
-
-#[test]
-fn test_rand_range() {
-    let mut rng = thread_rng();
-
-    for _ in 0..10 {
-        assert_eq!(rng.gen_bigint_range(&FromPrimitive::from_usize(236).unwrap(),
-                                        &FromPrimitive::from_usize(237).unwrap()),
-                   FromPrimitive::from_usize(236).unwrap());
-    }
-
-    let l = FromPrimitive::from_usize(403469000 + 2352).unwrap();
-    let u = FromPrimitive::from_usize(403469000 + 3513).unwrap();
-    for _ in 0..1000 {
-        let n: BigUint = rng.gen_biguint_below(&u);
-        assert!(n < u);
-
-        let n: BigUint = rng.gen_biguint_range(&l, &u);
-        assert!(n >= l);
-        assert!(n < u);
-    }
-}
-
-#[test]
-#[should_panic]
-fn test_zero_rand_range() {
-    thread_rng().gen_biguint_range(&FromPrimitive::from_usize(54).unwrap(),
-                                   &FromPrimitive::from_usize(54).unwrap());
-}
-
-#[test]
-#[should_panic]
-fn test_negative_rand_range() {
-    let mut rng = thread_rng();
-    let l = FromPrimitive::from_usize(2352).unwrap();
-    let u = FromPrimitive::from_usize(3513).unwrap();
-    // Switching u and l should fail:
-    let _n: BigUint = rng.gen_biguint_range(&u, &l);
-}
-
-fn test_mul_divide_torture_count(count: usize) {
-    use rand::{SeedableRng, StdRng, Rng};
-
-    let bits_max = 1 << 12;
-    let seed: &[_] = &[1, 2, 3, 4];
-    let mut rng: StdRng = SeedableRng::from_seed(seed);
-
-    for _ in 0..count {
-        // Test with numbers of random sizes:
-        let xbits = rng.gen_range(0, bits_max);
-        let ybits = rng.gen_range(0, bits_max);
-
-        let x = rng.gen_biguint(xbits);
-        let y = rng.gen_biguint(ybits);
-
-        if x.is_zero() || y.is_zero() {
-            continue;
-        }
-
-        let prod = &x * &y;
-        assert_eq!(&prod / &x, y);
-        assert_eq!(&prod / &y, x);
-    }
-}
-
-#[test]
-fn test_mul_divide_torture() {
-    test_mul_divide_torture_count(1000);
-}
-
-#[test]
-#[ignore]
-fn test_mul_divide_torture_long() {
-    test_mul_divide_torture_count(1000000);
 }
 
 #[test]
