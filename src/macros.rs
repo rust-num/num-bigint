@@ -319,7 +319,7 @@ macro_rules! impl_sum_iter_type {
     ($res:ty) => {
         impl<T> Sum<T> for $res
         where
-            $res: Add<T, Output=Self>
+            $res: Add<T, Output=$res>
         {
             fn sum<I>(iter: I) -> Self
             where
@@ -335,7 +335,7 @@ macro_rules! impl_product_iter_type {
     ($res:ty) => {
         impl<T> Product<T> for $res
         where
-            $res: Mul<T, Output=Self>
+            $res: Mul<T, Output=$res>
         {
             fn product<I>(iter: I) -> Self
             where
