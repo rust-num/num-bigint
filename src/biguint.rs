@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::default::Default;
-use std::iter::repeat;
+use std::iter::{repeat, Product, Sum};
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub,
                AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, DivAssign,
                MulAssign, RemAssign, ShlAssign, ShrAssign, SubAssign};
@@ -1689,6 +1689,9 @@ pub fn trailing_zeros(u: &BigUint) -> Option<usize> {
         .find(|&(_, &digit)| digit != 0)
         .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
 }
+
+impl_sum_iter_type!(BigUint);
+impl_product_iter_type!(BigUint);
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigUint {

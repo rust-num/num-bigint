@@ -1217,3 +1217,55 @@ fn test_random_shr() {
         }
     }
 }
+#[test]
+fn test_iter_sum() {
+    let result: BigInt = FromPrimitive::from_isize(-1234567).unwrap();
+    let data: Vec<BigInt> = vec![
+        FromPrimitive::from_i32(-1000000).unwrap(),
+        FromPrimitive::from_i32(-200000).unwrap(),
+        FromPrimitive::from_i32(-30000).unwrap(),
+        FromPrimitive::from_i32(-4000).unwrap(),
+        FromPrimitive::from_i32(-500).unwrap(),
+        FromPrimitive::from_i32(-60).unwrap(),
+        FromPrimitive::from_i32(-7).unwrap(),
+    ];
+
+    assert_eq!(result, data.iter().sum());
+    assert_eq!(result, data.into_iter().sum());
+}
+
+#[test]
+fn test_iter_product() {
+    let data: Vec<BigInt> = vec![
+        FromPrimitive::from_i32(1001).unwrap(),
+        FromPrimitive::from_i32(-1002).unwrap(),
+        FromPrimitive::from_i32(1003).unwrap(),
+        FromPrimitive::from_i32(-1004).unwrap(),
+        FromPrimitive::from_i32(1005).unwrap(),
+    ];
+    let result = data.get(0).unwrap() * data.get(1).unwrap() * data.get(2).unwrap()
+        * data.get(3).unwrap() * data.get(4).unwrap();
+
+    assert_eq!(result, data.iter().product());
+    assert_eq!(result, data.into_iter().product());
+}
+
+#[test]
+fn test_iter_sum_generic() {
+    let result: BigInt = FromPrimitive::from_isize(-1234567).unwrap();
+    let data = vec![-1000000, -200000, -30000, -4000, -500, -60, -7];
+
+    assert_eq!(result, data.iter().sum());
+    assert_eq!(result, data.into_iter().sum());
+}
+
+#[test]
+fn test_iter_product_generic() {
+    let data = vec![1001, -1002, 1003, -1004, 1005];
+    let result = data[0].to_bigint().unwrap() * data[1].to_bigint().unwrap()
+        * data[2].to_bigint().unwrap() * data[3].to_bigint().unwrap()
+        * data[4].to_bigint().unwrap();
+
+    assert_eq!(result, data.iter().product());
+    assert_eq!(result, data.into_iter().product());
+}

@@ -6,6 +6,7 @@ use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{i64, u64};
 #[allow(unused_imports)]
 use std::ascii::AsciiExt;
+use std::iter::{Product, Sum};
 
 #[cfg(feature = "serde")]
 use serde;
@@ -1778,6 +1779,9 @@ impl BigInt {
         BigInt::from_biguint(sign, mag)
     }
 }
+
+impl_sum_iter_type!(BigInt);
+impl_product_iter_type!(BigInt);
 
 /// Perform in-place two's complement of the given binary representation,
 /// in little-endian byte order.
