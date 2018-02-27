@@ -23,7 +23,6 @@ use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
 use self::Sign::{Minus, NoSign, Plus};
 
 use super::ParseBigIntError;
-use super::big_digit;
 use super::big_digit::{BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
@@ -38,7 +37,6 @@ mod bigint_tests;
 
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
 pub enum Sign {
     Minus,
     NoSign,
@@ -74,7 +72,7 @@ impl Mul<Sign> for Sign {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for Sign {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
     {
         match *self {
@@ -86,25 +84,28 @@ impl serde::Serialize for Sign {
 }
 
 #[cfg(feature = "serde")]
-impl serde::Deserialize for Sign {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
-        where D: serde::Deserializer
+impl<'de> serde::Deserialize<'de> for Sign {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: serde::Deserializer<'de>
     {
         use serde::de::Error;
+        use serde::de::Unexpected;
 
-        let sign: i8 = try!(serde::Deserialize::deserialize(deserializer));
+        let sign: i8 = serde::Deserialize::deserialize(deserializer)?;
         match sign {
             -1 => Ok(Sign::Minus),
             0 => Ok(Sign::NoSign),
             1 => Ok(Sign::Plus),
-            _ => Err(D::Error::invalid_value("sign must be -1, 0, or 1")),
+            _ => Err(D::Error::invalid_value(
+                Unexpected::Signed(sign.into()),
+                &"a sign of -1, 0, or 1",
+            )),
         }
     }
 }
 
 /// A big signed integer type.
 #[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
 pub struct BigInt {
     sign: Sign,
     data: BigUint,
@@ -1213,7 +1214,7 @@ impl From<BigUint> for BigInt {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigInt {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
     {
         (self.sign, &self.data).serialize(serializer)
@@ -1221,11 +1222,11 @@ impl serde::Serialize for BigInt {
 }
 
 #[cfg(feature = "serde")]
-impl serde::Deserialize for BigInt {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
-        where D: serde::Deserializer
+impl<'de> serde::Deserialize<'de> for BigInt {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: serde::Deserializer<'de>
     {
-        let (sign, data) = try!(serde::Deserialize::deserialize(deserializer));
+        let (sign, data) = serde::Deserialize::deserialize(deserializer)?;
         Ok(BigInt {
             sign: sign,
             data: data,
@@ -1320,14 +1321,15 @@ pub trait RandBigInt {
 #[cfg(any(feature = "rand", test))]
 impl<R: Rng> RandBigInt for R {
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
-        let (digits, rem) = bit_size.div_rem(&big_digit::BITS);
+        use super::big_digit::BITS;
+        let (digits, rem) = bit_size.div_rem(&BITS);
         let mut data = Vec::with_capacity(digits + 1);
         for _ in 0..digits {
             data.push(self.gen());
         }
         if rem > 0 {
             let final_digit: BigDigit = self.gen();
-            data.push(final_digit >> (big_digit::BITS - rem));
+            data.push(final_digit >> (BITS - rem));
         }
         BigUint::new(data)
     }
