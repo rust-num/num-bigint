@@ -32,10 +32,6 @@ use biguint::BigUint;
 use UsizePromotion;
 use IsizePromotion;
 
-#[cfg(test)]
-#[path = "tests/bigint.rs"]
-mod bigint_tests;
-
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
 pub enum Sign {
@@ -1811,4 +1807,54 @@ fn twos_complement<'a, I>(digits: I)
             carry = d.is_zero();
         }
     }
+}
+
+
+#[test]
+fn test_from_biguint() {
+    fn check(inp_s: Sign, inp_n: usize, ans_s: Sign, ans_n: usize) {
+        let inp = BigInt::from_biguint(inp_s, FromPrimitive::from_usize(inp_n).unwrap());
+        let ans = BigInt {
+            sign: ans_s,
+            data: FromPrimitive::from_usize(ans_n).unwrap(),
+        };
+        assert_eq!(inp, ans);
+    }
+    check(Plus, 1, Plus, 1);
+    check(Plus, 0, NoSign, 0);
+    check(Minus, 1, Minus, 1);
+    check(NoSign, 1, NoSign, 0);
+}
+
+#[test]
+fn test_from_slice() {
+    fn check(inp_s: Sign, inp_n: u32, ans_s: Sign, ans_n: u32) {
+        let inp = BigInt::from_slice(inp_s, &[inp_n]);
+        let ans = BigInt {
+            sign: ans_s,
+            data: FromPrimitive::from_u32(ans_n).unwrap(),
+        };
+        assert_eq!(inp, ans);
+    }
+    check(Plus, 1, Plus, 1);
+    check(Plus, 0, NoSign, 0);
+    check(Minus, 1, Minus, 1);
+    check(NoSign, 1, NoSign, 0);
+}
+
+#[test]
+fn test_assign_from_slice() {
+    fn check(inp_s: Sign, inp_n: u32, ans_s: Sign, ans_n: u32) {
+        let mut inp = BigInt::from_slice(Minus, &[2627_u32, 0_u32, 9182_u32, 42_u32]);
+        inp.assign_from_slice(inp_s, &[inp_n]);
+        let ans = BigInt {
+            sign: ans_s,
+            data: FromPrimitive::from_u32(ans_n).unwrap(),
+        };
+        assert_eq!(inp, ans);
+    }
+    check(Plus, 1, Plus, 1);
+    check(Plus, 0, NoSign, 0);
+    check(Minus, 1, Minus, 1);
+    check(NoSign, 1, NoSign, 0);
 }

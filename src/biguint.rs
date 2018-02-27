@@ -38,10 +38,6 @@ use UsizePromotion;
 
 use ParseBigIntError;
 
-#[cfg(test)]
-#[path = "tests/biguint.rs"]
-mod biguint_tests;
-
 /// A big unsigned integer type.
 ///
 /// A `BigUint`-typed value `BigUint { data: vec!(a, b, c) }` represents a number
@@ -2276,4 +2272,33 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
         }
         _   => panic!("Invalid bigdigit size")
     }
+}
+
+
+#[test]
+fn test_from_slice() {
+    fn check(slice: &[BigDigit], data: &[BigDigit]) {
+        assert!(BigUint::from_slice(slice).data == data);
+    }
+    check(&[1], &[1]);
+    check(&[0, 0, 0], &[]);
+    check(&[1, 2, 0, 0], &[1, 2]);
+    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
+    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
+    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
+}
+
+#[test]
+fn test_assign_from_slice() {
+    fn check(slice: &[BigDigit], data: &[BigDigit]) {
+        let mut p = BigUint::from_slice(&[2627_u32, 0_u32, 9182_u32, 42_u32]);
+        p.assign_from_slice(slice);
+        assert!(p.data == data);
+    }
+    check(&[1], &[1]);
+    check(&[0, 0, 0], &[]);
+    check(&[1, 2, 0, 0], &[1, 2]);
+    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
+    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
+    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
 }

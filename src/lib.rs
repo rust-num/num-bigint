@@ -127,18 +127,6 @@ impl From<ParseIntError> for ParseBigIntError {
     }
 }
 
-#[cfg(test)]
-use std::hash;
-
-#[cfg(test)]
-fn hash<T: hash::Hash>(x: &T) -> u64 {
-    use std::hash::{BuildHasher, Hasher};
-    use std::collections::hash_map::RandomState;
-    let mut hasher = <RandomState as BuildHasher>::Hasher::new();
-    x.hash(&mut hasher);
-    hasher.finish()
-}
-
 #[macro_use]
 mod macros;
 
