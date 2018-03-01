@@ -27,7 +27,7 @@ use super::ParseBigIntError;
 use super::big_digit::{BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
-use biguint::BigUint;
+use biguint::{BigUint, CloneWithCapacity};
 
 use UsizePromotion;
 use IsizePromotion;
@@ -64,6 +64,21 @@ impl Mul<Sign> for Sign {
             (Plus, Plus) | (Minus, Minus) => Plus,
             (Plus, Minus) | (Minus, Plus) => Minus,
         }
+    }
+}
+
+impl CloneWithCapacity for BigInt {
+    #[inline]
+    fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+    #[inline]
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+    #[inline]
+    fn clone_with_capacity(&self, capacity: usize) -> BigInt {
+        BigInt::from_biguint(self.sign, self.data.clone_with_capacity(capacity))
     }
 }
 

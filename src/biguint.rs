@@ -1689,6 +1689,29 @@ pub fn trailing_zeros(u: &BigUint) -> Option<usize> {
 impl_sum_iter_type!(BigUint);
 impl_product_iter_type!(BigUint);
 
+pub trait CloneWithCapacity {
+    fn capacity(&self) -> usize;
+    fn len(&self) -> usize;
+    fn clone_with_capacity(&self, capacity: usize) -> Self;
+}
+
+impl CloneWithCapacity for BigUint {
+    #[inline]
+    fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+    #[inline]
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+    #[inline]
+    fn clone_with_capacity(&self, capacity: usize) -> BigUint {
+        let mut data = Vec::with_capacity(capacity);
+        data.extend(&self.data);
+        BigUint::new(data)
+    }
+}
+
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigUint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
