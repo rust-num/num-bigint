@@ -173,9 +173,9 @@ impl fmt::LowerHex for BigInt {
 
 impl fmt::UpperHex for BigInt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.pad_integral(!self.is_negative(),
-                       "0x",
-                       &self.data.to_str_radix(16).to_ascii_uppercase())
+        let mut s = self.data.to_str_radix(16);
+        s.make_ascii_uppercase();
+        f.pad_integral(!self.is_negative(), "0x", &s)
     }
 }
 

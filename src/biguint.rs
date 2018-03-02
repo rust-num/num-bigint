@@ -93,7 +93,9 @@ impl fmt::LowerHex for BigUint {
 
 impl fmt::UpperHex for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.pad_integral(true, "0x", &self.to_str_radix(16).to_ascii_uppercase())
+        let mut s = self.to_str_radix(16);
+        s.make_ascii_uppercase();
+        f.pad_integral(true, "0x", &s)
     }
 }
 
