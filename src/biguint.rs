@@ -279,7 +279,25 @@ impl Num for BigUint {
     }
 }
 
-forward_all_binop_to_val_ref_commutative!(impl BitAnd for BigUint, bitand);
+forward_val_val_binop!(impl BitAnd for BigUint, bitand);
+forward_ref_val_binop!(impl BitAnd for BigUint, bitand);
+
+// do not use forward_ref_ref_binop_commutative! for bitand so that we can
+// clone the smaller value rather than the larger, avoiding over-allocation
+impl<'a, 'b> BitAnd<&'b BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn bitand(self, other: &BigUint) -> BigUint {
+        // forward to val-ref, choosing the smaller to clone
+        if self.data.len() <= other.data.len() {
+            self.clone() & other
+        } else {
+            other.clone() & self
+        }
+    }
+}
+
 forward_val_assign!(impl BitAndAssign for BigUint, bitand_assign);
 
 impl<'a> BitAnd<&'a BigUint> for BigUint {
