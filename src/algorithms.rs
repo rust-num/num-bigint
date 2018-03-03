@@ -178,18 +178,28 @@ pub fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
             "Cannot subtract b from a because b is larger than a.");
 }
 
-pub fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
-    debug_assert!(b.len() >= a.len());
+// Only for the Sub impl. `a` and `b` must have same length.
+#[inline]
+pub fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
+    debug_assert!(b.len() == a.len());
 
     let mut borrow = 0;
+
+    for (ai, bi) in a.iter().zip(b) {
+        *bi = sbb(*ai, *bi, &mut borrow);
+    }
+
+    borrow as BigDigit
+}
+
+pub fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
+    debug_assert!(b.len() >= a.len());
 
     let len = cmp::min(a.len(), b.len());
     let (a_lo, a_hi) = a.split_at(len);
     let (b_lo, b_hi) = b.split_at_mut(len);
 
-    for (a, b) in a_lo.iter().zip(b_lo) {
-        *b = sbb(*a, *b, &mut borrow);
-    }
+    let borrow = __sub2rev(a_lo, b_lo);
 
     assert!(a_hi.is_empty());
 
