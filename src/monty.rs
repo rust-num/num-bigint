@@ -1,7 +1,8 @@
 use integer::Integer;
-use traits::Zero;
+use traits::{One, Zero};
 
 use biguint::BigUint;
+use big_digit::BITS;
 
 struct MontyReducer<'a> {
     n: &'a BigUint,
@@ -49,79 +50,96 @@ impl<'a> MontyReducer<'a> {
         let n0inv = inv_mod_u32(n.data[0]);
         MontyReducer { n: n, n0inv: n0inv }
     }
-}
 
-// Montgomery Reduction
-//
-// Reference:
-// Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 2.6
-fn monty_redc(a: BigUint, mr: &MontyReducer) -> BigUint {
-    let mut c = a.data;
-    let n = &mr.n.data;
-    let n_size = n.len();
-
-    // Allocate sufficient work space
-    c.resize(2 * n_size + 2, 0);
-
-    // β is the size of a word, in this case 32 bits. So "a mod β" is
-    // equivalent to masking a to 32 bits.
-    // mu <- -N^(-1) mod β
-    let mu = 0u32.wrapping_sub(mr.n0inv);
-
-    // 1: for i = 0 to (n-1)
-    for i in 0..n_size {
-        // 2: q_i <- mu*c_i mod β
-        let q_i = c[i].wrapping_mul(mu);
-
-        // 3: C <- C + q_i * N * β^i
-        super::algorithms::mac_digit(&mut c[i..], n, q_i);
+    /// Map a number to the Montgomery domain
+    fn map(&self, x: &BigUint) -> BigUint {
+        let shift = self.n.data.len() * BITS;
+        (x << shift) % self.n
     }
 
-    // 4: R <- C * β^(-n)
-    // This is an n-word bitshift, equivalent to skipping n words.
-    let ret = BigUint::new(c[n_size..].to_vec());
+    /// Montgomery Reduction
+    ///
+    /// Reference:
+    /// Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 2.6
+    fn redc(&self, a: BigUint) -> BigUint {
+        let mut c = a.data;
+        let n = &self.n.data;
+        let n_size = n.len();
 
-    // 5: if R >= β^n then return R-N else return R.
-    if &ret < mr.n {
-        ret
-    } else {
-        ret - mr.n
+        // Allocate sufficient work space
+        c.resize(2 * n_size + 2, 0);
+
+        // β is the size of a word, in this case 32 bits. So "a mod β" is
+        // equivalent to masking a to 32 bits.
+        // mu <- -N^(-1) mod β
+        let mu = 0u32.wrapping_sub(self.n0inv);
+
+        // 1: for i = 0 to (n-1)
+        for i in 0..n_size {
+            // 2: q_i <- mu*c_i mod β
+            let q_i = c[i].wrapping_mul(mu);
+
+            // 3: C <- C + q_i * N * β^i
+            super::algorithms::mac_digit(&mut c[i..], n, q_i);
+        }
+
+        // 4: R <- C * β^(-n)
+        // This is an n-word bitshift, equivalent to skipping n words.
+        let ret = BigUint::new(c[n_size..].to_vec());
+
+        // 5: if R >= β^n then return R-N else return R.
+        if &ret < self.n {
+            ret
+        } else {
+            ret - self.n
+        }
     }
-}
 
-// Montgomery Multiplication
-fn monty_mult(a: BigUint, b: &BigUint, mr: &MontyReducer) -> BigUint {
-    monty_redc(a * b, mr)
-}
+    /// Montgomery Multiplication
+    fn mul(&self, a: BigUint, b: &BigUint) -> BigUint {
+        self.redc(a * b)
+    }
 
-// Montgomery Squaring
-fn monty_sqr(a: BigUint, mr: &MontyReducer) -> BigUint {
-    // TODO: Replace with an optimised squaring function
-    monty_redc(&a * &a, mr)
+    /// Montgomery Squaring
+    fn square(&self, a: BigUint) -> BigUint {
+        // TODO: Replace with an optimised squaring function
+        self.redc(&a * &a)
+    }
+
+    /// Montgomery Exponentiation
+    fn pow(&self, mut base: BigUint, exp: &BigUint) -> BigUint {
+        debug_assert!(!exp.is_zero());
+
+        // Binary exponentiation
+        let mut exp = exp.clone();
+        while exp.is_even() {
+            base = self.square(base);
+            exp >>= 1;
+        }
+        if exp.is_one() { return base; }
+
+        let mut acc = base.clone();
+        while !exp.is_one() {
+            exp >>= 1;
+            base = self.square(base);
+            if exp.is_odd() {
+                acc = self.mul(acc, &base);
+            }
+        }
+
+        acc
+    }
 }
 
 pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint{
     let mr = MontyReducer::new(modulus);
 
-    // Calculate the Montgomery parameter
-    let mut v = vec![0; modulus.data.len()];
-    v.push(1);
-    let r = BigUint::new(v);
-
     // Map the base to the Montgomery domain
-    let mut apri = a * &r % modulus;
+    let base = mr.map(a);
 
-    // Binary exponentiation
-    let mut ans = &r % modulus;
-    let mut e = exp.clone();
-    while !e.is_zero() {
-        if e.is_odd() {
-            ans = monty_mult(ans, &apri, &mr);
-        }
-        apri = monty_sqr(apri, &mr);
-        e = e >> 1;
-    }
+    // Do the computation
+    let answer = mr.pow(base, exp);
 
     // Map the result back to the residues domain
-    monty_redc(ans, &mr)
+    mr.redc(answer)
 }
