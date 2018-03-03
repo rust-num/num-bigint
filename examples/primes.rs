@@ -140,6 +140,9 @@ fn witness(a: &BigUint, n: &BigUint) -> bool {
 
     for _ in 1..t {
         x = &x * &x % n;
+        if x.is_one() {
+            return true;
+        }
         if x == n_m1 {
             return false;
         }
