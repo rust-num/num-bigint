@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::default::Default;
-use std::iter::{repeat, Product, Sum};
+use std::iter::{Product, Sum};
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub,
                AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, DivAssign,
                MulAssign, RemAssign, ShlAssign, ShrAssign, SubAssign};
@@ -29,7 +29,7 @@ pub use self::algorithms::big_digit;
 pub use self::big_digit::{BigDigit, DoubleBigDigit, ZERO_BIG_DIGIT};
 
 use self::algorithms::{mac_with_carry, mul3, scalar_mul, div_rem, div_rem_digit};
-use self::algorithms::{__add2, add2, sub2, sub2rev};
+use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
 use self::monty::monty_modpow;
@@ -440,12 +440,14 @@ impl<'a> Add<&'a BigUint> for BigUint {
 impl<'a> AddAssign<&'a BigUint> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: &BigUint) {
-        if self.data.len() < other.data.len() {
-            let extra = other.data.len() - self.data.len();
-            self.data.extend(repeat(0).take(extra));
-        }
-
-        let carry = __add2(&mut self.data[..], &other.data[..]);
+        let self_len = self.data.len();
+        let carry = if self_len < other.data.len() {
+            let lo_carry = __add2(&mut self.data[..], &other.data[..self_len]);
+            self.data.extend_from_slice(&other.data[self_len..]);
+            __add2(&mut self.data[self_len..], &[lo_carry])
+        } else {
+            __add2(&mut self.data[..], &other.data[..])
+        };
         if carry != 0 {
             self.data.push(carry);
         }
@@ -533,12 +535,16 @@ impl<'a> Sub<BigUint> for &'a BigUint {
     type Output = BigUint;
 
     fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.len() < self.data.len() {
-            let extra = self.data.len() - other.data.len();
-            other.data.extend(repeat(0).take(extra));
+        let other_len = other.data.len();
+        if other_len < self.data.len() {
+            let lo_borrow = __sub2rev(&self.data[..other_len], &mut other.data);
+            other.data.extend_from_slice(&self.data[other_len..]);
+            if lo_borrow != 0 {
+                sub2(&mut other.data[other_len..], &[1])
+            }
+        } else {
+            sub2rev(&self.data[..], &mut other.data[..]);
         }
-
-        sub2rev(&self.data[..], &mut other.data[..]);
         other.normalized()
     }
 }
@@ -570,10 +576,10 @@ impl Sub<BigUint> for BigDigit {
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
         if other.data.len() == 0 {
-            other.data.push(0);
+            other.data.push(self);
+        } else {
+            sub2rev(&[self], &mut other.data[..]);
         }
-
-        sub2rev(&[self], &mut other.data[..]);
         other.normalized()
     }
 }
