@@ -1,5 +1,6 @@
 use std::default::Default;
-use std::ops::{Add, Div, Mul, Neg, Rem, Shl, Shr, Sub, Not};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub,
+               BitAndAssign, BitOrAssign, BitXorAssign, Not};
 use std::str::{self, FromStr};
 use std::fmt;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
@@ -24,7 +25,7 @@ use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
 use self::Sign::{Minus, NoSign, Plus};
 
 use super::ParseBigIntError;
-use super::big_digit::{BigDigit, DoubleBigDigit};
+use super::big_digit::{self, BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
 use biguint::BigUint;
@@ -176,6 +177,400 @@ impl fmt::UpperHex for BigInt {
         let mut s = self.data.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(!self.is_negative(), "0x", &s)
+    }
+}
+
+// Negation in two's complement.
+// acc must be initialized as 1 for least-significant digit.
+//
+// When negating, a carry (acc == 1) means that all the digits
+// considered to this point were zero. This means that if all the
+// digits of a negative BigInt have been considered, carry must be
+// zero as we cannot have negative zero.
+//
+//    01 -> ...f    ff
+//    ff -> ...f    01
+// 01 00 -> ...f ff 00
+// 01 01 -> ...f fe ff
+// 01 ff -> ...f fe 01
+// ff 00 -> ...f 01 00
+// ff 01 -> ...f 00 ff
+// ff ff -> ...f 00 01
+#[inline]
+fn negate_carry(a: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += (!a) as DoubleBigDigit;
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
+    lo
+}
+
+fn normalize(i: &mut BigInt) {
+    biguint::normalize(&mut i.data);
+    if i.data.is_zero() {
+        i.sign = NoSign;
+    }
+}
+
+// !-2 = !...f fe = ...0 01 = +1
+// !-1 = !...f ff = ...0 00 =  0
+// ! 0 = !...0 00 = ...f ff = -1
+// !+1 = !...0 01 = ...f fe = -2
+impl Not for BigInt {
+    type Output = BigInt;
+
+    fn not(mut self) -> BigInt {
+        match self.sign {
+            NoSign | Plus => {
+                self.data += 1u32;
+                self.sign = Minus;
+            }
+            Minus => {
+                self.data -= 1u32;
+                self.sign = if self.data.is_zero() {
+                    NoSign
+                } else {
+                    Plus
+                };
+            }
+        }
+        self
+    }
+}
+
+// + 1 & -ff = ...0 01 & ...f 01 = ...0 01 = + 1
+// +ff & - 1 = ...0 ff & ...f ff = ...0 ff = +ff
+// answer is pos, has length of a
+fn bitand_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_b = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_b = negate_carry(bi, &mut carry_b);
+        *ai &= twos_b;
+    }
+    debug_assert!(b.len() > a.len() || carry_b == 0);
+}
+
+// - 1 & +ff = ...f ff & ...0 ff = ...0 ff = +ff
+// -ff & + 1 = ...f 01 & ...0 01 = ...0 01 = + 1
+// answer is pos, has length of b
+fn bitand_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_a = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_a = negate_carry(*ai, &mut carry_a);
+        *ai = twos_a & bi;
+    }
+    debug_assert!(a.len() > b.len() || carry_a == 0);
+    if a.len() > b.len() {
+        a.truncate(b.len());
+    } else if b.len() > a.len() {
+        let extra = &b[a.len()..];
+        a.extend(extra.iter().cloned());
+    }
+}
+
+// - 1 & -ff = ...f ff & ...f 01 = ...f 01 = - ff
+// -ff & - 1 = ...f 01 & ...f ff = ...f 01 = - ff
+// -ff & -fe = ...f 01 & ...f 02 = ...f 00 = -100
+// answer is neg, has length of longest with a possible carry
+fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_a = 1;
+    let mut carry_b = 1;
+    let mut carry_and = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_a = negate_carry(*ai, &mut carry_a);
+        let twos_b = negate_carry(bi, &mut carry_b);
+        *ai = negate_carry(twos_a & twos_b, &mut carry_and);
+    }
+    debug_assert!(a.len() > b.len() || carry_a == 0);
+    debug_assert!(b.len() > a.len() || carry_b == 0);
+    if a.len() > b.len()  {
+        for ai in a[b.len()..].iter_mut() {
+            let twos_a = negate_carry(*ai, &mut carry_a);
+            *ai = negate_carry(twos_a, &mut carry_and);
+        }
+        debug_assert!(carry_a == 0);
+    } else if b.len() > a.len() {
+        let extra = &b[a.len()..];
+        a.extend(extra.iter().map(|&bi| {
+            let twos_b = negate_carry(bi, &mut carry_b);
+            negate_carry(twos_b, &mut carry_and)
+        }));
+        debug_assert!(carry_b == 0);
+    }
+    if carry_and != 0 {
+        a.push(1);
+    }
+}
+
+impl<'a> BitAnd<&'a BigInt> for BigInt {
+    type Output = BigInt;
+
+    fn bitand(mut self, other: &BigInt) -> BigInt {
+        self &= other;
+        self
+    }
+}
+
+impl<'a> BitAndAssign<&'a BigInt> for BigInt {
+    fn bitand_assign(&mut self, other: &BigInt) {
+        match (self.sign, other.sign) {
+            (NoSign, _) => {}
+            (_, NoSign) => self.assign_from_slice(NoSign, &[]),
+            (Plus, Plus) => {
+                self.data &= &other.data;
+                if self.data.is_zero() {
+                    self.sign = NoSign;
+                }
+            }
+            (Plus, Minus) => {
+                bitand_pos_neg(biguint::digits_mut(&mut self.data),
+                               biguint::digits(&other.data));
+                normalize(self);
+            }
+            (Minus, Plus) => {
+                bitand_neg_pos(biguint::digits_mut(&mut self.data),
+                               biguint::digits(&other.data));
+                self.sign = Plus;
+                normalize(self);
+            }
+            (Minus, Minus) => {
+                bitand_neg_neg(biguint::digits_mut(&mut self.data),
+                               biguint::digits(&other.data));
+                normalize(self);
+            }
+        }
+    }
+}
+
+// + 1 | -ff = ...0 01 | ...f 01 = ...f 01 = -ff
+// +ff | - 1 = ...0 ff | ...f ff = ...f ff = - 1
+// answer is neg, has length of b
+fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_b = 1;
+    let mut carry_or = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_b = negate_carry(bi, &mut carry_b);
+        *ai = negate_carry(*ai | twos_b, &mut carry_or);
+    }
+    debug_assert!(b.len() > a.len() || carry_b == 0);
+    if a.len() > b.len() {
+        a.truncate(b.len());
+    } else if b.len() > a.len() {
+        let extra = &b[a.len()..];
+        a.extend(extra.iter().map(|&bi| {
+            let twos_b = negate_carry(bi, &mut carry_b);
+            negate_carry(twos_b, &mut carry_or)
+        }));
+        debug_assert!(carry_b == 0);
+    }
+    // for carry_or to be non-zero, we would need twos_b == 0
+    debug_assert!(carry_or == 0);
+}
+
+// - 1 | +ff = ...f ff | ...0 ff = ...f ff = - 1
+// -ff | + 1 = ...f 01 | ...0 01 = ...f 01 = -ff
+// answer is neg, has length of a
+fn bitor_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_a = 1;
+    let mut carry_or = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_a = negate_carry(*ai, &mut carry_a);
+        *ai = negate_carry(twos_a | bi, &mut carry_or);
+    }
+    debug_assert!(a.len() > b.len() || carry_a == 0);
+    if a.len() > b.len() {
+        for ai in a[b.len()..].iter_mut() {
+            let twos_a = negate_carry(*ai, &mut carry_a);
+            *ai = negate_carry(twos_a, &mut carry_or);
+        }
+        debug_assert!(carry_a == 0);
+    }
+    // for carry_or to be non-zero, we would need twos_a == 0
+    debug_assert!(carry_or == 0);
+}
+
+// - 1 | -ff = ...f ff | ...f 01 = ...f ff = -1
+// -ff | - 1 = ...f 01 | ...f ff = ...f ff = -1
+// answer is neg, has length of shortest
+fn bitor_neg_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_a = 1;
+    let mut carry_b = 1;
+    let mut carry_or = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_a = negate_carry(*ai, &mut carry_a);
+        let twos_b = negate_carry(bi, &mut carry_b);
+        *ai = negate_carry(twos_a | twos_b, &mut carry_or);
+    }
+    debug_assert!(a.len() > b.len() || carry_a == 0);
+    debug_assert!(b.len() > a.len() || carry_b == 0);
+    if a.len() > b.len() {
+        a.truncate(b.len());
+    }
+    // for carry_or to be non-zero, we would need twos_a == 0 or twos_b == 0
+    debug_assert!(carry_or == 0);
+}
+
+impl<'a> BitOr<&'a BigInt> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, other: &BigInt) -> BigInt {
+        self |= other;
+        self
+    }
+}
+
+impl<'a> BitOrAssign<&'a BigInt> for BigInt {
+    fn bitor_assign(&mut self, other: &BigInt) {
+        match (self.sign, other.sign) {
+            (_, NoSign) => {}
+            (NoSign, _) => self.assign_from_slice(other.sign, biguint::digits(&other.data)),
+            (Plus, Plus) => self.data |= &other.data,
+            (Plus, Minus) => {
+                bitor_pos_neg(biguint::digits_mut(&mut self.data),
+                              biguint::digits(&other.data));
+                self.sign = Minus;
+                normalize(self);
+            }
+            (Minus, Plus) => {
+                bitor_neg_pos(biguint::digits_mut(&mut self.data),
+                              biguint::digits(&other.data));
+                normalize(self);
+            }
+            (Minus, Minus) => {
+                bitor_neg_neg(biguint::digits_mut(&mut self.data),
+                              biguint::digits(&other.data));
+                normalize(self);
+            }
+        }
+    }
+}
+
+// + 1 ^ -ff = ...0 01 ^ ...f 01 = ...f 00 = -100
+// +ff ^ - 1 = ...0 ff ^ ...f ff = ...f 00 = -100
+// answer is neg, has length of longest with a possible carry
+fn bitxor_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_b = 1;
+    let mut carry_xor = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_b = negate_carry(bi, &mut carry_b);
+        *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
+    }
+    debug_assert!(b.len() > a.len() || carry_b == 0);
+    if a.len() > b.len() {
+        for ai in a[b.len()..].iter_mut() {
+            let twos_b = !0;
+            *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
+        }
+    } else if b.len() > a.len() {
+        let extra = &b[a.len()..];
+        a.extend(extra.iter().map(|&bi| {
+            let twos_b = negate_carry(bi, &mut carry_b);
+            negate_carry(twos_b, &mut carry_xor)
+        }));
+        debug_assert!(carry_b == 0);
+    }
+    if carry_xor != 0 {
+        a.push(1);
+    }
+}
+
+// - 1 ^ +ff = ...f ff ^ ...0 ff = ...f 00 = -100
+// -ff ^ + 1 = ...f 01 ^ ...0 01 = ...f 00 = -100
+// answer is neg, has length of longest with a possible carry
+fn bitxor_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_a = 1;
+    let mut carry_xor = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_a = negate_carry(*ai, &mut carry_a);
+        *ai = negate_carry(twos_a ^ bi, &mut carry_xor);
+    }
+    debug_assert!(a.len() > b.len() || carry_a == 0);
+    if a.len() > b.len() {
+        for ai in a[b.len()..].iter_mut() {
+            let twos_a = negate_carry(*ai, &mut carry_a);
+            *ai = negate_carry(twos_a, &mut carry_xor);
+        }
+        debug_assert!(carry_a == 0);
+    } else if b.len() > a.len() {
+        let extra = &b[a.len()..];
+        a.extend(extra.iter().map(|&bi| {
+            let twos_a = !0;
+            negate_carry(twos_a ^ bi, &mut carry_xor)
+        }));
+    }
+    if carry_xor != 0 {
+        a.push(1);
+    }
+}
+
+// - 1 ^ -ff = ...f ff ^ ...f 01 = ...0 fe = +fe
+// -ff & - 1 = ...f 01 ^ ...f ff = ...0 fe = +fe
+// answer is pos, has length of longest
+fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+    let mut carry_a = 1;
+    let mut carry_b = 1;
+    for (ai, &bi) in a.iter_mut().zip(b.iter()) {
+        let twos_a = negate_carry(*ai, &mut carry_a);
+        let twos_b = negate_carry(bi, &mut carry_b);
+        *ai = twos_a ^ twos_b;
+    }
+    debug_assert!(a.len() > b.len() || carry_a == 0);
+    debug_assert!(b.len() > a.len() || carry_b == 0);
+    if a.len() > b.len() {
+        for ai in a[b.len()..].iter_mut() {
+            let twos_a = negate_carry(*ai, &mut carry_a);
+            let twos_b = !0;
+            *ai = twos_a ^ twos_b;
+        }
+        debug_assert!(carry_a == 0);
+    } else if b.len() > a.len() {
+        let extra = &b[a.len()..];
+        a.extend(extra.iter().map(|&bi| {
+            let twos_a = !0;
+            let twos_b = negate_carry(bi, &mut carry_b);
+            twos_a ^ twos_b
+        }));
+        debug_assert!(carry_b == 0);
+    }
+}
+
+impl<'a> BitXor<&'a BigInt> for BigInt {
+    type Output = BigInt;
+
+    fn bitxor(mut self, other: &BigInt) -> BigInt {
+        self ^= other;
+        self
+    }
+}
+
+impl<'a> BitXorAssign<&'a BigInt> for BigInt {
+    fn bitxor_assign(&mut self, other: &BigInt) {
+        match (self.sign, other.sign) {
+            (_, NoSign) => {}
+            (NoSign, _) => self.assign_from_slice(other.sign, biguint::digits(&other.data)),
+            (Plus, Plus) => {
+                self.data ^= &other.data;
+                if self.data.is_zero() {
+                    self.sign = NoSign;
+                }
+            }
+            (Plus, Minus) => {
+                bitxor_pos_neg(biguint::digits_mut(&mut self.data),
+                               biguint::digits(&other.data));
+                self.sign = Minus;
+                normalize(self);
+            }
+            (Minus, Plus) => {
+                bitxor_neg_pos(biguint::digits_mut(&mut self.data),
+                               biguint::digits(&other.data));
+                normalize(self);
+            }
+            (Minus, Minus) => {
+                bitxor_neg_neg(biguint::digits_mut(&mut self.data),
+                               biguint::digits(&other.data));
+                self.sign = Plus;
+                normalize(self);
+            }
+        }
     }
 }
 
