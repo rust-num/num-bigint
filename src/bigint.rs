@@ -294,14 +294,44 @@ fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
 }
 
+forward_val_val_binop!(impl BitAnd for BigInt, bitand);
+forward_ref_val_binop!(impl BitAnd for BigInt, bitand);
+
+// do not use forward_ref_ref_binop_commutative! for bitand so that we can
+// clone as needed, avoiding over-allocation
+impl<'a, 'b> BitAnd<&'b BigInt> for &'a BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn bitand(self, other: &BigInt) -> BigInt {
+        match (self.sign, other.sign) {
+            (NoSign, _) | (_, NoSign) => BigInt::from_slice(NoSign, &[]),
+            (Plus, Plus) => BigInt::from_biguint(Plus, &self.data & &other.data),
+            (Plus, Minus) => self.clone() & other,
+            (Minus, Plus) => other.clone() & self,
+            (Minus, Minus) => {
+                // forward to val-ref, choosing the larger to clone
+                if self.len() >= other.len() {
+                    self.clone() & other
+                } else {
+                    other.clone() & self
+                }
+            }
+        }
+    }
+}
+
 impl<'a> BitAnd<&'a BigInt> for BigInt {
     type Output = BigInt;
 
+    #[inline]
     fn bitand(mut self, other: &BigInt) -> BigInt {
         self &= other;
         self
     }
 }
+
+forward_val_assign!(impl BitAndAssign for BigInt, bitand_assign);
 
 impl<'a> BitAndAssign<&'a BigInt> for BigInt {
     fn bitand_assign(&mut self, other: &BigInt) {
@@ -399,14 +429,45 @@ fn bitor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     debug_assert!(carry_or == 0);
 }
 
+forward_val_val_binop!(impl BitOr for BigInt, bitor);
+forward_ref_val_binop!(impl BitOr for BigInt, bitor);
+
+// do not use forward_ref_ref_binop_commutative! for bitor so that we can
+// clone as needed, avoiding over-allocation
+impl<'a, 'b> BitOr<&'b BigInt> for &'a BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn bitor(self, other: &BigInt) -> BigInt {
+        match (self.sign, other.sign) {
+            (NoSign, _) => other.clone(),
+            (_, NoSign) => self.clone(),
+            (Plus, Plus) => BigInt::from_biguint(Plus, &self.data | &other.data),
+            (Plus, Minus) => other.clone() | self,
+            (Minus, Plus) => self.clone() | other,
+            (Minus, Minus) => {
+                // forward to val-ref, choosing the smaller to clone
+                if self.len() <= other.len() {
+                    self.clone() | other
+                } else {
+                    other.clone() | self
+                }
+            }
+        }
+    }
+}
+
 impl<'a> BitOr<&'a BigInt> for BigInt {
     type Output = BigInt;
 
+    #[inline]
     fn bitor(mut self, other: &BigInt) -> BigInt {
         self |= other;
         self
     }
 }
+
+forward_val_assign!(impl BitOrAssign for BigInt, bitor_assign);
 
 impl<'a> BitOrAssign<&'a BigInt> for BigInt {
     fn bitor_assign(&mut self, other: &BigInt) {
@@ -520,14 +581,19 @@ fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
 }
 
+forward_all_binop_to_val_ref_commutative!(impl BitXor for BigInt, bitxor);
+
 impl<'a> BitXor<&'a BigInt> for BigInt {
     type Output = BigInt;
 
+    #[inline]
     fn bitxor(mut self, other: &BigInt) -> BigInt {
         self ^= other;
         self
     }
 }
+
+forward_val_assign!(impl BitXorAssign for BigInt, bitxor_assign);
 
 impl<'a> BitXorAssign<&'a BigInt> for BigInt {
     fn bitxor_assign(&mut self, other: &BigInt) {
