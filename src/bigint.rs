@@ -28,7 +28,7 @@ use super::ParseBigIntError;
 use super::big_digit::{self, BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
-use biguint::BigUint;
+use biguint::{BigUint, IntDigits};
 
 use UsizePromotion;
 use IsizePromotion;
@@ -204,13 +204,6 @@ fn negate_carry(a: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
     lo
 }
 
-fn normalize(i: &mut BigInt) {
-    biguint::normalize(&mut i.data);
-    if i.data.is_zero() {
-        i.sign = NoSign;
-    }
-}
-
 // !-2 = !...f fe = ...0 01 = +1
 // !-1 = !...f ff = ...0 00 =  0
 // ! 0 = !...0 00 = ...f ff = -1
@@ -240,7 +233,7 @@ impl Not for BigInt {
 // + 1 & -ff = ...0 01 & ...f 01 = ...0 01 = + 1
 // +ff & - 1 = ...0 ff & ...f ff = ...0 ff = +ff
 // answer is pos, has length of a
-fn bitand_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitand_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_b = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
         let twos_b = negate_carry(bi, &mut carry_b);
@@ -252,7 +245,7 @@ fn bitand_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
 // - 1 & +ff = ...f ff & ...0 ff = ...0 ff = +ff
 // -ff & + 1 = ...f 01 & ...0 01 = ...0 01 = + 1
 // answer is pos, has length of b
-fn bitand_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitand_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_a = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
         let twos_a = negate_carry(*ai, &mut carry_a);
@@ -271,7 +264,7 @@ fn bitand_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
 // -ff & - 1 = ...f 01 & ...f ff = ...f 01 = - ff
 // -ff & -fe = ...f 01 & ...f 02 = ...f 00 = -100
 // answer is neg, has length of longest with a possible carry
-fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_a = 1;
     let mut carry_b = 1;
     let mut carry_and = 1;
@@ -322,20 +315,17 @@ impl<'a> BitAndAssign<&'a BigInt> for BigInt {
                 }
             }
             (Plus, Minus) => {
-                bitand_pos_neg(biguint::digits_mut(&mut self.data),
-                               biguint::digits(&other.data));
-                normalize(self);
+                bitand_pos_neg(self.digits_mut(), other.digits());
+                self.normalize();
             }
             (Minus, Plus) => {
-                bitand_neg_pos(biguint::digits_mut(&mut self.data),
-                               biguint::digits(&other.data));
+                bitand_neg_pos(self.digits_mut(), other.digits());
                 self.sign = Plus;
-                normalize(self);
+                self.normalize();
             }
             (Minus, Minus) => {
-                bitand_neg_neg(biguint::digits_mut(&mut self.data),
-                               biguint::digits(&other.data));
-                normalize(self);
+                bitand_neg_neg(self.digits_mut(), other.digits());
+                self.normalize();
             }
         }
     }
@@ -344,7 +334,7 @@ impl<'a> BitAndAssign<&'a BigInt> for BigInt {
 // + 1 | -ff = ...0 01 | ...f 01 = ...f 01 = -ff
 // +ff | - 1 = ...0 ff | ...f ff = ...f ff = - 1
 // answer is neg, has length of b
-fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_b = 1;
     let mut carry_or = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
@@ -369,7 +359,7 @@ fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
 // - 1 | +ff = ...f ff | ...0 ff = ...f ff = - 1
 // -ff | + 1 = ...f 01 | ...0 01 = ...f 01 = -ff
 // answer is neg, has length of a
-fn bitor_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitor_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_a = 1;
     let mut carry_or = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
@@ -391,7 +381,7 @@ fn bitor_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
 // - 1 | -ff = ...f ff | ...f 01 = ...f ff = -1
 // -ff | - 1 = ...f 01 | ...f ff = ...f ff = -1
 // answer is neg, has length of shortest
-fn bitor_neg_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_a = 1;
     let mut carry_b = 1;
     let mut carry_or = 1;
@@ -422,23 +412,20 @@ impl<'a> BitOrAssign<&'a BigInt> for BigInt {
     fn bitor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
-            (NoSign, _) => self.assign_from_slice(other.sign, biguint::digits(&other.data)),
+            (NoSign, _) => self.assign_from_slice(other.sign, other.digits()),
             (Plus, Plus) => self.data |= &other.data,
             (Plus, Minus) => {
-                bitor_pos_neg(biguint::digits_mut(&mut self.data),
-                              biguint::digits(&other.data));
+                bitor_pos_neg(self.digits_mut(), other.digits());
                 self.sign = Minus;
-                normalize(self);
+                self.normalize();
             }
             (Minus, Plus) => {
-                bitor_neg_pos(biguint::digits_mut(&mut self.data),
-                              biguint::digits(&other.data));
-                normalize(self);
+                bitor_neg_pos(self.digits_mut(), other.digits());
+                self.normalize();
             }
             (Minus, Minus) => {
-                bitor_neg_neg(biguint::digits_mut(&mut self.data),
-                              biguint::digits(&other.data));
-                normalize(self);
+                bitor_neg_neg(self.digits_mut(), other.digits());
+                self.normalize();
             }
         }
     }
@@ -447,7 +434,7 @@ impl<'a> BitOrAssign<&'a BigInt> for BigInt {
 // + 1 ^ -ff = ...0 01 ^ ...f 01 = ...f 00 = -100
 // +ff ^ - 1 = ...0 ff ^ ...f ff = ...f 00 = -100
 // answer is neg, has length of longest with a possible carry
-fn bitxor_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitxor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_b = 1;
     let mut carry_xor = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
@@ -476,7 +463,7 @@ fn bitxor_pos_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
 // - 1 ^ +ff = ...f ff ^ ...0 ff = ...f 00 = -100
 // -ff ^ + 1 = ...f 01 ^ ...0 01 = ...f 00 = -100
 // answer is neg, has length of longest with a possible carry
-fn bitxor_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitxor_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_a = 1;
     let mut carry_xor = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
@@ -505,7 +492,7 @@ fn bitxor_neg_pos(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
 // - 1 ^ -ff = ...f ff ^ ...f 01 = ...0 fe = +fe
 // -ff & - 1 = ...f 01 ^ ...f ff = ...0 fe = +fe
 // answer is pos, has length of longest
-fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &Vec<BigDigit>) {
+fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     let mut carry_a = 1;
     let mut carry_b = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
@@ -546,7 +533,7 @@ impl<'a> BitXorAssign<&'a BigInt> for BigInt {
     fn bitxor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
-            (NoSign, _) => self.assign_from_slice(other.sign, biguint::digits(&other.data)),
+            (NoSign, _) => self.assign_from_slice(other.sign, other.digits()),
             (Plus, Plus) => {
                 self.data ^= &other.data;
                 if self.data.is_zero() {
@@ -554,21 +541,18 @@ impl<'a> BitXorAssign<&'a BigInt> for BigInt {
                 }
             }
             (Plus, Minus) => {
-                bitxor_pos_neg(biguint::digits_mut(&mut self.data),
-                               biguint::digits(&other.data));
+                bitxor_pos_neg(self.digits_mut(), other.digits());
                 self.sign = Minus;
-                normalize(self);
+                self.normalize();
             }
             (Minus, Plus) => {
-                bitxor_neg_pos(biguint::digits_mut(&mut self.data),
-                               biguint::digits(&other.data));
-                normalize(self);
+                bitxor_neg_pos(self.digits_mut(), other.digits());
+                self.normalize();
             }
             (Minus, Minus) => {
-                bitxor_neg_neg(biguint::digits_mut(&mut self.data),
-                               biguint::digits(&other.data));
+                bitxor_neg_neg(self.digits_mut(), other.digits());
                 self.sign = Plus;
-                normalize(self);
+                self.normalize();
             }
         }
     }
@@ -1606,6 +1590,32 @@ impl From<BigUint> for BigInt {
                 data: n,
             }
         }
+    }
+}
+
+impl IntDigits for BigInt {
+    #[inline]
+    fn digits(&self) -> &[BigDigit] {
+        self.data.digits()
+    }
+    #[inline]
+    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+        self.data.digits_mut()
+    }
+    #[inline]
+    fn normalize(&mut self) {
+        self.data.normalize();
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
+    }
+    #[inline]
+    fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+    #[inline]
+    fn len(&self) -> usize {
+        self.data.len()
     }
 }
 

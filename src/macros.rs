@@ -23,7 +23,7 @@ macro_rules! forward_val_val_binop_commutative {
             #[inline]
             fn $method(self, other: $res) -> $res {
                 // forward to val-ref, with the larger capacity as val
-                if self.data.capacity() >= other.data.capacity() {
+                if self.capacity() >= other.capacity() {
                     $imp::$method(self, &other)
                 } else {
                     $imp::$method(other, &self)
@@ -97,7 +97,7 @@ macro_rules! forward_ref_ref_binop_commutative {
             #[inline]
             fn $method(self, other: &$res) -> $res {
                 // forward to val-ref, choosing the larger to clone
-                if self.data.len() >= other.data.len() {
+                if self.len() >= other.len() {
                     $imp::$method(self.clone(), other)
                 } else {
                     $imp::$method(other.clone(), self)
