@@ -230,6 +230,17 @@ impl Not for BigInt {
     }
 }
 
+impl<'a> Not for &'a BigInt {
+    type Output = BigInt;
+
+    fn not(self) -> BigInt {
+        match self.sign {
+            NoSign | Plus => BigInt::from_biguint(Minus, &self.data + 1u32),
+            Minus => BigInt::from_biguint(Plus, &self.data - 1u32),
+        }
+    }
+}
+
 // + 1 & -ff = ...0 01 & ...f 01 = ...0 01 = + 1
 // +ff & - 1 = ...0 ff & ...f ff = ...0 ff = +ff
 // answer is pos, has length of a
