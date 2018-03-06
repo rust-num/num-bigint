@@ -1720,6 +1720,37 @@ pub fn trailing_zeros(u: &BigUint) -> Option<usize> {
 impl_sum_iter_type!(BigUint);
 impl_product_iter_type!(BigUint);
 
+pub trait IntDigits {
+    fn digits(&self) -> &[BigDigit];
+    fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
+    fn normalize(&mut self);
+    fn capacity(&self) -> usize;
+    fn len(&self) -> usize;
+}
+
+impl IntDigits for BigUint {
+    #[inline]
+    fn digits(&self) -> &[BigDigit] {
+        &self.data
+    }
+    #[inline]
+    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+        &mut self.data
+    }
+    #[inline]
+    fn normalize(&mut self) {
+        self.normalize();
+    }
+    #[inline]
+    fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+    #[inline]
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+}
+
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigUint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
