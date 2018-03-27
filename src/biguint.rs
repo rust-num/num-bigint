@@ -230,16 +230,12 @@ impl Num for BigUint {
         }
 
         if s.is_empty() {
-            // create ParseIntError::Empty
-            let e = u64::from_str_radix(s, radix).unwrap_err();
-            return Err(e.into());
+            return Err(ParseBigIntError::empty());
         }
 
         if s.starts_with('_') {
             // Must lead with a real digit!
-            // create ParseIntError::InvalidDigit
-            let e = u64::from_str_radix(s, radix).unwrap_err();
-            return Err(e.into());
+            return Err(ParseBigIntError::invalid());
         }
 
         // First normalize all characters to plain digit values
@@ -255,11 +251,7 @@ impl Num for BigUint {
             if d < radix as u8 {
                 v.push(d);
             } else {
-                // create ParseIntError::InvalidDigit
-                // Include the previous character for context.
-                let i = cmp::max(v.len(), 1) - 1;
-                let e = u64::from_str_radix(&s[i..], radix).unwrap_err();
-                return Err(e.into());
+                return Err(ParseBigIntError::invalid());
             }
         }
 

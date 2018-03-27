@@ -87,7 +87,6 @@ extern crate num_integer as integer;
 extern crate num_traits as traits;
 
 use std::error::Error;
-use std::num::ParseIntError;
 use std::fmt;
 
 #[cfg(target_pointer_width = "32")]
@@ -100,30 +99,48 @@ type IsizePromotion = i32;
 #[cfg(target_pointer_width = "64")]
 type IsizePromotion = i64;
 
-#[derive(Debug, PartialEq)]
-pub enum ParseBigIntError {
-    ParseInt(ParseIntError),
-    Other,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseBigIntError {
+    kind: BigIntErrorKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum BigIntErrorKind {
+    Empty,
+    InvalidDigit,
+}
+
+impl ParseBigIntError {
+    fn __description(&self) -> &str {
+        use BigIntErrorKind::*;
+        match self.kind {
+            Empty => "cannot parse integer from empty string",
+            InvalidDigit => "invalid digit found in string",
+        }
+    }
+
+    fn empty() -> Self {
+        ParseBigIntError {
+            kind: BigIntErrorKind::Empty,
+        }
+    }
+
+    fn invalid() -> Self {
+        ParseBigIntError {
+            kind: BigIntErrorKind::InvalidDigit,
+        }
+    }
 }
 
 impl fmt::Display for ParseBigIntError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &ParseBigIntError::ParseInt(ref e) => e.fmt(f),
-            &ParseBigIntError::Other => "failed to parse provided string".fmt(f),
-        }
+        self.__description().fmt(f)
     }
 }
 
 impl Error for ParseBigIntError {
     fn description(&self) -> &str {
-        "failed to parse bigint/biguint"
-    }
-}
-
-impl From<ParseIntError> for ParseBigIntError {
-    fn from(err: ParseIntError) -> ParseBigIntError {
-        ParseBigIntError::ParseInt(err)
+        self.__description()
     }
 }
 
