@@ -152,10 +152,46 @@ mod bigint;
 
 pub use biguint::BigUint;
 pub use biguint::ToBigUint;
-pub use biguint::big_digit;
-pub use biguint::big_digit::{BigDigit, DoubleBigDigit, ZERO_BIG_DIGIT};
 
 pub use bigint::Sign;
 pub use bigint::BigInt;
 pub use bigint::ToBigInt;
 pub use bigint::RandBigInt;
+
+mod big_digit {
+    /// A `BigDigit` is a `BigUint`'s composing element.
+    pub type BigDigit = u32;
+
+    /// A `DoubleBigDigit` is the internal type used to do the computations.  Its
+    /// size is the double of the size of `BigDigit`.
+    pub type DoubleBigDigit = u64;
+
+    /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
+    pub type SignedDoubleBigDigit = i64;
+
+    // `DoubleBigDigit` size dependent
+    pub const BITS: usize = 32;
+
+    const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
+
+    #[inline]
+    fn get_hi(n: DoubleBigDigit) -> BigDigit {
+        (n >> BITS) as BigDigit
+    }
+    #[inline]
+    fn get_lo(n: DoubleBigDigit) -> BigDigit {
+        (n & LO_MASK) as BigDigit
+    }
+
+    /// Split one `DoubleBigDigit` into two `BigDigit`s.
+    #[inline]
+    pub fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
+        (get_hi(n), get_lo(n))
+    }
+
+    /// Join two `BigDigit`s into one `DoubleBigDigit`
+    #[inline]
+    pub fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
+        (lo as DoubleBigDigit) | ((hi as DoubleBigDigit) << BITS)
+    }
+}

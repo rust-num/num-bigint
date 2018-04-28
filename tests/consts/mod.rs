@@ -1,14 +1,12 @@
 #![allow(unused)]
 
-use num_bigint::BigDigit;
-
-pub const N1: BigDigit = -1i32 as BigDigit;
-pub const N2: BigDigit = -2i32 as BigDigit;
+pub const N1: u32 = -1i32 as u32;
+pub const N2: u32 = -2i32 as u32;
 
 pub const SUM_TRIPLES: &'static [(
-    &'static [BigDigit],
-    &'static [BigDigit],
-    &'static [BigDigit],
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
 )] = &[
     (&[], &[], &[]),
     (&[], &[1], &[1]),
@@ -23,9 +21,9 @@ pub const SUM_TRIPLES: &'static [(
 
 pub const M: u32 = ::std::u32::MAX;
 pub const MUL_TRIPLES: &'static [(
-    &'static [BigDigit],
-    &'static [BigDigit],
-    &'static [BigDigit],
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
 )] = &[
     (&[], &[], &[]),
     (&[], &[1], &[]),
@@ -51,10 +49,10 @@ pub const MUL_TRIPLES: &'static [(
 ];
 
 pub const DIV_REM_QUADRUPLES: &'static [(
-    &'static [BigDigit],
-    &'static [BigDigit],
-    &'static [BigDigit],
-    &'static [BigDigit],
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
 )] = &[
     (&[1], &[2], &[], &[1]),
     (&[3], &[2], &[1], &[1]),
