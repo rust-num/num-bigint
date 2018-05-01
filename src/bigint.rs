@@ -25,7 +25,7 @@ use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
 use self::Sign::{Minus, NoSign, Plus};
 
 use super::ParseBigIntError;
-use super::big_digit::{self, BigDigit, DoubleBigDigit};
+use big_digit::{self, BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
 use biguint::{BigUint, IntDigits};
@@ -1868,7 +1868,7 @@ impl BigInt {
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
-    pub fn new(sign: Sign, digits: Vec<BigDigit>) -> BigInt {
+    pub fn new(sign: Sign, digits: Vec<u32>) -> BigInt {
         BigInt::from_biguint(sign, BigUint::new(digits))
     }
 
@@ -1891,13 +1891,13 @@ impl BigInt {
 
     /// Creates and initializes a `BigInt`.
     #[inline]
-    pub fn from_slice(sign: Sign, slice: &[BigDigit]) -> BigInt {
+    pub fn from_slice(sign: Sign, slice: &[u32]) -> BigInt {
         BigInt::from_biguint(sign, BigUint::from_slice(slice))
     }
 
     /// Reinitializes a `BigInt`.
     #[inline]
-    pub fn assign_from_slice(&mut self, sign: Sign, slice: &[BigDigit]) {
+    pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
         if sign == NoSign {
             self.data.assign_from_slice(&[]);
             self.sign = NoSign;

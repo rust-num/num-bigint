@@ -1,7 +1,7 @@
 extern crate num_bigint;
 extern crate num_traits;
 
-use num_bigint::{BigDigit, BigInt};
+use num_bigint::BigInt;
 use num_bigint::Sign::Plus;
 use num_traits::{Zero, Signed, ToPrimitive};
 
@@ -88,7 +88,7 @@ fn test_scalar_mul() {
 
 #[test]
 fn test_scalar_div_rem() {
-    fn check_sub(a: &BigInt, b: BigDigit, ans_q: &BigInt, ans_r: &BigInt) {
+    fn check_sub(a: &BigInt, b: u32, ans_q: &BigInt, ans_r: &BigInt) {
         let (q, r) = (a / b, a % b);
         if !r.is_zero() {
             assert_eq!(r.sign(), a.sign());
@@ -109,7 +109,7 @@ fn test_scalar_div_rem() {
         }
     }
 
-    fn check(a: &BigInt, b: BigDigit, q: &BigInt, r: &BigInt) {
+    fn check(a: &BigInt, b: u32, q: &BigInt, r: &BigInt) {
         check_sub(a, b, q, r);
         check_sub(&a.neg(), b, &q.neg(), &r.neg());
     }

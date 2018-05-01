@@ -21,12 +21,12 @@ use integer::Integer;
 use traits::{ToPrimitive, FromPrimitive, Float, Num, Unsigned, CheckedAdd, CheckedSub, CheckedMul,
              CheckedDiv, Zero, One};
 
+use big_digit::{self, BigDigit, DoubleBigDigit};
+
 #[path = "algorithms.rs"]
 mod algorithms;
 #[path = "monty.rs"]
 mod monty;
-pub use self::algorithms::big_digit;
-pub use self::big_digit::{BigDigit, DoubleBigDigit, ZERO_BIG_DIGIT};
 
 use self::algorithms::{mac_with_carry, mul3, scalar_mul, div_rem, div_rem_digit};
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
@@ -39,9 +39,6 @@ use UsizePromotion;
 use ParseBigIntError;
 
 /// A big unsigned integer type.
-///
-/// A `BigUint`-typed value `BigUint { data: vec!(a, b, c) }` represents a number
-/// `(a + b * big_digit::BASE + c * big_digit::BASE^2)`.
 #[derive(Clone, Debug, Hash)]
 pub struct BigUint {
     data: Vec<BigDigit>,
@@ -1379,7 +1376,7 @@ impl BigUint {
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
-    pub fn new(digits: Vec<BigDigit>) -> BigUint {
+    pub fn new(digits: Vec<u32>) -> BigUint {
         BigUint { data: digits }.normalized()
     }
 
@@ -1387,7 +1384,7 @@ impl BigUint {
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
-    pub fn from_slice(slice: &[BigDigit]) -> BigUint {
+    pub fn from_slice(slice: &[u32]) -> BigUint {
         BigUint::new(slice.to_vec())
     }
 
@@ -1395,7 +1392,7 @@ impl BigUint {
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
-    pub fn assign_from_slice(&mut self, slice: &[BigDigit]) {
+    pub fn assign_from_slice(&mut self, slice: &[u32]) {
         self.data.resize(slice.len(), 0);
         self.data.clone_from_slice(slice);
         self.normalize();

@@ -4,7 +4,7 @@ extern crate num_traits;
 extern crate rand;
 
 use num_integer::Integer;
-use num_bigint::{BigDigit, BigUint, ToBigUint, big_digit};
+use num_bigint::{BigUint, ToBigUint};
 use num_bigint::{BigInt, ToBigInt};
 use num_bigint::Sign::Plus;
 
@@ -146,19 +146,25 @@ fn test_hash() {
     assert!(hash(&d) != hash(&e));
 }
 
-const BIT_TESTS: &'static [(&'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit],
-           &'static [BigDigit])] = &[// LEFT              RIGHT        AND          OR                XOR
-                                     (&[], &[], &[], &[], &[]),
-                                     (&[1, 0, 1], &[1, 1], &[1], &[1, 1, 1], &[0, 1, 1]),
-                                     (&[1, 0, 1], &[0, 1, 1], &[0, 0, 1], &[1, 1, 1], &[1, 1]),
-                                     (&[268, 482, 17],
-                                      &[964, 54],
-                                      &[260, 34],
-                                      &[972, 502, 17],
-                                      &[712, 468, 17])];
+// LEFT, RIGHT, AND, OR, XOR
+const BIT_TESTS: &'static [(
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
+    &'static [u32],
+)] = &[
+    (&[], &[], &[], &[], &[]),
+    (&[1, 0, 1], &[1, 1], &[1], &[1, 1, 1], &[0, 1, 1]),
+    (&[1, 0, 1], &[0, 1, 1], &[0, 0, 1], &[1, 1, 1], &[1, 1]),
+    (
+        &[268, 482, 17],
+        &[964, 54],
+        &[260, 34],
+        &[972, 502, 17],
+        &[712, 468, 17],
+    ),
+];
 
 #[test]
 fn test_bitand() {
@@ -473,9 +479,9 @@ fn test_convert_i64() {
     check(i64::MAX.to_biguint().unwrap(), i64::MAX);
 
     check(BigUint::new(vec![]), 0);
-    check(BigUint::new(vec![1]), 1 << (0 * big_digit::BITS));
-    check(BigUint::new(vec![N1]), (1 << (1 * big_digit::BITS)) - 1);
-    check(BigUint::new(vec![0, 1]), 1 << (1 * big_digit::BITS));
+    check(BigUint::new(vec![1]), 1);
+    check(BigUint::new(vec![N1]), (1 << 32) - 1);
+    check(BigUint::new(vec![0, 1]), 1 << 32);
     check(BigUint::new(vec![N1, N1 >> 1]), i64::MAX);
 
     assert_eq!(i64::MIN.to_biguint(), None);
@@ -499,9 +505,9 @@ fn test_convert_u64() {
     check(u64::MAX.to_biguint().unwrap(), u64::MAX);
 
     check(BigUint::new(vec![]), 0);
-    check(BigUint::new(vec![1]), 1 << (0 * big_digit::BITS));
-    check(BigUint::new(vec![N1]), (1 << (1 * big_digit::BITS)) - 1);
-    check(BigUint::new(vec![0, 1]), 1 << (1 * big_digit::BITS));
+    check(BigUint::new(vec![1]), 1);
+    check(BigUint::new(vec![N1]), (1 << 32) - 1);
+    check(BigUint::new(vec![0, 1]), 1 << 32);
     check(BigUint::new(vec![N1, N1]), u64::MAX);
 
     assert_eq!(BigUint::new(vec![0, 0, 1]).to_u64(), None);
@@ -667,8 +673,8 @@ fn test_convert_from_uint() {
         }
     }
 
-    check!(u8, BigUint::from_slice(&[u8::MAX as BigDigit]));
-    check!(u16, BigUint::from_slice(&[u16::MAX as BigDigit]));
+    check!(u8, BigUint::from_slice(&[u8::MAX as u32]));
+    check!(u16, BigUint::from_slice(&[u16::MAX as u32]));
     check!(u32, BigUint::from_slice(&[u32::MAX]));
     check!(u64, BigUint::from_slice(&[u32::MAX, u32::MAX]));
     check!(usize, BigUint::from(usize::MAX as u64));
@@ -915,7 +921,7 @@ fn test_is_even() {
 }
 
 fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
-    let bits = big_digit::BITS;
+    let bits = 32;
     vec![(Zero::zero(),
           vec![(2, "0".to_string()), (3, "0".to_string())]),
          (BigUint::from_slice(&[0xff]),

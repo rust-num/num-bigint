@@ -12,49 +12,7 @@ use bigint::BigInt;
 use bigint::Sign;
 use bigint::Sign::{Minus, NoSign, Plus};
 
-#[allow(non_snake_case)]
-pub mod big_digit {
-    /// A `BigDigit` is a `BigUint`'s composing element.
-    pub type BigDigit = u32;
-
-    /// A `DoubleBigDigit` is the internal type used to do the computations.  Its
-    /// size is the double of the size of `BigDigit`.
-    pub type DoubleBigDigit = u64;
-
-    /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
-    pub type SignedDoubleBigDigit = i64;
-
-    pub const ZERO_BIG_DIGIT: BigDigit = 0;
-
-    // `DoubleBigDigit` size dependent
-    pub const BITS: usize = 32;
-
-    pub const BASE: DoubleBigDigit = 1 << BITS;
-    const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
-
-    #[inline]
-    fn get_hi(n: DoubleBigDigit) -> BigDigit {
-        (n >> BITS) as BigDigit
-    }
-    #[inline]
-    fn get_lo(n: DoubleBigDigit) -> BigDigit {
-        (n & LO_MASK) as BigDigit
-    }
-
-    /// Split one `DoubleBigDigit` into two `BigDigit`s.
-    #[inline]
-    pub fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
-        (get_hi(n), get_lo(n))
-    }
-
-    /// Join two `BigDigit`s into one `DoubleBigDigit`
-    #[inline]
-    pub fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
-        (lo as DoubleBigDigit) | ((hi as DoubleBigDigit) << BITS)
-    }
-}
-
-use big_digit::{BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 
 // Generic functions for add/subtract/multiply with carry/borrow:
 
@@ -647,7 +605,8 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 
 #[cfg(test)]
 mod algorithm_tests {
-    use {BigDigit, BigUint, BigInt};
+    use big_digit::BigDigit;
+    use {BigUint, BigInt};
     use Sign::Plus;
     use traits::Num;
 

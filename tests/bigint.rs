@@ -3,7 +3,7 @@ extern crate num_integer;
 extern crate num_traits;
 extern crate rand;
 
-use num_bigint::{BigDigit, BigUint, big_digit};
+use num_bigint::BigUint;
 use num_bigint::{BigInt, ToBigInt};
 use num_bigint::Sign::{Minus, NoSign, Plus};
 
@@ -163,7 +163,7 @@ fn test_from_signed_bytes_be() {
 
 #[test]
 fn test_cmp() {
-    let vs: [&[BigDigit]; 4] = [&[2 as BigDigit], &[1, 1], &[2, 1], &[1, 1, 1]];
+    let vs: [&[u32]; 4] = [&[2 as u32], &[1, 1], &[2, 1], &[1, 1, 1]];
     let mut nums = Vec::new();
     for s in vs.iter().rev() {
         nums.push(BigInt::from_slice(Minus, *s));
@@ -244,7 +244,7 @@ fn test_convert_i64() {
                None);
 
     assert_eq!(BigInt::from_biguint(Minus,
-                                    BigUint::new(vec![1, 0, 0, 1 << (big_digit::BITS - 1)]))
+                                    BigUint::new(vec![1, 0, 0, 1 << 31]))
                    .to_i64(),
                None);
 
@@ -458,11 +458,11 @@ fn test_convert_from_uint() {
         }
     }
 
-    check!(u8, BigInt::from_slice(Plus, &[u8::MAX as BigDigit]));
-    check!(u16, BigInt::from_slice(Plus, &[u16::MAX as BigDigit]));
-    check!(u32, BigInt::from_slice(Plus, &[u32::MAX as BigDigit]));
+    check!(u8, BigInt::from_slice(Plus, &[u8::MAX as u32]));
+    check!(u16, BigInt::from_slice(Plus, &[u16::MAX as u32]));
+    check!(u32, BigInt::from_slice(Plus, &[u32::MAX]));
     check!(u64,
-           BigInt::from_slice(Plus, &[u32::MAX as BigDigit, u32::MAX as BigDigit]));
+           BigInt::from_slice(Plus, &[u32::MAX, u32::MAX]));
     check!(usize, BigInt::from(usize::MAX as u64));
 }
 
@@ -482,16 +482,16 @@ fn test_convert_from_int() {
 
     check!(i8,
            BigInt::from_slice(Minus, &[1 << 7]),
-           BigInt::from_slice(Plus, &[i8::MAX as BigDigit]));
+           BigInt::from_slice(Plus, &[i8::MAX as u32]));
     check!(i16,
            BigInt::from_slice(Minus, &[1 << 15]),
-           BigInt::from_slice(Plus, &[i16::MAX as BigDigit]));
+           BigInt::from_slice(Plus, &[i16::MAX as u32]));
     check!(i32,
            BigInt::from_slice(Minus, &[1 << 31]),
-           BigInt::from_slice(Plus, &[i32::MAX as BigDigit]));
+           BigInt::from_slice(Plus, &[i32::MAX as u32]));
     check!(i64,
            BigInt::from_slice(Minus, &[0, 1 << 31]),
-           BigInt::from_slice(Plus, &[u32::MAX as BigDigit, i32::MAX as BigDigit]));
+           BigInt::from_slice(Plus, &[u32::MAX, i32::MAX as u32]));
     check!(isize,
            BigInt::from(isize::MIN as i64),
            BigInt::from(isize::MAX as i64));
