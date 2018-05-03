@@ -73,6 +73,8 @@ impl serde::Serialize for Sign {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
     {
+        // Note: do not change the serialization format, or it may break
+        // forward and backward compatibility of serialized data!
         match *self {
             Sign::Minus => (-1i8).serialize(serializer),
             Sign::NoSign => 0i8.serialize(serializer),
@@ -1701,6 +1703,8 @@ impl serde::Serialize for BigInt {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
     {
+        // Note: do not change the serialization format, or it may break
+        // forward and backward compatibility of serialized data!
         (self.sign, &self.data).serialize(serializer)
     }
 }
@@ -1711,10 +1715,7 @@ impl<'de> serde::Deserialize<'de> for BigInt {
         where D: serde::Deserializer<'de>
     {
         let (sign, data) = serde::Deserialize::deserialize(deserializer)?;
-        Ok(BigInt {
-            sign: sign,
-            data: data,
-        })
+        Ok(BigInt::from_biguint(sign, data))
     }
 }
 

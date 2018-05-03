@@ -1745,7 +1745,11 @@ impl serde::Serialize for BigUint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
     {
-        self.data.serialize(serializer)
+        // Note: do not change the serialization format, or it may break forward
+        // and backward compatibility of serialized data!  If we ever change the
+        // internal representation, we should still serialize in base-`u32`.
+        let data: &Vec<u32> = &self.data;
+        data.serialize(serializer)
     }
 }
 
@@ -1754,8 +1758,8 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: serde::Deserializer<'de>
     {
-        let data = try!(Vec::deserialize(deserializer));
-        Ok(BigUint { data: data })
+        let data: Vec<u32> = try!(Vec::deserialize(deserializer));
+        Ok(BigUint::new(data))
     }
 }
 
