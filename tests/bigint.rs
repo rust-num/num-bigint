@@ -522,6 +522,15 @@ fn test_add() {
         assert_op!(b + nc == na);
         assert_op!(na + nb == nc);
         assert_op!(a + na == Zero::zero());
+
+        assert_assign_op!(a += b == c);
+        assert_assign_op!(b += a == c);
+        assert_assign_op!(c += na == b);
+        assert_assign_op!(c += nb == a);
+        assert_assign_op!(a += nc == nb);
+        assert_assign_op!(b += nc == na);
+        assert_assign_op!(na += nb == nc);
+        assert_assign_op!(a += na == Zero::zero());
     }
 }
 
@@ -542,6 +551,15 @@ fn test_sub() {
         assert_op!(a - nb == c);
         assert_op!(nc - na == nb);
         assert_op!(a - a == Zero::zero());
+
+        assert_assign_op!(c -= a == b);
+        assert_assign_op!(c -= b == a);
+        assert_assign_op!(nb -= a == nc);
+        assert_assign_op!(na -= b == nc);
+        assert_assign_op!(b -= na == c);
+        assert_assign_op!(a -= nb == c);
+        assert_assign_op!(nc -= na == nb);
+        assert_assign_op!(a -= a == Zero::zero());
     }
 }
 
@@ -560,6 +578,13 @@ fn test_mul() {
 
         assert_op!(na * b == nc);
         assert_op!(nb * a == nc);
+
+        assert_assign_op!(a *= b == c);
+        assert_assign_op!(b *= a == c);
+        assert_assign_op!(na *= nb == c);
+
+        assert_assign_op!(na *= b == nc);
+        assert_assign_op!(nb *= a == nc);
     }
 
     for elm in DIV_REM_QUADRUPLES.iter() {
@@ -645,6 +670,8 @@ fn test_div_rem() {
         let (a, b, ans_q, ans_r) = (a.clone(), b.clone(), ans_q.clone(), ans_r.clone());
         assert_op!(a / b == ans_q);
         assert_op!(a % b == ans_r);
+        assert_assign_op!(a /= b == ans_q);
+        assert_assign_op!(a %= b == ans_r);
     }
 
     fn check(a: &BigInt, b: &BigInt, q: &BigInt, r: &BigInt) {

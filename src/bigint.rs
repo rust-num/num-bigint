@@ -1,8 +1,10 @@
 use std::default::Default;
-use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub,
-               BitAndAssign, BitOrAssign, BitXorAssign, Not};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub,
+               AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, DivAssign,
+               MulAssign, RemAssign, ShlAssign, ShrAssign, SubAssign};
 use std::str::{self, FromStr};
 use std::fmt;
+use std::mem;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{i64, u64};
 #[allow(unused_imports)]
@@ -670,8 +672,9 @@ impl Shl<usize> for BigInt {
     type Output = BigInt;
 
     #[inline]
-    fn shl(self, rhs: usize) -> BigInt {
-        (&self) << rhs
+    fn shl(mut self, rhs: usize) -> BigInt {
+        self <<= rhs;
+        self
     }
 }
 
@@ -681,6 +684,13 @@ impl<'a> Shl<usize> for &'a BigInt {
     #[inline]
     fn shl(self, rhs: usize) -> BigInt {
         BigInt::from_biguint(self.sign, &self.data << rhs)
+    }
+}
+
+impl ShlAssign<usize> for BigInt {
+    #[inline]
+    fn shl_assign(&mut self, rhs: usize) {
+        self.data <<= rhs;
     }
 }
 
@@ -697,10 +707,9 @@ impl Shr<usize> for BigInt {
     type Output = BigInt;
 
     #[inline]
-    fn shr(self, rhs: usize) -> BigInt {
-        let round_down = shr_round_down(&self, rhs);
-        let data = self.data >> rhs;
-        BigInt::from_biguint(self.sign, if round_down { data + 1u8 } else { data })
+    fn shr(mut self, rhs: usize) -> BigInt {
+        self >>= rhs;
+        self
     }
 }
 
@@ -709,9 +718,22 @@ impl<'a> Shr<usize> for &'a BigInt {
 
     #[inline]
     fn shr(self, rhs: usize) -> BigInt {
-        let round_down = shr_round_down(&self, rhs);
+        let round_down = shr_round_down(self, rhs);
         let data = &self.data >> rhs;
         BigInt::from_biguint(self.sign, if round_down { data + 1u8 } else { data })
+    }
+}
+
+impl ShrAssign<usize> for BigInt {
+    #[inline]
+    fn shr_assign(&mut self, rhs: usize) {
+        let round_down = shr_round_down(self, rhs);
+        self.data >>= rhs;
+        if round_down {
+            self.data += 1u8;
+        } else if self.data.is_zero() {
+            self.sign = NoSign;
+        }
     }
 }
 
@@ -860,7 +882,17 @@ impl Add<BigInt> for BigInt {
     }
 }
 
+impl<'a> AddAssign<&'a BigInt> for BigInt {
+    #[inline]
+    fn add_assign(&mut self, other: &BigInt) {
+        let n = mem::replace(self, BigInt::zero());
+        *self = n + other;
+    }
+}
+forward_val_assign!(impl AddAssign for BigInt, add_assign);
+
 promote_all_scalars!(impl Add for BigInt, add);
+promote_all_scalars_assign!(impl AddAssign for BigInt, add_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<BigDigit> for BigInt, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<DoubleBigDigit> for BigInt, add);
 
@@ -881,6 +913,13 @@ impl Add<BigDigit> for BigInt {
         }
     }
 }
+impl AddAssign<BigDigit> for BigInt {
+    #[inline]
+    fn add_assign(&mut self, other: BigDigit) {
+        let n = mem::replace(self, BigInt::zero());
+        *self = n + other;
+    }
+}
 
 impl Add<DoubleBigDigit> for BigInt {
     type Output = BigInt;
@@ -899,6 +938,13 @@ impl Add<DoubleBigDigit> for BigInt {
         }
     }
 }
+impl AddAssign<DoubleBigDigit> for BigInt {
+    #[inline]
+    fn add_assign(&mut self, other: DoubleBigDigit) {
+        let n = mem::replace(self, BigInt::zero());
+        *self = n + other;
+    }
+}
 
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<i32> for BigInt, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<i64> for BigInt, add);
@@ -915,6 +961,16 @@ impl Add<i32> for BigInt {
         }
     }
 }
+impl AddAssign<i32> for BigInt {
+    #[inline]
+    fn add_assign(&mut self, other: i32) {
+        if other >= 0 {
+            *self += other as u32;
+        } else {
+            *self -= i32_abs_as_u32(other);
+        }
+    }
+}
 
 impl Add<i64> for BigInt {
     type Output = BigInt;
@@ -925,6 +981,16 @@ impl Add<i64> for BigInt {
             self + other as u64
         } else {
             self - i64_abs_as_u64(other)
+        }
+    }
+}
+impl AddAssign<i64> for BigInt {
+    #[inline]
+    fn add_assign(&mut self, other: i64) {
+        if other >= 0 {
+            *self += other as u64;
+        } else {
+            *self -= i64_abs_as_u64(other);
         }
     }
 }
@@ -992,7 +1058,17 @@ impl Sub<BigInt> for BigInt {
     }
 }
 
+impl<'a> SubAssign<&'a BigInt> for BigInt {
+    #[inline]
+    fn sub_assign(&mut self, other: &BigInt) {
+        let n = mem::replace(self, BigInt::zero());
+        *self = n - other;
+    }
+}
+forward_val_assign!(impl SubAssign for BigInt, sub_assign);
+
 promote_all_scalars!(impl Sub for BigInt, sub);
+promote_all_scalars_assign!(impl SubAssign for BigInt, sub_assign);
 forward_all_scalar_binop_to_val_val!(impl Sub<BigDigit> for BigInt, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<DoubleBigDigit> for BigInt, sub);
 
@@ -1011,6 +1087,13 @@ impl Sub<BigDigit> for BigInt {
                     Less => BigInt::from_biguint(Minus, other - self.data),
                 }
         }
+    }
+}
+impl SubAssign<BigDigit> for BigInt {
+    #[inline]
+    fn sub_assign(&mut self, other: BigDigit) {
+        let n = mem::replace(self, BigInt::zero());
+        *self = n - other;
     }
 }
 
@@ -1040,6 +1123,13 @@ impl Sub<DoubleBigDigit> for BigInt {
         }
     }
 }
+impl SubAssign<DoubleBigDigit> for BigInt {
+    #[inline]
+    fn sub_assign(&mut self, other: DoubleBigDigit) {
+        let n = mem::replace(self, BigInt::zero());
+        *self = n - other;
+    }
+}
 
 impl Sub<BigInt> for DoubleBigDigit {
     type Output = BigInt;
@@ -1062,6 +1152,16 @@ impl Sub<i32> for BigInt {
             self - other as u32
         } else {
             self + i32_abs_as_u32(other)
+        }
+    }
+}
+impl SubAssign<i32> for BigInt {
+    #[inline]
+    fn sub_assign(&mut self, other: i32) {
+        if other >= 0 {
+            *self -= other as u32;
+        } else {
+            *self += i32_abs_as_u32(other);
         }
     }
 }
@@ -1091,6 +1191,16 @@ impl Sub<i64> for BigInt {
         }
     }
 }
+impl SubAssign<i64> for BigInt {
+    #[inline]
+    fn sub_assign(&mut self, other: i64) {
+        if other >= 0 {
+            *self -= other as u64;
+        } else {
+            *self += i64_abs_as_u64(other);
+        }
+    }
+}
 
 impl Sub<BigInt> for i64 {
     type Output = BigInt;
@@ -1116,7 +1226,16 @@ impl<'a, 'b> Mul<&'b BigInt> for &'a BigInt {
     }
 }
 
+impl<'a> MulAssign<&'a BigInt> for BigInt {
+    #[inline]
+    fn mul_assign(&mut self, other: &BigInt) {
+        *self = &*self * other;
+    }
+}
+forward_val_assign!(impl MulAssign for BigInt, mul_assign);
+
 promote_all_scalars!(impl Mul for BigInt, mul);
+promote_all_scalars_assign!(impl MulAssign for BigInt, mul_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<BigDigit> for BigInt, mul);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<DoubleBigDigit> for BigInt, mul);
 
@@ -1129,12 +1248,32 @@ impl Mul<BigDigit> for BigInt {
     }
 }
 
+impl MulAssign<BigDigit> for BigInt {
+    #[inline]
+    fn mul_assign(&mut self, other: BigDigit) {
+        self.data *= other;
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
+    }
+}
+
 impl Mul<DoubleBigDigit> for BigInt {
     type Output = BigInt;
 
     #[inline]
     fn mul(self, other: DoubleBigDigit) -> BigInt {
         BigInt::from_biguint(self.sign, self.data * other)
+    }
+}
+
+impl MulAssign<DoubleBigDigit> for BigInt {
+    #[inline]
+    fn mul_assign(&mut self, other: DoubleBigDigit) {
+        self.data *= other;
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
     }
 }
 
@@ -1154,6 +1293,18 @@ impl Mul<i32> for BigInt {
     }
 }
 
+impl MulAssign<i32> for BigInt {
+    #[inline]
+    fn mul_assign(&mut self, other: i32) {
+        if other >= 0 {
+            *self *= other as u32;
+        } else {
+            self.sign = -self.sign;
+            *self *= i32_abs_as_u32(other);
+        }
+    }
+}
+
 impl Mul<i64> for BigInt {
     type Output = BigInt;
 
@@ -1163,6 +1314,18 @@ impl Mul<i64> for BigInt {
             self * other as u64
         } else {
             -(self * i64_abs_as_u64(other))
+        }
+    }
+}
+
+impl MulAssign<i64> for BigInt {
+    #[inline]
+    fn mul_assign(&mut self, other: i64) {
+        if other >= 0 {
+            *self *= other as u64;
+        } else {
+            self.sign = -self.sign;
+            *self *= i64_abs_as_u64(other);
         }
     }
 }
@@ -1179,7 +1342,16 @@ impl<'a, 'b> Div<&'b BigInt> for &'a BigInt {
     }
 }
 
+impl<'a> DivAssign<&'a BigInt> for BigInt {
+    #[inline]
+    fn div_assign(&mut self, other: &BigInt) {
+        *self = &*self / other;
+    }
+}
+forward_val_assign!(impl DivAssign for BigInt, div_assign);
+
 promote_all_scalars!(impl Div for BigInt, div);
+promote_all_scalars_assign!(impl DivAssign for BigInt, div_assign);
 forward_all_scalar_binop_to_val_val!(impl Div<BigDigit> for BigInt, div);
 forward_all_scalar_binop_to_val_val!(impl Div<DoubleBigDigit> for BigInt, div);
 
@@ -1189,6 +1361,16 @@ impl Div<BigDigit> for BigInt {
     #[inline]
     fn div(self, other: BigDigit) -> BigInt {
         BigInt::from_biguint(self.sign, self.data / other)
+    }
+}
+
+impl DivAssign<BigDigit> for BigInt {
+    #[inline]
+    fn div_assign(&mut self, other: BigDigit) {
+        self.data /= other;
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
     }
 }
 
@@ -1207,6 +1389,16 @@ impl Div<DoubleBigDigit> for BigInt {
     #[inline]
     fn div(self, other: DoubleBigDigit) -> BigInt {
         BigInt::from_biguint(self.sign, self.data / other)
+    }
+}
+
+impl DivAssign<DoubleBigDigit> for BigInt {
+    #[inline]
+    fn div_assign(&mut self, other: DoubleBigDigit) {
+        self.data /= other;
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
     }
 }
 
@@ -1231,6 +1423,18 @@ impl Div<i32> for BigInt {
             self / other as u32
         } else {
             -(self / i32_abs_as_u32(other))
+        }
+    }
+}
+
+impl DivAssign<i32> for BigInt {
+    #[inline]
+    fn div_assign(&mut self, other: i32) {
+        if other >= 0 {
+            *self /= other as u32;
+        } else {
+            self.sign = -self.sign;
+            *self /= i32_abs_as_u32(other);
         }
     }
 }
@@ -1261,6 +1465,18 @@ impl Div<i64> for BigInt {
     }
 }
 
+impl DivAssign<i64> for BigInt {
+    #[inline]
+    fn div_assign(&mut self, other: i64) {
+        if other >= 0 {
+            *self /= other as u64;
+        } else {
+            self.sign = -self.sign;
+            *self /= i64_abs_as_u64(other);
+        }
+    }
+}
+
 impl Div<BigInt> for i64 {
     type Output = BigInt;
 
@@ -1286,7 +1502,16 @@ impl<'a, 'b> Rem<&'b BigInt> for &'a BigInt {
     }
 }
 
+impl<'a> RemAssign<&'a BigInt> for BigInt {
+    #[inline]
+    fn rem_assign(&mut self, other: &BigInt) {
+        *self = &*self % other;
+    }
+}
+forward_val_assign!(impl RemAssign for BigInt, rem_assign);
+
 promote_all_scalars!(impl Rem for BigInt, rem);
+promote_all_scalars_assign!(impl RemAssign for BigInt, rem_assign);
 forward_all_scalar_binop_to_val_val!(impl Rem<BigDigit> for BigInt, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<DoubleBigDigit> for BigInt, rem);
 
@@ -1296,6 +1521,16 @@ impl Rem<BigDigit> for BigInt {
     #[inline]
     fn rem(self, other: BigDigit) -> BigInt {
         BigInt::from_biguint(self.sign, self.data % other)
+    }
+}
+
+impl RemAssign<BigDigit> for BigInt {
+    #[inline]
+    fn rem_assign(&mut self, other: BigDigit) {
+        self.data %= other;
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
     }
 }
 
@@ -1314,6 +1549,16 @@ impl Rem<DoubleBigDigit> for BigInt {
     #[inline]
     fn rem(self, other: DoubleBigDigit) -> BigInt {
         BigInt::from_biguint(self.sign, self.data % other)
+    }
+}
+
+impl RemAssign<DoubleBigDigit> for BigInt {
+    #[inline]
+    fn rem_assign(&mut self, other: DoubleBigDigit) {
+        self.data %= other;
+        if self.data.is_zero() {
+            self.sign = NoSign;
+        }
     }
 }
 
@@ -1342,6 +1587,17 @@ impl Rem<i32> for BigInt {
     }
 }
 
+impl RemAssign<i32> for BigInt {
+    #[inline]
+    fn rem_assign(&mut self, other: i32) {
+        if other >= 0 {
+            *self %= other as u32;
+        } else {
+            *self %= i32_abs_as_u32(other);
+        }
+    }
+}
+
 impl Rem<BigInt> for i32 {
     type Output = BigInt;
 
@@ -1364,6 +1620,17 @@ impl Rem<i64> for BigInt {
             self % other as u64
         } else {
             self % i64_abs_as_u64(other)
+        }
+    }
+}
+
+impl RemAssign<i64> for BigInt {
+    #[inline]
+    fn rem_assign(&mut self, other: i64) {
+        if other >= 0 {
+            *self %= other as u64;
+        } else {
+            *self %= i64_abs_as_u64(other);
         }
     }
 }

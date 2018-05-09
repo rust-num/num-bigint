@@ -378,7 +378,8 @@ impl<'a> Shl<usize> for &'a BigUint {
 impl ShlAssign<usize> for BigUint {
     #[inline]
     fn shl_assign(&mut self, rhs: usize) {
-        *self = biguint_shl(Cow::Borrowed(&*self), rhs);
+        let n = mem::replace(self, BigUint::zero());
+        *self = n << rhs;
     }
 }
 
