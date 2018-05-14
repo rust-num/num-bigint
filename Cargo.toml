@@ -16,6 +16,9 @@ readme = "README.md"
 name = "bigint"
 
 [[bench]]
+name = "factorial"
+
+[[bench]]
 name = "gcd"
 
 [[bench]]
