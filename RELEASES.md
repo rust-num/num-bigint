@@ -9,6 +9,16 @@
 [8]: https://github.com/rust-num/num-bigint/pull/8
 [23]: https://github.com/rust-num/num-bigint/pull/23
 
+# Release 0.1.44
+
+- [Division with single-digit divisors is now much faster.][42]
+- The README now compares [`ramp`, `rug`, `rust-gmp`][20], and [`apint`][21].
+
+**Contributors**: @cuviper, @Robbepop
+
+[20]: https://github.com/rust-num/num-bigint/pull/20
+[21]: https://github.com/rust-num/num-bigint/pull/21
+[42]: https://github.com/rust-num/num-bigint/pull/42
 
 # Release 0.1.43
 
