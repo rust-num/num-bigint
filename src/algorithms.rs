@@ -456,8 +456,12 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     if u.is_zero() {
         return (Zero::zero(), Zero::zero());
     }
-    if *d == One::one() {
+    if d.data == [1] {
         return (u.clone(), Zero::zero());
+    }
+    if d.data.len() == 1 {
+        let (div, rem) = div_rem_digit(u.clone(), d.data[0]);
+        return (div, rem.into());
     }
 
     // Required or the q_len calculation below can underflow:
