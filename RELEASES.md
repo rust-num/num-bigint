@@ -1,13 +1,37 @@
 # Release 0.2.0 (pending)
 
-- :warning: [num-bigint now requires rustc 1.15 or greater][23].
+- :warning: [`num-bigint` now requires rustc 1.15 or greater][23].
+- :warning: [The `rand` and `serde` dependencies have been updated to 0.4 and 1.0][24]
+  respectively, and neither are enabled by default.  The `rustc-serialize`
+  crate is no longer supported by `num-bigint`.
 - :warning: [`Shr for BigInt` now rounds down][8] rather than toward zero,
   matching the behavior of the primitive integers for negative values.
+- :warning: [`ParseBigIntError` is now an opaque type][37].
+- :warning: [The `big_digit` module is no longer public][38], nor are the
+  `BigDigit` and `DoubleBigDigit` types and `ZERO_BIG_DIGIT` constant that
+  were re-exported in the crate root.  Public APIs which deal in digits, like
+  `BigUint::from_slice`, will now always be base-`u32`.
+- [`BigInt` and `BigUint` now implement `Product` and `Sum`][22] for iterators
+  of any item that we can `Mul` and `Add`, respectively.  For example, a
+  factorial can now be simply: `let f: BigUint = (1u32..1000).product();`
+- [`BigInt` now supports two's-complement logic operations][26], namely
+  `BitAnd`, `BitOr`, `BitXor`, and `Not`.  These act conceptually as if each
+  number had an infinite prefix of `0` or `1` bits for positive or negative.
+- [`BigInt` now supports assignment operators][41] like `AddAssign`.
+- The release also includes other miscellaneous improvements to performance.
 
-**Contributors**: @cuviper
+:warning: indicates a **breaking change**.
+
+**Contributors**: @clarcharr, @cuviper, @dodomorandi, @tspiteri
 
 [8]: https://github.com/rust-num/num-bigint/pull/8
+[22]: https://github.com/rust-num/num-bigint/pull/22
 [23]: https://github.com/rust-num/num-bigint/pull/23
+[24]: https://github.com/rust-num/num-bigint/pull/24
+[26]: https://github.com/rust-num/num-bigint/pull/26
+[37]: https://github.com/rust-num/num-bigint/pull/37
+[38]: https://github.com/rust-num/num-bigint/pull/38
+[41]: https://github.com/rust-num/num-bigint/pull/41
 
 # Release 0.1.44
 

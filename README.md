@@ -2,7 +2,7 @@
 
 [![crate](https://img.shields.io/crates/v/num-bigint.svg)](https://crates.io/crates/num-bigint)
 [![documentation](https://docs.rs/num-bigint/badge.svg)](https://docs.rs/num-bigint)
-![minimum rustc 1.8](https://img.shields.io/badge/rustc-1.8+-red.svg)
+![minimum rustc 1.15](https://img.shields.io/badge/rustc-1.15+-red.svg)
 [![Travis status](https://travis-ci.org/rust-num/num-bigint.svg?branch=master)](https://travis-ci.org/rust-num/num-bigint)
 
 Big integer types for Rust, `BigInt` and `BigUint`.
@@ -13,7 +13,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-num-bigint = "0.1"
+num-bigint = "0.2"
 ```
 
 and this to your crate root:
@@ -28,7 +28,7 @@ Release notes are available in [RELEASES.md](RELEASES.md).
 
 ## Compatibility
 
-The `num-bigint` crate is tested for rustc 1.8 and greater.
+The `num-bigint` crate is tested for rustc 1.15 and greater.
 
 ## Alternatives
 
@@ -38,7 +38,7 @@ table offers a brief comparison to a few alternatives.
 
 | Crate            | License        | Min rustc | Implementation |
 | :--------------- | :------------- | :-------- | :------------- |
-| **`num-bigint`** | MIT/Apache-2.0 | 1.8       | pure rust |
+| **`num-bigint`** | MIT/Apache-2.0 | 1.15      | pure rust |
 | [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly |
 | [`rug`]          | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |
 | [`rust-gmp`]     | MIT            | stable?   | links to [GMP] |
