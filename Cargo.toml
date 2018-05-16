@@ -35,22 +35,25 @@ default-features = false
 [dependencies.num-traits]
 version = "0.2.4"
 default-features = false
-features = ["std"]
 
 [dependencies.rand]
 optional = true
 version = "0.4"
+default-features = false
 
 [dependencies.serde]
 optional = true
 version = "1.0"
+default-features = false
+features = ["std"]
 
-[dev-dependencies]
-serde_test = "1.0"
+[dev-dependencies.serde_test]
+version = "1.0"
 
 [dev-dependencies.rand]
 version = "0.4"
 
 [features]
-default = []
+default = ["std"]
 i128 = ["num-integer/i128", "num-traits/i128"]
+std = ["num-integer/std", "num-traits/std"]
