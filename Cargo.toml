@@ -11,6 +11,7 @@ repository = "https://github.com/rust-num/num-bigint"
 version = "0.2.0-git"
 publish = false
 readme = "README.md"
+build = "build.rs"
 
 [[bench]]
 name = "bigint"
@@ -28,11 +29,11 @@ name = "shootout-pidigits"
 [dependencies]
 
 [dependencies.num-integer]
-version = "0.1.36"
+version = "0.1.38"
 default-features = false
 
 [dependencies.num-traits]
-version = "0.2.1"
+version = "0.2.4"
 default-features = false
 features = ["std"]
 
@@ -52,3 +53,4 @@ version = "0.4"
 
 [features]
 default = []
+i128 = ["num-integer/i128", "num-traits/i128"]

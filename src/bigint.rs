@@ -7,7 +7,9 @@ use std::fmt;
 use std::mem;
 use std::cmp::Ordering::{self, Less, Greater, Equal};
 use std::{i64, u64};
-#[allow(unused_imports)]
+#[cfg(has_i128)]
+use std::{i128, u128};
+#[allow(deprecated, unused_imports)]
 use std::ascii::AsciiExt;
 use std::iter::{Product, Sum};
 
@@ -1812,9 +1814,40 @@ impl ToPrimitive for BigInt {
     }
 
     #[inline]
+    #[cfg(has_i128)]
+    fn to_i128(&self) -> Option<i128> {
+        match self.sign {
+            Plus => self.data.to_i128(),
+            NoSign => Some(0),
+            Minus => {
+                self.data.to_u128().and_then(|n| {
+                    let m: u128 = 1 << 127;
+                    if n < m {
+                        Some(-(n as i128))
+                    } else if n == m {
+                        Some(i128::MIN)
+                    } else {
+                        None
+                    }
+                })
+            }
+        }
+    }
+
+    #[inline]
     fn to_u64(&self) -> Option<u64> {
         match self.sign {
             Plus => self.data.to_u64(),
+            NoSign => Some(0),
+            Minus => None,
+        }
+    }
+
+    #[inline]
+    #[cfg(has_i128)]
+    fn to_u128(&self) -> Option<u128> {
+        match self.sign {
+            Plus => self.data.to_u128(),
             NoSign => Some(0),
             Minus => None,
         }
@@ -1850,7 +1883,19 @@ impl FromPrimitive for BigInt {
     }
 
     #[inline]
+    #[cfg(has_i128)]
+    fn from_i128(n: i128) -> Option<BigInt> {
+        Some(BigInt::from(n))
+    }
+
+    #[inline]
     fn from_u64(n: u64) -> Option<BigInt> {
+        Some(BigInt::from(n))
+    }
+
+    #[inline]
+    #[cfg(has_i128)]
+    fn from_u128(n: u128) -> Option<BigInt> {
         Some(BigInt::from(n))
     }
 
@@ -1879,6 +1924,22 @@ impl From<i64> for BigInt {
     }
 }
 
+#[cfg(has_i128)]
+impl From<i128> for BigInt {
+    #[inline]
+    fn from(n: i128) -> Self {
+        if n >= 0 {
+            BigInt::from(n as u128)
+        } else {
+            let u = u128::MAX - (n as u128) + 1;
+            BigInt {
+                sign: Minus,
+                data: BigUint::from(u),
+            }
+        }
+    }
+}
+
 macro_rules! impl_bigint_from_int {
     ($T:ty) => {
         impl From<$T> for BigInt {
@@ -1898,6 +1959,21 @@ impl_bigint_from_int!(isize);
 impl From<u64> for BigInt {
     #[inline]
     fn from(n: u64) -> Self {
+        if n > 0 {
+            BigInt {
+                sign: Plus,
+                data: BigUint::from(n),
+            }
+        } else {
+            BigInt::zero()
+        }
+    }
+}
+
+#[cfg(has_i128)]
+impl From<u128> for BigInt {
+    #[inline]
+    fn from(n: u128) -> Self {
         if n > 0 {
             BigInt {
                 sign: Plus,
@@ -2040,11 +2116,17 @@ impl_to_bigint!(i8, FromPrimitive::from_i8);
 impl_to_bigint!(i16, FromPrimitive::from_i16);
 impl_to_bigint!(i32, FromPrimitive::from_i32);
 impl_to_bigint!(i64, FromPrimitive::from_i64);
+#[cfg(has_i128)]
+impl_to_bigint!(i128, FromPrimitive::from_i128);
+
 impl_to_bigint!(usize, FromPrimitive::from_usize);
 impl_to_bigint!(u8, FromPrimitive::from_u8);
 impl_to_bigint!(u16, FromPrimitive::from_u16);
 impl_to_bigint!(u32, FromPrimitive::from_u32);
 impl_to_bigint!(u64, FromPrimitive::from_u64);
+#[cfg(has_i128)]
+impl_to_bigint!(u128, FromPrimitive::from_u128);
+
 impl_to_bigint!(f32, FromPrimitive::from_f32);
 impl_to_bigint!(f64, FromPrimitive::from_f64);
 

@@ -14,6 +14,8 @@ use std::i64;
 use std::iter::repeat;
 use std::str::FromStr;
 use std::{u8, u16, u32, u64, usize};
+#[cfg(has_i128)]
+use std::{i128, u128};
 use std::hash::{BuildHasher, Hasher, Hash};
 use std::collections::hash_map::RandomState;
 
@@ -490,6 +492,31 @@ fn test_convert_i64() {
     assert_eq!(BigUint::new(vec![N1, N1, N1]).to_i64(), None);
 }
 
+#[test]
+#[cfg(has_i128)]
+fn test_convert_i128() {
+    fn check(b1: BigUint, i: i128) {
+        let b2: BigUint = FromPrimitive::from_i128(i).unwrap();
+        assert_eq!(b1, b2);
+        assert_eq!(b1.to_i128().unwrap(), i);
+    }
+
+    check(Zero::zero(), 0);
+    check(One::one(), 1);
+    check(i128::MAX.to_biguint().unwrap(), i128::MAX);
+
+    check(BigUint::new(vec![]), 0);
+    check(BigUint::new(vec![1]), 1);
+    check(BigUint::new(vec![N1]), (1 << 32) - 1);
+    check(BigUint::new(vec![0, 1]), 1 << 32);
+    check(BigUint::new(vec![N1, N1, N1, N1 >> 1]), i128::MAX);
+
+    assert_eq!(i128::MIN.to_biguint(), None);
+    assert_eq!(BigUint::new(vec![N1, N1, N1, N1]).to_i128(), None);
+    assert_eq!(BigUint::new(vec![0, 0, 0, 0, 1]).to_i128(), None);
+    assert_eq!(BigUint::new(vec![N1, N1, N1, N1, N1]).to_i128(), None);
+}
+
 // `DoubleBigDigit` size dependent
 #[test]
 fn test_convert_u64() {
@@ -512,6 +539,30 @@ fn test_convert_u64() {
 
     assert_eq!(BigUint::new(vec![0, 0, 1]).to_u64(), None);
     assert_eq!(BigUint::new(vec![N1, N1, N1]).to_u64(), None);
+}
+
+#[test]
+#[cfg(has_i128)]
+fn test_convert_u128() {
+    fn check(b1: BigUint, u: u128) {
+        let b2: BigUint = FromPrimitive::from_u128(u).unwrap();
+        assert_eq!(b1, b2);
+        assert_eq!(b1.to_u128().unwrap(), u);
+    }
+
+    check(Zero::zero(), 0);
+    check(One::one(), 1);
+    check(u128::MIN.to_biguint().unwrap(), u128::MIN);
+    check(u128::MAX.to_biguint().unwrap(), u128::MAX);
+
+    check(BigUint::new(vec![]), 0);
+    check(BigUint::new(vec![1]), 1);
+    check(BigUint::new(vec![N1]), (1 << 32) - 1);
+    check(BigUint::new(vec![0, 1]), 1 << 32);
+    check(BigUint::new(vec![N1, N1, N1, N1]), u128::MAX);
+
+    assert_eq!(BigUint::new(vec![0, 0, 0, 0, 1]).to_u128(), None);
+    assert_eq!(BigUint::new(vec![N1, N1, N1, N1, N1]).to_u128(), None);
 }
 
 #[test]
@@ -677,6 +728,8 @@ fn test_convert_from_uint() {
     check!(u16, BigUint::from_slice(&[u16::MAX as u32]));
     check!(u32, BigUint::from_slice(&[u32::MAX]));
     check!(u64, BigUint::from_slice(&[u32::MAX, u32::MAX]));
+    #[cfg(has_i128)]
+    check!(u128, BigUint::from_slice(&[u32::MAX, u32::MAX, u32::MAX, u32::MAX]));
     check!(usize, BigUint::from(usize::MAX as u64));
 }
 
@@ -1317,7 +1370,7 @@ fn test_from_str_radix() {
 
 #[test]
 fn test_all_str_radix() {
-    #[allow(unused_imports)]
+    #[allow(deprecated, unused_imports)]
     use std::ascii::AsciiExt;
 
     let n = BigUint::new((0..10).collect());

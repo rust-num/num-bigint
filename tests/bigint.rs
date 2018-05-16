@@ -12,6 +12,8 @@ use std::{f32, f64};
 use std::{i8, i16, i32, i64, isize};
 use std::iter::repeat;
 use std::{u8, u16, u32, u64, usize};
+#[cfg(has_i128)]
+use std::{i128, u128};
 use std::ops::Neg;
 use std::hash::{BuildHasher, Hasher, Hash};
 use std::collections::hash_map::RandomState;
@@ -240,16 +242,52 @@ fn test_convert_i64() {
 
     assert_eq!((i64::MAX as u64 + 1).to_bigint().unwrap().to_i64(), None);
 
-    assert_eq!(BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3, 4, 5])).to_i64(),
-               None);
+    assert_eq!(
+        BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3, 4, 5])).to_i64(),
+        None
+    );
 
-    assert_eq!(BigInt::from_biguint(Minus,
-                                    BigUint::new(vec![1, 0, 0, 1 << 31]))
-                   .to_i64(),
-               None);
+    assert_eq!(
+        BigInt::from_biguint(Minus, BigUint::new(vec![1, 0, 0, 1 << 31])).to_i64(),
+        None
+    );
 
-    assert_eq!(BigInt::from_biguint(Minus, BigUint::new(vec![1, 2, 3, 4, 5])).to_i64(),
-               None);
+    assert_eq!(
+        BigInt::from_biguint(Minus, BigUint::new(vec![1, 2, 3, 4, 5])).to_i64(),
+        None
+    );
+}
+
+#[test]
+#[cfg(has_i128)]
+fn test_convert_i128() {
+    fn check(b1: BigInt, i: i128) {
+        let b2: BigInt = FromPrimitive::from_i128(i).unwrap();
+        assert!(b1 == b2);
+        assert!(b1.to_i128().unwrap() == i);
+    }
+
+    check(Zero::zero(), 0);
+    check(One::one(), 1);
+    check(i128::MIN.to_bigint().unwrap(), i128::MIN);
+    check(i128::MAX.to_bigint().unwrap(), i128::MAX);
+
+    assert_eq!((i128::MAX as u128 + 1).to_bigint().unwrap().to_i128(), None);
+
+    assert_eq!(
+        BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3, 4, 5])).to_i128(),
+        None
+    );
+
+    assert_eq!(
+        BigInt::from_biguint(Minus, BigUint::new(vec![1, 0, 0, 1 << 31])).to_i128(),
+        None
+    );
+
+    assert_eq!(
+        BigInt::from_biguint(Minus, BigUint::new(vec![1, 2, 3, 4, 5])).to_i128(),
+        None
+    );
 }
 
 #[test]
@@ -265,13 +303,44 @@ fn test_convert_u64() {
     check(u64::MIN.to_bigint().unwrap(), u64::MIN);
     check(u64::MAX.to_bigint().unwrap(), u64::MAX);
 
-    assert_eq!(BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3, 4, 5])).to_u64(),
-               None);
+    assert_eq!(
+        BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3, 4, 5])).to_u64(),
+        None
+    );
 
     let max_value: BigUint = FromPrimitive::from_u64(u64::MAX).unwrap();
     assert_eq!(BigInt::from_biguint(Minus, max_value).to_u64(), None);
-    assert_eq!(BigInt::from_biguint(Minus, BigUint::new(vec![1, 2, 3, 4, 5])).to_u64(),
-               None);
+    assert_eq!(
+        BigInt::from_biguint(Minus, BigUint::new(vec![1, 2, 3, 4, 5])).to_u64(),
+        None
+    );
+}
+
+#[test]
+#[cfg(has_i128)]
+fn test_convert_u128() {
+    fn check(b1: BigInt, u: u128) {
+        let b2: BigInt = FromPrimitive::from_u128(u).unwrap();
+        assert!(b1 == b2);
+        assert!(b1.to_u128().unwrap() == u);
+    }
+
+    check(Zero::zero(), 0);
+    check(One::one(), 1);
+    check(u128::MIN.to_bigint().unwrap(), u128::MIN);
+    check(u128::MAX.to_bigint().unwrap(), u128::MAX);
+
+    assert_eq!(
+        BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3, 4, 5])).to_u128(),
+        None
+    );
+
+    let max_value: BigUint = FromPrimitive::from_u128(u128::MAX).unwrap();
+    assert_eq!(BigInt::from_biguint(Minus, max_value).to_u128(), None);
+    assert_eq!(
+        BigInt::from_biguint(Minus, BigUint::new(vec![1, 2, 3, 4, 5])).to_u128(),
+        None
+    );
 }
 
 #[test]
@@ -455,14 +524,15 @@ fn test_convert_from_uint() {
             assert_eq!(BigInt::from($ty::one()), BigInt::one());
             assert_eq!(BigInt::from($ty::MAX - $ty::one()), $max - BigInt::one());
             assert_eq!(BigInt::from($ty::MAX), $max);
-        }
+        };
     }
 
     check!(u8, BigInt::from_slice(Plus, &[u8::MAX as u32]));
     check!(u16, BigInt::from_slice(Plus, &[u16::MAX as u32]));
     check!(u32, BigInt::from_slice(Plus, &[u32::MAX]));
-    check!(u64,
-           BigInt::from_slice(Plus, &[u32::MAX, u32::MAX]));
+    check!(u64, BigInt::from_slice(Plus, &[u32::MAX, u32::MAX]));
+    #[cfg(has_i128)]
+    check!(u128, BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, u32::MAX]));
     check!(usize, BigInt::from(usize::MAX as u64));
 }
 
@@ -492,6 +562,10 @@ fn test_convert_from_int() {
     check!(i64,
            BigInt::from_slice(Minus, &[0, 1 << 31]),
            BigInt::from_slice(Plus, &[u32::MAX, i32::MAX as u32]));
+    #[cfg(has_i128)]
+    check!(i128,
+           BigInt::from_slice(Minus, &[0, 0, 0, 1 << 31]),
+           BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, i32::MAX as u32]));
     check!(isize,
            BigInt::from(isize::MIN as i64),
            BigInt::from(isize::MAX as i64));

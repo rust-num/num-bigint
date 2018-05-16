@@ -22,6 +22,12 @@ and this to your crate root:
 extern crate num_bigint;
 ```
 
+## Features
+
+Implementations for `i128` and `u128` are only available with Rust 1.26 and
+later.  The build script automatically detects this, but you can make it
+mandatory by enabling the `i128` crate feature.
+
 ## Releases
 
 Release notes are available in [RELEASES.md](RELEASES.md).
