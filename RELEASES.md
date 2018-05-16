@@ -1,6 +1,8 @@
 # Release 0.2.0 (pending)
 
 - :warning: [`num-bigint` now requires rustc 1.15 or greater][23].
+- :warning: [The crate now has a `std` feature, and won't build without it][46].
+  This is in preparation for someday supporting `#![no_std]` with `alloc`.
 - :warning: [The `rand` and `serde` dependencies have been updated to 0.4 and 1.0][24]
   respectively, and neither are enabled by default.  The `rustc-serialize`
   crate is no longer supported by `num-bigint`.
@@ -18,6 +20,8 @@
   `BitAnd`, `BitOr`, `BitXor`, and `Not`.  These act conceptually as if each
   number had an infinite prefix of `0` or `1` bits for positive or negative.
 - [`BigInt` now supports assignment operators][41] like `AddAssign`.
+- [`BigInt` and `BigUint` now support conversions with `i128` and `u128`][44],
+  if sufficient compiler support is detected.
 - The release also includes other miscellaneous improvements to performance.
 
 :warning: indicates a **breaking change**.
@@ -32,6 +36,8 @@
 [37]: https://github.com/rust-num/num-bigint/pull/37
 [38]: https://github.com/rust-num/num-bigint/pull/38
 [41]: https://github.com/rust-num/num-bigint/pull/41
+[44]: https://github.com/rust-num/num-bigint/pull/44
+[46]: https://github.com/rust-num/num-bigint/pull/46
 
 # Release 0.1.44
 
