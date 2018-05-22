@@ -29,7 +29,7 @@
   the crate root.  Public APIs which deal in digits, like `BigUint::from_slice`,
   will now always be base-`u32`.
 
-**Contributors**: @clarcharr, @cuviper, @dodomorandi, @tspiteri
+**Contributors**: @clarcharr, @cuviper, @dodomorandi, @tiehuis, @tspiteri
 
 [8]: https://github.com/rust-num/num-bigint/pull/8
 [22]: https://github.com/rust-num/num-bigint/pull/22
