@@ -52,25 +52,27 @@ impl<R: Rng> RandBigInt for R {
     }
 
     fn gen_bigint(&mut self, bit_size: usize) -> BigInt {
-        // Generate a random BigUint...
-        let biguint = self.gen_biguint(bit_size);
-        // ...and then randomly assign it a Sign...
-        let sign = if biguint.is_zero() {
-            // ...except that if the BigUint is zero, we need to try
-            // again with probability 0.5. This is because otherwise,
-            // the probability of generating a zero BigInt would be
-            // double that of any other number.
-            if self.gen() {
-                return self.gen_bigint(bit_size);
+        loop {
+            // Generate a random BigUint...
+            let biguint = self.gen_biguint(bit_size);
+            // ...and then randomly assign it a Sign...
+            let sign = if biguint.is_zero() {
+                // ...except that if the BigUint is zero, we need to try
+                // again with probability 0.5. This is because otherwise,
+                // the probability of generating a zero BigInt would be
+                // double that of any other number.
+                if self.gen() {
+                    continue;
+                } else {
+                    NoSign
+                }
+            } else if self.gen() {
+                Plus
             } else {
-                NoSign
-            }
-        } else if self.gen() {
-            Plus
-        } else {
-            Minus
-        };
-        BigInt::from_biguint(sign, biguint)
+                Minus
+            };
+            return BigInt::from_biguint(sign, biguint);
+        }
     }
 
     fn gen_biguint_below(&mut self, bound: &BigUint) -> BigUint {
