@@ -8,7 +8,9 @@ use rand::Rng;
 use BigInt;
 use BigUint;
 use Sign::*;
+
 use big_digit::BigDigit;
+use bigint::magnitude;
 
 use traits::Zero;
 use integer::Integer;
@@ -88,12 +90,22 @@ impl<R: Rng> RandBigInt for R {
 
     fn gen_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint {
         assert!(*lbound < *ubound);
-        return lbound + self.gen_biguint_below(&(ubound - lbound));
+        if lbound.is_zero() {
+            self.gen_biguint_below(ubound)
+        } else {
+            lbound + self.gen_biguint_below(&(ubound - lbound))
+        }
     }
 
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt {
         assert!(*lbound < *ubound);
-        let delta = (ubound - lbound).to_biguint().unwrap();
-        return lbound + BigInt::from(self.gen_biguint_below(&delta))
+        if lbound.is_zero() {
+            BigInt::from(self.gen_biguint_below(magnitude(&ubound)))
+        } else if ubound.is_zero() {
+            lbound + BigInt::from(self.gen_biguint_below(magnitude(&lbound)))
+        } else {
+            let delta = ubound - lbound;
+            lbound + BigInt::from(self.gen_biguint_below(magnitude(&delta)))
+        }
     }
 }
