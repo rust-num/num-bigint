@@ -163,7 +163,7 @@ pub use bigint::BigInt;
 pub use bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::RandBigInt;
+pub use bigrand::{RandBigInt, UniformBigUint};
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.

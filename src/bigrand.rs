@@ -1,6 +1,7 @@
 //! Randomization of big integers
 
 use rand::Rng;
+use rand::distributions::uniform::{SampleUniform, UniformSampler};
 
 use BigInt;
 use BigUint;
@@ -34,8 +35,7 @@ pub trait RandBigInt {
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
 }
 
-#[cfg(any(feature = "rand", test))]
-impl<R: Rng> RandBigInt for R {
+impl<R: Rng + ?Sized> RandBigInt for R {
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
         use super::big_digit::BITS;
         let (digits, rem) = bit_size.div_rem(&BITS);
@@ -105,4 +105,41 @@ impl<R: Rng> RandBigInt for R {
             lbound + BigInt::from(self.gen_biguint_below(magnitude(&delta)))
         }
     }
+}
+
+
+/// The back-end implementing rand's `UniformSampler` for `BigUint`.
+#[derive(Clone, Debug)]
+pub struct UniformBigUint {
+    base: BigUint,
+    len: BigUint,
+}
+
+impl UniformSampler for UniformBigUint {
+    type X = BigUint;
+
+    fn new(low: Self::X, high: Self::X) -> Self {
+        assert!(low < high);
+        UniformBigUint {
+            len: high - &low,
+            base: low,
+        }
+    }
+
+    fn new_inclusive(low: Self::X, high: Self::X) -> Self {
+        assert!(low <= high);
+        Self::new(low, high + 1u32)
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
+        &self.base + rng.gen_biguint_below(&self.len)
+    }
+
+    fn sample_single<R: Rng + ?Sized>(low: Self::X, high: Self::X, rng: &mut R) -> Self::X {
+        rng.gen_biguint_range(&low, &high)
+    }
+}
+
+impl SampleUniform for BigUint {
+    type Sampler = UniformBigUint;
 }
