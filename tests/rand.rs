@@ -85,6 +85,8 @@ mod bigint {
     use num_bigint::{BigInt, RandBigInt};
     use num_traits::Zero;
     use rand::thread_rng;
+    use rand::Rng;
+    use rand::distributions::Uniform;
 
     #[test]
     fn test_rand() {
@@ -133,5 +135,30 @@ mod bigint {
         let u = BigInt::from(3513);
         // Switching u and l should fail:
         let _n: BigInt = rng.gen_bigint_range(&u, &l);
+    }
+
+    #[test]
+    fn test_rand_uniform() {
+        let mut rng = thread_rng();
+
+        let tiny = Uniform::new(BigInt::from(236u32), BigInt::from(237u32));
+        for _ in 0..10 {
+            assert_eq!(rng.sample(&tiny), BigInt::from(236u32));
+        }
+
+        fn check(l: BigInt, u: BigInt) {
+            let mut rng = thread_rng();
+            let range = Uniform::new(l.clone(), u.clone());
+            for _ in 0..1000 {
+                let n: BigInt = rng.sample(&range);
+                assert!(n >= l);
+                assert!(n < u);
+            }
+        }
+        let l: BigInt = BigInt::from(403469000 + 2352);
+        let u: BigInt = BigInt::from(403469000 + 3513);
+        check(l.clone(), u.clone());
+        check(-l.clone(), u.clone());
+        check(-u.clone(), -l.clone());
     }
 }

@@ -8,7 +8,7 @@ use BigUint;
 use Sign::*;
 
 use big_digit::BigDigit;
-use bigint::magnitude;
+use bigint::{magnitude, into_magnitude};
 
 use traits::Zero;
 use integer::Integer;
@@ -142,4 +142,41 @@ impl UniformSampler for UniformBigUint {
 
 impl SampleUniform for BigUint {
     type Sampler = UniformBigUint;
+}
+
+
+/// The back-end implementing rand's `UniformSampler` for `BigInt`.
+#[derive(Clone, Debug)]
+pub struct UniformBigInt {
+    base: BigInt,
+    len: BigUint,
+}
+
+impl UniformSampler for UniformBigInt {
+    type X = BigInt;
+
+    fn new(low: Self::X, high: Self::X) -> Self {
+        assert!(low < high);
+        UniformBigInt {
+            len: into_magnitude(high - &low),
+            base: low,
+        }
+    }
+
+    fn new_inclusive(low: Self::X, high: Self::X) -> Self {
+        assert!(low <= high);
+        Self::new(low, high + 1u32)
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
+        &self.base + BigInt::from(rng.gen_biguint_below(&self.len))
+    }
+
+    fn sample_single<R: Rng + ?Sized>(low: Self::X, high: Self::X, rng: &mut R) -> Self::X {
+        rng.gen_bigint_range(&low, &high)
+    }
+}
+
+impl SampleUniform for BigInt {
+    type Sampler = UniformBigInt;
 }
