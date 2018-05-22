@@ -80,7 +80,7 @@
 // reserving this ability with the "std" feature now, and compilation will fail without.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(any(feature = "rand", test))]
+#[cfg(feature = "rand")]
 extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
@@ -90,6 +90,15 @@ extern crate num_traits as traits;
 
 use std::error::Error;
 use std::fmt;
+
+#[macro_use]
+mod macros;
+
+mod biguint;
+mod bigint;
+
+#[cfg(feature = "rand")]
+mod bigrand;
 
 #[cfg(target_pointer_width = "32")]
 type UsizePromotion = u32;
@@ -146,19 +155,15 @@ impl Error for ParseBigIntError {
     }
 }
 
-#[macro_use]
-mod macros;
-
-mod biguint;
-mod bigint;
-
 pub use biguint::BigUint;
 pub use biguint::ToBigUint;
 
 pub use bigint::Sign;
 pub use bigint::BigInt;
 pub use bigint::ToBigInt;
-pub use bigint::RandBigInt;
+
+#[cfg(feature = "rand")]
+pub use bigrand::RandBigInt;
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.
