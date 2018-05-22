@@ -38,7 +38,7 @@ default-features = false
 
 [dependencies.rand]
 optional = true
-version = "0.4"
+version = "0.5"
 default-features = false
 
 [dependencies.serde]
@@ -51,7 +51,7 @@ features = ["std"]
 version = "1.0"
 
 [dev-dependencies.rand]
-version = "0.4"
+version = "0.5"
 
 [features]
 default = ["std"]

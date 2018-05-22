@@ -1,8 +1,5 @@
 //! Randomization of big integers
 
-// Some of the tests of non-RNG-based functionality are randomized using the
-// RNG-based functionality, so the RNG-based functionality needs to be enabled
-// for tests.
 use rand::Rng;
 
 use BigInt;
