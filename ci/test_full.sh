@@ -4,8 +4,11 @@ set -ex
 
 echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
 
-FEATURES="rand serde"
-if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable)$ ]]; then
+FEATURES="serde"
+if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable|1.26.0|1.22.0)$ ]]; then
+  FEATURES="$FEATURES rand"
+fi
+if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable|1.26.0)$ ]]; then
   FEATURES="$FEATURES i128"
 fi
 

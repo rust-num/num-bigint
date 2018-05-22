@@ -47,6 +47,7 @@
 //! It's easy to generate large random numbers:
 //!
 //! ```rust
+//! # #[cfg(feature = "rand")]
 //! extern crate rand;
 //! extern crate num_bigint as bigint;
 //!
