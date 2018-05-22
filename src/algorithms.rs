@@ -358,8 +358,9 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // Toom-3 is like Karatsuba above, but dividing the inputs into three parts.
         // Both are instances of Toom-Cook, using `k=3` and `k=2` respectively.
         //
-        // FIXME: It would be nice to have comments breaking down the operations below.
-
+        // The general idea is to treat the large integers digits as
+        // polynomials of a certain degree and determine the coefficients/digits
+        // of the product of the two via interpolation of the polynomial product.
         let i = y.len()/3 + 1;
 
         let x0_len = cmp::min(x.len(), i);
@@ -368,26 +369,90 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let y0_len = i;
         let y1_len = cmp::min(y.len() - y0_len, i);
 
+        // Break x and y into three parts, representating an order two polynomial.
+        // t is chosen to be the size of a digit so we can use faster shifts
+        // in place of multiplications.
+        //
+        // x(t) = x2*t^2 + x1*t + x0
         let x0 = BigInt::from_slice(Plus, &x[..x0_len]);
         let x1 = BigInt::from_slice(Plus, &x[x0_len..x0_len + x1_len]);
         let x2 = BigInt::from_slice(Plus, &x[x0_len + x1_len..]);
 
+        // y(t) = y2*t^2 + y1*t + y0
         let y0 = BigInt::from_slice(Plus, &y[..y0_len]);
         let y1 = BigInt::from_slice(Plus, &y[y0_len..y0_len + y1_len]);
         let y2 = BigInt::from_slice(Plus, &y[y0_len + y1_len..]);
 
+        // Let w(t) = x(t) * y(t)
+        //
+        // This gives us the following order-4 polynomial.
+        //
+        // w(t) = w4*t^4 + w3*t^3 + w2*t^2 + w1*t + w0
+        //
+        // We need to find the coefficients w4, w3, w2, w1 and w0. Instead
+        // of simply multiplying the x and y in total, we can evaluate w
+        // at 5 points. An n-degree polynomial is uniquely identified by (n + 1)
+        // points.
+        //
+        // It is arbitrary as to what points we evaluate w at but we use the
+        // following.
+        //
+        // w(t) at t = 0, 1, -1, -2 and inf
+        //
+        // The values for w(t) in terms of x(t)*y(t) at these points are:
+        //
+        // let a = w(0)   = x0 * y0
+        // let b = w(1)   = (x2 + x1 + x0) * (y2 + y1 + y0)
+        // let c = w(-1)  = (x2 - x1 + x0) * (y2 - y1 + y0)
+        // let d = w(-2)  = (4*x2 - 2*x1 + x0) * (4*y2 - 2*y1 + y0)
+        // let e = w(inf) = x2 * y2 as t -> inf
+
+        // x0 + x2, avoiding temporaries
         let p = &x0 + &x2;
+
+        // y0 + y2, avoiding temporaries
         let q = &y0 + &y2;
 
+        // x2 - x1 + x0, avoiding temporaries
         let p2 = &p - &x1;
+
+        // y2 - y1 + y0, avoiding temporaries
         let q2 = &q - &y1;
 
+        // w(0)
         let r0 = &x0 * &y0;
+
+        // w(inf)
         let r4 = &x2 * &y2;
+
+        // w(1)
         let r1 = (p + x1) * (q + y1);
+
+        // w(-1)
         let r2 = &p2 * &q2;
+
+        // w(-2)
         let r3 = ((p2 + x2)*2 - x0) * ((q2 + y2)*2 - y0);
 
+        // Evaluating these points gives us the following system of linear equations.
+        //
+        //  0  0  0  0  1 | a
+        //  1  1  1  1  1 | b
+        //  1 -1  1 -1  1 | c
+        // 16 -8  4 -2  1 | d
+        //  1  0  0  0  0 | e
+        //
+        // The solved equation (after gaussian elimination or similar)
+        // in terms of its coefficients:
+        //
+        // w0 = w(0)
+        // w1 = w(0)/2 + w(1)/3 - w(-1) + w(2)/6 - 2*w(inf)
+        // w2 = -w(0) + w(1)/2 + w(-1)/2 - w(inf)
+        // w3 = -w(0)/2 + w(1)/6 + w(-1)/2 - w(1)/6
+        // w4 = w(inf)
+        //
+        // This particular sequence is given by Bodrato and is an interpolation
+        // of the above equations.
         let mut comp3: BigInt = (r3 - &r1) / 3;
         let mut comp1: BigInt = (r1 - &r2) / 2;
         let mut comp2: BigInt = r2 - &r0;
@@ -395,6 +460,9 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         comp2 = comp2 + &comp1 - &r4;
         comp1 = comp1 - &comp3;
 
+        // Recomposition. The coefficients of the polynomial are now known.
+        //
+        // Evaluate at w(t) where t is our given base to get the result.
         let result = r0 + (comp1 << 32*i) + (comp2 << 2*32*i) + (comp3 << 3*32*i) + (r4 << 4*32*i);
         let result_pos = result.to_biguint().unwrap();
         add2(&mut acc[..], &result_pos.data);
