@@ -1,6 +1,7 @@
 extern crate num_bigint;
 extern crate num_integer;
 extern crate num_traits;
+#[cfg(feature = "rand")]
 extern crate rand;
 
 use num_bigint::BigUint;
@@ -1021,11 +1022,13 @@ fn test_negative_shr() {
 }
 
 #[test]
+#[cfg(feature = "rand")]
 fn test_random_shr() {
     use rand::Rng;
+    use rand::distributions::Standard;
     let mut rng = rand::thread_rng();
 
-    for p in rng.gen_iter::<i64>().take(1000) {
+    for p in rng.sample_iter::<i64, _>(&Standard).take(1000) {
         let big = BigInt::from(p);
         let bigger = &big << 1000;
         assert_eq!(&bigger >> 1000, big);

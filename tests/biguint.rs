@@ -1,7 +1,6 @@
 extern crate num_bigint;
 extern crate num_integer;
 extern crate num_traits;
-extern crate rand;
 
 use num_integer::Integer;
 use num_bigint::{BigUint, ToBigUint};
