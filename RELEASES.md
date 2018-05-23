@@ -11,6 +11,7 @@
 - [`BigInt` now supports assignment operators][41] like `AddAssign`.
 - [`BigInt` and `BigUint` now support conversions with `i128` and `u128`][44],
   if sufficient compiler support is detected.
+- [`BigInt` and `BigUint` now implement rand's `SampleUniform` trait][48].
 - The release also includes other miscellaneous improvements to performance.
 
 ### Breaking Changes
@@ -18,9 +19,10 @@
 - [`num-bigint` now requires rustc 1.15 or greater][23].
 - [The crate now has a `std` feature, and won't build without it][46].  This is
   in preparation for someday supporting `#![no_std]` with `alloc`.
-- [The `rand` and `serde` dependencies have been updated to 0.4 and 1.0][24]
-  respectively, and neither are enabled by default.  The `rustc-serialize` crate
-  is no longer supported by `num-bigint`.
+- [The `serde` dependency has been updated to 1.0][24], still disabled by
+  default.  The `rustc-serialize` crate is no longer supported by `num-bigint`.
+- [The `rand` dependency has been updated to 0.5][48], now disabled by default.
+  This requires rustc 1.22 or greater for `rand`'s own requirement.
 - [`Shr for BigInt` now rounds down][8] rather than toward zero, matching the
   behavior of the primitive integers for negative values.
 - [`ParseBigIntError` is now an opaque type][37].
@@ -41,6 +43,7 @@
 [41]: https://github.com/rust-num/num-bigint/pull/41
 [44]: https://github.com/rust-num/num-bigint/pull/44
 [46]: https://github.com/rust-num/num-bigint/pull/46
+[48]: https://github.com/rust-num/num-bigint/pull/48
 
 # Release 0.1.44
 
