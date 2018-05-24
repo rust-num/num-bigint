@@ -5,7 +5,7 @@ extern crate num_traits;
 extern crate rand;
 
 mod biguint {
-    use num_bigint::{BigUint, RandBigInt};
+    use num_bigint::{BigUint, RandBigInt, RandomBits};
     use num_traits::Zero;
     use rand::thread_rng;
     use rand::Rng;
@@ -14,8 +14,18 @@ mod biguint {
     #[test]
     fn test_rand() {
         let mut rng = thread_rng();
-        let _n: BigUint = rng.gen_biguint(137);
+        let n: BigUint = rng.gen_biguint(137);
+        assert!(n.bits() <= 137);
         assert!(rng.gen_biguint(0).is_zero());
+    }
+
+    #[test]
+    fn test_rand_bits() {
+        let mut rng = thread_rng();
+        let n: BigUint = rng.sample(&RandomBits::new(137));
+        assert!(n.bits() <= 137);
+        let z: BigUint = rng.sample(&RandomBits::new(0));
+        assert!(z.is_zero());
     }
 
     #[test]
@@ -82,7 +92,7 @@ mod biguint {
 }
 
 mod bigint {
-    use num_bigint::{BigInt, RandBigInt};
+    use num_bigint::{BigInt, RandBigInt, RandomBits};
     use num_traits::Zero;
     use rand::thread_rng;
     use rand::Rng;
@@ -91,8 +101,18 @@ mod bigint {
     #[test]
     fn test_rand() {
         let mut rng = thread_rng();
-        let _n: BigInt = rng.gen_bigint(137);
+        let n: BigInt = rng.gen_bigint(137);
+        assert!(n.bits() <= 137);
         assert!(rng.gen_bigint(0).is_zero());
+    }
+
+    #[test]
+    fn test_rand_bits() {
+        let mut rng = thread_rng();
+        let n: BigInt = rng.sample(&RandomBits::new(137));
+        assert!(n.bits() <= 137);
+        let z: BigInt = rng.sample(&RandomBits::new(0));
+        assert!(z.is_zero());
     }
 
     #[test]

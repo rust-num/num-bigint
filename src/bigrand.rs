@@ -1,6 +1,6 @@
 //! Randomization of big integers
 
-use rand::Rng;
+use rand::prelude::*;
 use rand::distributions::uniform::{SampleUniform, UniformSampler};
 
 use BigInt;
@@ -179,4 +179,31 @@ impl UniformSampler for UniformBigInt {
 
 impl SampleUniform for BigInt {
     type Sampler = UniformBigInt;
+}
+
+/// A random distribution for `BigUint` and `BigInt` values of a particular bit size.
+#[derive(Clone, Copy, Debug)]
+pub struct RandomBits {
+    bits: usize,
+}
+
+impl RandomBits {
+    #[inline]
+    pub fn new(bits: usize) -> RandomBits {
+        RandomBits { bits }
+    }
+}
+
+impl Distribution<BigUint> for RandomBits {
+    #[inline]
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BigUint {
+        rng.gen_biguint(self.bits)
+    }
+}
+
+impl Distribution<BigInt> for RandomBits {
+    #[inline]
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BigInt {
+        rng.gen_bigint(self.bits)
+    }
 }
