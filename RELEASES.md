@@ -1,4 +1,4 @@
-# Release 0.2.0 (pending)
+# Release 0.2.0
 
 ### Enhancements
 
