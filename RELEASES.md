@@ -11,7 +11,8 @@
 - [`BigInt` now supports assignment operators][41] like `AddAssign`.
 - [`BigInt` and `BigUint` now support conversions with `i128` and `u128`][44],
   if sufficient compiler support is detected.
-- [`BigInt` and `BigUint` now implement rand's `SampleUniform` trait][48].
+- [`BigInt` and `BigUint` now implement rand's `SampleUniform` trait][48], and
+  [a custom `RandomBits` distribution samples by bit size][49].
 - The release also includes other miscellaneous improvements to performance.
 
 ### Breaking Changes
@@ -44,6 +45,7 @@
 [44]: https://github.com/rust-num/num-bigint/pull/44
 [46]: https://github.com/rust-num/num-bigint/pull/46
 [48]: https://github.com/rust-num/num-bigint/pull/48
+[49]: https://github.com/rust-num/num-bigint/pull/49
 
 # Release 0.1.44
 

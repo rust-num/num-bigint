@@ -1,6 +1,6 @@
 //! Randomization of big integers
 
-use rand::Rng;
+use rand::prelude::*;
 use rand::distributions::uniform::{SampleUniform, UniformSampler};
 
 use BigInt;
@@ -118,6 +118,7 @@ pub struct UniformBigUint {
 impl UniformSampler for UniformBigUint {
     type X = BigUint;
 
+    #[inline]
     fn new(low: Self::X, high: Self::X) -> Self {
         assert!(low < high);
         UniformBigUint {
@@ -126,15 +127,18 @@ impl UniformSampler for UniformBigUint {
         }
     }
 
+    #[inline]
     fn new_inclusive(low: Self::X, high: Self::X) -> Self {
         assert!(low <= high);
         Self::new(low, high + 1u32)
     }
 
+    #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
         &self.base + rng.gen_biguint_below(&self.len)
     }
 
+    #[inline]
     fn sample_single<R: Rng + ?Sized>(low: Self::X, high: Self::X, rng: &mut R) -> Self::X {
         rng.gen_biguint_range(&low, &high)
     }
@@ -155,6 +159,7 @@ pub struct UniformBigInt {
 impl UniformSampler for UniformBigInt {
     type X = BigInt;
 
+    #[inline]
     fn new(low: Self::X, high: Self::X) -> Self {
         assert!(low < high);
         UniformBigInt {
@@ -163,15 +168,18 @@ impl UniformSampler for UniformBigInt {
         }
     }
 
+    #[inline]
     fn new_inclusive(low: Self::X, high: Self::X) -> Self {
         assert!(low <= high);
         Self::new(low, high + 1u32)
     }
 
+    #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
         &self.base + BigInt::from(rng.gen_biguint_below(&self.len))
     }
 
+    #[inline]
     fn sample_single<R: Rng + ?Sized>(low: Self::X, high: Self::X, rng: &mut R) -> Self::X {
         rng.gen_bigint_range(&low, &high)
     }
@@ -179,4 +187,31 @@ impl UniformSampler for UniformBigInt {
 
 impl SampleUniform for BigInt {
     type Sampler = UniformBigInt;
+}
+
+/// A random distribution for `BigUint` and `BigInt` values of a particular bit size.
+#[derive(Clone, Copy, Debug)]
+pub struct RandomBits {
+    bits: usize,
+}
+
+impl RandomBits {
+    #[inline]
+    pub fn new(bits: usize) -> RandomBits {
+        RandomBits { bits }
+    }
+}
+
+impl Distribution<BigUint> for RandomBits {
+    #[inline]
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BigUint {
+        rng.gen_biguint(self.bits)
+    }
+}
+
+impl Distribution<BigInt> for RandomBits {
+    #[inline]
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BigInt {
+        rng.gen_bigint(self.bits)
+    }
 }
