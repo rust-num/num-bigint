@@ -29,3 +29,8 @@ done
 # test all supported features together
 cargo build --features="std $FEATURES"
 cargo test --features="std $FEATURES"
+
+# make sure benchmarks can be built
+if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
+  cargo bench --all-features --no-run
+fi

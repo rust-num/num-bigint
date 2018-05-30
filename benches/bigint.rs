@@ -1,4 +1,5 @@
 #![feature(test)]
+#![cfg(feature = "rand")]
 
 extern crate test;
 extern crate num_bigint;
@@ -12,7 +13,10 @@ use num_traits::{Zero, One, FromPrimitive, Num};
 use rand::{SeedableRng, StdRng};
 
 fn get_rng() -> StdRng {
-    let seed: &[_] = &[1, 2, 3, 4];
+    let mut seed = [0; 32];
+    for i in 1..32 {
+        seed[usize::from(i)] = i;
+    }
     SeedableRng::from_seed(seed)
 }
 
