@@ -292,3 +292,11 @@ fn modpow_even(b: &mut Bencher) {
 
     b.iter(|| base.modpow(&e, &m));
 }
+
+#[bench]
+fn sqrt(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let n = rng.gen_biguint(2048);
+
+    b.iter(|| n.sqrt());
+}

@@ -2538,6 +2538,18 @@ impl BigInt {
         };
         BigInt::from_biguint(sign, mag)
     }
+
+    /// Finds square root of `self`.
+    ///
+    /// The result is the greatest integer less than or equal to the
+    /// square root of `self`.
+    ///
+    /// Panics if `self` is a negative number.
+    pub fn sqrt(&self) -> Self {
+        assert!(!self.is_negative(), "number is negative");
+
+        BigInt::from_biguint(self.sign, self.data.sqrt())
+    }
 }
 
 impl_sum_iter_type!(BigInt);
