@@ -1756,7 +1756,6 @@ impl BigUint {
     /// square root of `self`.
     pub fn sqrt(&self) -> Self {
         let one = BigUint::one();
-        let two = BigUint::from(2 as u8);
 
         // Trivial cases
         if self.is_zero() {
@@ -1775,18 +1774,18 @@ impl BigUint {
         // Set initial guess to something >= floor(sqrt(self)), but as low
         // as possible to speed up convergence.
         let bit_len = self.len() * big_digit::BITS;
-        let guess = one.shl(bit_len/2 + 1);
+        let guess = one << (bit_len/2 + 1);
 
         let mut u = guess;
         let mut s: BigUint;
 
         loop {
             s = u;
-            let q = self.div_floor(&s);
-            let t: BigUint = &s + &q;
+            let q = self / &s;
+            let t: BigUint = &s + q;
 
             // Compute the candidate value for next iteration
-            u = t.div_floor(&two);
+            u = t >> 1;
 
             if u >= s { break; }
         }
