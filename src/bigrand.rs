@@ -2,6 +2,7 @@
 
 use rand::prelude::*;
 use rand::distributions::uniform::{SampleUniform, UniformSampler};
+use rand::AsByteSliceMut;
 
 use BigInt;
 use BigUint;
@@ -39,13 +40,15 @@ impl<R: Rng + ?Sized> RandBigInt for R {
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
         use super::big_digit::BITS;
         let (digits, rem) = bit_size.div_rem(&BITS);
-        let mut data = Vec::with_capacity(digits + 1);
-        for _ in 0..digits {
-            data.push(self.gen());
-        }
+        let mut data = vec![BigDigit::default(); digits + (rem > 0) as usize];
+        // `fill_bytes` is faster than many `gen::<u32>` calls
+        self.fill_bytes(data[..].as_byte_slice_mut());
+        // Swap bytes per the `Rng::fill` source. This might be
+        // unnecessary if reproducibility across architectures is not
+        // desired.
+        data.to_le();
         if rem > 0 {
-            let final_digit: BigDigit = self.gen();
-            data.push(final_digit >> (BITS - rem));
+            data[digits] >>= BITS - rem;
         }
         BigUint::new(data)
     }
