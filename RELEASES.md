@@ -1,4 +1,4 @@
-# Release 0.2.0
+# Release 0.2.0 (2018-05-25)
 
 ### Enhancements
 
@@ -47,7 +47,7 @@
 [48]: https://github.com/rust-num/num-bigint/pull/48
 [49]: https://github.com/rust-num/num-bigint/pull/49
 
-# Release 0.1.44
+# Release 0.1.44 (2018-05-14)
 
 - [Division with single-digit divisors is now much faster.][42]
 - The README now compares [`ramp`, `rug`, `rust-gmp`][20], and [`apint`][21].
@@ -58,7 +58,7 @@
 [21]: https://github.com/rust-num/num-bigint/pull/21
 [42]: https://github.com/rust-num/num-bigint/pull/42
 
-# Release 0.1.43
+# Release 0.1.43 (2018-02-08)
 
 - [The new `BigInt::modpow`][18] performs signed modular exponentiation, using
   the existing `BigUint::modpow` and rounding negatives similar to `mod_floor`.
@@ -68,7 +68,7 @@
 [18]: https://github.com/rust-num/num-bigint/pull/18
 
 
-# Release 0.1.42
+# Release 0.1.42 (2018-02-07)
 
 - [num-bigint now has its own source repository][num-356] at [rust-num/num-bigint][home].
 - [`lcm` now avoids creating a large intermediate product][num-350].
