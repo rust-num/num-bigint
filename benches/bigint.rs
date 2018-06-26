@@ -214,6 +214,52 @@ fn from_str_radix_36(b: &mut Bencher) {
     from_str_radix_bench(b, 36);
 }
 
+fn rand_bench(b: &mut Bencher, bits: usize) {
+    let mut rng = get_rng();
+
+    b.iter(|| rng.gen_bigint(bits));
+}
+
+#[bench]
+fn rand_64(b: &mut Bencher) {
+    rand_bench(b, 1 << 6);
+}
+
+#[bench]
+fn rand_256(b: &mut Bencher) {
+    rand_bench(b, 1 << 8);
+}
+
+#[bench]
+fn rand_1009(b: &mut Bencher) {
+    rand_bench(b, 1009);
+}
+
+#[bench]
+fn rand_2048(b: &mut Bencher) {
+    rand_bench(b, 1 << 11);
+}
+
+#[bench]
+fn rand_4096(b: &mut Bencher) {
+    rand_bench(b, 1 << 12);
+}
+
+#[bench]
+fn rand_8192(b: &mut Bencher) {
+    rand_bench(b, 1 << 13);
+}
+
+#[bench]
+fn rand_65536(b: &mut Bencher) {
+    rand_bench(b, 1 << 16);
+}
+
+#[bench]
+fn rand_131072(b: &mut Bencher) {
+    rand_bench(b, 1 << 17);
+}
+
 #[bench]
 fn shl(b: &mut Bencher) {
     let n = BigUint::one() << 1000;
