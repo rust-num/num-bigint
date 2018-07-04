@@ -434,6 +434,57 @@ impl One for BigUint {
 
 impl Unsigned for BigUint {}
 
+macro_rules! pow_impl {
+    ($unsigned:ty, $signed:ty) => {
+        impl pow::Pow<$unsigned> for BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: $unsigned) -> Self::Output {
+                // square and multiply from num_traits::pow
+                pow::pow(self, exp as usize)
+            }
+        }
+
+        impl<'a> pow::Pow<$unsigned> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: $unsigned) -> Self::Output {
+                // square and multiply from num_traits::pow
+                pow::pow(self.clone(), exp as usize)
+            }
+        }
+
+        impl<'a> pow::Pow<$signed> for BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: $signed) -> Self::Output {
+                assert!(exp >= 0, "Negative exponentiation is not supported");
+                pow::pow(self, exp as usize)
+            }
+        }
+
+        impl<'a> pow::Pow<$signed> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: $signed) -> Self::Output {
+                assert!(exp >= 0, "Negative exponentiation is not supported");
+                pow::pow(self.clone(), exp as usize)
+            }
+        }
+    }
+}
+
+pow_impl!(u8, i8);
+pow_impl!(u16, i16);
+pow_impl!(u32, i32);
+pow_impl!(u64, i64);
+pow_impl!(usize, isize);
+// FIXME support i128
+
 forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
 forward_val_assign!(impl AddAssign for BigUint, add_assign);
 
