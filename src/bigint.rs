@@ -18,7 +18,7 @@ use serde;
 
 use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
-             CheckedMul, CheckedDiv, Signed, Zero, One};
+             CheckedMul, CheckedDiv, PrimInt, Signed, Zero, One, Pow};
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -65,6 +65,24 @@ impl Mul<Sign> for Sign {
         }
     }
 }
+
+impl<T: PrimInt + BitAnd<Output=T>> Pow<T> for Sign {
+    type Output = Sign;
+
+    #[inline]
+    fn pow(self, other: T) -> Sign {
+        if self != Minus {
+            self
+        } else if other == T::zero() {
+            Plus
+        } else if other & T::one() == T::one() {
+            self
+        } else {
+            -self
+        }
+    }
+}
+
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for Sign {
@@ -808,6 +826,28 @@ impl Signed for BigInt {
     #[inline]
     fn is_negative(&self) -> bool {
         self.sign == Minus
+    }
+}
+
+impl<T: PrimInt> Pow<T> for BigInt
+    where BigUint: Pow<T, Output=BigUint>
+{
+    type Output = BigInt;
+
+    #[inline]
+    fn pow(self, rhs: T) -> BigInt {
+        BigInt::from_biguint(self.sign.pow(rhs), self.data.pow(rhs))
+    }
+}
+
+impl<'a, T: PrimInt> Pow<T> for &'a BigInt
+    where BigUint: Pow<T, Output=BigUint>
+{
+    type Output = BigInt;
+
+    #[inline]
+    fn pow(self, rhs: T) -> BigInt {
+        BigInt::from_biguint(self.sign.pow(rhs), self.clone().data.pow(rhs))
     }
 }
 

@@ -1531,7 +1531,6 @@ fn test_iter_product_generic() {
     assert_eq!(result, data.into_iter().product());
 }
 
-
 #[test]
 fn test_pow() {
     let one = 1u32.to_biguint().unwrap();
