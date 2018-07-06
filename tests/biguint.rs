@@ -957,6 +957,27 @@ fn test_lcm() {
 }
 
 #[test]
+fn test_sqrt() {
+    fn check(n: usize, expected: usize) {
+        let big_n: BigUint = FromPrimitive::from_usize(n).unwrap();
+        let big_expected: BigUint = FromPrimitive::from_usize(expected).unwrap();
+
+        assert_eq!(big_n.sqrt(), big_expected);
+    }
+
+    check(0, 0);
+    check(1, 1);
+    check(99, 9);
+    check(100, 10);
+    check(102, 10);
+    check(120, 10);
+
+    let big_n: BigUint = FromStr::from_str("123_456_789").unwrap();
+    let expected : BigUint = FromStr::from_str("11_111").unwrap();
+    assert_eq!(big_n.sqrt(), expected);
+}
+
+#[test]
 fn test_is_even() {
     let one: BigUint = FromStr::from_str("1").unwrap();
     let two: BigUint = FromStr::from_str("2").unwrap();

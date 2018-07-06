@@ -1749,6 +1749,49 @@ impl BigUint {
         }
         acc
     }
+
+    /// Finds square root of `self`.
+    ///
+    /// The result is the greatest integer less than or equal to the
+    /// square root of `self`.
+    pub fn sqrt(&self) -> Self {
+        let one = BigUint::one();
+
+        // Trivial cases
+        if self.is_zero() {
+            return BigUint::zero();
+        }
+
+        if self.is_one() {
+            return one;
+        }
+
+        // Newton's method to compute the square root of an integer.
+        //
+        // Reference:
+        // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.13
+        //
+        // Set initial guess to something >= floor(sqrt(self)), but as low
+        // as possible to speed up convergence.
+        let bit_len = self.len() * big_digit::BITS;
+        let guess = one << (bit_len/2 + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / &s;
+            let t: BigUint = &s + q;
+
+            // Compute the candidate value for next iteration
+            u = t >> 1;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
 }
 
 /// Returns the number of least-significant bits that are zero,
