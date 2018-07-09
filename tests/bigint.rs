@@ -1102,28 +1102,19 @@ fn test_pow() {
     let eight = 8u32.to_bigint().unwrap();
     macro_rules! check {
         ($t:ty) => {
-            assert_eq!((&two).pow(0 as $t), one);
-            assert_eq!(two.clone().pow(0 as $t), one);
-            assert_eq!((&two).pow(1 as $t), two);
-            assert_eq!(two.clone().pow(1 as $t), two);
-            assert_eq!((&two).clone().pow(2 as $t), four);
-            assert_eq!(two.clone().pow(2 as $t), four);
-            assert_eq!((&two).pow(3 as $t), eight);
-            assert_eq!(two.clone().pow(3 as $t), eight);
-            assert_eq!((&minus_two).pow(0 as $t), one, "-2^0");
-            assert_eq!((&minus_two).pow(1 as $t), minus_two, "-2^1");
-            assert_eq!((&minus_two).pow(2 as $t), four, "-2^2");
-            assert_eq!((&minus_two).pow(3 as $t), -&eight, "-2^3");
+            assert_eq!(two.pow(0 as $t), one);
+            assert_eq!(two.pow(1 as $t), two);
+            assert_eq!(two.pow(2 as $t), four);
+            assert_eq!(two.pow(3 as $t), eight);
+            assert_eq!(minus_two.pow(0 as $t), one, "-2^0");
+            assert_eq!(minus_two.pow(1 as $t), minus_two, "-2^1");
+            assert_eq!(minus_two.pow(2 as $t), four, "-2^2");
+            assert_eq!(minus_two.pow(3 as $t), -&eight, "-2^3");
         }
     }
     check!(u8);
-    check!(i8);
     check!(u16);
-    check!(i16);
     check!(u32);
-    check!(i32);
     check!(u64);
-    check!(i64);
     check!(usize);
-    check!(isize);
 }

@@ -18,7 +18,7 @@ use serde;
 
 use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
-             CheckedMul, CheckedDiv, PrimInt, Signed, Zero, One, Pow};
+             CheckedMul, CheckedDiv, Signed, Zero, One, Pow};
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -66,16 +66,16 @@ impl Mul<Sign> for Sign {
     }
 }
 
-impl<T: PrimInt + BitAnd<Output=T>> Pow<T> for Sign {
+impl<'a, T: Integer> Pow<&'a T> for Sign {
     type Output = Sign;
 
     #[inline]
-    fn pow(self, other: T) -> Sign {
-        if self != Minus {
-            self
-        } else if other == T::zero() {
+    fn pow(self, other: &T) -> Sign {
+        if other.is_zero() {
             Plus
-        } else if other & T::one() == T::one() {
+        } else if self != Minus {
+            self
+        } else if other.is_odd() {
             self
         } else {
             -self
@@ -829,27 +829,28 @@ impl Signed for BigInt {
     }
 }
 
-impl<T: PrimInt> Pow<T> for BigInt
-    where BigUint: Pow<T, Output=BigUint>
-{
-    type Output = BigInt;
 
-    #[inline]
-    fn pow(self, rhs: T) -> BigInt {
-        BigInt::from_biguint(self.sign.pow(rhs), self.data.pow(rhs))
+macro_rules! pow_impl {
+    ($type:ty) => {
+        impl<'a> Pow<$type> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn pow(self, rhs: $type) -> BigInt {
+                BigInt::from_biguint(self.sign.pow(&rhs), self.data.pow(rhs))
+            }
+        }
     }
 }
 
-impl<'a, T: PrimInt> Pow<T> for &'a BigInt
-    where BigUint: Pow<T, Output=BigUint>
-{
-    type Output = BigInt;
+pow_impl!(u8);
+pow_impl!(u16);
+pow_impl!(u32);
+pow_impl!(u64);
+pow_impl!(usize);
+#[cfg(has_i128)]
+pow_impl!(u128);
 
-    #[inline]
-    fn pow(self, rhs: T) -> BigInt {
-        BigInt::from_biguint(self.sign.pow(rhs), self.clone().data.pow(rhs))
-    }
-}
 
 // A convenience method for getting the absolute value of an i32 in a u32.
 #[inline]

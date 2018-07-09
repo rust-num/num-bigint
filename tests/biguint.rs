@@ -1539,24 +1539,17 @@ fn test_pow() {
     let eight = 8u32.to_biguint().unwrap();
     macro_rules! check {
         ($t:ty) => {
-            assert_eq!((&two).pow(0 as $t), one);
-            assert_eq!(two.clone().pow(0 as $t), one);
-            assert_eq!((&two).pow(1 as $t), two);
-            assert_eq!(two.clone().pow(1 as $t), two);
-            assert_eq!((&two).clone().pow(2 as $t), four);
-            assert_eq!(two.clone().pow(2 as $t), four);
-            assert_eq!((&two).pow(3 as $t), eight);
-            assert_eq!(two.clone().pow(3 as $t), eight);
+            assert_eq!(two.pow(0 as $t), one);
+            assert_eq!(two.pow(1 as $t), two);
+            assert_eq!(two.pow(2 as $t), four);
+            assert_eq!(two.pow(3 as $t), eight);
         }
     }
     check!(u8);
-    check!(i8);
     check!(u16);
-    check!(i16);
     check!(u32);
-    check!(i32);
     check!(u64);
-    check!(i64);
     check!(usize);
-    check!(isize);
+    #[cfg(has_i128)]
+    check!(u128);
 }

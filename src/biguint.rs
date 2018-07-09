@@ -435,55 +435,45 @@ impl One for BigUint {
 impl Unsigned for BigUint {}
 
 macro_rules! pow_impl {
-    ($unsigned:ty, $signed:ty) => {
-        impl pow::Pow<$unsigned> for BigUint {
+    ($unsigned:ty) => {
+         impl<'a> pow::Pow<$unsigned> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
-            fn pow(self, exp: $unsigned) -> Self::Output {
-                // square and multiply from num_traits::pow
-                pow::pow(self, exp as usize)
-            }
-        }
+            fn pow(self, mut exp: $unsigned) -> Self::Output {
+                // square and multiply from num_traits::pow in the next branch
+                let mut base = self.clone();
 
-        impl<'a> pow::Pow<$unsigned> for &'a BigUint {
-            type Output = BigUint;
+                if exp == 0 { return BigUint::one(); }
 
-            #[inline]
-            fn pow(self, exp: $unsigned) -> Self::Output {
-                // square and multiply from num_traits::pow
-                pow::pow(self.clone(), exp as usize)
-            }
-        }
+                while exp & 1 == 0 {
+                    base = &base * &base;
+                    exp >>= 1;
+                }
 
-        impl<'a> pow::Pow<$signed> for BigUint {
-            type Output = BigUint;
+                if exp == 1 { return base; }
 
-            #[inline]
-            fn pow(self, exp: $signed) -> Self::Output {
-                assert!(exp >= 0, "Negative exponentiation is not supported");
-                pow::pow(self, exp as usize)
-            }
-        }
-
-        impl<'a> pow::Pow<$signed> for &'a BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn pow(self, exp: $signed) -> Self::Output {
-                assert!(exp >= 0, "Negative exponentiation is not supported");
-                pow::pow(self.clone(), exp as usize)
+                let mut acc = self.clone();
+                while exp > 1 {
+                    exp >>= 1;
+                    base = &base * &base;
+                    if exp & 1 == 1 {
+                        acc = &acc * &base;
+                    }
+                }
+                acc
             }
         }
     }
 }
 
-pow_impl!(u8, i8);
-pow_impl!(u16, i16);
-pow_impl!(u32, i32);
-pow_impl!(u64, i64);
-pow_impl!(usize, isize);
-// FIXME support i128
+pow_impl!(u8);
+pow_impl!(u16);
+pow_impl!(u32);
+pow_impl!(u64);
+pow_impl!(usize);
+#[cfg(has_i128)]
+pow_impl!(u128);
 
 forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
 forward_val_assign!(impl AddAssign for BigUint, add_assign);
