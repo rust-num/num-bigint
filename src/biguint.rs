@@ -17,9 +17,9 @@ use std::ascii::AsciiExt;
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::Integer;
+use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Float, Num, Unsigned, CheckedAdd, CheckedSub, CheckedMul,
-             CheckedDiv, Zero, One};
+             CheckedDiv, Zero, One, pow};
 
 use big_digit::{self, BigDigit, DoubleBigDigit};
 
@@ -1026,6 +1026,52 @@ impl Integer for BigUint {
     }
 }
 
+impl Roots for BigUint {
+    fn nth_root(&self, n: u32) -> Self {
+        assert!(n > 0, "n must be at least 1");
+
+        let one = BigUint::one();
+
+        // Trivial cases
+        if self.is_zero() {
+            return BigUint::zero();
+        }
+
+        if self.is_one() {
+            return one;
+        }
+
+        let n = n as usize;
+        let n_min_1 = (n as usize) - 1;
+
+        // Newton's method to compute the nth root of an integer.
+        //
+        // Reference:
+        // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.14
+        //
+        // Set initial guess to something definitely >= floor(nth_root of self)
+        // but as low as possible to speed up convergence.
+        let bit_len = self.len() * big_digit::BITS;
+        let guess = one << (bit_len/n + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / pow(s.clone(), n_min_1);
+            let t: BigUint = n_min_1 * &s + q;
+
+            // Compute the candidate value for next iteration
+            u = t / n;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
+}
+
 fn high_bits_to_u64(v: &BigUint) -> u64 {
     match v.data.len() {
         0   => 0,
@@ -1748,6 +1794,25 @@ impl BigUint {
             }
         }
         acc
+    }
+
+    /// Returns the truncated principal square root of `self` --
+    /// see [Roots::sqrt](Roots::sqrt).
+    // struct.BigInt.html#trait.Roots
+    pub fn sqrt(&self) -> Self {
+        Roots::sqrt(self)
+    }
+
+    /// Returns the truncated principal cube root of `self` --
+    /// see [Roots::cbrt](Roots::cbrt).
+    pub fn cbrt(&self) -> Self {
+        Roots::cbrt(self)
+    }
+
+    /// Returns the truncated principal `n`th root of `self` --
+    /// See [Roots::nth_root](Roots::nth_root).
+    pub fn nth_root(&self, n: u32) -> Self {
+        Roots::nth_root(self, n)
     }
 }
 

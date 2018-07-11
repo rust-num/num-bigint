@@ -16,7 +16,7 @@ use std::iter::{Product, Sum};
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::Integer;
+use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
              CheckedMul, CheckedDiv, Signed, Zero, One};
 
@@ -1802,6 +1802,15 @@ impl Integer for BigInt {
     }
 }
 
+impl Roots for BigInt {
+    fn nth_root(&self, n: u32) -> Self {
+        assert!(!(self.is_negative() && n.is_even()),
+                "n-th root is undefined for number (n={})", n);
+
+        BigInt::from_biguint(self.sign, self.data.nth_root(n))
+    }
+}
+
 impl ToPrimitive for BigInt {
     #[inline]
     fn to_i64(&self) -> Option<i64> {
@@ -2537,6 +2546,25 @@ impl BigInt {
             (true, true) => (Minus, result),
         };
         BigInt::from_biguint(sign, mag)
+    }
+
+    /// Returns the truncated principal square root of `self` --
+    /// see [Roots::sqrt](Roots::sqrt).
+    // struct.BigInt.html#trait.Roots
+    pub fn sqrt(&self) -> Self {
+        Roots::sqrt(self)
+    }
+
+    /// Returns the truncated principal cube root of `self` --
+    /// see [Roots::cbrt](Roots::cbrt).
+    pub fn cbrt(&self) -> Self {
+        Roots::cbrt(self)
+    }
+
+    /// Returns the truncated principal `n`th root of `self` --
+    /// See [Roots::nth_root](Roots::nth_root).
+    pub fn nth_root(&self, n: u32) -> Self {
+        Roots::nth_root(self, n)
     }
 }
 

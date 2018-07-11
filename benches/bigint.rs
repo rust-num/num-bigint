@@ -4,13 +4,14 @@
 extern crate test;
 extern crate num_bigint;
 extern crate num_traits;
+extern crate num_integer;
 extern crate rand;
 
 use std::mem::replace;
 use test::Bencher;
 use num_bigint::{BigInt, BigUint, RandBigInt};
 use num_traits::{Zero, One, FromPrimitive, Num};
-use rand::{SeedableRng, StdRng};
+use rand::{SeedableRng, StdRng, Rng};
 
 fn get_rng() -> StdRng {
     let mut seed = [0; 32];
@@ -341,4 +342,33 @@ fn modpow_even(b: &mut Bencher) {
     let m = BigUint::from_str_radix(RFC3526_2048BIT_MODP_GROUP, 16).unwrap() - 1u32;
 
     b.iter(|| base.modpow(&e, &m));
+}
+
+#[bench]
+fn roots_sqrt(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let x = rng.gen_biguint(2048);
+
+    b.iter(|| x.sqrt());
+}
+
+#[bench]
+fn roots_cbrt(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let x = rng.gen_biguint(2048);
+
+    b.iter(|| x.cbrt());
+}
+
+#[bench]
+fn roots_nth(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let x = rng.gen_biguint(2048);
+    // Although n is u32, here we limit it to the set of u8 values since it
+    // hugely impacts the performance of nth_root due to exponentiation to
+    // the power of n-1. Using very large values for n is also not very realistic,
+    // and any n > x's bit size produces 1 as a result anyway.
+    let n: u8 = rng.gen();
+
+    b.iter(|| { x.nth_root(n as u32) });
 }
