@@ -1027,32 +1027,30 @@ impl Integer for BigUint {
 }
 
 impl Roots for BigUint {
+    // nth_root, sqrt and cbrt use Newton's method to compute
+    // principal root of a given degree for a given integer.
+
+    // Reference:
+    // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.14
     fn nth_root(&self, n: u32) -> Self {
-        assert!(n > 0, "n must be at least 1");
+        assert!(n > 0, "root degree n must be at least 1");
 
-        let one = BigUint::one();
-
-        // Trivial cases
-        if self.is_zero() {
-            return BigUint::zero();
+        if self.is_zero() || self.is_one() {
+            return self.clone()
         }
 
-        if self.is_one() {
-            return one;
+        match n { // Optimize for small n
+            1 => return self.clone(),
+            2 => return self.sqrt(),
+            3 => return self.cbrt(),
+            _ => (),
         }
 
         let n = n as usize;
-        let n_min_1 = (n as usize) - 1;
+        let n_min_1 = n - 1;
 
-        // Newton's method to compute the nth root of an integer.
-        //
-        // Reference:
-        // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.14
-        //
-        // Set initial guess to something definitely >= floor(nth_root of self)
-        // but as low as possible to speed up convergence.
         let bit_len = self.len() * big_digit::BITS;
-        let guess = one << (bit_len/n + 1);
+        let guess = BigUint::one() << (bit_len/n + 1);
 
         let mut u = guess;
         let mut s: BigUint;
@@ -1062,8 +1060,55 @@ impl Roots for BigUint {
             let q = self / pow(s.clone(), n_min_1);
             let t: BigUint = n_min_1 * &s + q;
 
-            // Compute the candidate value for next iteration
             u = t / n;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
+
+    // Reference:
+    // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.13
+    fn sqrt(&self) -> Self {
+        if self.is_zero() || self.is_one() {
+            return self.clone()
+        }
+
+        let bit_len = self.len() * big_digit::BITS;
+        let guess = BigUint::one() << (bit_len/2 + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / &s;
+            let t: BigUint = &s + q;
+            u = t >> 1;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
+
+    fn cbrt(&self) -> Self {
+        if self.is_zero() || self.is_one() {
+            return self.clone()
+        }
+
+        let bit_len = self.len() * big_digit::BITS;
+        let guess = BigUint::one() << (bit_len/3 + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / (&s * &s);
+            let t: BigUint = (&s << 1) + q;
+            u = t / 3u32;
 
             if u >= s { break; }
         }
@@ -1797,8 +1842,7 @@ impl BigUint {
     }
 
     /// Returns the truncated principal square root of `self` --
-    /// see [Roots::sqrt](Roots::sqrt).
-    // struct.BigInt.html#trait.Roots
+    /// see [Roots::sqrt](Roots::sqrt)
     pub fn sqrt(&self) -> Self {
         Roots::sqrt(self)
     }
@@ -1810,7 +1854,7 @@ impl BigUint {
     }
 
     /// Returns the truncated principal `n`th root of `self` --
-    /// See [Roots::nth_root](Roots::nth_root).
+    /// see [Roots::nth_root](Roots::nth_root).
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }

@@ -1805,9 +1805,19 @@ impl Integer for BigInt {
 impl Roots for BigInt {
     fn nth_root(&self, n: u32) -> Self {
         assert!(!(self.is_negative() && n.is_even()),
-                "n-th root is undefined for number (n={})", n);
+                "root of degree {} is imaginary", n);
 
         BigInt::from_biguint(self.sign, self.data.nth_root(n))
+    }
+
+    fn sqrt(&self) -> Self {
+        assert!(!self.is_negative(), "square root is imaginary");
+
+        BigInt::from_biguint(self.sign, self.data.sqrt())
+    }
+
+    fn cbrt(&self) -> Self {
+        BigInt::from_biguint(self.sign, self.data.cbrt())
     }
 }
 

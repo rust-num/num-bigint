@@ -11,7 +11,7 @@ use std::mem::replace;
 use test::Bencher;
 use num_bigint::{BigInt, BigUint, RandBigInt};
 use num_traits::{Zero, One, FromPrimitive, Num};
-use rand::{SeedableRng, StdRng, Rng};
+use rand::{SeedableRng, StdRng};
 
 fn get_rng() -> StdRng {
     let mut seed = [0; 32];
@@ -361,14 +361,9 @@ fn roots_cbrt(b: &mut Bencher) {
 }
 
 #[bench]
-fn roots_nth(b: &mut Bencher) {
+fn roots_nth_100(b: &mut Bencher) {
     let mut rng = get_rng();
     let x = rng.gen_biguint(2048);
-    // Although n is u32, here we limit it to the set of u8 values since it
-    // hugely impacts the performance of nth_root due to exponentiation to
-    // the power of n-1. Using very large values for n is also not very realistic,
-    // and any n > x's bit size produces 1 as a result anyway.
-    let n: u8 = rng.gen();
 
-    b.iter(|| { x.nth_root(n as u32) });
+    b.iter(|| x.nth_root(100));
 }
