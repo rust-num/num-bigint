@@ -2986,7 +2986,7 @@ impl BigInt {
     }
 
     pub fn trailing_zeros(&self) -> Option<usize> {
-        self.data.trailing_zeros()
+        biguint::trailing_zeros(&self.data)
     }
 }
 

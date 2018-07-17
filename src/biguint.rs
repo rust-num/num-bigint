@@ -1965,6 +1965,10 @@ impl BigUint {
         BigUint::new_native(slice.to_vec())
     }
 
+    pub fn get_limb(&self, i: usize) -> BigDigit {
+        self.data[i]
+    }
+
     /// Assign a value to a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
@@ -2318,10 +2322,6 @@ impl BigUint {
 
     pub fn trailing_zeros(&self) -> Option<usize> {
         trailing_zeros(self)
-    }
-
-    pub fn get_limb(&self, n: usize) -> BigDigit {
-        self.data[n]
     }
 }
 
