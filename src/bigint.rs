@@ -2560,7 +2560,6 @@ impl BigInt {
 
     /// Returns the truncated principal square root of `self` --
     /// see [Roots::sqrt](Roots::sqrt).
-    // struct.BigInt.html#trait.Roots
     pub fn sqrt(&self) -> Self {
         Roots::sqrt(self)
     }

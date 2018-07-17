@@ -1049,8 +1049,7 @@ impl Roots for BigUint {
         let n = n as usize;
         let n_min_1 = n - 1;
 
-        let bit_len = self.len() * big_digit::BITS;
-        let guess = BigUint::one() << (bit_len/n + 1);
+        let guess = BigUint::one() << (self.bits()/n + 1);
 
         let mut u = guess;
         let mut s: BigUint;
@@ -1075,8 +1074,7 @@ impl Roots for BigUint {
             return self.clone()
         }
 
-        let bit_len = self.len() * big_digit::BITS;
-        let guess = BigUint::one() << (bit_len/2 + 1);
+        let guess = BigUint::one() << (self.bits()/2 + 1);
 
         let mut u = guess;
         let mut s: BigUint;
@@ -1098,8 +1096,7 @@ impl Roots for BigUint {
             return self.clone()
         }
 
-        let bit_len = self.len() * big_digit::BITS;
-        let guess = BigUint::one() << (bit_len/3 + 1);
+        let guess = BigUint::one() << (self.bits()/3 + 1);
 
         let mut u = guess;
         let mut s: BigUint;
