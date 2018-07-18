@@ -2559,19 +2559,19 @@ impl BigInt {
     }
 
     /// Returns the truncated principal square root of `self` --
-    /// see [Roots::sqrt](Roots::sqrt).
+    /// see [Roots::sqrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.sqrt).
     pub fn sqrt(&self) -> Self {
         Roots::sqrt(self)
     }
 
     /// Returns the truncated principal cube root of `self` --
-    /// see [Roots::cbrt](Roots::cbrt).
+    /// see [Roots::cbrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.cbrt).
     pub fn cbrt(&self) -> Self {
         Roots::cbrt(self)
     }
 
     /// Returns the truncated principal `n`th root of `self` --
-    /// See [Roots::nth_root](Roots::nth_root).
+    /// See [Roots::nth_root](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#tymethod.nth_root).
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
