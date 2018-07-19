@@ -435,12 +435,12 @@ impl One for BigUint {
 impl Unsigned for BigUint {}
 
 macro_rules! pow_impl {
-    ($unsigned:ty) => {
-        impl<'a> Pow<$unsigned> for &'a BigUint {
+    ($T:ty) => {
+        impl<'a> Pow<$T> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
-            fn pow(self, mut exp: $unsigned) -> Self::Output {
+            fn pow(self, mut exp: $T) -> Self::Output {
                 if exp == 0 { return BigUint::one(); }
                 let mut base = self.clone();
 
@@ -464,11 +464,11 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'a, 'b> Pow<&'b $unsigned> for &'a BigUint {
+        impl<'a, 'b> Pow<&'b $T> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
-            fn pow(self, exp: &$unsigned) -> Self::Output {
+            fn pow(self, exp: &$T) -> Self::Output {
                 self.pow(*exp)
             }
         }

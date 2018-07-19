@@ -829,21 +829,21 @@ fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
 }
 
 macro_rules! pow_impl {
-    ($type:ty) => {
-        impl<'a> Pow<$type> for &'a BigInt {
+    ($T:ty) => {
+        impl<'a> Pow<$T> for &'a BigInt {
             type Output = BigInt;
 
             #[inline]
-            fn pow(self, rhs: $type) -> BigInt {
+            fn pow(self, rhs: $T) -> BigInt {
                 BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
             }
         }
 
-        impl<'a, 'b> Pow<&'b $type> for &'a BigInt {
+        impl<'a, 'b> Pow<&'b $T> for &'a BigInt {
             type Output = BigInt;
 
             #[inline]
-            fn pow(self, rhs: &$type) -> BigInt {
+            fn pow(self, rhs: &$T) -> BigInt {
                 BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
             }
         }
