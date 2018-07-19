@@ -1095,11 +1095,11 @@ fn test_iter_product_generic() {
 
 #[test]
 fn test_pow() {
-    let one = 1u32.to_bigint().unwrap();
-    let two = 2u32.to_bigint().unwrap();
-    let minus_two = -2i32.to_bigint().unwrap();
-    let four = 4u32.to_bigint().unwrap();
-    let eight = 8u32.to_bigint().unwrap();
+    let one = BigInt::from(1i32);
+    let two = BigInt::from(2i32);
+    let four = BigInt::from(4i32);
+    let eight = BigInt::from(8i32);
+    let minus_two = BigInt::from(-2i32);
     macro_rules! check {
         ($t:ty) => {
             assert_eq!(two.pow(0 as $t), one);
