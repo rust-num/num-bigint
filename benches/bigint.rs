@@ -301,7 +301,7 @@ fn pow_bench(b: &mut Bencher) {
         for i in 2..upper + 1 {
             for j in 2..upper + 1 {
                 let i_big = BigUint::from_usize(i).unwrap();
-                num_traits::pow(i_big, j);
+                i_big.pow(j);
             }
         }
     });

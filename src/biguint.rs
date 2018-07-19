@@ -19,7 +19,7 @@ use serde;
 
 use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Float, Num, Unsigned, CheckedAdd, CheckedSub, CheckedMul,
-             CheckedDiv, Zero, One, pow};
+             CheckedDiv, Zero, One, Pow};
 
 use big_digit::{self, BigDigit, DoubleBigDigit};
 
@@ -436,7 +436,7 @@ impl Unsigned for BigUint {}
 
 macro_rules! pow_impl {
     ($unsigned:ty) => {
-        impl<'a> pow::Pow<$unsigned> for &'a BigUint {
+        impl<'a> Pow<$unsigned> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
@@ -464,7 +464,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'a, 'b> pow::Pow<&'b $unsigned> for &'a BigUint {
+        impl<'a, 'b> Pow<&'b $unsigned> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
@@ -1105,7 +1105,7 @@ impl Roots for BigUint {
 
         loop {
             s = u;
-            let q = self / pow(s.clone(), n_min_1);
+            let q = self / s.pow(n_min_1);
             let t: BigUint = n_min_1 * &s + q;
 
             u = t / n;
