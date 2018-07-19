@@ -436,15 +436,14 @@ impl Unsigned for BigUint {}
 
 macro_rules! pow_impl {
     ($unsigned:ty) => {
-         impl<'a> pow::Pow<$unsigned> for &'a BigUint {
+        impl<'a> pow::Pow<$unsigned> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
             fn pow(self, mut exp: $unsigned) -> Self::Output {
-                // square and multiply from num_traits::pow in the next branch
+                if exp == 0 { return BigUint::one(); }
                 let mut base = self.clone();
 
-                if exp == 0 { return BigUint::one(); }
 
                 while exp & 1 == 0 {
                     base = &base * &base;
@@ -453,7 +452,7 @@ macro_rules! pow_impl {
 
                 if exp == 1 { return base; }
 
-                let mut acc = self.clone();
+                let mut acc = base.clone();
                 while exp > 1 {
                     exp >>= 1;
                     base = &base * &base;
@@ -462,6 +461,15 @@ macro_rules! pow_impl {
                     }
                 }
                 acc
+            }
+        }
+
+        impl<'a, 'b> pow::Pow<&'b $unsigned> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: &$unsigned) -> Self::Output {
+                self.pow(*exp)
             }
         }
     }

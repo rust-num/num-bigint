@@ -66,24 +66,6 @@ impl Mul<Sign> for Sign {
     }
 }
 
-impl<'a, T: Integer> Pow<&'a T> for Sign {
-    type Output = Sign;
-
-    #[inline]
-    fn pow(self, other: &T) -> Sign {
-        if other.is_zero() {
-            Plus
-        } else if self != Minus {
-            self
-        } else if other.is_odd() {
-            self
-        } else {
-            -self
-        }
-    }
-}
-
-
 #[cfg(feature = "serde")]
 impl serde::Serialize for Sign {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -830,6 +812,22 @@ impl Signed for BigInt {
 }
 
 
+/// Help function for pow
+///
+/// Computes the effect of the exponent on the sign.
+#[inline]
+fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
+    if other.is_zero() {
+        Plus
+    } else if sign != Minus {
+        sign
+    } else if other.is_odd() {
+        sign
+    } else {
+        -sign
+    }
+}
+
 macro_rules! pow_impl {
     ($type:ty) => {
         impl<'a> Pow<$type> for &'a BigInt {
@@ -837,7 +835,7 @@ macro_rules! pow_impl {
 
             #[inline]
             fn pow(self, rhs: $type) -> BigInt {
-                BigInt::from_biguint(self.sign.pow(&rhs), self.data.pow(rhs))
+                BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
             }
         }
     }
