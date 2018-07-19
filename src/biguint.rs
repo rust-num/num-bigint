@@ -17,9 +17,9 @@ use std::ascii::AsciiExt;
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::Integer;
+use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Float, Num, Unsigned, CheckedAdd, CheckedSub, CheckedMul,
-             CheckedDiv, Zero, One};
+             CheckedDiv, Zero, One, pow};
 
 use big_digit::{self, BigDigit, DoubleBigDigit};
 
@@ -1026,6 +1026,94 @@ impl Integer for BigUint {
     }
 }
 
+impl Roots for BigUint {
+    // nth_root, sqrt and cbrt use Newton's method to compute
+    // principal root of a given degree for a given integer.
+
+    // Reference:
+    // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.14
+    fn nth_root(&self, n: u32) -> Self {
+        assert!(n > 0, "root degree n must be at least 1");
+
+        if self.is_zero() || self.is_one() {
+            return self.clone()
+        }
+
+        match n { // Optimize for small n
+            1 => return self.clone(),
+            2 => return self.sqrt(),
+            3 => return self.cbrt(),
+            _ => (),
+        }
+
+        let n = n as usize;
+        let n_min_1 = n - 1;
+
+        let guess = BigUint::one() << (self.bits()/n + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / pow(s.clone(), n_min_1);
+            let t: BigUint = n_min_1 * &s + q;
+
+            u = t / n;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
+
+    // Reference:
+    // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.13
+    fn sqrt(&self) -> Self {
+        if self.is_zero() || self.is_one() {
+            return self.clone()
+        }
+
+        let guess = BigUint::one() << (self.bits()/2 + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / &s;
+            let t: BigUint = &s + q;
+            u = t >> 1;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
+
+    fn cbrt(&self) -> Self {
+        if self.is_zero() || self.is_one() {
+            return self.clone()
+        }
+
+        let guess = BigUint::one() << (self.bits()/3 + 1);
+
+        let mut u = guess;
+        let mut s: BigUint;
+
+        loop {
+            s = u;
+            let q = self / (&s * &s);
+            let t: BigUint = (&s << 1) + q;
+            u = t / 3u32;
+
+            if u >= s { break; }
+        }
+
+        s
+    }
+}
+
 fn high_bits_to_u64(v: &BigUint) -> u64 {
     match v.data.len() {
         0   => 0,
@@ -1748,6 +1836,24 @@ impl BigUint {
             }
         }
         acc
+    }
+
+    /// Returns the truncated principal square root of `self` --
+    /// see [Roots::sqrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.sqrt)
+    pub fn sqrt(&self) -> Self {
+        Roots::sqrt(self)
+    }
+
+    /// Returns the truncated principal cube root of `self` --
+    /// see [Roots::cbrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.cbrt).
+    pub fn cbrt(&self) -> Self {
+        Roots::cbrt(self)
+    }
+
+    /// Returns the truncated principal `n`th root of `self` --
+    /// see [Roots::nth_root](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#tymethod.nth_root).
+    pub fn nth_root(&self, n: u32) -> Self {
+        Roots::nth_root(self, n)
     }
 }
 

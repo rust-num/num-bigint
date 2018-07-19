@@ -4,6 +4,7 @@
 extern crate test;
 extern crate num_bigint;
 extern crate num_traits;
+extern crate num_integer;
 extern crate rand;
 
 use std::mem::replace;
@@ -341,4 +342,28 @@ fn modpow_even(b: &mut Bencher) {
     let m = BigUint::from_str_radix(RFC3526_2048BIT_MODP_GROUP, 16).unwrap() - 1u32;
 
     b.iter(|| base.modpow(&e, &m));
+}
+
+#[bench]
+fn roots_sqrt(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let x = rng.gen_biguint(2048);
+
+    b.iter(|| x.sqrt());
+}
+
+#[bench]
+fn roots_cbrt(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let x = rng.gen_biguint(2048);
+
+    b.iter(|| x.cbrt());
+}
+
+#[bench]
+fn roots_nth_100(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let x = rng.gen_biguint(2048);
+
+    b.iter(|| x.nth_root(100));
 }

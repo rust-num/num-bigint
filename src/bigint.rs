@@ -16,7 +16,7 @@ use std::iter::{Product, Sum};
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::Integer;
+use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
              CheckedMul, CheckedDiv, Signed, Zero, One};
 
@@ -1802,6 +1802,25 @@ impl Integer for BigInt {
     }
 }
 
+impl Roots for BigInt {
+    fn nth_root(&self, n: u32) -> Self {
+        assert!(!(self.is_negative() && n.is_even()),
+                "root of degree {} is imaginary", n);
+
+        BigInt::from_biguint(self.sign, self.data.nth_root(n))
+    }
+
+    fn sqrt(&self) -> Self {
+        assert!(!self.is_negative(), "square root is imaginary");
+
+        BigInt::from_biguint(self.sign, self.data.sqrt())
+    }
+
+    fn cbrt(&self) -> Self {
+        BigInt::from_biguint(self.sign, self.data.cbrt())
+    }
+}
+
 impl ToPrimitive for BigInt {
     #[inline]
     fn to_i64(&self) -> Option<i64> {
@@ -2537,6 +2556,24 @@ impl BigInt {
             (true, true) => (Minus, result),
         };
         BigInt::from_biguint(sign, mag)
+    }
+
+    /// Returns the truncated principal square root of `self` --
+    /// see [Roots::sqrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.sqrt).
+    pub fn sqrt(&self) -> Self {
+        Roots::sqrt(self)
+    }
+
+    /// Returns the truncated principal cube root of `self` --
+    /// see [Roots::cbrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.cbrt).
+    pub fn cbrt(&self) -> Self {
+        Roots::cbrt(self)
+    }
+
+    /// Returns the truncated principal `n`th root of `self` --
+    /// See [Roots::nth_root](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#tymethod.nth_root).
+    pub fn nth_root(&self, n: u32) -> Self {
+        Roots::nth_root(self, n)
     }
 }
 
