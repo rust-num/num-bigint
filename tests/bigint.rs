@@ -1106,6 +1106,7 @@ fn test_pow() {
             assert_eq!(two.pow(1 as $t), two);
             assert_eq!(two.pow(2 as $t), four);
             assert_eq!(two.pow(3 as $t), eight);
+            assert_eq!(two.pow(&(3 as $t)), eight);
             assert_eq!(minus_two.pow(0 as $t), one, "-2^0");
             assert_eq!(minus_two.pow(1 as $t), minus_two, "-2^1");
             assert_eq!(minus_two.pow(2 as $t), four, "-2^2");

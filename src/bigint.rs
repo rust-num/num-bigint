@@ -838,6 +838,15 @@ macro_rules! pow_impl {
                 BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
             }
         }
+
+        impl<'a, 'b> Pow<&'b $type> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn pow(self, rhs: &$type) -> BigInt {
+                BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
+            }
+        }
     }
 }
 
