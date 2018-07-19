@@ -1809,6 +1809,9 @@ impl BigUint {
     /// Panics if the modulus is zero.
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
         assert!(!modulus.is_zero(), "divide by zero!");
+        if modulus.is_one() { return BigUint::zero(); }
+        if exponent.is_zero() { return BigUint::one(); }
+        if self.is_zero() || self.is_one() { return self.clone(); }
 
         // For an odd modulus, we can use Montgomery multiplication in base 2^32.
         if modulus.is_odd() {
@@ -1816,19 +1819,16 @@ impl BigUint {
         }
 
         // Otherwise do basically the same as `num::pow`, but with a modulus.
-        let one = BigUint::one();
-        if exponent.is_zero() { return one; }
-
         let mut base = self % modulus;
         let mut exp = exponent.clone();
         while exp.is_even() {
             base = &base * &base % modulus;
             exp >>= 1;
         }
-        if exp == one { return base }
+        if exp.is_one() { return base }
 
         let mut acc = base.clone();
-        while exp > one {
+        while !exp.is_one() {
             exp >>= 1;
             base = &base * &base % modulus;
             if exp.is_odd() {
