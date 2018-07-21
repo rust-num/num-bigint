@@ -183,12 +183,12 @@ pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
         Greater => {
             let mut a = a.to_vec();
             sub2(&mut a, b);
-            (Plus, BigUint::new(a))
+            (Plus, BigUint::new_native(a))
         }
         Less => {
             let mut b = b.to_vec();
             sub2(&mut b, a);
-            (Minus, BigUint::new(b))
+            (Minus, BigUint::new_native(b))
         }
         _ => (NoSign, Zero::zero()),
     }
@@ -377,14 +377,14 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // in place of multiplications.
         //
         // x(t) = x2*t^2 + x1*t + x0
-        let x0 = BigInt::from_slice(Plus, &x[..x0_len]);
-        let x1 = BigInt::from_slice(Plus, &x[x0_len..x0_len + x1_len]);
-        let x2 = BigInt::from_slice(Plus, &x[x0_len + x1_len..]);
+        let x0 = BigInt::from_slice_native(Plus, &x[..x0_len]);
+        let x1 = BigInt::from_slice_native(Plus, &x[x0_len..x0_len + x1_len]);
+        let x2 = BigInt::from_slice_native(Plus, &x[x0_len + x1_len..]);
 
         // y(t) = y2*t^2 + y1*t + y0
-        let y0 = BigInt::from_slice(Plus, &y[..y0_len]);
-        let y1 = BigInt::from_slice(Plus, &y[y0_len..y0_len + y1_len]);
-        let y2 = BigInt::from_slice(Plus, &y[y0_len + y1_len..]);
+        let y0 = BigInt::from_slice_native(Plus, &y[..y0_len]);
+        let y1 = BigInt::from_slice_native(Plus, &y[y0_len..y0_len + y1_len]);
+        let y2 = BigInt::from_slice_native(Plus, &y[y0_len + y1_len..]);
 
         // Let w(t) = x(t) * y(t)
         //
@@ -633,7 +633,7 @@ pub fn biguint_shl(n: Cow<BigUint>, bits: usize) -> BigUint {
         }
     }
 
-    BigUint::new(data)
+    BigUint::new_native(data)
 }
 
 #[inline]
@@ -660,7 +660,7 @@ pub fn biguint_shr(n: Cow<BigUint>, bits: usize) -> BigUint {
         }
     }
 
-    BigUint::new(data)
+    BigUint::new_native(data)
 }
 
 pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {

@@ -138,7 +138,7 @@ fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
         })
         .collect();
 
-    BigUint::new(data)
+    BigUint::new_native(data)
 }
 
 // Convert from a power of two radix (bits == ilog2(radix)) where bits doesn't evenly divide
@@ -173,7 +173,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
         data.push(d as BigDigit);
     }
 
-    BigUint::new(data)
+    BigUint::new_native(data)
 }
 
 // Read little-endian radix digits
@@ -212,7 +212,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
         add2(&mut data, &[n]);
     }
 
-    BigUint::new(data)
+    BigUint::new_native(data)
 }
 
 impl Num for BigUint {
@@ -681,6 +681,19 @@ impl SubAssign<u32> for BigUint {
 impl Sub<BigUint> for u32 {
     type Output = BigUint;
 
+    #[cfg(not(feature = "i128"))]
+    #[inline]
+    fn sub(self, mut other: BigUint) -> BigUint {
+        while other.data.len() < 2 {
+            other.data.push(0);
+        }
+
+        let (hi, lo) = big_digit::from_doublebigdigit(self);
+        sub2rev(&[lo, hi], &mut other.data[..]);
+        other.normalized()
+    }
+
+    #[cfg(feature = "i128")]
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
         if other.data.len() == 0 {
@@ -832,6 +845,31 @@ impl MulAssign<u64> for BigUint {
     }
 }
 
+#[cfg(feature = "i128")]
+impl Mul<u128> for BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn mul(mut self, other: u128) -> BigUint {
+        self *= other;
+        self
+    }
+}
+#[cfg(feature = "i128")]
+impl MulAssign<u128> for BigUint {
+    #[inline]
+    fn mul_assign(&mut self, other: u128) {
+        if other == 0 {
+            self.data.clear();
+        } else if other <= BigDigit::max_value() as u128 {
+            *self *= other
+        } else {
+            let (hi, lo) = big_digit::from_doublebigdigit(other);
+            *self = mul3(&self.data[..], &[lo, hi])
+        }
+    }
+}
+
 #[cfg(has_i128)]
 impl Mul<u128> for BigUint {
     type Output = BigUint;
@@ -931,11 +969,55 @@ impl DivAssign<u64> for BigUint {
 impl Div<BigUint> for u64 {
     type Output = BigUint;
 
+    #[cfg(not(feature = "i128"))]
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
             0 => panic!(),
             1 => From::from(self / other.data[0] as u64),
+            2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
+            _ => Zero::zero(),
+        }
+    }
+
+    #[cfg(feature = "i128")]
+    #[inline]
+    fn div(self, other: BigUint) -> BigUint {
+        match other.data.len() {
+            0 => panic!(),
+            1 => From::from(self / other.data[0]),
+            _ => Zero::zero(),
+        }
+    }
+}
+
+#[cfg(feature = "i128")]
+impl Div<u128> for BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn div(self, other: u128) -> BigUint {
+        let (q, _) = self.div_rem(&From::from(other));
+        q
+    }
+}
+#[cfg(feature = "i128")]
+impl DivAssign<u128> for BigUint {
+    #[inline]
+    fn div_assign(&mut self, other: u128) {
+        *self = &*self / other;
+    }
+}
+
+#[cfg(feature = "i128")]
+impl Div<BigUint> for u128 {
+    type Output = BigUint;
+
+    #[inline]
+    fn div(self, other: BigUint) -> BigUint {
+        match other.data.len() {
+            0 => panic!(),
+            1 => From::from(self / other.data[0] as u128),
             2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             _ => Zero::zero(),
         }
@@ -1763,12 +1845,48 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
+#[cfg(not(feature = "i128"))]
+#[inline]
+fn ensure_big_digit(raw: Vec<u32>) -> Vec<BigDigit> {
+    raw
+}
+
+#[cfg(feature = "i128")]
+#[inline]
+fn ensure_big_digit(raw: Vec<u32>) -> Vec<BigDigit> {
+    ensure_big_digit_slice(&raw)
+}
+
+#[cfg(feature = "i128")]
+#[inline]
+fn ensure_big_digit_slice(raw: &[u32]) -> Vec<BigDigit> {
+    raw.chunks(2)
+        .map(|chunk| {
+            // raw could have odd length
+            if chunk.len() < 2 {
+                chunk[0] as BigDigit
+            } else {
+                // [0 1] [2 3] [4]
+                (BigDigit::from(chunk[0]) | BigDigit::from(chunk[1]) << 32)
+            }
+        })
+        .collect()
+}
+
 impl BigUint {
     /// Creates and initializes a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
+        Self::new_native(ensure_big_digit(digits))
+    }
+
+    /// Creates and initializes a `BigUint`.
+    ///
+    /// The digits are in little-endian base matching `BigDigit`.
+    #[inline]
+    pub fn new_native(digits: Vec<BigDigit>) -> BigUint {
         BigUint { data: digits }.normalized()
     }
 
@@ -1780,11 +1898,34 @@ impl BigUint {
         BigUint::new(slice.to_vec())
     }
 
+    /// Creates and initializes a `BigUint`.
+    ///
+    /// The digits are in little-endian base matching `BigDigit`
+    #[inline]
+    pub fn from_slice_native(slice: &[BigDigit]) -> BigUint {
+        BigUint::new_native(slice.to_vec())
+    }
+
     /// Assign a value to a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
+    #[cfg(not(feature = "i128"))]
     #[inline]
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
+        self.assign_from_slice_native(slice);
+    }
+    #[cfg(feature = "i128")]
+    #[inline]
+    pub fn assign_from_slice(&mut self, slice: &[u32]) {
+        let slice_digits = ensure_big_digit_slice(slice);
+        self.assign_from_slice_native(&slice_digits);
+    }
+
+    /// Assign a value to a `BigUint`.
+    ///
+    /// The digits are in little-endian with the base matching `BigDigit`.
+    #[inline]
+    pub fn assign_from_slice_native(&mut self, slice: &[BigDigit]) {
         self.data.resize(slice.len(), 0);
         self.data.clone_from_slice(slice);
         self.normalize();
@@ -2774,10 +2915,45 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
     }
 }
 
+#[cfg(not(feature = "i128"))]
 #[test]
 fn test_from_slice() {
+    fn check(slice: &[u32], data: &[BigDigit]) {
+        assert_eq!(BigUint::from_slice(slice).data, data);
+    }
+    check(&[1], &[1]);
+    check(&[0, 0, 0], &[]);
+    check(&[1, 2, 0, 0], &[1, 2]);
+    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
+    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
+    check(&[-1i32 as u32], &[-1i32 as BigDigit]);
+}
+
+#[cfg(feature = "i128")]
+#[test]
+fn test_from_slice() {
+    fn check(slice: &[u32], data: &[BigDigit]) {
+        assert_eq!(
+            BigUint::from_slice(slice).data,
+            data,
+            "from {:?}, to {:?}",
+            slice,
+            data
+        );
+    }
+    check(&[1], &[1]);
+    check(&[0, 0, 0], &[]);
+    check(&[1, 2], &[8_589_934_593]);
+    check(&[1, 2, 0, 0], &[8_589_934_593]);
+    check(&[0, 0, 1, 2], &[0, 8_589_934_593]);
+    check(&[0, 0, 1, 2, 0, 0], &[0, 8_589_934_593]);
+    check(&[-1i32 as u32], &[(-1i32 as u32) as BigDigit]);
+}
+
+#[test]
+fn test_from_slice_native() {
     fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        assert!(BigUint::from_slice(slice).data == data);
+        assert!(BigUint::from_slice_native(slice).data == data);
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);
@@ -2788,10 +2964,10 @@ fn test_from_slice() {
 }
 
 #[test]
-fn test_assign_from_slice() {
+fn test_assign_from_slice_native() {
     fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        let mut p = BigUint::from_slice(&[2627_u32, 0_u32, 9182_u32, 42_u32]);
-        p.assign_from_slice(slice);
+        let mut p = BigUint::from_slice_native(&[2627, 0, 9182, 42]);
+        p.assign_from_slice_native(slice);
         assert!(p.data == data);
     }
     check(&[1], &[1]);
