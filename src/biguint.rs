@@ -2015,8 +2015,7 @@ fn ensure_big_digit_slice(raw: &[u32]) -> Vec<BigDigit> {
             if chunk.len() < 2 {
                 chunk[0] as BigDigit
             } else {
-                // [0 1] [2 3] [4]
-                (BigDigit::from(chunk[0]) | BigDigit::from(chunk[1]) << 32)
+                BigDigit::from(chunk[0]) | (BigDigit::from(chunk[1]) << 32)
             }
         })
         .collect()

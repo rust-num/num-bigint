@@ -50,7 +50,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         if rem > 0 {
             data[digits] >>= BITS - rem;
         }
-        BigUint::new(data)
+        BigUint::new_native(data)
     }
 
     fn gen_bigint(&mut self, bit_size: usize) -> BigInt {
