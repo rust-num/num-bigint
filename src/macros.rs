@@ -12,7 +12,7 @@ macro_rules! forward_val_val_binop {
                 $imp::$method(self, &other)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_val_val_binop_commutative {
@@ -30,7 +30,7 @@ macro_rules! forward_val_val_binop_commutative {
                 }
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_ref_val_binop {
@@ -44,7 +44,7 @@ macro_rules! forward_ref_val_binop {
                 $imp::$method(self, &other)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_ref_val_binop_commutative {
@@ -58,7 +58,7 @@ macro_rules! forward_ref_val_binop_commutative {
                 $imp::$method(other, self)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_val_ref_binop {
@@ -72,7 +72,7 @@ macro_rules! forward_val_ref_binop {
                 $imp::$method(&self, other)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_ref_ref_binop {
@@ -86,7 +86,7 @@ macro_rules! forward_ref_ref_binop {
                 $imp::$method(self.clone(), other)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_ref_ref_binop_commutative {
@@ -104,7 +104,7 @@ macro_rules! forward_ref_ref_binop_commutative {
                 }
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_val_assign {
@@ -115,7 +115,7 @@ macro_rules! forward_val_assign {
                 self.$method(&other);
             }
         }
-    }
+    };
 }
 macro_rules! forward_val_assign_scalar {
     (impl $imp:ident for $res:ty, $scalar:ty, $method:ident) => {
@@ -125,11 +125,11 @@ macro_rules! forward_val_assign_scalar {
                 self.$method(&other);
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_scalar_val_val_binop_commutative {
-    (impl $imp:ident<$scalar:ty> for $res:ty, $method: ident) => {
+    (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl $imp<$res> for $scalar {
             type Output = $res;
 
@@ -138,11 +138,11 @@ macro_rules! forward_scalar_val_val_binop_commutative {
                 $imp::$method(other, self)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_scalar_val_ref_binop {
-    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+    (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl<'a> $imp<&'a $scalar> for $res {
             type Output = $res;
 
@@ -160,11 +160,11 @@ macro_rules! forward_scalar_val_ref_binop {
                 $imp::$method(*self, other)
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_scalar_ref_val_binop {
-    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+    (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl<'a> $imp<$scalar> for &'a $res {
             type Output = $res;
 
@@ -182,11 +182,11 @@ macro_rules! forward_scalar_ref_val_binop {
                 $imp::$method(self, other.clone())
             }
         }
-    }
+    };
 }
 
 macro_rules! forward_scalar_ref_ref_binop {
-    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+    (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl<'a, 'b> $imp<&'b $scalar> for &'a $res {
             type Output = $res;
 
@@ -204,7 +204,7 @@ macro_rules! forward_scalar_ref_ref_binop {
                 $imp::$method(*self, other.clone())
             }
         }
-    }
+    };
 }
 
 macro_rules! promote_scalars {
@@ -333,11 +333,11 @@ macro_rules! impl_sum_iter_type {
     ($res:ty) => {
         impl<T> Sum<T> for $res
         where
-            $res: Add<T, Output=$res>
+            $res: Add<T, Output = $res>,
         {
             fn sum<I>(iter: I) -> Self
             where
-                I: Iterator<Item = T>
+                I: Iterator<Item = T>,
             {
                 iter.fold(Zero::zero(), <$res>::add)
             }
@@ -349,11 +349,11 @@ macro_rules! impl_product_iter_type {
     ($res:ty) => {
         impl<T> Product<T> for $res
         where
-            $res: Mul<T, Output=$res>
+            $res: Mul<T, Output = $res>,
         {
             fn product<I>(iter: I) -> Self
             where
-                I: Iterator<Item = T>
+                I: Iterator<Item = T>,
             {
                 iter.fold(One::one(), <$res>::mul)
             }

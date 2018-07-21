@@ -5,22 +5,22 @@ extern crate num_traits;
 extern crate rand;
 
 use num_bigint::BigUint;
-use num_bigint::{BigInt, ToBigInt};
 use num_bigint::Sign::{Minus, NoSign, Plus};
+use num_bigint::{BigInt, ToBigInt};
 
-use std::cmp::Ordering::{Less, Equal, Greater};
-use std::{f32, f64};
-use std::{i8, i16, i32, i64, isize};
+use std::cmp::Ordering::{Equal, Greater, Less};
+use std::collections::hash_map::RandomState;
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::iter::repeat;
-use std::{u8, u16, u32, u64, usize};
+use std::ops::Neg;
+use std::{f32, f64};
 #[cfg(has_i128)]
 use std::{i128, u128};
-use std::ops::Neg;
-use std::hash::{BuildHasher, Hasher, Hash};
-use std::collections::hash_map::RandomState;
+use std::{i16, i32, i64, i8, isize};
+use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
-use num_traits::{Zero, One, Signed, ToPrimitive, FromPrimitive, Num, Float, Pow};
+use num_traits::{Float, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
 use consts::*;
@@ -31,8 +31,10 @@ mod macros;
 #[test]
 fn test_from_bytes_be() {
     fn check(s: &str, result: &str) {
-        assert_eq!(BigInt::from_bytes_be(Plus, s.as_bytes()),
-                   BigInt::parse_bytes(result.as_bytes(), 10).unwrap());
+        assert_eq!(
+            BigInt::from_bytes_be(Plus, s.as_bytes()),
+            BigInt::parse_bytes(result.as_bytes(), 10).unwrap()
+        );
     }
     check("A", "65");
     check("AA", "16705");
@@ -64,8 +66,10 @@ fn test_to_bytes_be() {
 #[test]
 fn test_from_bytes_le() {
     fn check(s: &str, result: &str) {
-        assert_eq!(BigInt::from_bytes_le(Plus, s.as_bytes()),
-                   BigInt::parse_bytes(result.as_bytes(), 10).unwrap());
+        assert_eq!(
+            BigInt::from_bytes_le(Plus, s.as_bytes()),
+            BigInt::parse_bytes(result.as_bytes(), 10).unwrap()
+        );
     }
     check("A", "65");
     check("AA", "16705");
@@ -97,8 +101,12 @@ fn test_to_bytes_le() {
 #[test]
 fn test_to_signed_bytes_le() {
     fn check(s: &str, result: Vec<u8>) {
-        assert_eq!(BigInt::parse_bytes(s.as_bytes(), 10).unwrap().to_signed_bytes_le(),
-                   result);
+        assert_eq!(
+            BigInt::parse_bytes(s.as_bytes(), 10)
+                .unwrap()
+                .to_signed_bytes_le(),
+            result
+        );
     }
 
     check("0", vec![0]);
@@ -113,8 +121,10 @@ fn test_to_signed_bytes_le() {
 #[test]
 fn test_from_signed_bytes_le() {
     fn check(s: &[u8], result: &str) {
-        assert_eq!(BigInt::from_signed_bytes_le(s),
-                   BigInt::parse_bytes(result.as_bytes(), 10).unwrap());
+        assert_eq!(
+            BigInt::from_signed_bytes_le(s),
+            BigInt::parse_bytes(result.as_bytes(), 10).unwrap()
+        );
     }
 
     check(&[], "0");
@@ -132,8 +142,12 @@ fn test_from_signed_bytes_le() {
 #[test]
 fn test_to_signed_bytes_be() {
     fn check(s: &str, result: Vec<u8>) {
-        assert_eq!(BigInt::parse_bytes(s.as_bytes(), 10).unwrap().to_signed_bytes_be(),
-                   result);
+        assert_eq!(
+            BigInt::parse_bytes(s.as_bytes(), 10)
+                .unwrap()
+                .to_signed_bytes_be(),
+            result
+        );
     }
 
     check("0", vec![0]);
@@ -148,8 +162,10 @@ fn test_to_signed_bytes_be() {
 #[test]
 fn test_from_signed_bytes_be() {
     fn check(s: &[u8], result: &str) {
-        assert_eq!(BigInt::from_signed_bytes_be(s),
-                   BigInt::parse_bytes(result.as_bytes(), 10).unwrap());
+        assert_eq!(
+            BigInt::from_signed_bytes_be(s),
+            BigInt::parse_bytes(result.as_bytes(), 10).unwrap()
+        );
     }
 
     check(&[], "0");
@@ -361,8 +377,10 @@ fn test_convert_f32() {
     check(&BigInt::from(u16::MAX), 2.0.powi(16) - 1.0);
     check(&BigInt::from(1u64 << 32), 2.0.powi(32));
     check(&BigInt::from_slice(Plus, &[0, 0, 1]), 2.0.powi(64));
-    check(&((BigInt::one() << 100) + (BigInt::one() << 123)),
-          2.0.powi(100) + 2.0.powi(123));
+    check(
+        &((BigInt::one() << 100) + (BigInt::one() << 123)),
+        2.0.powi(100) + 2.0.powi(123),
+    );
     check(&(BigInt::one() << 127), 2.0.powi(127));
     check(&(BigInt::from((1u64 << 24) - 1) << (128 - 24)), f32::MAX);
 
@@ -394,14 +412,18 @@ fn test_convert_f32() {
     }
 
     // rounding
-    assert_eq!(BigInt::from_f32(-f32::consts::PI),
-               Some(BigInt::from(-3i32)));
+    assert_eq!(
+        BigInt::from_f32(-f32::consts::PI),
+        Some(BigInt::from(-3i32))
+    );
     assert_eq!(BigInt::from_f32(-f32::consts::E), Some(BigInt::from(-2i32)));
     assert_eq!(BigInt::from_f32(-0.99999), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f32(-0.5), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f32(-0.0), Some(BigInt::zero()));
-    assert_eq!(BigInt::from_f32(f32::MIN_POSITIVE / 2.0),
-               Some(BigInt::zero()));
+    assert_eq!(
+        BigInt::from_f32(f32::MIN_POSITIVE / 2.0),
+        Some(BigInt::zero())
+    );
     assert_eq!(BigInt::from_f32(f32::MIN_POSITIVE), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f32(0.5), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f32(0.99999), Some(BigInt::zero()));
@@ -443,8 +465,10 @@ fn test_convert_f64() {
     check(&BigInt::from(u32::MAX), 2.0.powi(32) - 1.0);
     check(&BigInt::from(1u64 << 32), 2.0.powi(32));
     check(&BigInt::from_slice(Plus, &[0, 0, 1]), 2.0.powi(64));
-    check(&((BigInt::one() << 100) + (BigInt::one() << 152)),
-          2.0.powi(100) + 2.0.powi(152));
+    check(
+        &((BigInt::one() << 100) + (BigInt::one() << 152)),
+        2.0.powi(100) + 2.0.powi(152),
+    );
     check(&(BigInt::one() << 1023), 2.0.powi(1023));
     check(&(BigInt::from((1u64 << 53) - 1) << (1024 - 53)), f64::MAX);
 
@@ -468,14 +492,18 @@ fn test_convert_f64() {
     }
 
     // rounding
-    assert_eq!(BigInt::from_f64(-f64::consts::PI),
-               Some(BigInt::from(-3i32)));
+    assert_eq!(
+        BigInt::from_f64(-f64::consts::PI),
+        Some(BigInt::from(-3i32))
+    );
     assert_eq!(BigInt::from_f64(-f64::consts::E), Some(BigInt::from(-2i32)));
     assert_eq!(BigInt::from_f64(-0.99999), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f64(-0.5), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f64(-0.0), Some(BigInt::zero()));
-    assert_eq!(BigInt::from_f64(f64::MIN_POSITIVE / 2.0),
-               Some(BigInt::zero()));
+    assert_eq!(
+        BigInt::from_f64(f64::MIN_POSITIVE / 2.0),
+        Some(BigInt::zero())
+    );
     assert_eq!(BigInt::from_f64(f64::MIN_POSITIVE), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f64(0.5), Some(BigInt::zero()));
     assert_eq!(BigInt::from_f64(0.99999), Some(BigInt::zero()));
@@ -533,7 +561,10 @@ fn test_convert_from_uint() {
     check!(u32, BigInt::from_slice(Plus, &[u32::MAX]));
     check!(u64, BigInt::from_slice(Plus, &[u32::MAX, u32::MAX]));
     #[cfg(has_i128)]
-    check!(u128, BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, u32::MAX]));
+    check!(
+        u128,
+        BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, u32::MAX])
+    );
     check!(usize, BigInt::from(usize::MAX as u64));
 }
 
@@ -548,36 +579,50 @@ fn test_convert_from_int() {
             assert_eq!(BigInt::from($ty::one()), BigInt::one());
             assert_eq!(BigInt::from($ty::MAX - $ty::one()), $max - BigInt::one());
             assert_eq!(BigInt::from($ty::MAX), $max);
-        }
+        };
     }
 
-    check!(i8,
-           BigInt::from_slice(Minus, &[1 << 7]),
-           BigInt::from_slice(Plus, &[i8::MAX as u32]));
-    check!(i16,
-           BigInt::from_slice(Minus, &[1 << 15]),
-           BigInt::from_slice(Plus, &[i16::MAX as u32]));
-    check!(i32,
-           BigInt::from_slice(Minus, &[1 << 31]),
-           BigInt::from_slice(Plus, &[i32::MAX as u32]));
-    check!(i64,
-           BigInt::from_slice(Minus, &[0, 1 << 31]),
-           BigInt::from_slice(Plus, &[u32::MAX, i32::MAX as u32]));
+    check!(
+        i8,
+        BigInt::from_slice(Minus, &[1 << 7]),
+        BigInt::from_slice(Plus, &[i8::MAX as u32])
+    );
+    check!(
+        i16,
+        BigInt::from_slice(Minus, &[1 << 15]),
+        BigInt::from_slice(Plus, &[i16::MAX as u32])
+    );
+    check!(
+        i32,
+        BigInt::from_slice(Minus, &[1 << 31]),
+        BigInt::from_slice(Plus, &[i32::MAX as u32])
+    );
+    check!(
+        i64,
+        BigInt::from_slice(Minus, &[0, 1 << 31]),
+        BigInt::from_slice(Plus, &[u32::MAX, i32::MAX as u32])
+    );
     #[cfg(has_i128)]
-    check!(i128,
-           BigInt::from_slice(Minus, &[0, 0, 0, 1 << 31]),
-           BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, i32::MAX as u32]));
-    check!(isize,
-           BigInt::from(isize::MIN as i64),
-           BigInt::from(isize::MAX as i64));
+    check!(
+        i128,
+        BigInt::from_slice(Minus, &[0, 0, 0, 1 << 31]),
+        BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, i32::MAX as u32])
+    );
+    check!(
+        isize,
+        BigInt::from(isize::MIN as i64),
+        BigInt::from(isize::MAX as i64)
+    );
 }
 
 #[test]
 fn test_convert_from_biguint() {
     assert_eq!(BigInt::from(BigUint::zero()), BigInt::zero());
     assert_eq!(BigInt::from(BigUint::one()), BigInt::one());
-    assert_eq!(BigInt::from(BigUint::from_slice(&[1, 2, 3])),
-               BigInt::from_slice(Plus, &[1, 2, 3]));
+    assert_eq!(
+        BigInt::from(BigUint::from_slice(&[1, 2, 3])),
+        BigInt::from_slice(Plus, &[1, 2, 3])
+    );
 }
 
 #[test]
@@ -728,7 +773,6 @@ fn test_div_mod_floor() {
         }
     }
 }
-
 
 #[test]
 fn test_div_rem() {
@@ -950,7 +994,9 @@ fn test_from_str_radix() {
 
     // issue 10522, this hit an edge case that caused it to
     // attempt to allocate a vector of size (-1u) == huge.
-    let x: BigInt = format!("1{}", repeat("0").take(36).collect::<String>()).parse().unwrap();
+    let x: BigInt = format!("1{}", repeat("0").take(36).collect::<String>())
+        .parse()
+        .unwrap();
     let _y = x.to_string();
 }
 
@@ -980,8 +1026,10 @@ fn test_binary() {
     let hello = BigInt::parse_bytes("-224055342307539".as_bytes(), 10).unwrap();
 
     assert_eq!(format!("{:b}", a), "1010");
-    assert_eq!(format!("{:b}", hello),
-               "-110010111100011011110011000101101001100011010011");
+    assert_eq!(
+        format!("{:b}", hello),
+        "-110010111100011011110011000101101001100011010011"
+    );
     assert_eq!(format!("{:♥>+#8b}", a), "♥+0b1010");
 }
 
@@ -1024,8 +1072,8 @@ fn test_negative_shr() {
 #[test]
 #[cfg(feature = "rand")]
 fn test_random_shr() {
-    use rand::Rng;
     use rand::distributions::Standard;
+    use rand::Rng;
     let mut rng = rand::thread_rng();
 
     for p in rng.sample_iter::<i64, _>(&Standard).take(1000) {
@@ -1066,8 +1114,11 @@ fn test_iter_product() {
         FromPrimitive::from_i32(-1004).unwrap(),
         FromPrimitive::from_i32(1005).unwrap(),
     ];
-    let result = data.get(0).unwrap() * data.get(1).unwrap() * data.get(2).unwrap()
-        * data.get(3).unwrap() * data.get(4).unwrap();
+    let result = data.get(0).unwrap()
+        * data.get(1).unwrap()
+        * data.get(2).unwrap()
+        * data.get(3).unwrap()
+        * data.get(4).unwrap();
 
     assert_eq!(result, data.iter().product());
     assert_eq!(result, data.into_iter().product());
@@ -1085,8 +1136,10 @@ fn test_iter_sum_generic() {
 #[test]
 fn test_iter_product_generic() {
     let data = vec![1001, -1002, 1003, -1004, 1005];
-    let result = data[0].to_bigint().unwrap() * data[1].to_bigint().unwrap()
-        * data[2].to_bigint().unwrap() * data[3].to_bigint().unwrap()
+    let result = data[0].to_bigint().unwrap()
+        * data[1].to_bigint().unwrap()
+        * data[2].to_bigint().unwrap()
+        * data[3].to_bigint().unwrap()
         * data[4].to_bigint().unwrap();
 
     assert_eq!(result, data.iter().product());
@@ -1111,7 +1164,7 @@ fn test_pow() {
             assert_eq!(minus_two.pow(1 as $t), minus_two, "-2^1");
             assert_eq!(minus_two.pow(2 as $t), four, "-2^2");
             assert_eq!(minus_two.pow(3 as $t), -&eight, "-2^3");
-        }
+        };
     }
     check!(u8);
     check!(u16);

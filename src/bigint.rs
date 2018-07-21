@@ -1,24 +1,27 @@
-use std::default::Default;
-use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Shl, Shr, Sub,
-               AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, DivAssign,
-               MulAssign, RemAssign, ShlAssign, ShrAssign, SubAssign};
-use std::str::{self, FromStr};
-use std::fmt;
-use std::mem;
-use std::cmp::Ordering::{self, Less, Greater, Equal};
-use std::{i64, u64};
-#[cfg(has_i128)]
-use std::{i128, u128};
 #[allow(deprecated, unused_imports)]
 use std::ascii::AsciiExt;
+use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::default::Default;
+use std::fmt;
 use std::iter::{Product, Sum};
+use std::mem;
+use std::ops::{
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
+    Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+};
+use std::str::{self, FromStr};
+#[cfg(has_i128)]
+use std::{i128, u128};
+use std::{i64, u64};
 
 #[cfg(feature = "serde")]
 use serde;
 
 use integer::{Integer, Roots};
-use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
-             CheckedMul, CheckedDiv, Signed, Zero, One, Pow};
+use traits::{
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
+    ToPrimitive, Zero,
+};
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -28,8 +31,8 @@ use biguint;
 use biguint::to_str_radix_reversed;
 use biguint::{BigUint, IntDigits};
 
-use UsizePromotion;
 use IsizePromotion;
+use UsizePromotion;
 
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
@@ -69,7 +72,8 @@ impl Mul<Sign> for Sign {
 #[cfg(feature = "serde")]
 impl serde::Serialize for Sign {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: serde::Serializer
+    where
+        S: serde::Serializer,
     {
         // Note: do not change the serialization format, or it may break
         // forward and backward compatibility of serialized data!
@@ -84,7 +88,8 @@ impl serde::Serialize for Sign {
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Sign {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: serde::Deserializer<'de>
+    where
+        D: serde::Deserializer<'de>,
     {
         use serde::de::Error;
         use serde::de::Unexpected;
@@ -235,11 +240,7 @@ impl Not for BigInt {
             }
             Minus => {
                 self.data -= 1u32;
-                self.sign = if self.data.is_zero() {
-                    NoSign
-                } else {
-                    Plus
-                };
+                self.sign = if self.data.is_zero() { NoSign } else { Plus };
             }
         }
         self
@@ -302,7 +303,7 @@ fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len()  {
+    if a.len() > b.len() {
         for ai in a[b.len()..].iter_mut() {
             let twos_a = negate_carry(*ai, &mut carry_a);
             *ai = negate_carry(twos_a, &mut carry_and);
@@ -709,10 +710,9 @@ impl ShlAssign<usize> for BigInt {
 // Negative values need a rounding adjustment if there are any ones in the
 // bits that are getting shifted out.
 fn shr_round_down(i: &BigInt, rhs: usize) -> bool {
-    i.is_negative() &&
-        biguint::trailing_zeros(&i.data)
-            .map(|n| n < rhs)
-            .unwrap_or(false)
+    i.is_negative() && biguint::trailing_zeros(&i.data)
+        .map(|n| n < rhs)
+        .unwrap_or(false)
 }
 
 impl Shr<usize> for BigInt {
@@ -811,7 +811,6 @@ impl Signed for BigInt {
     }
 }
 
-
 /// Help function for pow
 ///
 /// Computes the effect of the exponent on the sign.
@@ -847,7 +846,7 @@ macro_rules! pow_impl {
                 BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
             }
         }
-    }
+    };
 }
 
 pow_impl!(u8);
@@ -857,7 +856,6 @@ pow_impl!(u64);
 pow_impl!(usize);
 #[cfg(has_i128)]
 pow_impl!(u128);
-
 
 // A convenience method for getting the absolute value of an i32 in a u32.
 #[inline]
@@ -888,15 +886,13 @@ macro_rules! bigint_add {
             (_, NoSign) => $a_owned,
             (NoSign, _) => $b_owned,
             // same sign => keep the sign with the sum of magnitudes
-            (Plus, Plus) | (Minus, Minus) =>
-                BigInt::from_biguint($a.sign, $a_data + $b_data),
+            (Plus, Plus) | (Minus, Minus) => BigInt::from_biguint($a.sign, $a_data + $b_data),
             // opposite signs => keep the sign of the larger with the difference of magnitudes
-            (Plus, Minus) | (Minus, Plus) =>
-                match $a.data.cmp(&$b.data) {
-                    Less => BigInt::from_biguint($b.sign, $b_data - $a_data),
-                    Greater => BigInt::from_biguint($a.sign, $a_data - $b_data),
-                    Equal => Zero::zero(),
-                },
+            (Plus, Minus) | (Minus, Plus) => match $a.data.cmp(&$b.data) {
+                Less => BigInt::from_biguint($b.sign, $b_data - $a_data),
+                Greater => BigInt::from_biguint($a.sign, $a_data - $b_data),
+                Equal => Zero::zero(),
+            },
         }
     };
 }
@@ -906,12 +902,14 @@ impl<'a, 'b> Add<&'b BigInt> for &'a BigInt {
 
     #[inline]
     fn add(self, other: &BigInt) -> BigInt {
-        bigint_add!(self,
-                    self.clone(),
-                    &self.data,
-                    other,
-                    other.clone(),
-                    &other.data)
+        bigint_add!(
+            self,
+            self.clone(),
+            &self.data,
+            other,
+            other.clone(),
+            &other.data
+        )
     }
 }
 
@@ -964,12 +962,11 @@ impl Add<BigDigit> for BigInt {
         match self.sign {
             NoSign => From::from(other),
             Plus => BigInt::from_biguint(Plus, self.data + other),
-            Minus =>
-                match self.data.cmp(&From::from(other)) {
-                    Equal => Zero::zero(),
-                    Less => BigInt::from_biguint(Plus, other - self.data),
-                    Greater => BigInt::from_biguint(Minus, self.data - other),
-                }
+            Minus => match self.data.cmp(&From::from(other)) {
+                Equal => Zero::zero(),
+                Less => BigInt::from_biguint(Plus, other - self.data),
+                Greater => BigInt::from_biguint(Minus, self.data - other),
+            },
         }
     }
 }
@@ -989,12 +986,11 @@ impl Add<DoubleBigDigit> for BigInt {
         match self.sign {
             NoSign => From::from(other),
             Plus => BigInt::from_biguint(Plus, self.data + other),
-            Minus =>
-                match self.data.cmp(&From::from(other)) {
-                    Equal => Zero::zero(),
-                    Less => BigInt::from_biguint(Plus, other - self.data),
-                    Greater => BigInt::from_biguint(Minus, self.data - other),
-                }
+            Minus => match self.data.cmp(&From::from(other)) {
+                Equal => Zero::zero(),
+                Less => BigInt::from_biguint(Plus, other - self.data),
+                Greater => BigInt::from_biguint(Minus, self.data - other),
+            },
         }
     }
 }
@@ -1082,12 +1078,14 @@ impl<'a, 'b> Sub<&'b BigInt> for &'a BigInt {
 
     #[inline]
     fn sub(self, other: &BigInt) -> BigInt {
-        bigint_sub!(self,
-                    self.clone(),
-                    &self.data,
-                    other,
-                    other.clone(),
-                    &other.data)
+        bigint_sub!(
+            self,
+            self.clone(),
+            &self.data,
+            other,
+            other.clone(),
+            &other.data
+        )
     }
 }
 
@@ -1140,12 +1138,11 @@ impl Sub<BigDigit> for BigInt {
         match self.sign {
             NoSign => BigInt::from_biguint(Minus, From::from(other)),
             Minus => BigInt::from_biguint(Minus, self.data + other),
-            Plus =>
-                match self.data.cmp(&From::from(other)) {
-                    Equal => Zero::zero(),
-                    Greater => BigInt::from_biguint(Plus, self.data - other),
-                    Less => BigInt::from_biguint(Minus, other - self.data),
-                }
+            Plus => match self.data.cmp(&From::from(other)) {
+                Equal => Zero::zero(),
+                Greater => BigInt::from_biguint(Plus, self.data - other),
+                Less => BigInt::from_biguint(Minus, other - self.data),
+            },
         }
     }
 }
@@ -1174,12 +1171,11 @@ impl Sub<DoubleBigDigit> for BigInt {
         match self.sign {
             NoSign => BigInt::from_biguint(Minus, From::from(other)),
             Minus => BigInt::from_biguint(Minus, self.data + other),
-            Plus =>
-                match self.data.cmp(&From::from(other)) {
-                    Equal => Zero::zero(),
-                    Greater => BigInt::from_biguint(Plus, self.data - other),
-                    Less => BigInt::from_biguint(Minus, other - self.data),
-                }
+            Plus => match self.data.cmp(&From::from(other)) {
+                Equal => Zero::zero(),
+                Greater => BigInt::from_biguint(Plus, self.data - other),
+                Less => BigInt::from_biguint(Minus, other - self.data),
+            },
         }
     }
 }
@@ -1852,8 +1848,11 @@ impl Integer for BigInt {
 
 impl Roots for BigInt {
     fn nth_root(&self, n: u32) -> Self {
-        assert!(!(self.is_negative() && n.is_even()),
-                "root of degree {} is imaginary", n);
+        assert!(
+            !(self.is_negative() && n.is_even()),
+            "root of degree {} is imaginary",
+            n
+        );
 
         BigInt::from_biguint(self.sign, self.data.nth_root(n))
     }
@@ -1875,18 +1874,16 @@ impl ToPrimitive for BigInt {
         match self.sign {
             Plus => self.data.to_i64(),
             NoSign => Some(0),
-            Minus => {
-                self.data.to_u64().and_then(|n| {
-                    let m: u64 = 1 << 63;
-                    if n < m {
-                        Some(-(n as i64))
-                    } else if n == m {
-                        Some(i64::MIN)
-                    } else {
-                        None
-                    }
-                })
-            }
+            Minus => self.data.to_u64().and_then(|n| {
+                let m: u64 = 1 << 63;
+                if n < m {
+                    Some(-(n as i64))
+                } else if n == m {
+                    Some(i64::MIN)
+                } else {
+                    None
+                }
+            }),
         }
     }
 
@@ -1896,18 +1893,16 @@ impl ToPrimitive for BigInt {
         match self.sign {
             Plus => self.data.to_i128(),
             NoSign => Some(0),
-            Minus => {
-                self.data.to_u128().and_then(|n| {
-                    let m: u128 = 1 << 127;
-                    if n < m {
-                        Some(-(n as i128))
-                    } else if n == m {
-                        Some(i128::MIN)
-                    } else {
-                        None
-                    }
-                })
-            }
+            Minus => self.data.to_u128().and_then(|n| {
+                let m: u128 = 1 << 127;
+                if n < m {
+                    Some(-(n as i128))
+                } else if n == m {
+                    Some(i128::MIN)
+                } else {
+                    None
+                }
+            }),
         }
     }
 
@@ -1932,24 +1927,16 @@ impl ToPrimitive for BigInt {
 
     #[inline]
     fn to_f32(&self) -> Option<f32> {
-        self.data.to_f32().map(|n| {
-            if self.sign == Minus {
-                -n
-            } else {
-                n
-            }
-        })
+        self.data
+            .to_f32()
+            .map(|n| if self.sign == Minus { -n } else { n })
     }
 
     #[inline]
     fn to_f64(&self) -> Option<f64> {
-        self.data.to_f64().map(|n| {
-            if self.sign == Minus {
-                -n
-            } else {
-                n
-            }
-        })
+        self.data
+            .to_f64()
+            .map(|n| if self.sign == Minus { -n } else { n })
     }
 }
 
@@ -2025,7 +2012,7 @@ macro_rules! impl_bigint_from_int {
                 BigInt::from(n as i64)
             }
         }
-    }
+    };
 }
 
 impl_bigint_from_int!(i8);
@@ -2070,7 +2057,7 @@ macro_rules! impl_bigint_from_uint {
                 BigInt::from(n as u64)
             }
         }
-    }
+    };
 }
 
 impl_bigint_from_uint!(u8);
@@ -2121,7 +2108,8 @@ impl IntDigits for BigInt {
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigInt {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: serde::Serializer
+    where
+        S: serde::Serializer,
     {
         // Note: do not change the serialization format, or it may break
         // forward and backward compatibility of serialized data!
@@ -2132,7 +2120,8 @@ impl serde::Serialize for BigInt {
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for BigInt {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: serde::Deserializer<'de>
+    where
+        D: serde::Deserializer<'de>,
     {
         let (sign, data) = serde::Deserialize::deserialize(deserializer)?;
         Ok(BigInt::from_biguint(sign, data))
@@ -2170,9 +2159,9 @@ impl biguint::ToBigUint for BigInt {
     #[inline]
     fn to_biguint(&self) -> Option<BigUint> {
         match self.sign() {
-            Plus    => Some(self.data.clone()),
-            NoSign  => Some(Zero::zero()),
-            Minus   => None,
+            Plus => Some(self.data.clone()),
+            NoSign => Some(Zero::zero()),
+            Minus => None,
         }
     }
 }
@@ -2185,7 +2174,7 @@ macro_rules! impl_to_bigint {
                 $from_ty(*self)
             }
         }
-    }
+    };
 }
 
 impl_to_bigint!(isize, FromPrimitive::from_isize);
@@ -2341,7 +2330,9 @@ impl BigInt {
     /// ```
     #[inline]
     pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigInt> {
-        str::from_utf8(buf).ok().and_then(|s| BigInt::from_str_radix(s, radix).ok())
+        str::from_utf8(buf)
+            .ok()
+            .and_then(|s| BigInt::from_str_radix(s, radix).ok())
     }
 
     /// Creates and initializes a `BigInt`. Each u8 of the input slice is
@@ -2452,7 +2443,8 @@ impl BigInt {
     pub fn to_signed_bytes_le(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_le();
         let last_byte = bytes.last().map(|v| *v).unwrap_or(0);
-        if last_byte > 0x7f && !(last_byte == 0x80 && bytes.iter().rev().skip(1).all(Zero::is_zero)) {
+        if last_byte > 0x7f && !(last_byte == 0x80 && bytes.iter().rev().skip(1).all(Zero::is_zero))
+        {
             // msb used by magnitude, extend by 1 byte
             bytes.push(0);
         }
@@ -2588,7 +2580,10 @@ impl BigInt {
     ///
     /// Panics if the exponent is negative or the modulus is zero.
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
-        assert!(!exponent.is_negative(), "negative exponentiation is not supported!");
+        assert!(
+            !exponent.is_negative(),
+            "negative exponentiation is not supported!"
+        );
         assert!(!modulus.is_zero(), "divide by zero!");
 
         let result = self.data.modpow(&exponent.data, &modulus.data);
@@ -2646,7 +2641,8 @@ fn twos_complement_be(digits: &mut [u8]) {
 /// starting from the least significant byte.
 #[inline]
 fn twos_complement<'a, I>(digits: I)
-    where I: IntoIterator<Item = &'a mut u8>
+where
+    I: IntoIterator<Item = &'a mut u8>,
 {
     let mut carry = true;
     for d in digits {
@@ -2657,7 +2653,6 @@ fn twos_complement<'a, I>(digits: I)
         }
     }
 }
-
 
 #[test]
 fn test_from_biguint() {

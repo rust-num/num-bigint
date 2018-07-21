@@ -3,11 +3,7 @@
 pub const N1: u32 = -1i32 as u32;
 pub const N2: u32 = -2i32 as u32;
 
-pub const SUM_TRIPLES: &'static [(
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-)] = &[
+pub const SUM_TRIPLES: &'static [(&'static [u32], &'static [u32], &'static [u32])] = &[
     (&[], &[], &[]),
     (&[], &[1], &[1]),
     (&[1], &[1], &[2]),
@@ -20,11 +16,7 @@ pub const SUM_TRIPLES: &'static [(
 ];
 
 pub const M: u32 = ::std::u32::MAX;
-pub const MUL_TRIPLES: &'static [(
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-)] = &[
+pub const MUL_TRIPLES: &'static [(&'static [u32], &'static [u32], &'static [u32])] = &[
     (&[], &[], &[]),
     (&[], &[1], &[]),
     (&[2], &[], &[]),

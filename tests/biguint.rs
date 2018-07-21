@@ -2,24 +2,26 @@ extern crate num_bigint;
 extern crate num_integer;
 extern crate num_traits;
 
-use num_integer::Integer;
-use num_bigint::{BigUint, ToBigUint};
-use num_bigint::{BigInt, ToBigInt};
 use num_bigint::Sign::Plus;
+use num_bigint::{BigInt, ToBigInt};
+use num_bigint::{BigUint, ToBigUint};
+use num_integer::Integer;
 
-use std::cmp::Ordering::{Less, Equal, Greater};
-use std::{f32, f64};
+use std::cmp::Ordering::{Equal, Greater, Less};
+use std::collections::hash_map::RandomState;
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::i64;
 use std::iter::repeat;
 use std::str::FromStr;
-use std::{u8, u16, u32, u64, usize};
+use std::{f32, f64};
 #[cfg(has_i128)]
 use std::{i128, u128};
-use std::hash::{BuildHasher, Hasher, Hash};
-use std::collections::hash_map::RandomState;
+use std::{u16, u32, u64, u8, usize};
 
-use num_traits::{Num, Zero, One, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv, ToPrimitive,
-                 FromPrimitive, Float, Pow};
+use num_traits::{
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
+    ToPrimitive, Zero,
+};
 
 mod consts;
 use consts::*;
@@ -30,8 +32,10 @@ mod macros;
 #[test]
 fn test_from_bytes_be() {
     fn check(s: &str, result: &str) {
-        assert_eq!(BigUint::from_bytes_be(s.as_bytes()),
-                   BigUint::parse_bytes(result.as_bytes(), 10).unwrap());
+        assert_eq!(
+            BigUint::from_bytes_be(s.as_bytes()),
+            BigUint::parse_bytes(result.as_bytes(), 10).unwrap()
+        );
     }
     check("A", "65");
     check("AA", "16705");
@@ -61,8 +65,10 @@ fn test_to_bytes_be() {
 #[test]
 fn test_from_bytes_le() {
     fn check(s: &str, result: &str) {
-        assert_eq!(BigUint::from_bytes_le(s.as_bytes()),
-                   BigUint::parse_bytes(result.as_bytes(), 10).unwrap());
+        assert_eq!(
+            BigUint::from_bytes_le(s.as_bytes()),
+            BigUint::parse_bytes(result.as_bytes(), 10).unwrap()
+        );
     }
     check("A", "65");
     check("AA", "16705");
@@ -234,115 +240,137 @@ fn test_shl() {
     check("0", 3, "0");
     check("1", 3, "8");
 
-    check("1\
-           0000\
-           0000\
-           0000\
-           0001\
-           0000\
-           0000\
-           0000\
-           0001",
-          3,
-          "8\
-           0000\
-           0000\
-           0000\
-           0008\
-           0000\
-           0000\
-           0000\
-           0008");
-    check("1\
-           0000\
-           0001\
-           0000\
-           0001",
-          2,
-          "4\
-           0000\
-           0004\
-           0000\
-           0004");
-    check("1\
-           0001\
-           0001",
-          1,
-          "2\
-           0002\
-           0002");
+    check(
+        "1\
+         0000\
+         0000\
+         0000\
+         0001\
+         0000\
+         0000\
+         0000\
+         0001",
+        3,
+        "8\
+         0000\
+         0000\
+         0000\
+         0008\
+         0000\
+         0000\
+         0000\
+         0008",
+    );
+    check(
+        "1\
+         0000\
+         0001\
+         0000\
+         0001",
+        2,
+        "4\
+         0000\
+         0004\
+         0000\
+         0004",
+    );
+    check(
+        "1\
+         0001\
+         0001",
+        1,
+        "2\
+         0002\
+         0002",
+    );
 
-    check("\
-          4000\
-          0000\
-          0000\
-          0000",
-          3,
-          "2\
-          0000\
-          0000\
-          0000\
-          0000");
-    check("4000\
-          0000",
-          2,
-          "1\
-          0000\
-          0000");
-    check("4000",
-          2,
-          "1\
-          0000");
+    check(
+        "\
+         4000\
+         0000\
+         0000\
+         0000",
+        3,
+        "2\
+         0000\
+         0000\
+         0000\
+         0000",
+    );
+    check(
+        "4000\
+         0000",
+        2,
+        "1\
+         0000\
+         0000",
+    );
+    check(
+        "4000",
+        2,
+        "1\
+         0000",
+    );
 
-    check("4000\
-          0000\
-          0000\
-          0000",
-          67,
-          "2\
-          0000\
-          0000\
-          0000\
-          0000\
-          0000\
-          0000\
-          0000\
-          0000");
-    check("4000\
-          0000",
-          35,
-          "2\
-          0000\
-          0000\
-          0000\
-          0000");
-    check("4000",
-          19,
-          "2\
-          0000\
-          0000");
+    check(
+        "4000\
+         0000\
+         0000\
+         0000",
+        67,
+        "2\
+         0000\
+         0000\
+         0000\
+         0000\
+         0000\
+         0000\
+         0000\
+         0000",
+    );
+    check(
+        "4000\
+         0000",
+        35,
+        "2\
+         0000\
+         0000\
+         0000\
+         0000",
+    );
+    check(
+        "4000",
+        19,
+        "2\
+         0000\
+         0000",
+    );
 
-    check("fedc\
-          ba98\
-          7654\
-          3210\
-          fedc\
-          ba98\
-          7654\
-          3210",
-          4,
-          "f\
-          edcb\
-          a987\
-          6543\
-          210f\
-          edcb\
-          a987\
-          6543\
-          2100");
-    check("88887777666655554444333322221111",
-          16,
-          "888877776666555544443333222211110000");
+    check(
+        "fedc\
+         ba98\
+         7654\
+         3210\
+         fedc\
+         ba98\
+         7654\
+         3210",
+        4,
+        "f\
+         edcb\
+         a987\
+         6543\
+         210f\
+         edcb\
+         a987\
+         6543\
+         2100",
+    );
+    check(
+        "88887777666655554444333322221111",
+        16,
+        "888877776666555544443333222211110000",
+    );
 }
 
 #[test]
@@ -359,111 +387,133 @@ fn test_shr() {
     check("0", 3, "0");
     check("f", 3, "1");
 
-    check("1\
-          0000\
-          0000\
-          0000\
-          0001\
-          0000\
-          0000\
-          0000\
-          0001",
-          3,
-          "2000\
-          0000\
-          0000\
-          0000\
-          2000\
-          0000\
-          0000\
-          0000");
-    check("1\
-          0000\
-          0001\
-          0000\
-          0001",
-          2,
-          "4000\
-          0000\
-          4000\
-          0000");
-    check("1\
-          0001\
-          0001",
-          1,
-          "8000\
-          8000");
+    check(
+        "1\
+         0000\
+         0000\
+         0000\
+         0001\
+         0000\
+         0000\
+         0000\
+         0001",
+        3,
+        "2000\
+         0000\
+         0000\
+         0000\
+         2000\
+         0000\
+         0000\
+         0000",
+    );
+    check(
+        "1\
+         0000\
+         0001\
+         0000\
+         0001",
+        2,
+        "4000\
+         0000\
+         4000\
+         0000",
+    );
+    check(
+        "1\
+         0001\
+         0001",
+        1,
+        "8000\
+         8000",
+    );
 
-    check("2\
-          0000\
-          0000\
-          0000\
-          0001\
-          0000\
-          0000\
-          0000\
-          0001",
-          67,
-          "4000\
-          0000\
-          0000\
-          0000");
-    check("2\
-          0000\
-          0001\
-          0000\
-          0001",
-          35,
-          "4000\
-          0000");
-    check("2\
-          0001\
-          0001",
-          19,
-          "4000");
+    check(
+        "2\
+         0000\
+         0000\
+         0000\
+         0001\
+         0000\
+         0000\
+         0000\
+         0001",
+        67,
+        "4000\
+         0000\
+         0000\
+         0000",
+    );
+    check(
+        "2\
+         0000\
+         0001\
+         0000\
+         0001",
+        35,
+        "4000\
+         0000",
+    );
+    check(
+        "2\
+         0001\
+         0001",
+        19,
+        "4000",
+    );
 
-    check("1\
-          0000\
-          0000\
-          0000\
-          0000",
-          1,
-          "8000\
-          0000\
-          0000\
-          0000");
-    check("1\
-          0000\
-          0000",
-          1,
-          "8000\
-          0000");
-    check("1\
-          0000",
-          1,
-          "8000");
-    check("f\
-          edcb\
-          a987\
-          6543\
-          210f\
-          edcb\
-          a987\
-          6543\
-          2100",
-          4,
-          "fedc\
-          ba98\
-          7654\
-          3210\
-          fedc\
-          ba98\
-          7654\
-          3210");
+    check(
+        "1\
+         0000\
+         0000\
+         0000\
+         0000",
+        1,
+        "8000\
+         0000\
+         0000\
+         0000",
+    );
+    check(
+        "1\
+         0000\
+         0000",
+        1,
+        "8000\
+         0000",
+    );
+    check(
+        "1\
+         0000",
+        1,
+        "8000",
+    );
+    check(
+        "f\
+         edcb\
+         a987\
+         6543\
+         210f\
+         edcb\
+         a987\
+         6543\
+         2100",
+        4,
+        "fedc\
+         ba98\
+         7654\
+         3210\
+         fedc\
+         ba98\
+         7654\
+         3210",
+    );
 
-    check("888877776666555544443333222211110000",
-          16,
-          "88887777666655554444333322221111");
+    check(
+        "888877776666555544443333222211110000",
+        16,
+        "88887777666655554444333322221111",
+    );
 }
 
 // `DoubleBigDigit` size dependent
@@ -577,8 +627,10 @@ fn test_convert_f32() {
     check(&BigUint::from(u16::MAX), 2.0.powi(16) - 1.0);
     check(&BigUint::from(1u64 << 32), 2.0.powi(32));
     check(&BigUint::from_slice(&[0, 0, 1]), 2.0.powi(64));
-    check(&((BigUint::one() << 100) + (BigUint::one() << 123)),
-          2.0.powi(100) + 2.0.powi(123));
+    check(
+        &((BigUint::one() << 100) + (BigUint::one() << 123)),
+        2.0.powi(100) + 2.0.powi(123),
+    );
     check(&(BigUint::one() << 127), 2.0.powi(127));
     check(&(BigUint::from((1u64 << 24) - 1) << (128 - 24)), f32::MAX);
 
@@ -611,14 +663,18 @@ fn test_convert_f32() {
     assert_eq!(BigUint::from_f32(-0.99999), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f32(-0.5), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f32(-0.0), Some(BigUint::zero()));
-    assert_eq!(BigUint::from_f32(f32::MIN_POSITIVE / 2.0),
-               Some(BigUint::zero()));
+    assert_eq!(
+        BigUint::from_f32(f32::MIN_POSITIVE / 2.0),
+        Some(BigUint::zero())
+    );
     assert_eq!(BigUint::from_f32(f32::MIN_POSITIVE), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f32(0.5), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f32(0.99999), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f32(f32::consts::E), Some(BigUint::from(2u32)));
-    assert_eq!(BigUint::from_f32(f32::consts::PI),
-               Some(BigUint::from(3u32)));
+    assert_eq!(
+        BigUint::from_f32(f32::consts::PI),
+        Some(BigUint::from(3u32))
+    );
 
     // special float values
     assert_eq!(BigUint::from_f32(f32::NAN), None);
@@ -648,8 +704,10 @@ fn test_convert_f64() {
     check(&BigUint::from(u32::MAX), 2.0.powi(32) - 1.0);
     check(&BigUint::from(1u64 << 32), 2.0.powi(32));
     check(&BigUint::from_slice(&[0, 0, 1]), 2.0.powi(64));
-    check(&((BigUint::one() << 100) + (BigUint::one() << 152)),
-          2.0.powi(100) + 2.0.powi(152));
+    check(
+        &((BigUint::one() << 100) + (BigUint::one() << 152)),
+        2.0.powi(100) + 2.0.powi(152),
+    );
     check(&(BigUint::one() << 1023), 2.0.powi(1023));
     check(&(BigUint::from((1u64 << 53) - 1) << (1024 - 53)), f64::MAX);
 
@@ -677,14 +735,18 @@ fn test_convert_f64() {
     assert_eq!(BigUint::from_f64(-0.99999), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f64(-0.5), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f64(-0.0), Some(BigUint::zero()));
-    assert_eq!(BigUint::from_f64(f64::MIN_POSITIVE / 2.0),
-               Some(BigUint::zero()));
+    assert_eq!(
+        BigUint::from_f64(f64::MIN_POSITIVE / 2.0),
+        Some(BigUint::zero())
+    );
     assert_eq!(BigUint::from_f64(f64::MIN_POSITIVE), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f64(0.5), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f64(0.99999), Some(BigUint::zero()));
     assert_eq!(BigUint::from_f64(f64::consts::E), Some(BigUint::from(2u32)));
-    assert_eq!(BigUint::from_f64(f64::consts::PI),
-               Some(BigUint::from(3u32)));
+    assert_eq!(
+        BigUint::from_f64(f64::consts::PI),
+        Some(BigUint::from(3u32))
+    );
 
     // special float values
     assert_eq!(BigUint::from_f64(f64::NAN), None);
@@ -708,8 +770,10 @@ fn test_convert_to_bigint() {
         assert_eq!(n.to_bigint().unwrap().to_biguint().unwrap(), n);
     }
     check(Zero::zero(), Zero::zero());
-    check(BigUint::new(vec![1, 2, 3]),
-          BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3])));
+    check(
+        BigUint::new(vec![1, 2, 3]),
+        BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3])),
+    );
 }
 
 #[test]
@@ -720,7 +784,7 @@ fn test_convert_from_uint() {
             assert_eq!(BigUint::from($ty::one()), BigUint::one());
             assert_eq!(BigUint::from($ty::MAX - $ty::one()), $max - BigUint::one());
             assert_eq!(BigUint::from($ty::MAX), $max);
-        }
+        };
     }
 
     check!(u8, BigUint::from_slice(&[u8::MAX as u32]));
@@ -728,7 +792,10 @@ fn test_convert_from_uint() {
     check!(u32, BigUint::from_slice(&[u32::MAX]));
     check!(u64, BigUint::from_slice(&[u32::MAX, u32::MAX]));
     #[cfg(has_i128)]
-    check!(u128, BigUint::from_slice(&[u32::MAX, u32::MAX, u32::MAX, u32::MAX]));
+    check!(
+        u128,
+        BigUint::from_slice(&[u32::MAX, u32::MAX, u32::MAX, u32::MAX])
+    );
     check!(usize, BigUint::from(usize::MAX as u64));
 }
 
@@ -974,69 +1041,113 @@ fn test_is_even() {
 
 fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
     let bits = 32;
-    vec![(Zero::zero(),
-          vec![(2, "0".to_string()), (3, "0".to_string())]),
-         (BigUint::from_slice(&[0xff]),
-          vec![(2, "11111111".to_string()),
-               (3, "100110".to_string()),
-               (4, "3333".to_string()),
-               (5, "2010".to_string()),
-               (6, "1103".to_string()),
-               (7, "513".to_string()),
-               (8, "377".to_string()),
-               (9, "313".to_string()),
-               (10, "255".to_string()),
-               (11, "212".to_string()),
-               (12, "193".to_string()),
-               (13, "168".to_string()),
-               (14, "143".to_string()),
-               (15, "120".to_string()),
-               (16, "ff".to_string())]),
-         (BigUint::from_slice(&[0xfff]),
-          vec![(2, "111111111111".to_string()),
-               (4, "333333".to_string()),
-               (16, "fff".to_string())]),
-         (BigUint::from_slice(&[1, 2]),
-          vec![(2,
-                format!("10{}1", repeat("0").take(bits - 1).collect::<String>())),
-               (4,
-                format!("2{}1", repeat("0").take(bits / 2 - 1).collect::<String>())),
-               (10,
-                match bits {
-                   64 => "36893488147419103233".to_string(),
-                   32 => "8589934593".to_string(),
-                   16 => "131073".to_string(),
-                   _ => panic!(),
-               }),
-               (16,
-                format!("2{}1", repeat("0").take(bits / 4 - 1).collect::<String>()))]),
-         (BigUint::from_slice(&[1, 2, 3]),
-          vec![(2,
-                format!("11{}10{}1",
+    vec![
+        (
+            Zero::zero(),
+            vec![(2, "0".to_string()), (3, "0".to_string())],
+        ),
+        (
+            BigUint::from_slice(&[0xff]),
+            vec![
+                (2, "11111111".to_string()),
+                (3, "100110".to_string()),
+                (4, "3333".to_string()),
+                (5, "2010".to_string()),
+                (6, "1103".to_string()),
+                (7, "513".to_string()),
+                (8, "377".to_string()),
+                (9, "313".to_string()),
+                (10, "255".to_string()),
+                (11, "212".to_string()),
+                (12, "193".to_string()),
+                (13, "168".to_string()),
+                (14, "143".to_string()),
+                (15, "120".to_string()),
+                (16, "ff".to_string()),
+            ],
+        ),
+        (
+            BigUint::from_slice(&[0xfff]),
+            vec![
+                (2, "111111111111".to_string()),
+                (4, "333333".to_string()),
+                (16, "fff".to_string()),
+            ],
+        ),
+        (
+            BigUint::from_slice(&[1, 2]),
+            vec![
+                (
+                    2,
+                    format!("10{}1", repeat("0").take(bits - 1).collect::<String>()),
+                ),
+                (
+                    4,
+                    format!("2{}1", repeat("0").take(bits / 2 - 1).collect::<String>()),
+                ),
+                (
+                    10,
+                    match bits {
+                        64 => "36893488147419103233".to_string(),
+                        32 => "8589934593".to_string(),
+                        16 => "131073".to_string(),
+                        _ => panic!(),
+                    },
+                ),
+                (
+                    16,
+                    format!("2{}1", repeat("0").take(bits / 4 - 1).collect::<String>()),
+                ),
+            ],
+        ),
+        (
+            BigUint::from_slice(&[1, 2, 3]),
+            vec![
+                (
+                    2,
+                    format!(
+                        "11{}10{}1",
                         repeat("0").take(bits - 2).collect::<String>(),
-                        repeat("0").take(bits - 1).collect::<String>())),
-               (4,
-                format!("3{}2{}1",
+                        repeat("0").take(bits - 1).collect::<String>()
+                    ),
+                ),
+                (
+                    4,
+                    format!(
+                        "3{}2{}1",
                         repeat("0").take(bits / 2 - 1).collect::<String>(),
-                        repeat("0").take(bits / 2 - 1).collect::<String>())),
-               (8,
-                match bits {
-                   64 => "14000000000000000000004000000000000000000001".to_string(),
-                   32 => "6000000000100000000001".to_string(),
-                   16 => "140000400001".to_string(),
-                   _ => panic!(),
-               }),
-               (10,
-                match bits {
-                   64 => "1020847100762815390427017310442723737601".to_string(),
-                   32 => "55340232229718589441".to_string(),
-                   16 => "12885032961".to_string(),
-                   _ => panic!(),
-               }),
-               (16,
-                format!("3{}2{}1",
+                        repeat("0").take(bits / 2 - 1).collect::<String>()
+                    ),
+                ),
+                (
+                    8,
+                    match bits {
+                        64 => "14000000000000000000004000000000000000000001".to_string(),
+                        32 => "6000000000100000000001".to_string(),
+                        16 => "140000400001".to_string(),
+                        _ => panic!(),
+                    },
+                ),
+                (
+                    10,
+                    match bits {
+                        64 => "1020847100762815390427017310442723737601".to_string(),
+                        32 => "55340232229718589441".to_string(),
+                        16 => "12885032961".to_string(),
+                        _ => panic!(),
+                    },
+                ),
+                (
+                    16,
+                    format!(
+                        "3{}2{}1",
                         repeat("0").take(bits / 4 - 1).collect::<String>(),
-                        repeat("0").take(bits / 4 - 1).collect::<String>()))])]
+                        repeat("0").take(bits / 4 - 1).collect::<String>()
+                    ),
+                ),
+            ],
+        ),
+    ]
 }
 
 #[test]
@@ -1053,20 +1164,48 @@ fn test_to_str_radix() {
 
 #[test]
 fn test_from_and_to_radix() {
-    const GROUND_TRUTH : &'static[(&'static[u8], u32, &'static[u8])] = &[
-        (b"0",          42, &[0]),
-        (b"ffffeeffbb", 2, &[1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-                             1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                             1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
-        (b"ffffeeffbb", 3, &[2, 2, 1, 1, 2, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2,
-                             0, 0, 0, 0, 1, 0, 0, 2, 2, 0, 1]),
-        (b"ffffeeffbb", 4, &[3, 2, 3, 2, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3,
-                             3, 3, 3, 3, 3]),
-        (b"ffffeeffbb", 5, &[0, 4, 3, 3, 1, 4, 2, 4, 1, 4, 4, 2, 3, 0, 0,
-                             1, 2, 1]),
-        (b"ffffeeffbb", 6, &[5, 5, 4, 5, 5, 0, 0, 1, 2, 5, 3, 0, 1, 0, 2, 2]),
-        (b"ffffeeffbb", 7, &[4, 2, 3, 6, 0, 1, 6, 1, 6, 2, 0, 3, 2, 4, 1]),
-        (b"ffffeeffbb", 8, &[3, 7, 6, 7, 7, 5, 3, 7, 7, 7, 7, 7, 7, 1]),
+    const GROUND_TRUTH: &'static [(&'static [u8], u32, &'static [u8])] = &[
+        (b"0", 42, &[0]),
+        (
+            b"ffffeeffbb",
+            2,
+            &[
+                1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            ],
+        ),
+        (
+            b"ffffeeffbb",
+            3,
+            &[
+                2, 2, 1, 1, 2, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 2, 2, 0, 1,
+            ],
+        ),
+        (
+            b"ffffeeffbb",
+            4,
+            &[3, 2, 3, 2, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        ),
+        (
+            b"ffffeeffbb",
+            5,
+            &[0, 4, 3, 3, 1, 4, 2, 4, 1, 4, 4, 2, 3, 0, 0, 1, 2, 1],
+        ),
+        (
+            b"ffffeeffbb",
+            6,
+            &[5, 5, 4, 5, 5, 0, 0, 1, 2, 5, 3, 0, 1, 0, 2, 2],
+        ),
+        (
+            b"ffffeeffbb",
+            7,
+            &[4, 2, 3, 6, 0, 1, 6, 1, 6, 2, 0, 3, 2, 4, 1],
+        ),
+        (
+            b"ffffeeffbb",
+            8,
+            &[3, 7, 6, 7, 7, 5, 3, 7, 7, 7, 7, 7, 7, 1],
+        ),
         (b"ffffeeffbb", 9, &[8, 4, 5, 7, 0, 0, 3, 2, 0, 3, 0, 8, 3]),
         (b"ffffeeffbb", 10, &[5, 9, 5, 3, 1, 5, 0, 1, 5, 9, 9, 0, 1]),
         (b"ffffeeffbb", 11, &[10, 7, 6, 5, 2, 0, 3, 3, 3, 4, 9, 3]),
@@ -1326,14 +1465,20 @@ fn test_from_and_to_radix() {
         inbase_be.reverse(); // now le
         assert_eq!(inbase_be, inbaseradix_le);
         // from_radix_le
-        assert_eq!(BigUint::from_radix_le(inbaseradix_le, radix).unwrap(), bigint);
+        assert_eq!(
+            BigUint::from_radix_le(inbaseradix_le, radix).unwrap(),
+            bigint
+        );
         // from_radix_be
         let mut inbaseradix_be = Vec::from(inbaseradix_le);
         inbaseradix_be.reverse();
-        assert_eq!(BigUint::from_radix_be(&inbaseradix_be, radix).unwrap(), bigint);
+        assert_eq!(
+            BigUint::from_radix_be(&inbaseradix_be, radix).unwrap(),
+            bigint
+        );
     }
 
-    assert!(BigUint::from_radix_le(&[10,100,10], 50).is_none());
+    assert!(BigUint::from_radix_le(&[10, 100, 10], 50).is_none());
 }
 
 #[test]
@@ -1410,8 +1555,10 @@ fn test_binary() {
     let hello = BigUint::parse_bytes("224055342307539".as_bytes(), 10).unwrap();
 
     assert_eq!(format!("{:b}", a), "1010");
-    assert_eq!(format!("{:b}", hello),
-               "110010111100011011110011000101101001100011010011");
+    assert_eq!(
+        format!("{:b}", hello),
+        "110010111100011011110011000101101001100011010011"
+    );
     assert_eq!(format!("{:♥>+#8b}", a), "♥+0b1010");
 }
 
@@ -1504,8 +1651,11 @@ fn test_iter_product() {
         FromPrimitive::from_u32(1004).unwrap(),
         FromPrimitive::from_u32(1005).unwrap(),
     ];
-    let result = data.get(0).unwrap() * data.get(1).unwrap() * data.get(2).unwrap()
-        * data.get(3).unwrap() * data.get(4).unwrap();
+    let result = data.get(0).unwrap()
+        * data.get(1).unwrap()
+        * data.get(2).unwrap()
+        * data.get(3).unwrap()
+        * data.get(4).unwrap();
 
     assert_eq!(result, data.iter().product());
     assert_eq!(result, data.into_iter().product());
@@ -1523,8 +1673,10 @@ fn test_iter_sum_generic() {
 #[test]
 fn test_iter_product_generic() {
     let data = vec![1001_u32, 1002, 1003, 1004, 1005];
-    let result = data[0].to_biguint().unwrap() * data[1].to_biguint().unwrap()
-        * data[2].to_biguint().unwrap() * data[3].to_biguint().unwrap()
+    let result = data[0].to_biguint().unwrap()
+        * data[1].to_biguint().unwrap()
+        * data[2].to_biguint().unwrap()
+        * data[3].to_biguint().unwrap()
         * data[4].to_biguint().unwrap();
 
     assert_eq!(result, data.iter().product());
@@ -1548,7 +1700,7 @@ fn test_pow() {
             assert_eq!(two.pow(10 as $t), tentwentyfour);
             assert_eq!(two.pow(11 as $t), twentyfourtyeight);
             assert_eq!(two.pow(&(11 as $t)), twentyfourtyeight);
-        }
+        };
     }
     check!(u8);
     check!(u16);
