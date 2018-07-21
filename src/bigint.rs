@@ -384,7 +384,7 @@ impl<'a> BitAndAssign<&'a BigInt> for BigInt {
     fn bitand_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (NoSign, _) => {}
-            (_, NoSign) => self.assign_from_slice(NoSign, &[]),
+            (_, NoSign) => self.assign_from_slice_native(NoSign, &[]),
             (Plus, Plus) => {
                 self.data &= &other.data;
                 if self.data.is_zero() {
@@ -520,7 +520,7 @@ impl<'a> BitOrAssign<&'a BigInt> for BigInt {
     fn bitor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
-            (NoSign, _) => self.assign_from_slice(other.sign, other.digits()),
+            (NoSign, _) => self.assign_from_slice_native(other.sign, other.digits()),
             (Plus, Plus) => self.data |= &other.data,
             (Plus, Minus) => {
                 bitor_pos_neg(self.digits_mut(), other.digits());
@@ -646,7 +646,7 @@ impl<'a> BitXorAssign<&'a BigInt> for BigInt {
     fn bitxor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
-            (NoSign, _) => self.assign_from_slice(other.sign, other.digits()),
+            (NoSign, _) => self.assign_from_slice_native(other.sign, other.digits()),
             (Plus, Plus) => {
                 self.data ^= &other.data;
                 if self.data.is_zero() {
@@ -1016,6 +1016,7 @@ impl Add<u32> for BigInt {
         }
     }
 }
+
 impl AddAssign<u32> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: u32) {
@@ -1040,6 +1041,7 @@ impl Add<u64> for BigInt {
         }
     }
 }
+
 impl AddAssign<u64> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: u64) {
@@ -2045,7 +2047,7 @@ impl Rem<i64> for BigInt {
     #[inline]
     fn rem(self, other: i64) -> BigInt {
         if other >= 0 {
-            self % other as u64
+            self % other as i64
         } else {
             self % i64_abs_as_u64(other)
         }
@@ -2640,6 +2642,12 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::from_slice(slice))
     }
 
+    /// Creates and initializes a `BigInt` using `BigDigit`s.
+    #[inline]
+    pub fn from_slice_native(sign: Sign, slice: &[BigDigit]) -> BigInt {
+        BigInt::from_biguint(sign, BigUint::from_slice_native(slice))
+    }
+
     /// Reinitializes a `BigInt`.
     #[inline]
     pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
@@ -2648,6 +2656,21 @@ impl BigInt {
             self.sign = NoSign;
         } else {
             self.data.assign_from_slice(slice);
+            self.sign = match self.data.is_zero() {
+                true => NoSign,
+                false => sign,
+            }
+        }
+    }
+
+    /// Reinitializes a `BigInt`, using native `BigDigit`s.
+    #[inline]
+    pub fn assign_from_slice_native(&mut self, sign: Sign, slice: &[BigDigit]) {
+        if sign == NoSign {
+            self.data.assign_from_slice_native(&[]);
+            self.sign = NoSign;
+        } else {
+            self.data.assign_from_slice_native(slice);
             self.sign = match self.data.is_zero() {
                 true => NoSign,
                 false => sign,
