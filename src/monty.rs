@@ -1,7 +1,7 @@
 use integer::Integer;
 use traits::Zero;
 
-use big_digit::BigDigit;
+use big_digit::{BigDigit, SignedDoubleBigDigit};
 use biguint::BigUint;
 
 struct MontyReducer<'a> {
@@ -13,13 +13,12 @@ struct MontyReducer<'a> {
 //
 // Reference:
 // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.20
-#[cfg(not(feature = "i128"))]
-fn inv_mod_big_digit(num: u32) -> u32 {
+fn inv_mod(num: BigDigit) -> BigDigit {
     // num needs to be relatively prime to 2**32 -- i.e. it must be odd.
     assert!(num % 2 != 0);
 
-    let mut a: i64 = num as i64;
-    let mut b: i64 = (u32::max_value() as i64) + 1;
+    let mut a: SignedDoubleBigDigit = num as SignedDoubleBigDigit;
+    let mut b: SignedDoubleBigDigit = (BigDigit::max_value() as SignedDoubleBigDigit) + 1;
 
     // ExtendedGcd
     // Input: positive integers a and b
@@ -45,47 +44,12 @@ fn inv_mod_big_digit(num: u32) -> u32 {
 
     assert!(a == 1);
     // Downcasting acts like a mod 2^32 too.
-    u as u32
-}
-
-#[cfg(feature = "i128")]
-fn inv_mod_big_digit(num: u64) -> u64 {
-    // num needs to be relatively prime to 2**32 -- i.e. it must be odd.
-    assert!(num % 2 != 0);
-
-    let mut a: i128 = num as i128;
-    let mut b: i128 = (u64::max_value() as i128) + 1;
-
-    // ExtendedGcd
-    // Input: positive integers a and b
-    // Output: integers (g, u, v) such that g = gcd(a, b) = ua + vb
-    // As we don't need v for modular inverse, we don't calculate it.
-
-    // 1: (u, w) <- (1, 0)
-    let mut u = 1;
-    let mut w = 0;
-    // 3: while b != 0
-    while b != 0 {
-        // 4: (q, r) <- DivRem(a, b)
-        let q = a / b;
-        let r = a % b;
-        // 5: (a, b) <- (b, r)
-        a = b;
-        b = r;
-        // 6: (u, w) <- (w, u - qw)
-        let m = u - w * q;
-        u = w;
-        w = m;
-    }
-
-    assert!(a == 1);
-    // Downcasting acts like a mod 2^32 too.
-    u as u64
+    u as BigDigit
 }
 
 impl<'a> MontyReducer<'a> {
     fn new(n: &'a BigUint) -> Self {
-        let n0inv = inv_mod_big_digit(n.data[0]);
+        let n0inv = inv_mod(n.data[0]);
         MontyReducer { n: n, n0inv: n0inv }
     }
 }
@@ -102,8 +66,8 @@ fn monty_redc(a: BigUint, mr: &MontyReducer) -> BigUint {
     // Allocate sufficient work space
     c.resize(2 * n_size + 2, 0);
 
-    // β is the size of a word, in this case 32 bits. So "a mod β" is
-    // equivalent to masking a to 32 bits.
+    // β is the size of a word, in this case {32|64} bits. So "a mod β" is
+    // equivalent to masking a to {32|64} bits.
     // mu <- -N^(-1) mod β
     let mu = (0 as BigDigit).wrapping_sub(mr.n0inv);
 
@@ -141,7 +105,6 @@ fn monty_sqr(a: BigUint, mr: &MontyReducer) -> BigUint {
 
 pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
     let mr = MontyReducer::new(modulus);
-    println!("reducer: {}", mr.n);
 
     // Calculate the Montgomery parameter
     let mut v = vec![0; modulus.data.len()];
@@ -164,4 +127,27 @@ pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
 
     // Map the result back to the residues domain
     monty_redc(ans, &mr)
+}
+
+#[test]
+fn test_inv_mod() {
+    use big_digit::DoubleBigDigit;
+
+    let modulus = (BigDigit::max_value() as DoubleBigDigit) + 1;
+
+    for element in 0..100 {
+        let element = element as BigDigit;
+        if element % 2 == 0 {
+            continue;
+        }
+
+        let inverse = inv_mod(element.clone());
+        let cmp = (inverse as DoubleBigDigit * element as DoubleBigDigit) % modulus;
+
+        assert_eq!(
+            cmp as BigDigit, 1,
+            "mod_inverse({}, {}) * {} % {} = {}, not 1",
+            element, &modulus, element, &modulus, cmp,
+        );
+    }
 }
