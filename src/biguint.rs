@@ -967,7 +967,7 @@ impl MulAssign<u128> for BigUint {
         if other == 0 {
             self.data.clear();
         } else if other <= BigDigit::max_value() as u128 {
-            *self *= other
+            *self *= other as BigDigit
         } else {
             let (hi, lo) = big_digit::from_doublebigdigit(other);
             *self = mul3(&self.data[..], &[lo, hi])
