@@ -3060,6 +3060,14 @@ impl BigInt {
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
+
+    pub fn get_limb(&self, n: usize) -> BigDigit {
+        self.data.get_limb(n)
+    }
+
+    pub fn trailing_zeros(&self) -> Option<usize> {
+        self.data.trailing_zeros()
+    }
 }
 
 impl_sum_iter_type!(BigInt);

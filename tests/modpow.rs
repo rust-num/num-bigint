@@ -66,7 +66,7 @@ mod biguint {
         let e: BigUint = e.into();
         let m: BigUint = m.into();
         let r: BigUint = r.into();
-
+        println!("checking: {} {} {} {}", b, e, m, r);
         assert_eq!(b.modpow(&e, &m), r);
 
         let even_m = &m << 1;
@@ -76,7 +76,7 @@ mod biguint {
     }
 
     #[test]
-    fn test_modpow() {
+    fn test_modpow_single() {
         check_modpow::<u32>(1, 0, 11, 1);
         check_modpow::<u32>(0, 15, 11, 0);
         check_modpow::<u32>(3, 7, 11, 9);

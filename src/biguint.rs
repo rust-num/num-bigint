@@ -2441,6 +2441,14 @@ impl BigUint {
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
+
+    pub fn trailing_zeros(&self) -> Option<usize> {
+        trailing_zeros(self)
+    }
+
+    pub fn get_limb(&self, n: usize) -> BigDigit {
+        self.data[n]
+    }
 }
 
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
