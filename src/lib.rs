@@ -196,6 +196,10 @@ mod big_digit {
     #[cfg(feature = "u64_digit")]
     const LO_MASK: DoubleBigDigit = (-1i64 as DoubleBigDigit) >> BITS;
 
+    pub const HALF_WORD_SIZE: usize = BITS / 2;
+    pub const HALF_DIGIT_BASE: usize = 1 << HALF_WORD_SIZE;
+    pub const HALF_DIGIT_MASK: usize = HALF_DIGIT_BASE - 1;
+
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {
         (n >> BITS) as BigDigit

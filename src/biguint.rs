@@ -2315,6 +2315,14 @@ impl BigUint {
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
+
+    pub fn trailing_zeros(&self) -> Option<usize> {
+        trailing_zeros(self)
+    }
+
+    pub fn get_limb(&self, n: usize) -> BigDigit {
+        self.data[n]
+    }
 }
 
 /// Returns the number of least-significant bits that are zero,
