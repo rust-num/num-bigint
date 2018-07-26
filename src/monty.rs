@@ -4,8 +4,7 @@ use traits::{One, Zero};
 use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 use biguint::BigUint;
 
-struct MontyReducer<'a> {
-    n: &'a BigUint,
+struct MontyReducer {
     n0inv: BigDigit,
 }
 
@@ -26,107 +25,11 @@ fn inv_mod_alt(b: BigDigit) -> BigDigit {
     -k0 as BigDigit
 }
 
-// Calculate the modular inverse of `num`, using Extended GCD.
-//
-// Reference:
-// Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.20
-fn inv_mod(num: BigDigit) -> BigDigit {
-    // num needs to be relatively prime to 2**{32|64} -- i.e. it must be odd.
-    assert!(num % 2 != 0);
-
-    let mut a = SignedDoubleBigDigit::from(num);
-    let mut b = SignedDoubleBigDigit::from(BigDigit::max_value()) + 1;
-
-    // ExtendedGcd
-    // Input: positive integers a and b
-    // Output: integers (g, u, v) such that g = gcd(a, b) = ua + vb
-    // As we don't need v for modular inverse, we don't calculate it.
-
-    // 1: (u, w) <- (1, 0)
-    let mut u = 1;
-    let mut w = 0;
-    // 3: while b != 0
-    while b != 0 {
-        // 4: (q, r) <- DivRem(a, b)
-        let q = a / b;
-        let r = a % b;
-        // 5: (a, b) <- (b, r)
-        a = b;
-        b = r;
-        // 6: (u, w) <- (w, u - qw)
-        let m = u - w * q;
-        u = w;
-        w = m;
-    }
-
-    assert!(a == 1);
-    // Downcasting acts like a mod 2^32 too.
-    u as BigDigit
-}
-
-impl<'a> MontyReducer<'a> {
-    fn new(n: &'a BigUint) -> Self {
+impl MontyReducer {
+    fn new(n: &BigUint) -> Self {
         let n0inv = inv_mod_alt(n.data[0]);
-        MontyReducer { n: n, n0inv: n0inv }
+        MontyReducer { n0inv }
     }
-}
-
-// Montgomery Reduction
-//
-// Reference:
-// Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 2.6
-fn monty_redc(a: BigUint, mr: &MontyReducer) -> BigUint {
-    // println!("redc: {}", &a);
-    let mut c = a.data;
-    let n = &mr.n.data;
-    let n_size = n.len();
-
-    // Allocate sufficient work space
-    c.resize(2 * n_size + 2, 0);
-
-    // β is the size of a word, in this case {32|64} bits. So "a mod β" is
-    // equivalent to masking a to {32|64} bits.
-    // mu <- -N^(-1) mod β
-    let mu = mr.n0inv; //(0 as BigDigit).wrapping_sub(mr.n0inv);
-
-    // 1: for i = 0 to (n-1)
-    for i in 0..n_size {
-        // 2: q_i <- mu*c_i mod β
-        let q_i = c[i].wrapping_mul(mu as BigDigit);
-        // println!("{} {}", q_i, c[i]);
-
-        // 3: C <- C + q_i * N * β^i
-        super::algorithms::mac_digit(&mut c[i..], n, q_i);
-        // println!("updated: {:?}", c);
-    }
-
-    // println!("c: {:?}", c);
-    // println!("n_size: {}\nmu: {:?}", n_size, mu);
-    // println!("n: {:?}", n);
-
-    // 4: R <- C * β^(-n)
-    // This is an n-word bitshift, equivalent to skipping n words.
-    let ret = BigUint::new_native(c[n_size..].to_vec());
-
-    // 5: if R >= β^n then return R-N else return R.
-    if &ret < mr.n {
-        ret
-    } else {
-        ret - mr.n
-    }
-}
-
-// Montgomery Multiplication
-fn monty_mult(a: BigUint, b: &BigUint, mr: &MontyReducer) -> BigUint {
-    // println!("mul: {} * {}", &a, &b);
-    monty_redc(a * b, mr)
-}
-
-// Montgomery Squaring
-fn monty_sqr(a: BigUint, mr: &MontyReducer) -> BigUint {
-    // println!("sqr {} **2", &a);
-    // TODO: Replace with an optimised squaring function
-    monty_redc(&a * &a, mr)
 }
 
 /// Computes z mod m = x * y * 2 ** (-n*_W) mod m
@@ -185,8 +88,8 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
 #[inline(always)]
 fn add_mul_vvw(z: &mut [BigDigit], x: &[BigDigit], y: BigDigit) -> BigDigit {
     let mut c = 0;
-    for (i, zi) in z.iter_mut().enumerate() {
-        let (z1, z0) = mul_add_www(x[i], y, *zi);
+    for (zi, xi) in z.iter_mut().zip(x.iter()) {
+        let (z1, z0) = mul_add_www(*xi, y, *zi);
         let (c_, zi_) = add_ww(z0, c, 0);
         *zi = zi_;
         c = c_ + z1;
@@ -199,9 +102,8 @@ fn add_mul_vvw(z: &mut [BigDigit], x: &[BigDigit], y: BigDigit) -> BigDigit {
 #[inline(always)]
 fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
     let mut c = 0;
-    for (i, xi) in x.iter().enumerate().take(z.len()) {
-        let yi = y[i];
-        let zi = xi.wrapping_sub(yi).wrapping_sub(c);
+    for (i, (xi, yi)) in x.iter().zip(y.iter()).enumerate().take(z.len()) {
+        let zi = xi.wrapping_sub(*yi).wrapping_sub(c);
         z[i] = zi;
         // see "Hacker's Delight", section 2-12 (overflow detection)
         c = ((yi & !xi) | ((yi | !xi) & zi)) >> (big_digit::BITS - 1)
@@ -215,10 +117,7 @@ fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
 fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
     let yc = y.wrapping_add(c);
     let z0 = x.wrapping_add(yc);
-    let mut z1 = 0;
-    if z0 < x || yc < y {
-        z1 = 1;
-    }
+    let z1 = if z0 < x || yc < y { 1 } else { 0 };
 
     (z1, z0)
 }
@@ -236,11 +135,11 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     let mr = MontyReducer::new(m);
     let num_words = m.data.len();
 
-    println!("modpow {:?} {:?} {:?}", x, y, m);
-    println!("numWords {}", num_words);
+    // println!("modpow {:?} {:?} {:?}", x, y, m);
+    // println!("numWords {}", num_words);
     let mut x = x.clone();
 
-    println!("inverse: {:?}", mr.n0inv);
+    // println!("inverse: {:?}", mr.n0inv);
     // We want the lengths of x and m to be equal.
     // It is OK if x >= m as long as len(x) == len(m).
     if x.data.len() > num_words {
@@ -257,7 +156,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     if rr.data.len() < num_words {
         rr.data.resize(num_words, 0);
     }
-    println!("rr: {:?}", rr);
+    // println!("rr: {:?}", rr);
     // one = 1, with equal length to that of m
     let mut one = BigUint::one();
     one.data.resize(num_words, 0);
@@ -278,7 +177,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     let mut zz = BigUint::zero();
     zz.data.resize(num_words, 0);
 
-    println!("powers: {:?}", powers);
+    // println!("powers: {:?}", powers);
     // same windowed exponent, but with Montgomery multiplications
     for i in (0..y.data.len()).rev() {
         let mut yi = y.data[i];
@@ -325,27 +224,4 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
 
     zz.normalize();
     zz
-}
-
-#[test]
-fn test_inv_mod() {
-    use big_digit::DoubleBigDigit;
-
-    let modulus = (BigDigit::max_value() as DoubleBigDigit) + 1;
-
-    for element in 0..100 {
-        let element = element as BigDigit;
-        if element % 2 == 0 {
-            continue;
-        }
-
-        let inverse = inv_mod(element.clone());
-        let cmp = (inverse as DoubleBigDigit * element as DoubleBigDigit) % modulus;
-
-        assert_eq!(
-            cmp as BigDigit, 1,
-            "mod_inverse({}, {}) * {} % {} = {}, not 1",
-            element, &modulus, element, &modulus, cmp,
-        );
-    }
 }
