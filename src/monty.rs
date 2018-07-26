@@ -213,51 +213,15 @@ fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
 /// z1<<_W + z0 = x+y+c, with c == 0 or 1
 #[inline(always)]
 fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
-    let yc = y.wrapping_add(c);
-    let z0 = x.wrapping_add(yc);
-    let mut z1 = 0;
-    if z0 < x || yc < y {
-        z1 = 1;
-    }
-
-    (z1, z0)
+    let z = x as DoubleBigDigit + y as DoubleBigDigit + c as DoubleBigDigit;
+    ((z >> big_digit::BITS) as BigDigit, z as BigDigit)
 }
 
 /// z1 << _W + z0 = x * y + c
 #[inline(always)]
 fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
-    let (z1, zz0) = mul_ww(x, y);
-    let z0 = zz0.wrapping_add(c);
-    if z0 < zz0 {
-        (z1 + 1, z0)
-    } else {
-        (z1, z0)
-    }
-}
-
-/// z1<<_W + z0 = x*y
-/// Adapted from Warren, Hacker's Delight, p. 132.
-#[inline(always)]
-fn mul_ww(x: BigDigit, y: BigDigit) -> (BigDigit, BigDigit) {
-    let x0 = x & big_digit::HALF_DIGIT_MASK as BigDigit;
-    let x1 = x >> big_digit::HALF_WORD_SIZE;
-    let y0 = y & big_digit::HALF_DIGIT_MASK as BigDigit;
-    let y1 = y >> big_digit::HALF_WORD_SIZE;
-    let w0 = x0.wrapping_mul(y0);
-    let t = x1
-        .wrapping_mul(y0)
-        .wrapping_add(w0 >> big_digit::HALF_WORD_SIZE);
-
-    let mut w1 = t & big_digit::HALF_DIGIT_MASK as BigDigit;
-    let w2 = t >> big_digit::HALF_WORD_SIZE;
-    w1 = w1.wrapping_add(x0.wrapping_mul(y1));
-    let z1 = x1
-        .wrapping_mul(y1)
-        .wrapping_add(w2)
-        .wrapping_add(w1 >> big_digit::HALF_WORD_SIZE);
-    let z0 = x.wrapping_mul(y);
-
-    (z1, z0)
+    let z = x as DoubleBigDigit * y as DoubleBigDigit + c as DoubleBigDigit;
+    ((z >> big_digit::BITS) as BigDigit, z as BigDigit)
 }
 
 /// Calculates x ** y mod m using a fixed, 4-bit window.
