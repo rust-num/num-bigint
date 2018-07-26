@@ -213,8 +213,14 @@ fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
 /// z1<<_W + z0 = x+y+c, with c == 0 or 1
 #[inline(always)]
 fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
-    let z = x as DoubleBigDigit + y as DoubleBigDigit + c as DoubleBigDigit;
-    ((z >> big_digit::BITS) as BigDigit, z as BigDigit)
+    let yc = y.wrapping_add(c);
+    let z0 = x.wrapping_add(yc);
+    let mut z1 = 0;
+    if z0 < x || yc < y {
+        z1 = 1;
+    }
+
+    (z1, z0)
 }
 
 /// z1 << _W + z0 = x * y + c
