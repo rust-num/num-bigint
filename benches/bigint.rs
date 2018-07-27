@@ -10,7 +10,7 @@ extern crate rand;
 use std::mem::replace;
 use test::Bencher;
 use num_bigint::{BigInt, BigUint, RandBigInt};
-use num_traits::{Zero, One, FromPrimitive, Num};
+use num_traits::{Zero, One, FromPrimitive, Num, Pow};
 use rand::{SeedableRng, StdRng};
 
 fn get_rng() -> StdRng {
