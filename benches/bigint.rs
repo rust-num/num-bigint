@@ -10,7 +10,7 @@ extern crate rand;
 use std::mem::replace;
 use test::Bencher;
 use num_bigint::{BigInt, BigUint, RandBigInt};
-use num_traits::{Zero, One, FromPrimitive, Num};
+use num_traits::{Zero, One, FromPrimitive, Num, Pow};
 use rand::{SeedableRng, StdRng};
 
 fn get_rng() -> StdRng {
@@ -301,7 +301,7 @@ fn pow_bench(b: &mut Bencher) {
         for i in 2..upper + 1 {
             for j in 2..upper + 1 {
                 let i_big = BigUint::from_usize(i).unwrap();
-                num_traits::pow(i_big, j);
+                i_big.pow(j);
             }
         }
     });

@@ -18,7 +18,7 @@ use serde;
 
 use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Num, CheckedAdd, CheckedSub,
-             CheckedMul, CheckedDiv, Signed, Zero, One};
+             CheckedMul, CheckedDiv, Signed, Zero, One, Pow};
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -810,6 +810,54 @@ impl Signed for BigInt {
         self.sign == Minus
     }
 }
+
+
+/// Help function for pow
+///
+/// Computes the effect of the exponent on the sign.
+#[inline]
+fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
+    if other.is_zero() {
+        Plus
+    } else if sign != Minus {
+        sign
+    } else if other.is_odd() {
+        sign
+    } else {
+        -sign
+    }
+}
+
+macro_rules! pow_impl {
+    ($T:ty) => {
+        impl<'a> Pow<$T> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn pow(self, rhs: $T) -> BigInt {
+                BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
+            }
+        }
+
+        impl<'a, 'b> Pow<&'b $T> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn pow(self, rhs: &$T) -> BigInt {
+                BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
+            }
+        }
+    }
+}
+
+pow_impl!(u8);
+pow_impl!(u16);
+pow_impl!(u32);
+pow_impl!(u64);
+pow_impl!(usize);
+#[cfg(has_i128)]
+pow_impl!(u128);
+
 
 // A convenience method for getting the absolute value of an i32 in a u32.
 #[inline]

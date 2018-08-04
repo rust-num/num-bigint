@@ -4,7 +4,7 @@ extern crate num_traits;
 
 mod biguint {
     use num_bigint::BigUint;
-    use num_traits::pow;
+    use num_traits::Pow;
     use std::str::FromStr;
 
     fn check(x: u64, n: u32) {
@@ -17,8 +17,8 @@ mod biguint {
             assert_eq!(&res, &big_x.cbrt())
         }
 
-        assert!(pow(res.clone(), n as usize) <= big_x);
-        assert!(pow(res.clone() + 1u32, n as usize) > big_x);
+        assert!(res.pow(n) <= big_x);
+        assert!((res + 1u32).pow(n) > big_x);
     }
 
     #[test]
@@ -58,7 +58,7 @@ mod biguint {
 
 mod bigint {
     use num_bigint::BigInt;
-    use num_traits::{Signed, pow};
+    use num_traits::{Signed, Pow};
 
     fn check(x: i64, n: u32) {
         let big_x = BigInt::from(x);
@@ -71,11 +71,11 @@ mod bigint {
         }
 
         if big_x.is_negative() {
-            assert!(pow(res.clone() - 1u32, n as usize) < big_x);
-            assert!(pow(res.clone(), n as usize) >= big_x);
+            assert!(res.pow(n) >= big_x);
+            assert!((res - 1u32).pow(n) < big_x);
         } else {
-            assert!(pow(res.clone(), n as usize) <= big_x);
-            assert!(pow(res.clone() + 1u32, n as usize) > big_x);
+            assert!(res.pow(n) <= big_x);
+            assert!((res + 1u32).pow(n) > big_x);
         }
     }
 

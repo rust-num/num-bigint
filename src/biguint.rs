@@ -19,7 +19,7 @@ use serde;
 
 use integer::{Integer, Roots};
 use traits::{ToPrimitive, FromPrimitive, Float, Num, Unsigned, CheckedAdd, CheckedSub, CheckedMul,
-             CheckedDiv, Zero, One, pow};
+             CheckedDiv, Zero, One, Pow};
 
 use big_digit::{self, BigDigit, DoubleBigDigit};
 
@@ -433,6 +433,55 @@ impl One for BigUint {
 }
 
 impl Unsigned for BigUint {}
+
+macro_rules! pow_impl {
+    ($T:ty) => {
+        impl<'a> Pow<$T> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, mut exp: $T) -> Self::Output {
+                if exp == 0 { return BigUint::one(); }
+                let mut base = self.clone();
+
+
+                while exp & 1 == 0 {
+                    base = &base * &base;
+                    exp >>= 1;
+                }
+
+                if exp == 1 { return base; }
+
+                let mut acc = base.clone();
+                while exp > 1 {
+                    exp >>= 1;
+                    base = &base * &base;
+                    if exp & 1 == 1 {
+                        acc = &acc * &base;
+                    }
+                }
+                acc
+            }
+        }
+
+        impl<'a, 'b> Pow<&'b $T> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: &$T) -> Self::Output {
+                self.pow(*exp)
+            }
+        }
+    }
+}
+
+pow_impl!(u8);
+pow_impl!(u16);
+pow_impl!(u32);
+pow_impl!(u64);
+pow_impl!(usize);
+#[cfg(has_i128)]
+pow_impl!(u128);
 
 forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
 forward_val_assign!(impl AddAssign for BigUint, add_assign);
@@ -1056,7 +1105,7 @@ impl Roots for BigUint {
 
         loop {
             s = u;
-            let q = self / pow(s.clone(), n_min_1);
+            let q = self / s.pow(n_min_1);
             let t: BigUint = n_min_1 * &s + q;
 
             u = t / n;

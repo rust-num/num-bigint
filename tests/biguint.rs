@@ -19,7 +19,7 @@ use std::hash::{BuildHasher, Hasher, Hash};
 use std::collections::hash_map::RandomState;
 
 use num_traits::{Num, Zero, One, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv, ToPrimitive,
-                 FromPrimitive, Float};
+                 FromPrimitive, Float, Pow};
 
 mod consts;
 use consts::*;
@@ -766,7 +766,7 @@ fn test_sub() {
 #[should_panic]
 fn test_sub_fail_on_underflow() {
     let (a, b): (BigUint, BigUint) = (Zero::zero(), One::one());
-    a - b;
+    let _ = a - b;
 }
 
 #[test]
@@ -1529,4 +1529,32 @@ fn test_iter_product_generic() {
 
     assert_eq!(result, data.iter().product());
     assert_eq!(result, data.into_iter().product());
+}
+
+#[test]
+fn test_pow() {
+    let one = BigUint::from(1u32);
+    let two = BigUint::from(2u32);
+    let four = BigUint::from(4u32);
+    let eight = BigUint::from(8u32);
+    let tentwentyfour = BigUint::from(1024u32);
+    let twentyfourtyeight = BigUint::from(2048u32);
+    macro_rules! check {
+        ($t:ty) => {
+            assert_eq!(two.pow(0 as $t), one);
+            assert_eq!(two.pow(1 as $t), two);
+            assert_eq!(two.pow(2 as $t), four);
+            assert_eq!(two.pow(3 as $t), eight);
+            assert_eq!(two.pow(10 as $t), tentwentyfour);
+            assert_eq!(two.pow(11 as $t), twentyfourtyeight);
+            assert_eq!(two.pow(&(11 as $t)), twentyfourtyeight);
+        }
+    }
+    check!(u8);
+    check!(u16);
+    check!(u32);
+    check!(u64);
+    check!(usize);
+    #[cfg(has_i128)]
+    check!(u128);
 }
