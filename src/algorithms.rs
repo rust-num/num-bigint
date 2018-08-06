@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 use std::cmp;
-use std::cmp::Ordering::{self, Less, Greater, Equal};
+use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::iter::repeat;
 use std::mem;
 use traits;
-use traits::{Zero, One};
+use traits::{One, Zero};
 
 use biguint::BigUint;
 
@@ -95,7 +95,9 @@ pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     if carry != 0 {
         for a in a_hi {
             *a = adc(*a, 0, &mut carry);
-            if carry == 0 { break }
+            if carry == 0 {
+                break;
+            }
         }
     }
 
@@ -127,13 +129,17 @@ pub fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
     if borrow != 0 {
         for a in a_hi {
             *a = sbb(*a, 0, &mut borrow);
-            if borrow == 0 { break }
+            if borrow == 0 {
+                break;
+            }
         }
     }
 
     // note: we're _required_ to fail on underflow
-    assert!(borrow == 0 && b_hi.iter().all(|x| *x == 0),
-            "Cannot subtract b from a because b is larger than a.");
+    assert!(
+        borrow == 0 && b_hi.iter().all(|x| *x == 0),
+        "Cannot subtract b from a because b is larger than a."
+    );
 }
 
 // Only for the Sub impl. `a` and `b` must have same length.
@@ -162,8 +168,10 @@ pub fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
     assert!(a_hi.is_empty());
 
     // note: we're _required_ to fail on underflow
-    assert!(borrow == 0 && b_hi.iter().all(|x| *x == 0),
-            "Cannot subtract b from a because b is larger than a.");
+    assert!(
+        borrow == 0 && b_hi.iter().all(|x| *x == 0),
+        "Cannot subtract b from a because b is larger than a."
+    );
 }
 
 pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
@@ -210,11 +218,7 @@ pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
 /// Three argument multiply accumulate:
 /// acc += b * c
 fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    let (x, y) = if b.len() < c.len() {
-        (b, c)
-    } else {
-        (c, b)
-    };
+    let (x, y) = if b.len() < c.len() { (b, c) } else { (c, b) };
 
     // We use three algorithms for different input sizes.
     //
@@ -317,8 +321,8 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // Not required, but the adds go faster if we drop any unneeded 0s from the end:
         p.normalize();
 
-        add2(&mut acc[b..],        &p.data[..]);
-        add2(&mut acc[b * 2..],    &p.data[..]);
+        add2(&mut acc[b..], &p.data[..]);
+        add2(&mut acc[b * 2..], &p.data[..]);
 
         // Zero out p before the next multiply:
         p.data.truncate(0);
@@ -328,8 +332,8 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         mac3(&mut p.data[..], x0, y0);
         p.normalize();
 
-        add2(&mut acc[..],         &p.data[..]);
-        add2(&mut acc[b..],        &p.data[..]);
+        add2(&mut acc[..], &p.data[..]);
+        add2(&mut acc[b..], &p.data[..]);
 
         // p1 = (x1 - x0) * (y1 - y0)
         // We do this one last, since it may be negative and acc can't ever be negative:
@@ -337,7 +341,7 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let (j1_sign, j1) = sub_sign(y1, y0);
 
         match j0_sign * j1_sign {
-            Plus    => {
+            Plus => {
                 p.data.truncate(0);
                 p.data.extend(repeat(0).take(len));
 
@@ -345,13 +349,12 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
                 p.normalize();
 
                 sub2(&mut acc[b..], &p.data[..]);
-            },
-            Minus   => {
+            }
+            Minus => {
                 mac3(&mut acc[b..], &j0.data[..], &j1.data[..]);
-            },
-            NoSign  => (),
+            }
+            NoSign => (),
         }
-
     } else {
         // Toom-3 multiplication:
         //
@@ -361,7 +364,7 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // The general idea is to treat the large integers digits as
         // polynomials of a certain degree and determine the coefficients/digits
         // of the product of the two via interpolation of the polynomial product.
-        let i = y.len()/3 + 1;
+        let i = y.len() / 3 + 1;
 
         let x0_len = cmp::min(x.len(), i);
         let x1_len = cmp::min(x.len() - x0_len, i);
@@ -432,7 +435,7 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let r2 = &p2 * &q2;
 
         // w(-2)
-        let r3 = ((p2 + x2)*2 - x0) * ((q2 + y2)*2 - y0);
+        let r3 = ((p2 + x2) * 2 - x0) * ((q2 + y2) * 2 - y0);
 
         // Evaluating these points gives us the following system of linear equations.
         //
@@ -456,14 +459,18 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let mut comp3: BigInt = (r3 - &r1) / 3;
         let mut comp1: BigInt = (r1 - &r2) / 2;
         let mut comp2: BigInt = r2 - &r0;
-        comp3 = (&comp2 - comp3)/2 + &r4*2;
+        comp3 = (&comp2 - comp3) / 2 + &r4 * 2;
         comp2 = comp2 + &comp1 - &r4;
         comp1 = comp1 - &comp3;
 
         // Recomposition. The coefficients of the polynomial are now known.
         //
         // Evaluate at w(t) where t is our given base to get the result.
-        let result = r0 + (comp1 << 32*i) + (comp2 << 2*32*i) + (comp3 << 3*32*i) + (r4 << 4*32*i);
+        let result = r0
+            + (comp1 << 32 * i)
+            + (comp2 << 2 * 32 * i)
+            + (comp3 << 3 * 32 * i)
+            + (r4 << 4 * 32 * i);
         let result_pos = result.to_biguint().unwrap();
         add2(&mut acc[..], &result_pos.data);
     }
@@ -533,13 +540,17 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
 
     let bn = *b.data.last().unwrap();
     let q_len = a.data.len() - b.data.len() + 1;
-    let mut q = BigUint { data: vec![0; q_len] };
+    let mut q = BigUint {
+        data: vec![0; q_len],
+    };
 
     // We reuse the same temporary to avoid hitting the allocator in our inner loop - this is
     // sized to hold a0 (in the common case; if a particular digit of the quotient is zero a0
     // can be bigger).
     //
-    let mut tmp = BigUint { data: Vec::with_capacity(2) };
+    let mut tmp = BigUint {
+        data: Vec::with_capacity(2),
+    };
 
     for j in (0..q_len).rev() {
         /*
@@ -678,9 +689,9 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 #[cfg(test)]
 mod algorithm_tests {
     use big_digit::BigDigit;
-    use {BigUint, BigInt};
-    use Sign::Plus;
     use traits::Num;
+    use Sign::Plus;
+    use {BigInt, BigUint};
 
     #[test]
     fn test_sub_sign() {

@@ -58,7 +58,7 @@ mod biguint {
 
 mod bigint {
     use num_bigint::BigInt;
-    use num_traits::{Signed, Pow};
+    use num_traits::{Pow, Signed};
 
     fn check(x: i64, n: u32) {
         let big_x = BigInt::from(x);

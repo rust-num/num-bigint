@@ -1,17 +1,17 @@
 #![feature(test)]
 #![cfg(feature = "rand")]
 
-extern crate test;
 extern crate num_bigint;
-extern crate num_traits;
 extern crate num_integer;
+extern crate num_traits;
 extern crate rand;
+extern crate test;
 
+use num_bigint::{BigInt, BigUint, RandBigInt};
+use num_traits::{FromPrimitive, Num, One, Pow, Zero};
+use rand::{SeedableRng, StdRng};
 use std::mem::replace;
 use test::Bencher;
-use num_bigint::{BigInt, BigUint, RandBigInt};
-use num_traits::{Zero, One, FromPrimitive, Num, Pow};
-use rand::{SeedableRng, StdRng};
 
 fn get_rng() -> StdRng {
     let mut seed = [0; 32];
@@ -39,7 +39,7 @@ fn divide_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
 
 fn factorial(n: usize) -> BigUint {
     let mut f: BigUint = One::one();
-    for i in 1..(n+1) {
+    for i in 1..(n + 1) {
         let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
         f = f * bu;
     }
@@ -307,21 +307,21 @@ fn pow_bench(b: &mut Bencher) {
     });
 }
 
-
 /// This modulus is the prime from the 2048-bit MODP DH group:
 /// https://tools.ietf.org/html/rfc3526#section-3
-const RFC3526_2048BIT_MODP_GROUP: &'static str = "\
-    FFFFFFFF_FFFFFFFF_C90FDAA2_2168C234_C4C6628B_80DC1CD1\
-    29024E08_8A67CC74_020BBEA6_3B139B22_514A0879_8E3404DD\
-    EF9519B3_CD3A431B_302B0A6D_F25F1437_4FE1356D_6D51C245\
-    E485B576_625E7EC6_F44C42E9_A637ED6B_0BFF5CB6_F406B7ED\
-    EE386BFB_5A899FA5_AE9F2411_7C4B1FE6_49286651_ECE45B3D\
-    C2007CB8_A163BF05_98DA4836_1C55D39A_69163FA8_FD24CF5F\
-    83655D23_DCA3AD96_1C62F356_208552BB_9ED52907_7096966D\
-    670C354E_4ABC9804_F1746C08_CA18217C_32905E46_2E36CE3B\
-    E39E772C_180E8603_9B2783A2_EC07A28F_B5C55DF0_6F4C52C9\
-    DE2BCBF6_95581718_3995497C_EA956AE5_15D22618_98FA0510\
-    15728E5A_8AACAA68_FFFFFFFF_FFFFFFFF";
+const RFC3526_2048BIT_MODP_GROUP: &'static str =
+    "\
+     FFFFFFFF_FFFFFFFF_C90FDAA2_2168C234_C4C6628B_80DC1CD1\
+     29024E08_8A67CC74_020BBEA6_3B139B22_514A0879_8E3404DD\
+     EF9519B3_CD3A431B_302B0A6D_F25F1437_4FE1356D_6D51C245\
+     E485B576_625E7EC6_F44C42E9_A637ED6B_0BFF5CB6_F406B7ED\
+     EE386BFB_5A899FA5_AE9F2411_7C4B1FE6_49286651_ECE45B3D\
+     C2007CB8_A163BF05_98DA4836_1C55D39A_69163FA8_FD24CF5F\
+     83655D23_DCA3AD96_1C62F356_208552BB_9ED52907_7096966D\
+     670C354E_4ABC9804_F1746C08_CA18217C_32905E46_2E36CE3B\
+     E39E772C_180E8603_9B2783A2_EC07A28F_B5C55DF0_6F4C52C9\
+     DE2BCBF6_95581718_3995497C_EA956AE5_15D22618_98FA0510\
+     15728E5A_8AACAA68_FFFFFFFF_FFFFFFFF";
 
 #[bench]
 fn modpow(b: &mut Bencher) {

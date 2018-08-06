@@ -76,7 +76,6 @@
 //! The `num-bigint` crate is tested for rustc 1.15 and greater.
 
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.2")]
-
 // We don't actually support `no_std` yet, and probably won't until `alloc` is stable.  We're just
 // reserving this ability with the "std" feature now, and compilation will fail without.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -95,8 +94,8 @@ use std::fmt;
 #[macro_use]
 mod macros;
 
-mod biguint;
 mod bigint;
+mod biguint;
 
 #[cfg(feature = "rand")]
 mod bigrand;
@@ -159,12 +158,12 @@ impl Error for ParseBigIntError {
 pub use biguint::BigUint;
 pub use biguint::ToBigUint;
 
-pub use bigint::Sign;
 pub use bigint::BigInt;
+pub use bigint::Sign;
 pub use bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::{RandBigInt, RandomBits, UniformBigUint, UniformBigInt};
+pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.

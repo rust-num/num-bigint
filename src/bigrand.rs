@@ -1,7 +1,7 @@
 //! Randomization of big integers
 
-use rand::prelude::*;
 use rand::distributions::uniform::{SampleUniform, UniformSampler};
+use rand::prelude::*;
 use rand::AsByteSliceMut;
 
 use BigInt;
@@ -9,10 +9,10 @@ use BigUint;
 use Sign::*;
 
 use big_digit::BigDigit;
-use bigint::{magnitude, into_magnitude};
+use bigint::{into_magnitude, magnitude};
 
-use traits::Zero;
 use integer::Integer;
+use traits::Zero;
 
 pub trait RandBigInt {
     /// Generate a random `BigUint` of the given bit size.
@@ -110,7 +110,6 @@ impl<R: Rng + ?Sized> RandBigInt for R {
     }
 }
 
-
 /// The back-end implementing rand's `UniformSampler` for `BigUint`.
 #[derive(Clone, Debug)]
 pub struct UniformBigUint {
@@ -150,7 +149,6 @@ impl UniformSampler for UniformBigUint {
 impl SampleUniform for BigUint {
     type Sampler = UniformBigUint;
 }
-
 
 /// The back-end implementing rand's `UniformSampler` for `BigInt`.
 #[derive(Clone, Debug)]

@@ -7,9 +7,9 @@ extern crate rand;
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
     use num_traits::Zero;
+    use rand::distributions::Uniform;
     use rand::thread_rng;
     use rand::{Rng, SeedableRng};
-    use rand::distributions::Uniform;
 
     #[test]
     fn test_rand() {
@@ -164,9 +164,9 @@ mod biguint {
 mod bigint {
     use num_bigint::{BigInt, RandBigInt, RandomBits};
     use num_traits::Zero;
+    use rand::distributions::Uniform;
     use rand::thread_rng;
     use rand::{Rng, SeedableRng};
-    use rand::distributions::Uniform;
 
     #[test]
     fn test_rand() {

@@ -12,15 +12,13 @@ macro_rules! assert_op {
 
 /// Assert that an assign-op works for all val/ref combinations
 macro_rules! assert_assign_op {
-    ($left:ident $op:tt $right:ident == $expected:expr) => {
-        {
-            let mut left = $left.clone();
-            assert_eq!({ left $op &$right; left}, $expected);
+    ($left:ident $op:tt $right:ident == $expected:expr) => {{
+        let mut left = $left.clone();
+        assert_eq!({ left $op &$right; left}, $expected);
 
-            let mut left = $left.clone();
-            assert_eq!({ left $op $right.clone(); left}, $expected);
-        }
-    };
+        let mut left = $left.clone();
+        assert_eq!({ left $op $right.clone(); left}, $expected);
+    }};
 }
 
 /// Assert that an op works for scalar left or right

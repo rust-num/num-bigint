@@ -9,7 +9,6 @@ use num_traits::Zero;
 use rand::prelude::*;
 
 fn test_mul_divide_torture_count(count: usize) {
-
     let bits_max = 1 << 12;
     let seed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
     let mut rng = SmallRng::from_seed(seed);
@@ -42,4 +41,3 @@ fn test_mul_divide_torture() {
 fn test_mul_divide_torture_long() {
     test_mul_divide_torture_count(1000000);
 }
-

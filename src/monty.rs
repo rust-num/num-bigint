@@ -5,7 +5,7 @@ use biguint::BigUint;
 
 struct MontyReducer<'a> {
     n: &'a BigUint,
-    n0inv: u32
+    n0inv: u32,
 }
 
 // Calculate the modular inverse of `num`, using Extended GCD.
@@ -33,10 +33,12 @@ fn inv_mod_u32(num: u32) -> u32 {
         let q = a / b;
         let r = a % b;
         // 5: (a, b) <- (b, r)
-        a = b; b = r;
+        a = b;
+        b = r;
         // 6: (u, w) <- (w, u - qw)
-        let m = u - w*q;
-        u = w; w = m;
+        let m = u - w * q;
+        u = w;
+        w = m;
     }
 
     assert!(a == 1);
@@ -100,7 +102,7 @@ fn monty_sqr(a: BigUint, mr: &MontyReducer) -> BigUint {
     monty_redc(&a * &a, mr)
 }
 
-pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint{
+pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
     let mr = MontyReducer::new(modulus);
 
     // Calculate the Montgomery parameter
