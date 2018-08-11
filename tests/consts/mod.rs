@@ -13,6 +13,7 @@ pub const SUM_TRIPLES: &'static [(&'static [u32], &'static [u32], &'static [u32]
     (&[N1, N1], &[N1, N1], &[N2, N1, 1]),
     (&[1, 1, 1], &[N1, N1], &[0, 1, 2]),
     (&[2, 2, 1], &[N1, N2], &[1, 1, 2]),
+    (&[1, 2, 2, 1], &[N1, N2], &[0, 1, 3, 1]),
 ];
 
 pub const M: u32 = ::std::u32::MAX;
