@@ -603,6 +603,7 @@ impl AddAssign<u128> for BigUint {
                 }
                 __add2(&mut self.data, &[d, c, b, a])
             } else {
+                debug_assert!(b > 0);
                 while self.data.len() < 3 {
                     self.data.push(0);
                 }
@@ -1434,7 +1435,7 @@ impl ToPrimitive for BigUint {
             ret |= (*i as u128) << bits;
             bits += big_digit::BITS;
         }
-        println!("{:?} -> {}", self, ret);
+
         Some(ret)
     }
 
