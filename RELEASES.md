@@ -1,3 +1,22 @@
+# Release 0.2.1 (2018-11-02)
+
+- [`RandBigInt` now uses `Rng::fill_bytes`][53] to improve performance, instead
+  of repeated `gen::<u32>` calls.  The also affects the implementations of the
+  other `rand` traits.  This may potentially change the values produced by some
+  seeded RNGs on previous versions, but the values were tested to be stable
+  with `ChaChaRng`, `IsaacRng`, and `XorShiftRng`.
+- [`BigInt` and `BigUint` now implement `num_integer::Roots`][56].
+- [`BigInt` and `BigUint` now implement `num_traits::Pow`][54].
+- [`BigInt` and `BigUint` now implement operators with 128-bit integers][64].
+
+**Contributors**: @cuviper, @dignifiedquire, @mancabizjak, @Robbepop,
+@TheIronBorn, @thomwiggers
+
+[53]: https://github.com/rust-num/num-bigint/pull/53
+[54]: https://github.com/rust-num/num-bigint/pull/54
+[56]: https://github.com/rust-num/num-bigint/pull/56
+[64]: https://github.com/rust-num/num-bigint/pull/64
+
 # Release 0.2.0 (2018-05-25)
 
 ### Enhancements
