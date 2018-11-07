@@ -40,7 +40,6 @@ impl MontyReducer {
 /// x and y are required to satisfy 0 <= z < 2**(n*_W) and then the result
 /// z is guaranteed to satisfy 0 <= z < 2**(n*_W), but it may not be < m.
 fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> BigUint {
-    // println!("montgomery: {:?} {:?} {:?} {} {}", x, y, m, k, n);
     // This code assumes x, y, m are all the same length, n.
     // (required by addMulVVW and the for loop).
     // It also assumes that x, y are already reduced mod m,
@@ -135,11 +134,8 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     let mr = MontyReducer::new(m);
     let num_words = m.data.len();
 
-    // println!("modpow {:?} {:?} {:?}", x, y, m);
-    // println!("numWords {}", num_words);
     let mut x = x.clone();
 
-    // println!("inverse: {:?}", mr.n0inv);
     // We want the lengths of x and m to be equal.
     // It is OK if x >= m as long as len(x) == len(m).
     if x.data.len() > num_words {
@@ -156,7 +152,6 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     if rr.data.len() < num_words {
         rr.data.resize(num_words, 0);
     }
-    // println!("rr: {:?}", rr);
     // one = 1, with equal length to that of m
     let mut one = BigUint::one();
     one.data.resize(num_words, 0);
@@ -170,14 +165,13 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
         let r = montgomery(&powers[i - 1], &powers[1], m, mr.n0inv, num_words);
         powers.push(r);
     }
-    // println!("powers: {:?} {}", powers, 1 << n);
+
     // initialize z = 1 (Montgomery 1)
     let mut z = powers[0].clone();
     z.data.resize(num_words, 0);
     let mut zz = BigUint::zero();
     zz.data.resize(num_words, 0);
 
-    // println!("powers: {:?}", powers);
     // same windowed exponent, but with Montgomery multiplications
     for i in (0..y.data.len()).rev() {
         let mut yi = y.data[i];
