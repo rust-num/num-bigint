@@ -1502,7 +1502,6 @@ impl Mul<u64> for BigInt {
 }
 
 impl MulAssign<u64> for BigInt {
-<<<<<<< HEAD
     #[inline]
     fn mul_assign(&mut self, other: u64) {
         self.data *= other;
@@ -1516,21 +1515,6 @@ impl Mul<u128> for BigInt {
     type Output = BigInt;
 
     #[inline]
-=======
-    #[inline]
-    fn mul_assign(&mut self, other: u64) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
-    }
-}
-#[cfg(has_i128)]
-impl Mul<u128> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
->>>>>>> feat: implement u128 and i128 operations for BigInt
     fn mul(self, other: u128) -> BigInt {
         BigInt::from_biguint(self.sign, self.data * other)
     }
@@ -1661,7 +1645,6 @@ impl Div<u32> for BigInt {
         BigInt::from_biguint(self.sign, self.data / other)
     }
 }
-<<<<<<< HEAD
 
 impl DivAssign<u32> for BigInt {
     #[inline]
@@ -1682,28 +1665,6 @@ impl Div<BigInt> for u32 {
     }
 }
 
-=======
-
-impl DivAssign<u32> for BigInt {
-    #[inline]
-    fn div_assign(&mut self, other: u32) {
-        self.data /= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
-    }
-}
-
-impl Div<BigInt> for u32 {
-    type Output = BigInt;
-
-    #[inline]
-    fn div(self, other: BigInt) -> BigInt {
-        BigInt::from_biguint(other.sign, self / other.data)
-    }
-}
-
->>>>>>> feat: implement u128 and i128 operations for BigInt
 impl Div<u64> for BigInt {
     type Output = BigInt;
 
