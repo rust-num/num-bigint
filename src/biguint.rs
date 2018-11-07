@@ -2614,6 +2614,7 @@ fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
 }
 
 #[cfg(feature = "serde")]
+#[cfg(not(feature = "u64_digit"))]
 impl serde::Serialize for BigUint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -2628,6 +2629,18 @@ impl serde::Serialize for BigUint {
 }
 
 #[cfg(feature = "serde")]
+#[cfg(feature = "u64_digit")]
+impl serde::Serialize for BigUint {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        unimplemented!()
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg(not(feature = "u64_digit"))]
 impl<'de> serde::Deserialize<'de> for BigUint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -2635,6 +2648,17 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     {
         let data: Vec<u32> = Vec::deserialize(deserializer)?;
         Ok(BigUint::new(data))
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg(feature = "u64_digit")]
+impl<'de> serde::Deserialize<'de> for BigUint {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        unimplemented!()
     }
 }
 
