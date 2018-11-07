@@ -66,7 +66,7 @@ mod biguint {
         let e: BigUint = e.into();
         let m: BigUint = m.into();
         let r: BigUint = r.into();
-        println!("checking: {} {} {} {}", b, e, m, r);
+
         assert_eq!(b.modpow(&e, &m), r);
 
         let even_m = &m << 1;

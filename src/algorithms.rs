@@ -38,14 +38,10 @@ fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
 
 #[inline]
 pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    // println!("mac_with_carry: {} {} {} {}", a, b, c, acc);
     *acc += a as DoubleBigDigit;
     *acc += (b as DoubleBigDigit) * (c as DoubleBigDigit);
-    // println!("acc {}", acc);
     let lo = *acc as BigDigit;
-    // println!("lo {}", lo);
     *acc >>= big_digit::BITS;
-    // println!("acc shifted {}", acc);
     lo
 }
 
@@ -201,7 +197,6 @@ pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
 /// Three argument multiply accumulate:
 /// acc += b * c
 pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
-    // println!("mac_digit: {:?} += {:?} * {}", acc, b, c);
     if c == 0 {
         return;
     }
