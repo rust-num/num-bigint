@@ -1,11 +1,13 @@
 # num-bigint
 
-[![crate](https://img.shields.io/crates/v/num-bigint.svg)](https://crates.io/crates/num-bigint)
-[![documentation](https://docs.rs/num-bigint/badge.svg)](https://docs.rs/num-bigint)
+[![crate](https://img.shields.io/crates/v/num-bigint-dig.svg)](https://crates.io/crates/num-bigint-dig)
+[![documentation](https://docs.rs/num-bigint-dig/badge.svg)](https://docs.rs/num-bigint-dig)
 ![minimum rustc 1.15](https://img.shields.io/badge/rustc-1.15+-red.svg)
 [![Travis status](https://travis-ci.org/rust-num/num-bigint.svg?branch=master)](https://travis-ci.org/rust-num/num-bigint)
 
 Big integer types for Rust, `BigInt` and `BigUint`.
+
+> **Warning** This is a fork of [`rust-num/num-bigint`](https://github.com/rust-num/num-bigint) and only here, to provide the features needed for [dignifiedqurie/rust-rsa](https://github.com/dignifiedquire/rust-rsa).
 
 ## Usage
 
@@ -13,13 +15,13 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-num-bigint = "0.2"
+num-bigint-dig = "0.2"
 ```
 
 and this to your crate root:
 
 ```rust
-extern crate num_bigint;
+extern crate num_bigint_dig as num_bigint;
 ```
 
 ## Features
