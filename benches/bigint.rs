@@ -343,27 +343,3 @@ fn modpow_even(b: &mut Bencher) {
 
     b.iter(|| base.modpow(&e, &m));
 }
-
-#[bench]
-fn roots_sqrt(b: &mut Bencher) {
-    let mut rng = get_rng();
-    let x = rng.gen_biguint(2048);
-
-    b.iter(|| x.sqrt());
-}
-
-#[bench]
-fn roots_cbrt(b: &mut Bencher) {
-    let mut rng = get_rng();
-    let x = rng.gen_biguint(2048);
-
-    b.iter(|| x.cbrt());
-}
-
-#[bench]
-fn roots_nth_100(b: &mut Bencher) {
-    let mut rng = get_rng();
-    let x = rng.gen_biguint(2048);
-
-    b.iter(|| x.nth_root(100));
-}
