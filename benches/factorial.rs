@@ -1,6 +1,6 @@
 #![feature(test)]
 
-extern crate num_bigint;
+extern crate num_bigint_dig as num_bigint;
 extern crate num_traits;
 extern crate test;
 

@@ -44,7 +44,7 @@ use ParseBigIntError;
 /// A big unsigned integer type.
 #[derive(Clone, Debug, Hash)]
 pub struct BigUint {
-    data: Vec<BigDigit>,
+    pub data: Vec<BigDigit>,
 }
 
 impl PartialEq for BigUint {
