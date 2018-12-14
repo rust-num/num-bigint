@@ -105,8 +105,8 @@ mod biguint {
     #[test]
     fn test_roots_rand() {
         use num_bigint::RandBigInt;
-        use rand::{thread_rng, Rng};
         use rand::distributions::Uniform;
+        use rand::{thread_rng, Rng};
 
         let mut rng = thread_rng();
         let bit_range = Uniform::new(0, 2048);

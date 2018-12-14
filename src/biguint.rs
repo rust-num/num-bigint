@@ -1450,7 +1450,7 @@ impl Roots for BigUint {
         // The root of non-zero values less than 2ⁿ can only be 1.
         let bits = self.bits();
         if bits <= n as usize {
-            return BigUint::one()
+            return BigUint::one();
         }
 
         // If we fit in `u64`, compute the root that way.
@@ -1543,7 +1543,6 @@ impl Roots for BigUint {
             let scale = root_scale * 3;
             (self >> scale).cbrt() << root_scale
         };
-
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / (s * s);
