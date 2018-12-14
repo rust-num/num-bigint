@@ -710,9 +710,10 @@ impl ShlAssign<usize> for BigInt {
 // Negative values need a rounding adjustment if there are any ones in the
 // bits that are getting shifted out.
 fn shr_round_down(i: &BigInt, rhs: usize) -> bool {
-    i.is_negative() && biguint::trailing_zeros(&i.data)
-        .map(|n| n < rhs)
-        .unwrap_or(false)
+    i.is_negative()
+        && biguint::trailing_zeros(&i.data)
+            .map(|n| n < rhs)
+            .unwrap_or(false)
 }
 
 impl Shr<usize> for BigInt {
@@ -1126,15 +1127,13 @@ macro_rules! bigint_sub {
             (_, NoSign) => $a_owned,
             (NoSign, _) => -$b_owned,
             // opposite signs => keep the sign of the left with the sum of magnitudes
-            (Plus, Minus) | (Minus, Plus) =>
-                BigInt::from_biguint($a.sign, $a_data + $b_data),
+            (Plus, Minus) | (Minus, Plus) => BigInt::from_biguint($a.sign, $a_data + $b_data),
             // same sign => keep or toggle the sign of the left with the difference of magnitudes
-            (Plus, Plus) | (Minus, Minus) =>
-                match $a.data.cmp(&$b.data) {
-                    Less => BigInt::from_biguint(-$a.sign, $b_data - $a_data),
-                    Greater => BigInt::from_biguint($a.sign, $a_data - $b_data),
-                    Equal => Zero::zero(),
-                },
+            (Plus, Plus) | (Minus, Minus) => match $a.data.cmp(&$b.data) {
+                Less => BigInt::from_biguint(-$a.sign, $b_data - $a_data),
+                Greater => BigInt::from_biguint($a.sign, $a_data - $b_data),
+                Equal => Zero::zero(),
+            },
         }
     };
 }
@@ -2759,7 +2758,11 @@ impl BigInt {
     pub fn to_signed_bytes_be(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_be();
         let first_byte = bytes.first().map(|v| *v).unwrap_or(0);
-        if first_byte > 0x7f && !(first_byte == 0x80 && bytes.iter().skip(1).all(Zero::is_zero)) {
+        if first_byte > 0x7f
+            && !(first_byte == 0x80
+                && bytes.iter().skip(1).all(Zero::is_zero)
+                && self.sign == Sign::Minus)
+        {
             // msb used by magnitude, extend by 1 byte
             bytes.insert(0, 0);
         }
@@ -2783,7 +2786,10 @@ impl BigInt {
     pub fn to_signed_bytes_le(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_le();
         let last_byte = bytes.last().map(|v| *v).unwrap_or(0);
-        if last_byte > 0x7f && !(last_byte == 0x80 && bytes.iter().rev().skip(1).all(Zero::is_zero))
+        if last_byte > 0x7f
+            && !(last_byte == 0x80
+                && bytes.iter().rev().skip(1).all(Zero::is_zero)
+                && self.sign == Sign::Minus)
         {
             // msb used by magnitude, extend by 1 byte
             bytes.push(0);

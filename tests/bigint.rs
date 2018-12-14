@@ -116,6 +116,7 @@ fn test_to_signed_bytes_le() {
     check("-100", vec![156]);
     check("-8388608", vec![0, 0, 0x80]);
     check("-192", vec![0x40, 0xff]);
+    check("128", vec![0x80, 0])
 }
 
 #[test]
@@ -157,6 +158,7 @@ fn test_to_signed_bytes_be() {
     check("-100", vec![156]);
     check("-8388608", vec![128, 0, 0]);
     check("-192", vec![0xff, 0x40]);
+    check("128", vec![0, 0x80]);
 }
 
 #[test]
@@ -178,6 +180,22 @@ fn test_from_signed_bytes_be() {
     check(&[128, 0, 0], "-8388608");
     check(&[255; 10], "-1");
     check(&[0xff, 0x40], "-192");
+}
+
+#[test]
+fn test_signed_bytes_be_round_trip() {
+    for i in -0x1FFFF..0x20000 {
+        let n = BigInt::from(i);
+        assert_eq!(n, BigInt::from_signed_bytes_be(&n.to_signed_bytes_be()));
+    }
+}
+
+#[test]
+fn test_signed_bytes_le_round_trip() {
+    for i in -0x1FFFF..0x20000 {
+        let n = BigInt::from(i);
+        assert_eq!(n, BigInt::from_signed_bytes_le(&n.to_signed_bytes_le()));
+    }
 }
 
 #[test]

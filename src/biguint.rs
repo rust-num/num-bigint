@@ -135,7 +135,8 @@ fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
                 .iter()
                 .rev()
                 .fold(0, |acc, &c| (acc << bits) | c as BigDigit)
-        }).collect();
+        })
+        .collect();
 
     BigUint::new(data)
 }
