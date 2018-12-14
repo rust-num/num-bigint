@@ -25,6 +25,9 @@ name = "factorial"
 name = "gcd"
 
 [[bench]]
+name = "roots"
+
+[[bench]]
 harness = false
 name = "shootout-pidigits"
 

@@ -1267,6 +1267,35 @@ impl Integer for BigUint {
     }
 }
 
+#[inline]
+fn fixpoint<F>(mut x: BigUint, max_bits: usize, f: F) -> BigUint
+where
+    F: Fn(&BigUint) -> BigUint,
+{
+    let mut xn = f(&x);
+
+    // If the value increased, then the initial guess must have been low.
+    // Repeat until we reverse course.
+    while x < xn {
+        // Sometimes an increase will go way too far, especially with large
+        // powers, and then take a long time to walk back.  We know an upper
+        // bound based on bit size, so saturate on that.
+        x = if xn.bits() > max_bits {
+            BigUint::one() << max_bits
+        } else {
+            xn
+        };
+        xn = f(&x);
+    }
+
+    // Now keep repeating while the estimate is decreasing.
+    while x > xn {
+        x = xn;
+        xn = f(&x);
+    }
+    x
+}
+
 impl Roots for BigUint {
     // nth_root, sqrt and cbrt use Newton's method to compute
     // principal root of a given degree for a given integer.
@@ -1288,27 +1317,42 @@ impl Roots for BigUint {
             _ => (),
         }
 
-        let n = n as usize;
-        let n_min_1 = n - 1;
-
-        let guess = BigUint::one() << (self.bits() / n + 1);
-
-        let mut u = guess;
-        let mut s: BigUint;
-
-        loop {
-            s = u;
-            let q = self / s.pow(n_min_1);
-            let t: BigUint = n_min_1 * &s + q;
-
-            u = t / n;
-
-            if u >= s {
-                break;
-            }
+        // The root of non-zero values less than 2ⁿ can only be 1.
+        let bits = self.bits();
+        if bits <= n as usize {
+            return BigUint::one()
         }
 
-        s
+        // If we fit in `u64`, compute the root that way.
+        if let Some(x) = self.to_u64() {
+            return x.nth_root(n).into();
+        }
+
+        let max_bits = bits / n as usize + 1;
+
+        let guess = if let Some(f) = self.to_f64() {
+            // We fit in `f64` (lossy), so get a better initial guess from that.
+            BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
+        } else {
+            // Try to guess by scaling down such that it does fit in `f64`.
+            // With some (x * 2ⁿᵏ), its nth root ≈ (ⁿ√x * 2ᵏ)
+            let nsz = n as usize;
+            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let root_scale = (extra_bits + (nsz - 1)) / nsz;
+            let scale = root_scale * nsz;
+            if scale < bits && bits - scale > nsz {
+                (self >> scale).nth_root(n) << root_scale
+            } else {
+                BigUint::one() << max_bits
+            }
+        };
+
+        let n_min_1 = n - 1;
+        fixpoint(guess, max_bits, move |s| {
+            let q = self / s.pow(n_min_1);
+            let t = n_min_1 * s + q;
+            t / n
+        })
     }
 
     // Reference:
@@ -1318,23 +1362,31 @@ impl Roots for BigUint {
             return self.clone();
         }
 
-        let guess = BigUint::one() << (self.bits() / 2 + 1);
-
-        let mut u = guess;
-        let mut s: BigUint;
-
-        loop {
-            s = u;
-            let q = self / &s;
-            let t: BigUint = &s + q;
-            u = t >> 1;
-
-            if u >= s {
-                break;
-            }
+        // If we fit in `u64`, compute the root that way.
+        if let Some(x) = self.to_u64() {
+            return x.sqrt().into();
         }
 
-        s
+        let bits = self.bits();
+        let max_bits = bits / 2 as usize + 1;
+
+        let guess = if let Some(f) = self.to_f64() {
+            // We fit in `f64` (lossy), so get a better initial guess from that.
+            BigUint::from_f64(f.sqrt()).unwrap()
+        } else {
+            // Try to guess by scaling down such that it does fit in `f64`.
+            // With some (x * 2²ᵏ), its sqrt ≈ (√x * 2ᵏ)
+            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let root_scale = (extra_bits + 1) / 2;
+            let scale = root_scale * 2;
+            (self >> scale).sqrt() << root_scale
+        };
+
+        fixpoint(guess, max_bits, move |s| {
+            let q = self / s;
+            let t = s + q;
+            t >> 1
+        })
     }
 
     fn cbrt(&self) -> Self {
@@ -1342,23 +1394,32 @@ impl Roots for BigUint {
             return self.clone();
         }
 
-        let guess = BigUint::one() << (self.bits() / 3 + 1);
-
-        let mut u = guess;
-        let mut s: BigUint;
-
-        loop {
-            s = u;
-            let q = self / (&s * &s);
-            let t: BigUint = (&s << 1) + q;
-            u = t / 3u32;
-
-            if u >= s {
-                break;
-            }
+        // If we fit in `u64`, compute the root that way.
+        if let Some(x) = self.to_u64() {
+            return x.cbrt().into();
         }
 
-        s
+        let bits = self.bits();
+        let max_bits = bits / 3 as usize + 1;
+
+        let guess = if let Some(f) = self.to_f64() {
+            // We fit in `f64` (lossy), so get a better initial guess from that.
+            BigUint::from_f64(f.cbrt()).unwrap()
+        } else {
+            // Try to guess by scaling down such that it does fit in `f64`.
+            // With some (x * 2³ᵏ), its cbrt ≈ (∛x * 2ᵏ)
+            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let root_scale = (extra_bits + 2) / 3;
+            let scale = root_scale * 3;
+            (self >> scale).cbrt() << root_scale
+        };
+
+
+        fixpoint(guess, max_bits, move |s| {
+            let q = self / (s * s);
+            let t = (s << 1) + q;
+            t / 3u32
+        })
     }
 }
 
