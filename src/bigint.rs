@@ -2759,7 +2759,7 @@ impl BigInt {
     pub fn to_signed_bytes_be(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_be();
         let first_byte = bytes.first().map(|v| *v).unwrap_or(0);
-        if first_byte > 0x7f && !(first_byte == 0x80 && bytes.iter().skip(1).all(Zero::is_zero)) {
+        if first_byte > 0x7f && !(first_byte == 0x80 && bytes.iter().skip(1).all(Zero::is_zero) && self.sign == Sign::Minus) {
             // msb used by magnitude, extend by 1 byte
             bytes.insert(0, 0);
         }
@@ -2783,7 +2783,7 @@ impl BigInt {
     pub fn to_signed_bytes_le(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_le();
         let last_byte = bytes.last().map(|v| *v).unwrap_or(0);
-        if last_byte > 0x7f && !(last_byte == 0x80 && bytes.iter().rev().skip(1).all(Zero::is_zero))
+        if last_byte > 0x7f && !(last_byte == 0x80 && bytes.iter().rev().skip(1).all(Zero::is_zero) && self.sign == Sign::Minus)
         {
             // msb used by magnitude, extend by 1 byte
             bytes.push(0);
