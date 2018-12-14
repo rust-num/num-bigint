@@ -116,6 +116,7 @@ fn test_to_signed_bytes_le() {
     check("-100", vec![156]);
     check("-8388608", vec![0, 0, 0x80]);
     check("-192", vec![0x40, 0xff]);
+    check("128", vec![0x80, 0])
 }
 
 #[test]
@@ -157,6 +158,7 @@ fn test_to_signed_bytes_be() {
     check("-100", vec![156]);
     check("-8388608", vec![128, 0, 0]);
     check("-192", vec![0xff, 0x40]);
+    check("128", vec![0, 0x80]);
 }
 
 #[test]
