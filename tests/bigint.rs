@@ -183,6 +183,22 @@ fn test_from_signed_bytes_be() {
 }
 
 #[test]
+fn test_signed_bytes_be_round_trip() {
+    for i in -0x1FFFF..0x20000 {
+        let n = BigInt::from(i);
+        assert_eq!(n, BigInt::from_signed_bytes_be(&n.to_signed_bytes_be()));
+    }
+}
+
+#[test]
+fn test_signed_bytes_le_round_trip() {
+    for i in -0x1FFFF..0x20000 {
+        let n = BigInt::from(i);
+        assert_eq!(n, BigInt::from_signed_bytes_le(&n.to_signed_bytes_le()));
+    }
+}
+
+#[test]
 fn test_cmp() {
     let vs: [&[u32]; 4] = [&[2 as u32], &[1, 1], &[2, 1], &[1, 1, 1]];
     let mut nums = Vec::new();
