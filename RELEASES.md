@@ -1,3 +1,14 @@
+# Release 0.2.2 (2018-12-14)
+
+- [The `Roots` implementations now use better initial guesses][71].
+- [Fixed `to_signed_bytes_*` for some positive numbers][72], where the
+  most-significant byte is `0x80` and the rest are `0`.
+
+[71]: https://github.com/rust-num/num-bigint/pull/71
+[72]: https://github.com/rust-num/num-bigint/pull/72
+
+**Contributors**: @cuviper, @leodasvacas
+
 # Release 0.2.1 (2018-11-02)
 
 - [`RandBigInt` now uses `Rng::fill_bytes`][53] to improve performance, instead
