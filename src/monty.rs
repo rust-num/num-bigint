@@ -57,6 +57,7 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
     z.data.resize(n * 2, 0);
 
     let mut c: BigDigit = 0;
+
     for i in 0..n {
         let c2 = add_mul_vvw(&mut z.data[i..n + i], &x.data, y.data[i]);
         let t = z.data[i].wrapping_mul(k);
@@ -64,27 +65,22 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
         let cx = c.wrapping_add(c2);
         let cy = cx.wrapping_add(c3);
         z.data[n + i] = cy;
-        if cx < c2 || cy < c3 {
-            c = 1;
-        } else {
-            c = 0;
-        }
+        c = if cx < c2 || cy < c3 { 1 } else { 0 };
     }
 
     if c == 0 {
-        z.data = z.data[n..].to_vec();
+        let (first, second) = z.data.split_at_mut(n);
+        first.swap_with_slice(&mut second[..]);
     } else {
-        {
-            let (mut first, second) = z.data.split_at_mut(n);
-            sub_vv(&mut first, &second, &m.data);
-        }
-        z.data = z.data[..n].to_vec();
+        let (mut first, second) = z.data.split_at_mut(n);
+        sub_vv(&mut first, &second, &m.data);
     }
+    z.data.truncate(n);
 
     z
 }
 
-#[inline(always)]
+#[inline]
 fn add_mul_vvw(z: &mut [BigDigit], x: &[BigDigit], y: BigDigit) -> BigDigit {
     let mut c = 0;
     for (zi, xi) in z.iter_mut().zip(x.iter()) {
@@ -98,7 +94,7 @@ fn add_mul_vvw(z: &mut [BigDigit], x: &[BigDigit], y: BigDigit) -> BigDigit {
 }
 
 /// The resulting carry c is either 0 or 1.
-#[inline(always)]
+#[inline]
 fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
     let mut c = 0;
     for (i, (xi, yi)) in x.iter().zip(y.iter()).enumerate().take(z.len()) {
@@ -112,7 +108,7 @@ fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
 }
 
 /// z1<<_W + z0 = x+y+c, with c == 0 or 1
-#[inline(always)]
+#[inline]
 fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
     let yc = y.wrapping_add(c);
     let z0 = x.wrapping_add(yc);
@@ -122,7 +118,7 @@ fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
 }
 
 /// z1 << _W + z0 = x * y + c
-#[inline(always)]
+#[inline]
 fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
     let z = x as DoubleBigDigit * y as DoubleBigDigit + c as DoubleBigDigit;
     ((z >> big_digit::BITS) as BigDigit, z as BigDigit)
@@ -159,6 +155,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     let n = 4;
     // powers[i] contains x^i
     let mut powers = Vec::with_capacity(1 << n);
+
     powers.push(montgomery(&one, &rr, m, mr.n0inv, num_words));
     powers.push(montgomery(&x, &rr, m, mr.n0inv, num_words));
     for i in 2..1 << n {

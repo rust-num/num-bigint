@@ -54,7 +54,7 @@ features = ["std"]
 version = "1.0"
 
 [features]
-default = ["std"]
+default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
 std = ["num-integer/std", "num-traits/std"]
 u64_digit = []

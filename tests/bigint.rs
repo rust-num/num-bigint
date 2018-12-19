@@ -782,9 +782,9 @@ fn test_div_rem() {
             assert_eq!(r.sign(), a.sign());
         }
         assert!(r.abs() <= b.abs());
-        assert!(*a == b * &q + &r);
-        assert!(q == *ans_q);
-        assert!(r == *ans_r);
+        assert_eq!(*a, b * &q + &r);
+        assert_eq!(q, *ans_q);
+        assert_eq!(r, *ans_r);
 
         let (a, b, ans_q, ans_r) = (a.clone(), b.clone(), ans_q.clone(), ans_r.clone());
         assert_op!(a / b == ans_q);

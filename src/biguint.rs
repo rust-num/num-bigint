@@ -2001,7 +2001,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigUint;
+    /// use num_bigint_dig::BigUint;
     ///
     /// assert_eq!(BigUint::from_bytes_be(b"A"),
     ///            BigUint::parse_bytes(b"65", 10).unwrap());
@@ -2045,7 +2045,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigUint, ToBigUint};
+    /// use num_bigint_dig::{BigUint, ToBigUint};
     ///
     /// assert_eq!(BigUint::parse_bytes(b"1234", 10), ToBigUint::to_biguint(&1234));
     /// assert_eq!(BigUint::parse_bytes(b"ABCD", 16), ToBigUint::to_biguint(&0xABCD));
@@ -2068,7 +2068,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigUint};
+    /// use num_bigint_dig::{BigUint};
     ///
     /// let inbase190 = &[15, 33, 125, 12, 14];
     /// let a = BigUint::from_radix_be(inbase190, 190).unwrap();
@@ -2111,7 +2111,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigUint};
+    /// use num_bigint_dig::{BigUint};
     ///
     /// let inbase190 = &[14, 12, 125, 33, 15];
     /// let a = BigUint::from_radix_be(inbase190, 190).unwrap();
@@ -2149,7 +2149,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigUint;
+    /// use num_bigint_dig::BigUint;
     ///
     /// let i = BigUint::parse_bytes(b"1125", 10).unwrap();
     /// assert_eq!(i.to_bytes_be(), vec![4, 101]);
@@ -2166,7 +2166,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigUint;
+    /// use num_bigint_dig::BigUint;
     ///
     /// let i = BigUint::parse_bytes(b"1125", 10).unwrap();
     /// assert_eq!(i.to_bytes_le(), vec![101, 4]);
@@ -2186,7 +2186,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigUint;
+    /// use num_bigint_dig::BigUint;
     ///
     /// let i = BigUint::parse_bytes(b"ff", 16).unwrap();
     /// assert_eq!(i.to_str_radix(16), "ff");
@@ -2206,7 +2206,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigUint;
+    /// use num_bigint_dig::BigUint;
     ///
     /// assert_eq!(BigUint::from(0xFFFFu64).to_radix_be(159),
     ///            vec![2, 94, 27]);
@@ -2227,7 +2227,7 @@ impl BigUint {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigUint;
+    /// use num_bigint_dig::BigUint;
     ///
     /// assert_eq!(BigUint::from(0xFFFFu64).to_radix_le(159),
     ///            vec![27, 94, 2]);

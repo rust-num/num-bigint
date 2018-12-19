@@ -19,7 +19,7 @@
 //! ## Example
 //!
 //! ```rust
-//! extern crate num_bigint;
+//! extern crate num_bigint_dig as num_bigint;
 //! extern crate num_traits;
 //!
 //! # fn main() {
@@ -49,7 +49,7 @@
 //! ```rust
 //! # #[cfg(feature = "rand")]
 //! extern crate rand;
-//! extern crate num_bigint as bigint;
+//! extern crate num_bigint_dig as bigint;
 //!
 //! # #[cfg(feature = "rand")]
 //! # fn main() {

@@ -2612,7 +2612,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigInt, Sign};
+    /// use num_bigint_dig::{BigInt, Sign};
     ///
     /// assert_eq!(BigInt::from_bytes_be(Sign::Plus, b"A"),
     ///            BigInt::parse_bytes(b"65", 10).unwrap());
@@ -2684,7 +2684,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigInt, ToBigInt};
+    /// use num_bigint_dig::{BigInt, ToBigInt};
     ///
     /// assert_eq!(BigInt::parse_bytes(b"1234", 10), ToBigInt::to_bigint(&1234));
     /// assert_eq!(BigInt::parse_bytes(b"ABCD", 16), ToBigInt::to_bigint(&0xABCD));
@@ -2707,7 +2707,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigInt, Sign};
+    /// use num_bigint_dig::{BigInt, Sign};
     ///
     /// let inbase190 = vec![15, 33, 125, 12, 14];
     /// let a = BigInt::from_radix_be(Sign::Minus, &inbase190, 190).unwrap();
@@ -2727,7 +2727,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigInt, Sign};
+    /// use num_bigint_dig::{BigInt, Sign};
     ///
     /// let inbase190 = vec![14, 12, 125, 33, 15];
     /// let a = BigInt::from_radix_be(Sign::Minus, &inbase190, 190).unwrap();
@@ -2742,7 +2742,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{ToBigInt, Sign};
+    /// use num_bigint_dig::{ToBigInt, Sign};
     ///
     /// let i = -1125.to_bigint().unwrap();
     /// assert_eq!(i.to_bytes_be(), (Sign::Minus, vec![4, 101]));
@@ -2757,7 +2757,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{ToBigInt, Sign};
+    /// use num_bigint_dig::{ToBigInt, Sign};
     ///
     /// let i = -1125.to_bigint().unwrap();
     /// assert_eq!(i.to_bytes_le(), (Sign::Minus, vec![101, 4]));
@@ -2772,7 +2772,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::ToBigInt;
+    /// use num_bigint_dig::ToBigInt;
     ///
     /// let i = -1125.to_bigint().unwrap();
     /// assert_eq!(i.to_signed_bytes_be(), vec![251, 155]);
@@ -2796,7 +2796,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::ToBigInt;
+    /// use num_bigint_dig::ToBigInt;
     ///
     /// let i = -1125.to_bigint().unwrap();
     /// assert_eq!(i.to_signed_bytes_le(), vec![155, 251]);
@@ -2822,7 +2822,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::BigInt;
+    /// use num_bigint_dig::BigInt;
     ///
     /// let i = BigInt::parse_bytes(b"ff", 16).unwrap();
     /// assert_eq!(i.to_str_radix(16), "ff");
@@ -2847,7 +2847,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigInt, Sign};
+    /// use num_bigint_dig::{BigInt, Sign};
     ///
     /// assert_eq!(BigInt::from(-0xFFFFi64).to_radix_be(159),
     ///            (Sign::Minus, vec![2, 94, 27]));
@@ -2866,7 +2866,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{BigInt, Sign};
+    /// use num_bigint_dig::{BigInt, Sign};
     ///
     /// assert_eq!(BigInt::from(-0xFFFFi64).to_radix_le(159),
     ///            (Sign::Minus, vec![27, 94, 2]));
@@ -2882,7 +2882,7 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{ToBigInt, Sign};
+    /// use num_bigint_dig::{ToBigInt, Sign};
     ///
     /// assert_eq!(ToBigInt::to_bigint(&1234).unwrap().sign(), Sign::Plus);
     /// assert_eq!(ToBigInt::to_bigint(&-4321).unwrap().sign(), Sign::Minus);

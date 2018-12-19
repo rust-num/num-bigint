@@ -135,8 +135,10 @@ fn main() {
         DEFAULT_DIGITS
     } else if args[1] == "--bench" {
         return pidigits(DEFAULT_DIGITS, &mut std::io::sink()).unwrap();
+    } else if let Ok(n) = FromStr::from_str(&args[1]) {
+        n
     } else {
-        FromStr::from_str(&args[1]).unwrap()
+        DEFAULT_DIGITS
     };
     pidigits(n, &mut std::io::stdout()).unwrap();
 }

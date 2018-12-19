@@ -710,4 +710,20 @@ mod algorithm_tests {
         assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
         assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
     }
+
+    #[test]
+    fn test_eq() {
+        let a = BigUint::from_str_radix("265252859812191058636308480000000", 10).unwrap();
+        let b = BigUint::from_str_radix("26525285981219105863630848000000", 10).unwrap();
+        assert!(a != b);
+        assert_ne!(a, b);
+
+        let a = BigUint::from_str_radix("138995801145388806366366393471481216294", 10).unwrap();
+        let b = BigUint::from_str_radix("168653801169012228514850424976871974699", 10).unwrap();
+
+        assert!(a != b);
+        assert_ne!(a, b);
+        assert!(&a != &b);
+        assert_ne!(&a, &b);
+    }
 }
