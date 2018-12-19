@@ -29,6 +29,7 @@ harness = false
 name = "shootout-pidigits"
 
 [dependencies]
+smallvec = "0.6.7"
 
 [dependencies.num-integer]
 version = "0.1.39"

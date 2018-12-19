@@ -40,7 +40,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
         use super::big_digit::BITS;
         let (digits, rem) = bit_size.div_rem(&BITS);
-        let mut data = vec![BigDigit::default(); digits + (rem > 0) as usize];
+        let mut data = smallvec![BigDigit::default(); digits + (rem > 0) as usize];
         // `fill_bytes` is faster than many `gen::<u32>` calls
         self.fill_bytes(data[..].as_byte_slice_mut());
         // Swap bytes per the `Rng::fill` source. This might be

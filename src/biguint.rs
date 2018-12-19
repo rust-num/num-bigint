@@ -26,6 +26,8 @@ use traits::{
 
 use big_digit::{self, BigDigit};
 
+use smallvec::SmallVec;
+
 #[path = "algorithms.rs"]
 mod algorithms;
 #[path = "monty.rs"]
@@ -36,6 +38,7 @@ use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
 use self::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
+use super::VEC_SIZE;
 
 use UsizePromotion;
 
@@ -44,7 +47,7 @@ use ParseBigIntError;
 /// A big unsigned integer type.
 #[derive(Clone, Debug, Hash)]
 pub struct BigUint {
-    pub data: Vec<BigDigit>,
+    pub data: SmallVec<[BigDigit; VEC_SIZE]>,
 }
 
 impl PartialEq for BigUint {
@@ -148,7 +151,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
     debug_assert!(v.iter().all(|&c| (c as BigDigit) < (1 << bits)));
 
     let big_digits = (v.len() * bits + big_digit::BITS - 1) / big_digit::BITS;
-    let mut data = Vec::with_capacity(big_digits);
+    let mut data = SmallVec::with_capacity(big_digits);
 
     let mut d = 0;
     let mut dbits = 0; // number of bits we currently have in d
@@ -184,7 +187,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     // Estimate how big the result will be, so we can pre-allocate it.
     let bits = (radix as f64).log2() * v.len() as f64;
     let big_digits = (bits / big_digit::BITS as f64).ceil();
-    let mut data = Vec::with_capacity(big_digits as usize);
+    let mut data = SmallVec::with_capacity(big_digits as usize);
 
     let (base, power) = get_radix_base(radix);
     let radix = radix as BigDigit;
@@ -1679,6 +1682,7 @@ impl FromPrimitive for BigUint {
     }
 }
 
+#[cfg(not(u64_digit))]
 impl From<u64> for BigUint {
     #[inline]
     fn from(mut n: u64) -> Self {
@@ -1691,6 +1695,14 @@ impl From<u64> for BigUint {
         }
 
         ret
+    }
+}
+
+#[cfg(u64_digit)]
+impl From<u64> for BigUint {
+    #[inline]
+    fn from(mut n: u64) -> Self {
+        BigUint::new_native(smallvec![n])
     }
 }
 
@@ -1907,19 +1919,19 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
 
 #[cfg(not(feature = "u64_digit"))]
 #[inline]
-fn ensure_big_digit(raw: Vec<u32>) -> Vec<BigDigit> {
-    raw
+fn ensure_big_digit(raw: Vec<u32>) -> SmallVec<[BigDigit; VEC_SIZE]> {
+    raw.into()
 }
 
 #[cfg(feature = "u64_digit")]
 #[inline]
-fn ensure_big_digit(raw: Vec<u32>) -> Vec<BigDigit> {
+fn ensure_big_digit(raw: Vec<u32>) -> SmallVec<[BigDigit; VEC_SIZE]> {
     ensure_big_digit_slice(&raw)
 }
 
 #[cfg(feature = "u64_digit")]
 #[inline]
-fn ensure_big_digit_slice(raw: &[u32]) -> Vec<BigDigit> {
+fn ensure_big_digit_slice(raw: &[u32]) -> SmallVec<[BigDigit; VEC_SIZE]> {
     raw.chunks(2)
         .map(|chunk| {
             // raw could have odd length
@@ -1945,7 +1957,7 @@ impl BigUint {
     ///
     /// The digits are in little-endian base matching `BigDigit`.
     #[inline]
-    pub fn new_native(digits: Vec<BigDigit>) -> BigUint {
+    pub fn new_native(digits: SmallVec<[BigDigit; VEC_SIZE]>) -> BigUint {
         BigUint { data: digits }.normalized()
     }
 
@@ -1962,7 +1974,7 @@ impl BigUint {
     /// The digits are in little-endian base matching `BigDigit`
     #[inline]
     pub fn from_slice_native(slice: &[BigDigit]) -> BigUint {
-        BigUint::new_native(slice.to_vec())
+        BigUint::new_native(slice.into())
     }
 
     pub fn get_limb(&self, i: usize) -> BigDigit {
@@ -2340,7 +2352,7 @@ impl_product_iter_type!(BigUint);
 
 pub trait IntDigits {
     fn digits(&self) -> &[BigDigit];
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; VEC_SIZE]>;
     fn normalize(&mut self);
     fn capacity(&self) -> usize;
     fn len(&self) -> usize;
@@ -2352,7 +2364,7 @@ impl IntDigits for BigUint {
         &self.data
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; VEC_SIZE]> {
         &mut self.data
     }
     #[inline]
@@ -3009,8 +3021,8 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
 #[cfg(not(feature = "u64_digit"))]
 #[test]
 fn test_from_slice() {
-    fn check(slice: &[u32], data: &[BigDigit]) {
-        assert_eq!(BigUint::from_slice(slice).data, data);
+    fn check(slice: &[BigDigit], data: &[BigDigit]) {
+        assert_eq!(&BigUint::from_slice(slice).data[..], data);
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);
@@ -3025,7 +3037,7 @@ fn test_from_slice() {
 fn test_from_slice() {
     fn check(slice: &[u32], data: &[BigDigit]) {
         assert_eq!(
-            BigUint::from_slice(slice).data,
+            &BigUint::from_slice(slice).data[..],
             data,
             "from {:?}, to {:?}",
             slice,
@@ -3038,13 +3050,13 @@ fn test_from_slice() {
     check(&[1, 2, 0, 0], &[8_589_934_593]);
     check(&[0, 0, 1, 2], &[0, 8_589_934_593]);
     check(&[0, 0, 1, 2, 0, 0], &[0, 8_589_934_593]);
-    check(&[-1i32 as u32], &[(-1i32 as u32) as BigDigit]);
+    check(&[(-1i32 as u32) as BigDigit], &[(-1i32 as u32) as BigDigit]);
 }
 
 #[test]
 fn test_from_slice_native() {
     fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        assert!(BigUint::from_slice_native(slice).data == data);
+        assert!(&BigUint::from_slice_native(slice).data[..] == data);
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);
@@ -3059,7 +3071,7 @@ fn test_assign_from_slice_native() {
     fn check(slice: &[BigDigit], data: &[BigDigit]) {
         let mut p = BigUint::from_slice_native(&[2627, 0, 9182, 42]);
         p.assign_from_slice_native(slice);
-        assert!(p.data == data);
+        assert!(&p.data[..] == data);
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);

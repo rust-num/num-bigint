@@ -85,6 +85,9 @@ extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
 
+#[macro_use]
+extern crate smallvec;
+
 extern crate num_integer as integer;
 extern crate num_traits as traits;
 
@@ -164,6 +167,12 @@ pub use bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
 pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+
+#[cfg(not(feature = "u64_digit"))]
+pub const VEC_SIZE: usize = 8;
+
+#[cfg(feature = "u64_digit")]
+pub const VEC_SIZE: usize = 4;
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.

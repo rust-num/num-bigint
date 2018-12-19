@@ -1,6 +1,8 @@
 extern crate num_bigint_dig as num_bigint;
 extern crate num_integer;
 extern crate num_traits;
+#[macro_use]
+extern crate smallvec;
 
 use num_bigint::Sign::Plus;
 use num_bigint::{BigInt, ToBigInt};
@@ -1709,29 +1711,4 @@ fn test_pow() {
     check!(usize);
     #[cfg(has_i128)]
     check!(u128);
-}
-
-#[test]
-fn dummy() {
-    let n = BigUint {
-        data: vec![2091882447511797859u64, 13026742510440650545u64],
-    };
-    let e = BigUint {
-        data: vec![65537u64],
-    };
-    let d = BigUint {
-        data: vec![3067126905460138833u64, 4701489854577608180u64],
-    };
-    let p1 = BigUint {
-        data: vec![13836070790002140521u64],
-    };
-    let p2 = BigUint {
-        data: vec![17367718686279877099u64],
-    };
-
-    println!("n: {:?}", n.to_bytes_le());
-    println!("e: {:?}", e.to_bytes_le());
-    println!("d: {:?}", d.to_bytes_le());
-    println!("p1: {:?} {:?}", p1, p1.to_bytes_le());
-    println!("p2: {:?} {:?}", p2, p2.to_bytes_le());
 }
