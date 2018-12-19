@@ -28,8 +28,9 @@ name = "gcd"
 harness = false
 name = "shootout-pidigits"
 
-[dependencies]
-smallvec = "0.6.7"
+[dependencies.smallvec]
+version = "0.6.7"
+default-features = false
 
 [dependencies.num-integer]
 version = "0.1.39"
@@ -57,5 +58,5 @@ version = "1.0"
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
-std = ["num-integer/std", "num-traits/std"]
+std = ["num-integer/std", "num-traits/std", "smallvec/std"]
 u64_digit = []

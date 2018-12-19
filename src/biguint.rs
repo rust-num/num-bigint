@@ -1682,7 +1682,7 @@ impl FromPrimitive for BigUint {
     }
 }
 
-#[cfg(not(u64_digit))]
+#[cfg(not(feature = "u64_digit"))]
 impl From<u64> for BigUint {
     #[inline]
     fn from(mut n: u64) -> Self {
@@ -1698,10 +1698,10 @@ impl From<u64> for BigUint {
     }
 }
 
-#[cfg(u64_digit)]
+#[cfg(feature = "u64_digit")]
 impl From<u64> for BigUint {
     #[inline]
-    fn from(mut n: u64) -> Self {
+    fn from(n: u64) -> Self {
         BigUint::new_native(smallvec![n])
     }
 }
@@ -2384,6 +2384,7 @@ impl IntDigits for BigUint {
 /// Combine four `u32`s into a single `u128`.
 #[cfg(has_i128)]
 #[inline]
+#[allow(dead_code)]
 fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
     u128::from(d) | (u128::from(c) << 32) | (u128::from(b) << 64) | (u128::from(a) << 96)
 }
@@ -2391,6 +2392,7 @@ fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
 /// Split a single `u128` into four `u32`.
 #[cfg(has_i128)]
 #[inline]
+#[allow(dead_code)]
 fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
     (
         (n >> 96) as u32,
@@ -3021,7 +3023,7 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
 #[cfg(not(feature = "u64_digit"))]
 #[test]
 fn test_from_slice() {
-    fn check(slice: &[BigDigit], data: &[BigDigit]) {
+    fn check(slice: &[u32], data: &[BigDigit]) {
         assert_eq!(&BigUint::from_slice(slice).data[..], data);
     }
     check(&[1], &[1]);
@@ -3050,7 +3052,7 @@ fn test_from_slice() {
     check(&[1, 2, 0, 0], &[8_589_934_593]);
     check(&[0, 0, 1, 2], &[0, 8_589_934_593]);
     check(&[0, 0, 1, 2, 0, 0], &[0, 8_589_934_593]);
-    check(&[(-1i32 as u32) as BigDigit], &[(-1i32 as u32) as BigDigit]);
+    check(&[-1i32 as u32], &[(-1i32 as u32) as BigDigit]);
 }
 
 #[test]
