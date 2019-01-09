@@ -99,6 +99,8 @@ mod biguint;
 
 #[cfg(feature = "rand")]
 mod bigrand;
+#[cfg(feature = "rand")]
+mod bigprime;
 
 #[cfg(target_pointer_width = "32")]
 type UsizePromotion = u32;
@@ -164,6 +166,8 @@ pub use bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
 pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+#[cfg(feature = "rand")]
+pub use bigprime::{RandBigPrime, RandBigPrimeError, is_prime, is_safe_prime};
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.

@@ -5,7 +5,7 @@ extern crate num_traits;
 extern crate rand;
 
 mod biguint {
-    use num_bigint::{BigUint, RandBigInt, RandomBits};
+    use num_bigint::{BigUint, RandBigInt, RandomBits, RandBigPrime, is_prime, is_safe_prime};
     use num_traits::Zero;
     use rand::distributions::Uniform;
     use rand::thread_rng;
@@ -55,6 +55,34 @@ mod biguint {
     #[should_panic]
     fn test_zero_rand_range() {
         thread_rng().gen_biguint_range(&BigUint::from(54u32), &BigUint::from(54u32));
+    }
+
+    #[test]
+    fn test_gen_prime() {
+        let mut rng = thread_rng();
+        for bits in &vec![64usize, 128usize, 256usize, 384usize, 512usize, 768usize, 1024usize] {
+            let p = rng.gen_prime(*bits);
+            assert!(p.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_is_prime() {
+        use num_traits::Num;
+        let mut prime = BigUint::from_str_radix("33376463607021642560387296949", 10).unwrap();
+        assert!(is_prime(&prime));
+        for _ in 0..5 {
+            prime <<= 1usize;
+            prime += 1usize;
+            assert!(is_safe_prime(&prime));
+        }
+        prime = BigUint::from_str_radix("77162903328470141405988589789674379619", 10).unwrap();
+        assert!(is_prime(&prime));
+        for _ in 0..3 {
+            prime <<= 1usize;
+            prime += 1usize;
+            assert!(is_safe_prime(&prime));
+        }
     }
 
     #[test]
