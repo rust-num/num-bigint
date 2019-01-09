@@ -840,6 +840,24 @@ fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
     }
 }
 
+impl<'a> Pow<BigUint> for &'a BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn pow(self, rhs: BigUint) -> BigInt {
+        BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
+    }
+}
+
+impl<'a, 'b> Pow<&'b BigUint> for &'a BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn pow(self, rhs: &BigUint) -> BigInt {
+        BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
+    }
+}
+
 macro_rules! pow_impl {
     ($T:ty) => {
         impl<'a> Pow<$T> for &'a BigInt {

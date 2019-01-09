@@ -452,6 +452,48 @@ impl One for BigUint {
 
 impl Unsigned for BigUint {}
 
+impl<'a> Pow<BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, mut exp: BigUint) -> Self::Output {
+        if exp.is_zero() {
+            return BigUint::one();
+        }
+        let mut base = self.clone();
+
+        while exp.is_even() {
+            base = &base * &base;
+            exp >>= 1_usize;
+        }
+
+        if exp.is_one() {
+            return base;
+        }
+
+        let mut acc = base.clone();
+
+        while !exp.is_one() {
+            exp >>= 1_usize;
+            base = &base * &base;
+            if exp.is_odd() {
+                acc *= &base;
+            }
+        }
+        acc
+    }
+}
+
+impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
+        type Output = BigUint;
+
+        #[inline]
+        fn pow(self, exp: &BigUint) -> Self::Output {
+            let exp = exp.clone();
+            self.pow(exp)
+        }
+    }
+
 macro_rules! pow_impl {
     ($T:ty) => {
         impl<'a> Pow<$T> for &'a BigUint {
@@ -3002,4 +3044,12 @@ fn test_u128_u32_roundtrip() {
         let (a, b, c, d) = u32_from_u128(*val);
         assert_eq!(u32_to_u128(a, b, c, d), *val);
     }
+}
+
+#[test]
+fn test_pow_biguint() {
+    let base = BigUint::from(5u8);
+    let exponent = BigUint::from(3u8);
+
+    assert_eq!(BigUint::from(125u8), base.pow(exponent));
 }
