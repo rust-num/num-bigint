@@ -2412,7 +2412,7 @@ impl serde::Serialize for BigUint {
         // Note: do not change the serialization format, or it may break forward
         // and backward compatibility of serialized data!  If we ever change the
         // internal representation, we should still serialize in base-`u32`.
-        let data: &Vec<u32> = &self.data;
+        let data: &[u32] = &self.data.as_slice();
         data.serialize(serializer)
     }
 }
@@ -2424,12 +2424,29 @@ impl serde::Serialize for BigUint {
     where
         S: serde::Serializer,
     {
-        unimplemented!()
+        let last = if self.data.is_empty() {
+            0
+        } else {
+            self.data.len() - 1
+        };
+        let data: Vec<u32> = self
+            .data
+            .iter()
+            .enumerate()
+            .flat_map(|(i, n)| {
+                if i == last && n < &(::std::u32::MAX as u64) {
+                    vec![*n as u32]
+                } else {
+                    vec![*n as u32, (n >> 32) as u32]
+                }
+            })
+            .collect();
+        println!("{:?} -> {:?}", &self.data, &data);
+        data.serialize(serializer)
     }
 }
 
 #[cfg(feature = "serde")]
-#[cfg(not(feature = "u64_digit"))]
 impl<'de> serde::Deserialize<'de> for BigUint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -2437,17 +2454,6 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     {
         let data: Vec<u32> = try!(Vec::deserialize(deserializer));
         Ok(BigUint::new(data))
-    }
-}
-
-#[cfg(feature = "serde")]
-#[cfg(feature = "u64_digit")]
-impl<'de> serde::Deserialize<'de> for BigUint {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        unimplemented!()
     }
 }
 
