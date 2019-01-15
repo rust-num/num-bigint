@@ -35,6 +35,8 @@ Implementations for `i128` and `u128` are only available with Rust 1.26 and
 later.  The build script automatically detects this, but you can make it
 mandatory by enabling the `i128` crate feature.
 
+The `prime` feature gate enables algorithms and support for dealing with large primes.
+
 ## Releases
 
 Release notes are available in [RELEASES.md](RELEASES.md).
@@ -63,3 +65,9 @@ table offers a brief comparison to a few alternatives.
 [`rust-gmp`]: https://crates.io/crates/rust-gmp
 [`ramp`]: https://crates.io/crates/ramp
 [`apint`]: https://crates.io/crates/apint
+
+## Benchmarks
+
+```
+cargo bench --features prime
+```

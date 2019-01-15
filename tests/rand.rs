@@ -419,3 +419,27 @@ mod bigint {
         seeded_value_stability::<XorShiftRng>(EXPECTED_XOR);
     }
 }
+
+mod prime {
+    use num_bigint::prime::probably_prime;
+    use num_bigint::RandPrime;
+    use rand::prelude::*;
+
+    #[test]
+    fn test_prime_small() {
+        let mut rng = StdRng::from_seed([0u8; 32]);
+        for n in 2..10 {
+            let p = rng.gen_prime(n);
+
+            assert_eq!(p.bits(), n);
+            assert!(probably_prime(&p, 32));
+        }
+    }
+
+    #[test]
+    fn test_gen_prime_1024() {
+        let mut rng = StdRng::from_seed([0u8; 32]);
+        let p = rng.gen_prime(1024);
+        assert_eq!(p.bits(), 1024);
+    }
+}

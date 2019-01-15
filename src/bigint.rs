@@ -18,22 +18,22 @@ use std::{i64, u64};
 use serde;
 
 use integer::{Integer, Roots};
-use traits::{
+use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
     ToPrimitive, Zero,
 };
 
-use smallvec::SmallVec;
-
 use self::Sign::{Minus, NoSign, Plus};
-use super::VEC_SIZE;
-
 use super::ParseBigIntError;
+use super::VEC_SIZE;
+use algorithms::mod_inverse;
 use big_digit::{self, BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
 use biguint::{BigUint, IntDigits};
-
+use smallvec::SmallVec;
+use std::borrow::Cow;
+use traits::ModInverse;
 use IsizePromotion;
 use UsizePromotion;
 
@@ -3024,6 +3024,20 @@ where
             *d = d.wrapping_add(1);
             carry = d.is_zero();
         }
+    }
+}
+
+// Mod Inverse
+
+impl<'a> ModInverse<&'a BigInt> for BigInt {
+    fn mod_inverse(self, m: &'a BigInt) -> Option<BigInt> {
+        mod_inverse(Cow::Owned(self), m)
+    }
+}
+
+impl ModInverse<BigInt> for BigInt {
+    fn mod_inverse(self, m: BigInt) -> Option<BigInt> {
+        mod_inverse(Cow::Owned(self), &m)
     }
 }
 

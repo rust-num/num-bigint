@@ -19,26 +19,27 @@ use std::{u64, u8};
 use serde;
 
 use integer::{Integer, Roots};
-use traits::{
+use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
     ToPrimitive, Unsigned, Zero,
 };
+use BigInt;
 
 use big_digit::{self, BigDigit};
 
+use bigint::Sign::Plus;
 use smallvec::SmallVec;
+use traits::ModInverse;
 
-#[path = "algorithms.rs"]
-mod algorithms;
 #[path = "monty.rs"]
 mod monty;
 
-use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
-use self::algorithms::{biguint_shl, biguint_shr};
-use self::algorithms::{cmp_slice, fls, ilog2};
-use self::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
 use super::VEC_SIZE;
+use crate::algorithms::{__add2, __sub2rev, add2, mod_inverse, sub2, sub2rev};
+use crate::algorithms::{biguint_shl, biguint_shr};
+use crate::algorithms::{cmp_slice, fls, ilog2};
+use crate::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
 
 use UsizePromotion;
 
@@ -2263,7 +2264,7 @@ impl BigUint {
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
     /// be nonzero.
     #[inline]
-    fn normalize(&mut self) {
+    pub(crate) fn normalize(&mut self) {
         while let Some(&0) = self.data.last() {
             self.data.pop();
         }
@@ -2271,7 +2272,7 @@ impl BigUint {
 
     /// Returns a normalized `BigUint`.
     #[inline]
-    fn normalized(mut self) -> BigUint {
+    pub(crate) fn normalized(mut self) -> BigUint {
         self.normalize();
         self
     }
@@ -3138,5 +3139,31 @@ fn test_u128_u32_roundtrip() {
     for val in &values {
         let (a, b, c, d) = u32_from_u128(*val);
         assert_eq!(u32_to_u128(a, b, c, d), *val);
+    }
+}
+
+// Mod Inverse
+
+impl<'a> ModInverse<&'a BigUint> for BigUint {
+    fn mod_inverse(self, m: &'a BigUint) -> Option<BigUint> {
+        match mod_inverse(
+            Cow::Owned(BigInt::from_biguint(Plus, self)),
+            &BigInt::from_biguint(Plus, m.clone()),
+        ) {
+            Some(res) => res.to_biguint(),
+            None => None,
+        }
+    }
+}
+
+impl ModInverse<BigUint> for BigUint {
+    fn mod_inverse(self, m: BigUint) -> Option<BigUint> {
+        match mod_inverse(
+            Cow::Owned(BigInt::from_biguint(Plus, self)),
+            &BigInt::from_biguint(Plus, m),
+        ) {
+            Some(res) => res.to_biguint(),
+            None => None,
+        }
     }
 }

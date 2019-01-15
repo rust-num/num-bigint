@@ -1,3 +1,7 @@
+// Copyright 2018 Stichting Organism
+//
+// Copyright 2018 Friedel Ziegelmayer
+//
 // Copyright 2013-2014 The Rust Project Developers. See the COPYRIGHT
 // file at the top-level directory of this distribution and at
 // http://rust-lang.org/COPYRIGHT.
@@ -82,14 +86,23 @@
 
 #[cfg(feature = "rand")]
 extern crate rand;
+
 #[cfg(feature = "serde")]
 extern crate serde;
 
 #[macro_use]
 extern crate smallvec;
 
+#[cfg(feature = "prime")]
+#[macro_use]
+extern crate lazy_static;
+
 extern crate num_integer as integer;
-extern crate num_traits as traits;
+extern crate num_iter;
+extern crate num_traits;
+
+#[cfg(feature = "prime")]
+extern crate byteorder;
 
 use std::error::Error;
 use std::fmt;
@@ -99,6 +112,12 @@ mod macros;
 
 mod bigint;
 mod biguint;
+
+#[cfg(feature = "prime")]
+pub mod prime;
+
+pub mod algorithms;
+pub mod traits;
 
 #[cfg(feature = "rand")]
 mod bigrand;
@@ -166,7 +185,7 @@ pub use bigint::Sign;
 pub use bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+pub use bigrand::{RandBigInt, RandPrime, RandomBits, UniformBigInt, UniformBigUint};
 
 #[cfg(not(feature = "u64_digit"))]
 pub const VEC_SIZE: usize = 8;

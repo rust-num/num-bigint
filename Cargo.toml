@@ -1,8 +1,8 @@
 [package]
 authors = ["The Rust Project Developers"]
 description = "Big integer implementation for Rust"
-documentation = "https://docs.rs/num-bigint"
-homepage = "https://github.com/rust-num/num-bigint"
+documentation = "https://docs.rs/num-bigint-dig"
+homepage = "https://github.com/dignifiedquire/num-bigint"
 keywords = ["mathematics", "numerics", "bignum"]
 categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT/Apache-2.0"
@@ -11,22 +11,15 @@ repository = "https://github.com/dignifiedquier/num-bigint"
 version = "0.2.1"
 readme = "README.md"
 build = "build.rs"
+autobenches = false
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand"]
-
-[[bench]]
-name = "bigint"
-
-[[bench]]
-name = "factorial"
-
-[[bench]]
-name = "gcd"
+features = ["std", "serde", "rand", "prime"]
 
 [[bench]]
 harness = false
-name = "shootout-pidigits"
+name = "bench_main"
+required-features = ["prime"]
 
 [dependencies.smallvec]
 version = "0.6.7"
@@ -39,6 +32,11 @@ default-features = false
 [dependencies.num-traits]
 version = "0.2.4"
 default-features = false
+
+[dependencies.num-iter]
+version = "0.1.37"
+default-features = false
+
 
 [dependencies.rand]
 optional = true
@@ -55,8 +53,19 @@ features = ["std"]
 [dev-dependencies.serde_test]
 version = "1.0"
 
+[dependencies.lazy_static]
+version = "1.2.0"
+
+[dependencies.byteorder]
+version = "1.2.7"
+
+[dev-dependencies]
+criterion = "0.2"
+rand_chacha = "0.1"
+
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
 std = ["num-integer/std", "num-traits/std", "smallvec/std"]
 u64_digit = []
+prime = ["rand"]
