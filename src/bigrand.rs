@@ -16,6 +16,7 @@ use num_iter::range_step;
 use num_traits::Zero;
 use num_traits::{FromPrimitive, ToPrimitive};
 
+#[cfg(feature = "prime")]
 use crate::prime::probably_prime;
 
 pub trait RandBigInt {
@@ -239,6 +240,7 @@ impl Distribution<BigInt> for RandomBits {
 /// assert_eq!(p.bits(), 1024);
 /// ```
 ///
+#[cfg(feature = "prime")]
 pub trait RandPrime {
     /// Generate a random prime number with as many bits as given.
     fn gen_prime(&mut self, bits: usize) -> BigUint;
@@ -249,8 +251,10 @@ pub trait RandPrime {
 /// prime. This list is truncated at the point where smallPrimesProduct exceeds
 /// a u64. It does not include two because we ensure that the candidates are
 /// odd by construction.
+#[cfg(feature = "prime")]
 const SMALL_PRIMES: [u8; 15] = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53];
 
+#[cfg(feature = "prime")]
 lazy_static! {
     /// The product of the values in SMALL_PRIMES and allows us
     /// to reduce a candidate prime by this number and then determine whether it's
@@ -259,6 +263,7 @@ lazy_static! {
     static ref SMALL_PRIMES_PRODUCT: BigUint = BigUint::from_u64(16_294_579_238_595_022_365).unwrap();
 }
 
+#[cfg(feature = "prime")]
 impl<R: Rng + ?Sized> RandPrime for R {
     fn gen_prime(&mut self, bit_size: usize) -> BigUint {
         if bit_size < 2 {

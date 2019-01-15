@@ -185,7 +185,10 @@ pub use bigint::Sign;
 pub use bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::{RandBigInt, RandPrime, RandomBits, UniformBigInt, UniformBigUint};
+pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+
+#[cfg(feature = "prime")]
+pub use bigrand::RandPrime;
 
 #[cfg(not(feature = "u64_digit"))]
 pub const VEC_SIZE: usize = 8;

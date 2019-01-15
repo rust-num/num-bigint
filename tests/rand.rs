@@ -420,6 +420,7 @@ mod bigint {
     }
 }
 
+#[cfg(feature = "prime")]
 mod prime {
     use num_bigint::prime::probably_prime;
     use num_bigint::RandPrime;
