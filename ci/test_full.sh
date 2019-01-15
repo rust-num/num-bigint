@@ -4,13 +4,7 @@ set -ex
 
 echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
 
-FEATURES="serde"
-if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable|1.26.0|1.22.0)$ ]]; then
-  FEATURES="$FEATURES rand"
-fi
-if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable|1.26.0)$ ]]; then
-  FEATURES="$FEATURES i128"
-fi
+FEATURES="serde i128 u64_digit"
 
 # num-bigint should build and test everywhere.
 cargo build --verbose
