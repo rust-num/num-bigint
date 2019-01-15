@@ -4,7 +4,7 @@ set -ex
 
 echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
 
-FEATURES="serde i128 u64_digit"
+FEATURES="serde i128 u64_digit prime"
 
 # num-bigint should build and test everywhere.
 cargo build --verbose

@@ -7,7 +7,7 @@
 
 Big integer types for Rust, `BigInt` and `BigUint`.
 
-> **Warning** This is a fork of [`rust-num/num-bigint`](https://github.com/rust-num/num-bigint) and only here, to provide the features needed for [dignifiedqurie/rust-rsa](https://github.com/dignifiedquire/rust-rsa).
+> **Warning** This is a fork of [`rust-num/num-bigint`](https://github.com/rust-num/num-bigint) with a focus on providing functionality, needed to implement cryptographic operations.
 
 ## Usage
 

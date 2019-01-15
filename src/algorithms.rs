@@ -815,7 +815,7 @@ pub fn mod_inverse(g: Cow<BigInt>, n: &BigInt) -> Option<BigInt> {
 }
 
 #[cfg(test)]
-mod algorithm_tests {
+mod tests {
     // extern crate rand;
 
     use algorithms::{extended_gcd, jacobi};
@@ -824,6 +824,7 @@ mod algorithm_tests {
     use num_traits::Num;
     use num_traits::{FromPrimitive, One};
     use traits::ModInverse;
+
     use Sign::Plus;
     use {BigInt, BigUint};
 
@@ -963,18 +964,12 @@ mod algorithm_tests {
         }
     }
 
-}
-
-#[cfg(feature = "prime")]
-mod random_prime_tests {
-    use algorithms::extended_gcd;
-    use bigrand::RandBigInt;
-    use rand::thread_rng;
-    use BigInt;
-    use Sign::Plus;
-
     #[test]
+    #[cfg(feature = "rand")]
     fn test_extended_gcd_assumptions() {
+        use bigrand::RandBigInt;
+        use rand::thread_rng;
+
         let mut rng = thread_rng();
 
         for i in 1..100 {
@@ -987,5 +982,4 @@ mod random_prime_tests {
             assert_eq!(q, lhs + &rhs);
         }
     }
-
 }

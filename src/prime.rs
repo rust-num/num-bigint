@@ -1,16 +1,17 @@
-//https://github.com/RustCrypto/RSA/blob/master/src/prime.rs
+// https://github.com/RustCrypto/RSA/blob/master/src/prime.rs
 //! Implements probabilistic prime checkers.
 
-use crate::algorithms::jacobi;
-use bigrand::RandBigInt;
 use byteorder::{BigEndian, ByteOrder};
 use integer::Integer;
 use num_traits::{FromPrimitive, One, ToPrimitive, Zero};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use BigInt;
-use BigUint;
-use Sign::Plus;
+
+use crate::algorithms::jacobi;
+use crate::big_digit;
+use crate::bigrand::RandBigInt;
+use crate::Sign::Plus;
+use crate::{BigInt, BigUint};
 
 lazy_static! {
     pub(crate) static ref BIG_1: BigUint = BigUint::one();
@@ -109,7 +110,11 @@ pub fn probably_prime_miller_rabin(n: &BigUint, reps: usize, force2: bool) -> bo
     let nm3 = n - &*BIG_3;
 
     let mut seed_vec = vec![0u8; 8];
-    BigEndian::write_u64(seed_vec.as_mut_slice(), n.get_limb(0));
+    BigEndian::write_uint(
+        seed_vec.as_mut_slice(),
+        n.get_limb(0) as u64,
+        big_digit::BITS / 8,
+    );
     let mut seed = [0u8; 32];
     seed[0..8].copy_from_slice(&seed_vec[..]);
     let mut rng = StdRng::from_seed(seed);
@@ -340,13 +345,13 @@ fn is_bit_set(x: &BigUint, i: usize) -> bool {
 /// Returns the i-th bit.
 #[inline]
 fn get_bit(x: &BigUint, i: usize) -> u8 {
-    let j = i / 64;
+    let j = i / big_digit::BITS;
     // if is out of range of the set words, it is always false.
     if i >= x.bits() {
         return 0;
     }
 
-    (x.get_limb(j) >> (i % 64) & 1) as u8
+    (x.get_limb(j) >> (i % big_digit::BITS) & 1) as u8
 }
 
 // pub fn big_prime(size: uint) -> BigUint {
