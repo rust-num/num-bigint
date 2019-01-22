@@ -119,6 +119,8 @@ pub mod prime;
 pub mod algorithms;
 pub mod traits;
 
+pub use traits::*;
+
 #[cfg(feature = "rand")]
 mod bigrand;
 
@@ -178,9 +180,11 @@ impl Error for ParseBigIntError {
 }
 
 pub use biguint::BigUint;
+pub use biguint::IntoBigUint;
 pub use biguint::ToBigUint;
 
 pub use bigint::BigInt;
+pub use bigint::IntoBigInt;
 pub use bigint::Sign;
 pub use bigint::ToBigInt;
 

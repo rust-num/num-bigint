@@ -72,7 +72,7 @@ fn bench_gen_prime(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default();
+    config = { let mut c = Criterion::default(); c.sample_size(5) };
     targets =
         probably_prime_0,
         probably_prime_1,

@@ -27,28 +27,27 @@ use BigInt;
 
 use big_digit::{self, BigDigit};
 
-use bigint::Sign::Plus;
 use smallvec::SmallVec;
-use traits::ModInverse;
 
 #[path = "monty.rs"]
 mod monty;
 
 use self::monty::monty_modpow;
 use super::VEC_SIZE;
-use crate::algorithms::{__add2, __sub2rev, add2, mod_inverse, sub2, sub2rev};
+use crate::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use crate::algorithms::{biguint_shl, biguint_shr};
 use crate::algorithms::{cmp_slice, fls, ilog2};
 use crate::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
-
-use UsizePromotion;
+use crate::algorithms::{extended_gcd, mod_inverse};
+use crate::traits::{ExtendedGcd, ModInverse};
 
 use ParseBigIntError;
+use UsizePromotion;
 
 /// A big unsigned integer type.
 #[derive(Clone, Debug, Hash)]
 pub struct BigUint {
-    pub data: SmallVec<[BigDigit; VEC_SIZE]>,
+    pub(crate) data: SmallVec<[BigDigit; VEC_SIZE]>,
 }
 
 impl PartialEq for BigUint {
@@ -866,6 +865,19 @@ impl<'a, 'b> Mul<&'b BigUint> for &'a BigUint {
         mul3(&self.data[..], &other.data[..])
     }
 }
+
+impl<'a, 'b> Mul<&'a BigInt> for &'b BigUint {
+    type Output = BigInt;
+
+    #[inline]
+    fn mul(self, other: &BigInt) -> BigInt {
+        BigInt {
+            data: mul3(&self.data[..], &other.digits()[..]),
+            sign: other.sign,
+        }
+    }
+}
+
 impl<'a> MulAssign<&'a BigUint> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: &'a BigUint) {
@@ -1346,37 +1358,8 @@ impl Integer for BigUint {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
-        #[inline]
-        fn twos(x: &BigUint) -> usize {
-            trailing_zeros(x).unwrap_or(0)
-        }
-
-        // Stein's algorithm
-        if self.is_zero() {
-            return other.clone();
-        }
-        if other.is_zero() {
-            return self.clone();
-        }
-        let mut m = self.clone();
-        let mut n = other.clone();
-
-        // find common factors of 2
-        let shift = cmp::min(twos(&n), twos(&m));
-
-        // divide m and n by 2 until odd
-        // m inside loop
-        n >>= twos(&n);
-
-        while !m.is_zero() {
-            m >>= twos(&m);
-            if n > m {
-                mem::swap(&mut n, &mut m)
-            }
-            m -= &n;
-        }
-
-        n << shift
+        let (res, _, _) = extended_gcd(Cow::Borrowed(self), Cow::Borrowed(other), false);
+        res.into_biguint().unwrap()
     }
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
@@ -1751,12 +1734,32 @@ impl ToBigUint for BigUint {
     }
 }
 
+/// A generic trait for converting a value to a `BigUint`, and consuming the value.
+pub trait IntoBigUint {
+    /// Converts the value of `self` to a `BigUint`.
+    fn into_biguint(self) -> Option<BigUint>;
+}
+
+impl IntoBigUint for BigUint {
+    #[inline]
+    fn into_biguint(self) -> Option<BigUint> {
+        Some(self)
+    }
+}
+
 macro_rules! impl_to_biguint {
     ($T:ty, $from_ty:path) => {
         impl ToBigUint for $T {
             #[inline]
             fn to_biguint(&self) -> Option<BigUint> {
                 $from_ty(*self)
+            }
+        }
+
+        impl IntoBigUint for $T {
+            #[inline]
+            fn into_biguint(self) -> Option<BigUint> {
+                $from_ty(self)
             }
         }
     };
@@ -2335,6 +2338,16 @@ impl BigUint {
 
     pub fn trailing_zeros(&self) -> Option<usize> {
         trailing_zeros(self)
+    }
+
+    /// Sets the value to the provided digit, reusing internal storage.
+    pub fn set_digit(&mut self, digit: BigDigit) {
+        if self.is_zero() {
+            self.data.resize(1, digit);
+        } else {
+            self.data.resize(1, 0);
+            self.data[0] = digit;
+        }
     }
 }
 
@@ -3145,25 +3158,108 @@ fn test_u128_u32_roundtrip() {
 // Mod Inverse
 
 impl<'a> ModInverse<&'a BigUint> for BigUint {
-    fn mod_inverse(self, m: &'a BigUint) -> Option<BigUint> {
-        match mod_inverse(
-            Cow::Owned(BigInt::from_biguint(Plus, self)),
-            &BigInt::from_biguint(Plus, m.clone()),
-        ) {
-            Some(res) => res.to_biguint(),
-            None => None,
-        }
+    type Output = BigInt;
+    fn mod_inverse(self, m: &'a BigUint) -> Option<BigInt> {
+        mod_inverse(Cow::Owned(self), Cow::Borrowed(m))
     }
 }
 
 impl ModInverse<BigUint> for BigUint {
-    fn mod_inverse(self, m: BigUint) -> Option<BigUint> {
-        match mod_inverse(
-            Cow::Owned(BigInt::from_biguint(Plus, self)),
-            &BigInt::from_biguint(Plus, m),
-        ) {
-            Some(res) => res.to_biguint(),
-            None => None,
-        }
+    type Output = BigInt;
+    fn mod_inverse(self, m: BigUint) -> Option<BigInt> {
+        mod_inverse(Cow::Owned(self), Cow::Owned(m))
     }
+}
+
+impl<'a> ModInverse<&'a BigInt> for BigUint {
+    type Output = BigInt;
+    fn mod_inverse(self, m: &'a BigInt) -> Option<BigInt> {
+        mod_inverse(Cow::Owned(self), Cow::Owned(m.to_biguint().unwrap()))
+    }
+}
+impl ModInverse<BigInt> for BigUint {
+    type Output = BigInt;
+    fn mod_inverse(self, m: BigInt) -> Option<BigInt> {
+        mod_inverse(Cow::Owned(self), Cow::Owned(m.into_biguint().unwrap()))
+    }
+}
+
+impl<'a, 'b> ModInverse<&'b BigUint> for &'a BigUint {
+    type Output = BigInt;
+
+    fn mod_inverse(self, m: &'b BigUint) -> Option<BigInt> {
+        mod_inverse(Cow::Borrowed(self), Cow::Borrowed(m))
+    }
+}
+
+impl<'a> ModInverse<BigUint> for &'a BigUint {
+    type Output = BigInt;
+
+    fn mod_inverse(self, m: BigUint) -> Option<BigInt> {
+        mod_inverse(Cow::Borrowed(self), Cow::Owned(m))
+    }
+}
+
+impl<'a, 'b> ModInverse<&'b BigInt> for &'a BigUint {
+    type Output = BigInt;
+
+    fn mod_inverse(self, m: &'b BigInt) -> Option<BigInt> {
+        mod_inverse(Cow::Borrowed(self), Cow::Owned(m.to_biguint().unwrap()))
+    }
+}
+
+// Extended GCD
+
+impl<'a> ExtendedGcd<&'a BigUint> for BigUint {
+    fn extended_gcd(self, other: &'a BigUint) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(Cow::Owned(self), Cow::Borrowed(other), true);
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+impl<'a> ExtendedGcd<&'a BigInt> for BigUint {
+    fn extended_gcd(self, other: &'a BigInt) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(
+            Cow::Owned(self),
+            Cow::Owned(other.to_biguint().unwrap()),
+            true,
+        );
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+impl<'a, 'b> ExtendedGcd<&'b BigInt> for &'a BigUint {
+    fn extended_gcd(self, other: &'b BigInt) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(
+            Cow::Borrowed(self),
+            Cow::Owned(other.to_biguint().unwrap()),
+            true,
+        );
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+impl<'a, 'b> ExtendedGcd<&'b BigUint> for &'a BigUint {
+    fn extended_gcd(self, other: &'b BigUint) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(Cow::Borrowed(self), Cow::Borrowed(other), true);
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+#[test]
+fn test_set_digit() {
+    let mut a = BigUint::new(vec![3]);
+    a.set_digit(4);
+    assert_eq!(a.data.len(), 1);
+    assert_eq!(a.data[0], 4);
+
+    let mut a = BigUint::new(vec![3, 2]);
+    a.set_digit(4);
+    assert_eq!(a.data.len(), 1);
+    assert_eq!(a.data[0], 4);
+
+    let mut a = BigUint::new(vec![]);
+    a.set_digit(4);
+    assert_eq!(a.data.len(), 1);
+    assert_eq!(a.data[0], 4);
 }

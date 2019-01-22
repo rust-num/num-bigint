@@ -1,5 +1,5 @@
 #[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
+use std::borrow::Cow;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::default::Default;
 use std::fmt;
@@ -26,16 +26,18 @@ use num_traits::{
 use self::Sign::{Minus, NoSign, Plus};
 use super::ParseBigIntError;
 use super::VEC_SIZE;
-use algorithms::mod_inverse;
 use big_digit::{self, BigDigit, DoubleBigDigit};
 use biguint;
 use biguint::to_str_radix_reversed;
 use biguint::{BigUint, IntDigits};
 use smallvec::SmallVec;
-use std::borrow::Cow;
-use traits::ModInverse;
+
 use IsizePromotion;
 use UsizePromotion;
+
+use crate::algorithms::{extended_gcd, mod_inverse};
+use crate::biguint::IntoBigUint;
+use crate::traits::{ExtendedGcd, ModInverse};
 
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
@@ -113,8 +115,8 @@ impl<'de> serde::Deserialize<'de> for Sign {
 /// A big signed integer type.
 #[derive(Clone, Debug, Hash)]
 pub struct BigInt {
-    sign: Sign,
-    data: BigUint,
+    pub(crate) sign: Sign,
+    pub(crate) data: BigUint,
 }
 
 /// Return the magnitude of a `BigInt`.
@@ -896,15 +898,15 @@ fn i128_abs_as_u128(a: i128) -> u128 {
 // we compare both sign and magnitude.  So we duplicate this body for every
 // val/ref combination, deferring that decision to BigUint's own forwarding.
 macro_rules! bigint_add {
-    ($a:expr, $a_owned:expr, $a_data:expr, $b:expr, $b_owned:expr, $b_data:expr) => {
-        match ($a.sign, $b.sign) {
+    ($a:expr, $a_owned:expr, $a_data:expr, $a_sign:expr, $b:expr, $b_owned:expr, $b_data:expr, $b_sign:expr) => {
+        match ($a_sign, $b_sign) {
             (_, NoSign) => $a_owned,
             (NoSign, _) => $b_owned,
             // same sign => keep the sign with the sum of magnitudes
-            (Plus, Plus) | (Minus, Minus) => BigInt::from_biguint($a.sign, $a_data + $b_data),
+            (Plus, Plus) | (Minus, Minus) => BigInt::from_biguint($a_sign, $a_data + $b_data),
             // opposite signs => keep the sign of the larger with the difference of magnitudes
-            (Plus, Minus) | (Minus, Plus) => match $a.data.cmp(&$b.data) {
-                Less => BigInt::from_biguint($b.sign, $b_data - $a_data),
+            (Plus, Minus) | (Minus, Plus) => match $a_data.cmp(&$b_data) {
+                Less => BigInt::from_biguint($b_sign, $b_data - $a_data),
                 Greater => BigInt::from_biguint($a.sign, $a_data - $b_data),
                 Equal => Zero::zero(),
             },
@@ -921,9 +923,11 @@ impl<'a, 'b> Add<&'b BigInt> for &'a BigInt {
             self,
             self.clone(),
             &self.data,
+            self.sign,
             other,
             other.clone(),
-            &other.data
+            &other.data,
+            other.sign
         )
     }
 }
@@ -933,7 +937,16 @@ impl<'a> Add<BigInt> for &'a BigInt {
 
     #[inline]
     fn add(self, other: BigInt) -> BigInt {
-        bigint_add!(self, self.clone(), &self.data, other, other, other.data)
+        bigint_add!(
+            self,
+            self.clone(),
+            &self.data,
+            self.sign,
+            other,
+            other,
+            other.data,
+            other.sign
+        )
     }
 }
 
@@ -942,7 +955,70 @@ impl<'a> Add<&'a BigInt> for BigInt {
 
     #[inline]
     fn add(self, other: &BigInt) -> BigInt {
-        bigint_add!(self, self, self.data, other, other.clone(), &other.data)
+        bigint_add!(
+            self,
+            self,
+            self.data,
+            self.sign,
+            other,
+            other.clone(),
+            &other.data,
+            other.sign
+        )
+    }
+}
+
+impl<'a> Add<&'a mut BigInt> for BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn add(self, other: &mut BigInt) -> BigInt {
+        bigint_add!(
+            self,
+            self,
+            self.data,
+            self.sign,
+            other,
+            other.clone(),
+            &other.data,
+            other.sign
+        )
+    }
+}
+
+impl<'a, 'b> Add<&'a mut BigInt> for &'b mut BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn add(self, other: &mut BigInt) -> BigInt {
+        bigint_add!(
+            self,
+            self.clone(),
+            &self.data,
+            self.sign,
+            other,
+            other.clone(),
+            &other.data,
+            other.sign
+        )
+    }
+}
+
+impl<'a> Add<&'a BigUint> for BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn add(self, other: &BigUint) -> BigInt {
+        bigint_add!(
+            self,
+            self,
+            self.data,
+            self.sign,
+            other,
+            other.to_bigint().unwrap(),
+            other,
+            Plus
+        )
     }
 }
 
@@ -951,7 +1027,7 @@ impl Add<BigInt> for BigInt {
 
     #[inline]
     fn add(self, other: BigInt) -> BigInt {
-        bigint_add!(self, self, self.data, other, other, other.data)
+        bigint_add!(self, self, self.data, self.sign, other, other, other.data, other.sign)
     }
 }
 
@@ -1435,6 +1511,7 @@ impl<'a> MulAssign<&'a BigInt> for BigInt {
         *self = &*self * other;
     }
 }
+
 forward_val_assign!(impl MulAssign for BigInt, mul_assign);
 
 promote_all_scalars!(impl Mul for BigInt, mul);
@@ -2485,6 +2562,19 @@ impl ToBigInt for BigInt {
     }
 }
 
+/// A generic trait for converting a value to a `BigInt`, consuming the value.
+pub trait IntoBigInt {
+    /// Converts the value of `self` to a `BigInt`.
+    fn into_bigint(self) -> Option<BigInt>;
+}
+
+impl IntoBigInt for BigInt {
+    #[inline]
+    fn into_bigint(self) -> Option<BigInt> {
+        Some(self)
+    }
+}
+
 impl ToBigInt for BigUint {
     #[inline]
     fn to_bigint(&self) -> Option<BigInt> {
@@ -2510,12 +2600,44 @@ impl biguint::ToBigUint for BigInt {
     }
 }
 
+impl IntoBigInt for BigUint {
+    #[inline]
+    fn into_bigint(self) -> Option<BigInt> {
+        if self.is_zero() {
+            Some(Zero::zero())
+        } else {
+            Some(BigInt {
+                sign: Plus,
+                data: self,
+            })
+        }
+    }
+}
+
+impl IntoBigUint for BigInt {
+    #[inline]
+    fn into_biguint(self) -> Option<BigUint> {
+        match self.sign() {
+            Plus => Some(self.data),
+            NoSign => Some(Zero::zero()),
+            Minus => None,
+        }
+    }
+}
+
 macro_rules! impl_to_bigint {
     ($T:ty, $from_ty:path) => {
         impl ToBigInt for $T {
             #[inline]
             fn to_bigint(&self) -> Option<BigInt> {
                 $from_ty(*self)
+            }
+        }
+
+        impl IntoBigInt for $T {
+            #[inline]
+            fn into_bigint(self) -> Option<BigInt> {
+                $from_ty(self)
             }
         }
     };
@@ -3029,15 +3151,113 @@ where
 
 // Mod Inverse
 
-impl<'a> ModInverse<&'a BigInt> for BigInt {
-    fn mod_inverse(self, m: &'a BigInt) -> Option<BigInt> {
-        mod_inverse(Cow::Owned(self), m)
+impl<'a> ModInverse<&'a BigUint> for BigInt {
+    type Output = BigInt;
+    fn mod_inverse(self, m: &'a BigUint) -> Option<BigInt> {
+        if self.is_negative() {
+            let v = self
+                .mod_floor(&m.to_bigint().unwrap())
+                .into_biguint()
+                .unwrap();
+            mod_inverse(Cow::Owned(v), Cow::Borrowed(m))
+        } else {
+            mod_inverse(Cow::Owned(self.into_biguint().unwrap()), Cow::Borrowed(m))
+        }
     }
 }
 
-impl ModInverse<BigInt> for BigInt {
-    fn mod_inverse(self, m: BigInt) -> Option<BigInt> {
-        mod_inverse(Cow::Owned(self), &m)
+impl<'a> ModInverse<&'a BigInt> for BigInt {
+    type Output = BigInt;
+    fn mod_inverse(self, m: &'a BigInt) -> Option<BigInt> {
+        if self.is_negative() {
+            let v = self.mod_floor(m).into_biguint().unwrap();
+            mod_inverse(Cow::Owned(v), Cow::Owned(m.to_biguint().unwrap()))
+        } else {
+            mod_inverse(
+                Cow::Owned(self.into_biguint().unwrap()),
+                Cow::Owned(m.to_biguint().unwrap()),
+            )
+        }
+    }
+}
+
+impl<'a, 'b> ModInverse<&'b BigUint> for &'a BigInt {
+    type Output = BigInt;
+
+    fn mod_inverse(self, m: &'b BigUint) -> Option<BigInt> {
+        if self.is_negative() {
+            let v = self
+                .mod_floor(&m.to_bigint().unwrap())
+                .into_biguint()
+                .unwrap();
+            mod_inverse(Cow::Owned(v), Cow::Borrowed(m))
+        } else {
+            mod_inverse(Cow::Owned(self.to_biguint().unwrap()), Cow::Borrowed(m))
+        }
+    }
+}
+
+impl<'a, 'b> ModInverse<&'b BigInt> for &'a BigInt {
+    type Output = BigInt;
+
+    fn mod_inverse(self, m: &'b BigInt) -> Option<BigInt> {
+        if self.is_negative() {
+            let v = self.mod_floor(m).into_biguint().unwrap();
+            mod_inverse(Cow::Owned(v), Cow::Owned(m.to_biguint().unwrap()))
+        } else {
+            mod_inverse(
+                Cow::Owned(self.to_biguint().unwrap()),
+                Cow::Owned(m.to_biguint().unwrap()),
+            )
+        }
+    }
+}
+
+// Extended GCD
+
+impl<'a> ExtendedGcd<&'a BigUint> for BigInt {
+    fn extended_gcd(self, other: &'a BigUint) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(
+            Cow::Owned(self.into_biguint().unwrap()),
+            Cow::Borrowed(other),
+            true,
+        );
+
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+impl<'a> ExtendedGcd<&'a BigInt> for BigInt {
+    fn extended_gcd(self, other: &'a BigInt) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(
+            Cow::Owned(self.into_biguint().unwrap()),
+            Cow::Owned(other.to_biguint().unwrap()),
+            true,
+        );
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+impl<'a, 'b> ExtendedGcd<&'b BigInt> for &'a BigInt {
+    fn extended_gcd(self, other: &'b BigInt) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(
+            Cow::Owned(self.to_biguint().unwrap()),
+            Cow::Owned(other.to_biguint().unwrap()),
+            true,
+        );
+
+        (a, b.unwrap(), c.unwrap())
+    }
+}
+
+impl<'a, 'b> ExtendedGcd<&'b BigUint> for &'a BigInt {
+    fn extended_gcd(self, other: &'b BigUint) -> (BigInt, BigInt, BigInt) {
+        let (a, b, c) = extended_gcd(
+            Cow::Owned(self.to_biguint().unwrap()),
+            Cow::Borrowed(other),
+            true,
+        );
+        (a, b.unwrap(), c.unwrap())
     }
 }
 

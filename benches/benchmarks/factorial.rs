@@ -45,7 +45,7 @@ fn factorial_div_u32(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default();
+    config = { let mut c = Criterion::default(); c.sample_size(5) };
     targets =
         factorial_mul_biguint,
         factorial_mul_u32,

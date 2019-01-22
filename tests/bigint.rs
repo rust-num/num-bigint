@@ -655,6 +655,35 @@ fn test_add() {
 }
 
 #[test]
+fn test_add_mut() {
+    for elm in SUM_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let mut a = BigInt::from_slice(Plus, a_vec);
+        let mut b = BigInt::from_slice(Plus, b_vec);
+        let mut c = BigInt::from_slice(Plus, c_vec);
+        let (na, nb, nc) = (-&a, -&b, -&c);
+
+        assert_op!(a + b == c);
+        assert_op!(b + a == c);
+        assert_op!(c + na == b);
+        assert_op!(c + nb == a);
+        assert_op!(a + nc == nb);
+        assert_op!(b + nc == na);
+        assert_op!(na + nb == nc);
+        assert_op!(a + na == Zero::zero());
+
+        assert_assign_op!(a += b == c);
+        assert_assign_op!(b += a == c);
+        assert_assign_op!(c += na == b);
+        assert_assign_op!(c += nb == a);
+        assert_assign_op!(a += nc == nb);
+        assert_assign_op!(b += nc == na);
+        assert_assign_op!(na += nb == nc);
+        assert_assign_op!(a += na == Zero::zero());
+    }
+}
+
+#[test]
 fn test_sub() {
     for elm in SUM_TRIPLES.iter() {
         let (a_vec, b_vec, c_vec) = *elm;

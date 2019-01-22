@@ -50,22 +50,22 @@ fn gcd_euclid_4096(c: &mut Criterion) {
     bench(c, "gcd_euclid_4096".to_string(), 4096, euclid);
 }
 
-// Integer for BigUint now uses Stein for gcd
+// Integer for BigUint now uses Lehmer for gcd
 
-fn gcd_stein_0064(c: &mut Criterion) {
-    bench(c, "gcd_stein_0064".to_string(), 64, BigUint::gcd);
+fn gcd_lehmer_0064(c: &mut Criterion) {
+    bench(c, "gcd_lehmer_0064".to_string(), 64, BigUint::gcd);
 }
 
-fn gcd_stein_0256(c: &mut Criterion) {
-    bench(c, "gcd_stein_0256".to_string(), 256, BigUint::gcd);
+fn gcd_lehmer_0256(c: &mut Criterion) {
+    bench(c, "gcd_lehmer_0256".to_string(), 256, BigUint::gcd);
 }
 
-fn gcd_stein_1024(c: &mut Criterion) {
-    bench(c, "gcd_stein_1024".to_string(), 1024, BigUint::gcd);
+fn gcd_lehmer_1024(c: &mut Criterion) {
+    bench(c, "gcd_lehmer_1024".to_string(), 1024, BigUint::gcd);
 }
 
-fn gcd_stein_4096(c: &mut Criterion) {
-    bench(c, "gcd_stein_4096".to_string(), 4096, BigUint::gcd);
+fn gcd_lehmer_4096(c: &mut Criterion) {
+    bench(c, "gcd_lehmer_4096".to_string(), 4096, BigUint::gcd);
 }
 
 criterion_group! {
@@ -76,8 +76,8 @@ criterion_group! {
         gcd_euclid_0256,
         gcd_euclid_1024,
         gcd_euclid_4096,
-        gcd_stein_0064,
-        gcd_stein_0256,
-        gcd_stein_1024,
-        gcd_stein_4096,
+        gcd_lehmer_0064,
+        gcd_lehmer_0256,
+        gcd_lehmer_1024,
+        gcd_lehmer_4096,
 }

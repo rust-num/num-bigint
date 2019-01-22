@@ -11,6 +11,7 @@ mod benchmarks;
 criterion_main! {
     benchmarks::prime_benches::benches,
     benchmarks::gcd::benches,
+    benchmarks::egcd::benches,
     benchmarks::factorial::benches,
     benchmarks::bigint::benches,
 }

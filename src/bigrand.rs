@@ -12,8 +12,10 @@ use Sign::*;
 use big_digit::BigDigit;
 use bigint::{into_magnitude, magnitude};
 use integer::Integer;
+#[cfg(feature = "prime")]
 use num_iter::range_step;
 use num_traits::Zero;
+#[cfg(feature = "prime")]
 use num_traits::{FromPrimitive, ToPrimitive};
 
 #[cfg(feature = "prime")]
