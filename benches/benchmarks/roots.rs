@@ -1,15 +1,9 @@
-#![feature(test)]
 #![cfg(feature = "rand")]
 
-extern crate num_bigint;
-extern crate num_traits;
-extern crate rand;
-extern crate test;
-
+use criterion::Criterion;
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::Pow;
 use rand::{SeedableRng, StdRng};
-use test::Bencher;
 
 // The `big64` cases demonstrate the speed of cases where the value
 // can be converted to a `u64` primitive for faster calculation.
@@ -46,131 +40,140 @@ fn check(x: &BigUint, n: u32) {
     assert_eq!((&hi - 1u32).nth_root(n), root);
 }
 
-fn bench_sqrt(b: &mut Bencher, bits: usize) {
+fn bench_sqrt(c: &mut Criterion, bits: usize) {
     let x = get_rng().gen_biguint(bits);
-    eprintln!("bench_sqrt({})", x);
 
     check(&x, 2);
-    b.iter(|| x.sqrt());
+    c.bench_function(&format!("bench_sqrt(bits={})", bits), move |b| {
+        b.iter(|| x.sqrt())
+    });
 }
 
-#[bench]
-fn big64_sqrt(b: &mut Bencher) {
+fn big64_sqrt(b: &mut Criterion) {
     bench_sqrt(b, 64);
 }
 
-#[bench]
-fn big1k_sqrt(b: &mut Bencher) {
+fn big1k_sqrt(b: &mut Criterion) {
     bench_sqrt(b, 1024);
 }
 
-#[bench]
-fn big2k_sqrt(b: &mut Bencher) {
+fn big2k_sqrt(b: &mut Criterion) {
     bench_sqrt(b, 2048);
 }
 
-#[bench]
-fn big4k_sqrt(b: &mut Bencher) {
+fn big4k_sqrt(b: &mut Criterion) {
     bench_sqrt(b, 4096);
 }
 
-fn bench_cbrt(b: &mut Bencher, bits: usize) {
+fn bench_cbrt(c: &mut Criterion, bits: usize) {
     let x = get_rng().gen_biguint(bits);
-    eprintln!("bench_cbrt({})", x);
 
     check(&x, 3);
-    b.iter(|| x.cbrt());
+    c.bench_function(&format!("bench_cbrt(bits={})", bits), move |b| {
+        b.iter(|| x.cbrt())
+    });
 }
 
-#[bench]
-fn big64_cbrt(b: &mut Bencher) {
+fn big64_cbrt(b: &mut Criterion) {
     bench_cbrt(b, 64);
 }
 
-#[bench]
-fn big1k_cbrt(b: &mut Bencher) {
+fn big1k_cbrt(b: &mut Criterion) {
     bench_cbrt(b, 1024);
 }
 
-#[bench]
-fn big2k_cbrt(b: &mut Bencher) {
+fn big2k_cbrt(b: &mut Criterion) {
     bench_cbrt(b, 2048);
 }
 
-#[bench]
-fn big4k_cbrt(b: &mut Bencher) {
+fn big4k_cbrt(b: &mut Criterion) {
     bench_cbrt(b, 4096);
 }
 
-fn bench_nth_root(b: &mut Bencher, bits: usize, n: u32) {
+fn bench_nth_root(c: &mut Criterion, bits: usize, n: u32) {
     let x = get_rng().gen_biguint(bits);
-    eprintln!("bench_{}th_root({})", n, x);
 
     check(&x, n);
-    b.iter(|| x.nth_root(n));
+    c.bench_function(&format!("bench_{}th_root(bits={})", n, bits), move |b| {
+        b.iter(|| x.nth_root(n))
+    });
 }
 
-#[bench]
-fn big64_nth_10(b: &mut Bencher) {
+fn big64_nth_10(b: &mut Criterion) {
     bench_nth_root(b, 64, 10);
 }
 
-#[bench]
-fn big1k_nth_10(b: &mut Bencher) {
+fn big1k_nth_10(b: &mut Criterion) {
     bench_nth_root(b, 1024, 10);
 }
 
-#[bench]
-fn big1k_nth_100(b: &mut Bencher) {
+fn big1k_nth_100(b: &mut Criterion) {
     bench_nth_root(b, 1024, 100);
 }
 
-#[bench]
-fn big1k_nth_1000(b: &mut Bencher) {
+fn big1k_nth_1000(b: &mut Criterion) {
     bench_nth_root(b, 1024, 1000);
 }
 
-#[bench]
-fn big1k_nth_10000(b: &mut Bencher) {
+fn big1k_nth_10000(b: &mut Criterion) {
     bench_nth_root(b, 1024, 10000);
 }
 
-#[bench]
-fn big2k_nth_10(b: &mut Bencher) {
+fn big2k_nth_10(b: &mut Criterion) {
     bench_nth_root(b, 2048, 10);
 }
 
-#[bench]
-fn big2k_nth_100(b: &mut Bencher) {
+fn big2k_nth_100(b: &mut Criterion) {
     bench_nth_root(b, 2048, 100);
 }
 
-#[bench]
-fn big2k_nth_1000(b: &mut Bencher) {
+fn big2k_nth_1000(b: &mut Criterion) {
     bench_nth_root(b, 2048, 1000);
 }
 
-#[bench]
-fn big2k_nth_10000(b: &mut Bencher) {
+fn big2k_nth_10000(b: &mut Criterion) {
     bench_nth_root(b, 2048, 10000);
 }
 
-#[bench]
-fn big4k_nth_10(b: &mut Bencher) {
+fn big4k_nth_10(b: &mut Criterion) {
     bench_nth_root(b, 4096, 10);
 }
 
-#[bench]
-fn big4k_nth_100(b: &mut Bencher) {
+fn big4k_nth_100(b: &mut Criterion) {
     bench_nth_root(b, 4096, 100);
 }
 
-#[bench]
-fn big4k_nth_1000(b: &mut Bencher) {
+fn big4k_nth_1000(b: &mut Criterion) {
     bench_nth_root(b, 4096, 1000);
 }
 
-#[bench]
-fn big4k_nth_10000(b: &mut Bencher) {
+fn big4k_nth_10000(b: &mut Criterion) {
     bench_nth_root(b, 4096, 10000);
+}
+
+criterion_group! {
+    name = benches;
+    config = Criterion::default();
+    targets =
+        big64_sqrt,
+        big1k_sqrt,
+        big2k_sqrt,
+        big4k_sqrt,
+        big64_cbrt,
+        big1k_cbrt,
+        big2k_cbrt,
+        big4k_cbrt,
+        big64_nth_10,
+        big1k_nth_10,
+        big1k_nth_100,
+        big1k_nth_1000,
+        big1k_nth_10000,
+        big2k_nth_10,
+        big2k_nth_100,
+        big2k_nth_1000,
+        big2k_nth_10000,
+        big4k_nth_10,
+        big4k_nth_100,
+        big4k_nth_1000,
+        big4k_nth_10000,
 }

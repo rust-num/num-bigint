@@ -14,4 +14,5 @@ criterion_main! {
     benchmarks::egcd::benches,
     benchmarks::factorial::benches,
     benchmarks::bigint::benches,
+    benchmarks::roots::benches,
 }

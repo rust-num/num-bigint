@@ -17,9 +17,6 @@ autobenches = false
 features = ["std", "serde", "rand", "prime"]
 
 [[bench]]
-name = "roots"
-
-[[bench]]
 harness = false
 name = "bench_main"
 required-features = ["prime"]
