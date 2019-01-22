@@ -35,6 +35,8 @@ Implementations for `i128` and `u128` are only available with Rust 1.26 and
 later.  The build script automatically detects this, but you can make it
 mandatory by enabling the `i128` crate feature.
 
+The `u64_digit` feature enables usage of larger internal "digits" (or otherwise known as "limbs"). Speeeding up almost all operations on architectures that have native support for it.
+
 The `prime` feature gate enables algorithms and support for dealing with large primes.
 
 ## Releases
@@ -51,14 +53,16 @@ While `num-bigint` strives for good performance in pure Rust code, other
 crates may offer better performance with different trade-offs.  The following
 table offers a brief comparison to a few alternatives.
 
-| Crate            | License        | Min rustc | Implementation |
-| :--------------- | :------------- | :-------- | :------------- |
-| **`num-bigint`** | MIT/Apache-2.0 | 1.15      | pure rust |
-| [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly |
-| [`rug`]          | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |
-| [`rust-gmp`]     | MIT            | stable?   | links to [GMP] |
-| [`apint`]        | MIT/Apache-2.0 | 1.26      | pure rust (unfinished) |
+| Crate                | License        | Min rustc | Implementation |
+| :------------------- | :------------- | :-------- | :------------- |
+| **`num-bigint-dig`** | MIT/Apache-2.0 | 1.31      | pure rust |
+| [`num-bigint`]       | MIT/Apache-2.0 | 1.15      | pure rust |
+| [`ramp`]             | Apache-2.0     | nightly   | rust and inline assembly |
+| [`rug`]              | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |
+| [`rust-gmp`]         | MIT            | stable?   | links to [GMP] |
+| [`apint`]            | MIT/Apache-2.0 | 1.26      | pure rust (unfinished) |
 
+[`num-bigint`](https://crates.io/crates/num-bigint)
 [GMP]: https://gmplib.org/
 [`gmp-mpfr-sys`]: https://crates.io/crates/gmp-mpfr-sys
 [`rug`]: https://crates.io/crates/rug
