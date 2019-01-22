@@ -62,7 +62,7 @@ table offers a brief comparison to a few alternatives.
 | [`rust-gmp`]         | MIT            | stable?   | links to [GMP] |
 | [`apint`]            | MIT/Apache-2.0 | 1.26      | pure rust (unfinished) |
 
-[`num-bigint`](https://crates.io/crates/num-bigint)
+[`num-bigint`]: https://crates.io/crates/num-bigint
 [GMP]: https://gmplib.org/
 [`gmp-mpfr-sys`]: https://crates.io/crates/gmp-mpfr-sys
 [`rug`]: https://crates.io/crates/rug
