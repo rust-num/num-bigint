@@ -45,7 +45,7 @@ Release notes are available in [RELEASES.md](RELEASES.md).
 
 ## Compatibility
 
-The `num-bigint` crate is tested for rustc 1.15 and greater.
+The `num-bigint` crate is tested for rustc 1.31 and greater.
 
 ## Alternatives
 
