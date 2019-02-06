@@ -217,7 +217,9 @@ pub fn probably_prime_lucas(n: &BigUint) -> bool {
         // We'll never find (d/n) = -1 if n is a square.
         // If n is a non-square we expect to find a d in just a few attempts on average.
         // After 40 attempts, take a moment to check if n is indeed a square.
-        if p == 40 && (&n_int * &n_int).sqrt() == n_int {
+
+        let t1 = &n_int * &n_int;
+        if p == 40 && t1.sqrt() == n_int {
             return false;
         }
 
