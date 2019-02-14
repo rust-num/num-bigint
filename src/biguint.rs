@@ -1824,13 +1824,25 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
 }
 
 impl BigUint {
+    /// quickly computes `self % div`
+    pub fn quick_rem(&self, div: u32) -> u32 {
+        let mut rem = 0u64;
+        for digit in self.data.iter().rev() {
+            rem = (rem << 32) + (*digit) as u64;
+            rem %= div as u64;
+        }
+
+        rem as u32
+    }
+
+
     /// Creates and initializes a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
         BigUint { data: digits }.normalized()
-    }
+}
 
     /// Creates and initializes a `BigUint`.
     ///
