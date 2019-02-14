@@ -1842,7 +1842,7 @@ impl BigUint {
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
         BigUint { data: digits }.normalized()
-}
+    }
 
     /// Creates and initializes a `BigUint`.
     ///
