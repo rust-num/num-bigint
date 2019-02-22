@@ -1845,6 +1845,15 @@ impl BigUint {
         total
     }
 
+    pub fn trailing_zeros(&self) -> Option<usize> {
+    self.data
+        .iter()
+        .enumerate()
+        .find(|&(_, &digit)| digit != 0)
+        .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
+}
+
+
     /// Creates and initializes a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
