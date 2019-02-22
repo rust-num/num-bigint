@@ -1835,6 +1835,15 @@ impl BigUint {
         rem as u32
     }
 
+    pub fn factorial(&self) -> BigUint {
+        let mut total = BigUint::from(1u8);
+        let mut i = BigUint::from(1u8);
+        while &i < self {
+            i += 1u8;
+            total *= &i;
+        }
+        total
+    }
 
     /// Creates and initializes a `BigUint`.
     ///
