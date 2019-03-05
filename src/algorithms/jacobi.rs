@@ -56,7 +56,7 @@ pub fn jacobi(x: &BigInt, y: &BigInt) -> isize {
         }
 
         a = b;
-        b = c.clone();
+        b = c;
     }
 }
 

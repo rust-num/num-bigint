@@ -11,7 +11,7 @@ use crate::algorithms::jacobi;
 use crate::big_digit;
 use crate::bigrand::RandBigInt;
 use crate::Sign::Plus;
-use crate::{BigInt, BigUint};
+use crate::{BigInt, BigUint, IntoBigUint};
 
 lazy_static! {
     pub(crate) static ref BIG_1: BigUint = BigUint::one();
@@ -46,7 +46,7 @@ const PRIME_BIT_MASK: u64 = 1 << 2
 /// ProbablyPrime reports whether x is probably prime,
 /// applying the Miller-Rabin test with n pseudorandomly chosen bases
 /// as well as a Baillie-PSW test.
-//
+///
 /// If x is prime, ProbablyPrime returns true.
 /// If x is chosen randomly and not prime, ProbablyPrime probably returns false.
 /// The probability of returning true for a randomly chosen non-prime is at most ¼ⁿ.
@@ -97,6 +97,87 @@ pub fn probably_prime(x: &BigUint, n: usize) -> bool {
     probably_prime_miller_rabin(x, n + 1, true) && probably_prime_lucas(x)
 }
 
+const NUMBER_OF_PRIMES: usize = 127;
+const PRIME_GAP: [u64; 167] = [
+    2, 2, 4, 2, 4, 2, 4, 6, 2, 6, 4, 2, 4, 6, 6, 2, 6, 4, 2, 6, 4, 6, 8, 4, 2, 4, 2, 4, 14, 4, 6,
+    2, 10, 2, 6, 6, 4, 6, 6, 2, 10, 2, 4, 2, 12, 12, 4, 2, 4, 6, 2, 10, 6, 6, 6, 2, 6, 4, 2, 10,
+    14, 4, 2, 4, 14, 6, 10, 2, 4, 6, 8, 6, 6, 4, 6, 8, 4, 8, 10, 2, 10, 2, 6, 4, 6, 8, 4, 2, 4, 12,
+    8, 4, 8, 4, 6, 12, 2, 18, 6, 10, 6, 6, 2, 6, 10, 6, 6, 2, 6, 6, 4, 2, 12, 10, 2, 4, 6, 6, 2,
+    12, 4, 6, 8, 10, 8, 10, 8, 6, 6, 4, 8, 6, 4, 8, 4, 14, 10, 12, 2, 10, 2, 4, 2, 10, 14, 4, 2, 4,
+    14, 4, 2, 4, 20, 4, 8, 10, 8, 4, 6, 6, 14, 4, 6, 6, 8, 6, 12,
+];
+
+const INCR_LIMIT: usize = 0x10000;
+
+/// Calculate the next larger prime, given a starting number `n`.
+pub fn next_prime(n: &BigUint) -> BigUint {
+    if n < &*BIG_2 {
+        return 2u32.into_biguint().unwrap();
+    }
+
+    // We want something larger than our current number.
+    let mut res = n + &*BIG_1;
+
+    // Ensure we are odd.
+    res |= &*BIG_1;
+
+    // Handle values up to 7.
+    if let Some(val) = res.to_u64() {
+        if val < 7 {
+            return res;
+        }
+    }
+
+    let nbits = res.bits();
+    let prime_limit = if nbits / 2 >= NUMBER_OF_PRIMES {
+        NUMBER_OF_PRIMES - 1
+    } else {
+        nbits / 2
+    };
+
+    // Compute the residues modulo small odd primes
+    let mut moduli = vec![BigUint::zero(); prime_limit];
+
+    'outer: loop {
+        let mut prime = 3;
+        for i in 0..prime_limit {
+            moduli[i] = &res / prime;
+            prime += PRIME_GAP[i];
+        }
+
+        // Check residues
+        let mut difference: usize = 0;
+        for incr in (0..INCR_LIMIT as u64).step_by(2) {
+            let mut prime: u64 = 3;
+
+            let mut cancel = false;
+            for i in 0..prime_limit {
+                let r = (&moduli[i] + incr) % prime;
+                prime += PRIME_GAP[i];
+
+                if r.is_zero() {
+                    cancel = true;
+                    break;
+                }
+            }
+
+            if !cancel {
+                res += difference;
+                difference = 0;
+                if probably_prime(&res, 20) {
+                    break 'outer;
+                }
+            }
+
+            difference += 2;
+        }
+
+        res += difference;
+    }
+
+    res
+}
+
 /// Reports whether n passes reps rounds of the Miller-Rabin primality test, using pseudo-randomly chosen bases.
 /// If `force2` is true, one of the rounds is forced to use base 2.
 ///
@@ -105,7 +186,7 @@ pub fn probably_prime_miller_rabin(n: &BigUint, reps: usize, force2: bool) -> bo
     // println!("miller-rabin: {}", n);
     let nm1 = n - &*BIG_1;
     // determine q, k such that nm1 = q << k
-    let k = nm1.trailing_zeros().unwrap();
+    let k = nm1.trailing_zeros().unwrap() as usize;
     let q = &nm1 >> k;
     let nm3 = n - &*BIG_3;
 
@@ -217,7 +298,9 @@ pub fn probably_prime_lucas(n: &BigUint) -> bool {
         // We'll never find (d/n) = -1 if n is a square.
         // If n is a non-square we expect to find a d in just a few attempts on average.
         // After 40 attempts, take a moment to check if n is indeed a square.
-        if p == 40 && (&n_int * &n_int).sqrt() == n_int {
+
+        let t1 = &n_int * &n_int;
+        if p == 40 && t1.sqrt() == n_int {
             return false;
         }
 
@@ -237,7 +320,7 @@ pub fn probably_prime_lucas(n: &BigUint) -> bool {
     //
     // Arrange s = (n - Jacobi(Δ, n)) / 2^r = (n+1) / 2^r.
     let mut s = n + &*BIG_1;
-    let r = s.trailing_zeros().unwrap();
+    let r = s.trailing_zeros().unwrap() as usize;
     s = &s >> r;
     let nm2 = n - &*BIG_2; // n - 2
 
@@ -354,25 +437,12 @@ fn get_bit(x: &BigUint, i: usize) -> u8 {
     (x.get_limb(j) >> (i % big_digit::BITS) & 1) as u8
 }
 
-// pub fn big_prime(size: uint) -> BigUint {
-//   let one: BigUint = One::one();
-//   let two = one + one;
-
-//   let mut rng = task_rng();
-//   let mut candidate = rng.gen_biguint(size);
-//   if candidate.is_even() {
-//     candidate = candidate + one;
-//   }
-//   while !is_prime(&candidate) {
-//     candidate = candidate + two;
-//   }
-//   candidate
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
     // use RandBigInt;
+
+    use crate::biguint::ToBigUint;
 
     lazy_static! {
         static ref PRIMES: Vec<&'static str> = vec![
@@ -559,5 +629,25 @@ mod tests {
         assert!(is_bit_set(&num, 5));
         assert!(!is_bit_set(&num, 6));
         assert!(is_bit_set(&num, 7));
+    }
+
+    #[test]
+    fn test_next_prime() {
+        let primes1 = (0..2048u32)
+            .map(|i| next_prime(&i.to_biguint().unwrap()))
+            .collect::<Vec<_>>();
+        let primes2 = (0..2048u32)
+            .map(|i| {
+                let i = i.to_biguint().unwrap();
+                let p = next_prime(&i);
+                assert!(&p > &i);
+                p
+            })
+            .collect::<Vec<_>>();
+
+        for (p1, p2) in primes1.iter().zip(&primes2) {
+            assert_eq!(p1, p2);
+            assert!(probably_prime(p1, 25));
+        }
     }
 }

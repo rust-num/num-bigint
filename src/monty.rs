@@ -39,7 +39,7 @@ impl MontyReducer {
 /// In the terminology of that paper, this is an "Almost Montgomery Multiplication":
 /// x and y are required to satisfy 0 <= z < 2**(n*_W) and then the result
 /// z is guaranteed to satisfy 0 <= z < 2**(n*_W), but it may not be < m.
-fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> BigUint {
+fn montgomery(z: &mut BigUint, x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) {
     // This code assumes x, y, m are all the same length, n.
     // (required by addMulVVW and the for loop).
     // It also assumes that x, y are already reduced mod m,
@@ -53,7 +53,7 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
         n
     );
 
-    let mut z = BigUint::zero();
+    z.data.clear();
     z.data.resize(n * 2, 0);
 
     let mut c: BigDigit = 0;
@@ -76,8 +76,6 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
         sub_vv(&mut first, &second, &m.data);
     }
     z.data.truncate(n);
-
-    z
 }
 
 #[inline]
@@ -156,10 +154,15 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     // powers[i] contains x^i
     let mut powers = Vec::with_capacity(1 << n);
 
-    powers.push(montgomery(&one, &rr, m, mr.n0inv, num_words));
-    powers.push(montgomery(&x, &rr, m, mr.n0inv, num_words));
+    let mut v1 = BigUint::zero();
+    montgomery(&mut v1, &one, &rr, m, mr.n0inv, num_words);
+    powers.push(v1);
+    let mut v2 = BigUint::zero();
+    montgomery(&mut v2, &x, &rr, m, mr.n0inv, num_words);
+    powers.push(v2);
     for i in 2..1 << n {
-        let r = montgomery(&powers[i - 1], &powers[1], m, mr.n0inv, num_words);
+        let mut r = BigUint::zero();
+        montgomery(&mut r, &powers[i - 1], &powers[1], m, mr.n0inv, num_words);
         powers.push(r);
     }
 
@@ -175,12 +178,13 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
         let mut j = 0;
         while j < big_digit::BITS {
             if i != y.data.len() - 1 || j != 0 {
-                zz = montgomery(&z, &z, m, mr.n0inv, num_words);
-                z = montgomery(&zz, &zz, m, mr.n0inv, num_words);
-                zz = montgomery(&z, &z, m, mr.n0inv, num_words);
-                z = montgomery(&zz, &zz, m, mr.n0inv, num_words);
+                montgomery(&mut zz, &z, &z, m, mr.n0inv, num_words);
+                montgomery(&mut z, &zz, &zz, m, mr.n0inv, num_words);
+                montgomery(&mut zz, &z, &z, m, mr.n0inv, num_words);
+                montgomery(&mut z, &zz, &zz, m, mr.n0inv, num_words);
             }
-            zz = montgomery(
+            montgomery(
+                &mut zz,
                 &z,
                 &powers[(yi >> (big_digit::BITS - n)) as usize],
                 m,
@@ -194,7 +198,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     }
 
     // convert to regular number
-    zz = montgomery(&z, &one, m, mr.n0inv, num_words);
+    montgomery(&mut zz, &z, &one, m, mr.n0inv, num_words);
 
     zz.normalize();
     // One last reduction, just in case.

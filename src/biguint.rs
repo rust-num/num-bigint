@@ -2515,7 +2515,6 @@ impl serde::Serialize for BigUint {
                 }
             })
             .collect();
-        println!("{:?} -> {:?}", &self.data, &data);
         data.serialize(serializer)
     }
 }
