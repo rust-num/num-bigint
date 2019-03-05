@@ -757,6 +757,12 @@ impl Zero for BigInt {
     }
 
     #[inline]
+    fn set_zero(&mut self) {
+        self.data.set_zero();
+        self.sign = NoSign;
+    }
+
+    #[inline]
     fn is_zero(&self) -> bool {
         self.sign == NoSign
     }
@@ -766,6 +772,12 @@ impl One for BigInt {
     #[inline]
     fn one() -> BigInt {
         BigInt::from_biguint(Plus, One::one())
+    }
+
+    #[inline]
+    fn set_one(&mut self) {
+        self.data.set_one();
+        self.sign = Plus;
     }
 
     #[inline]

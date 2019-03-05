@@ -418,6 +418,11 @@ impl Zero for BigUint {
     }
 
     #[inline]
+    fn set_zero(&mut self) {
+        self.data.clear();
+    }
+
+    #[inline]
     fn is_zero(&self) -> bool {
         self.data.is_empty()
     }
@@ -427,6 +432,12 @@ impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
         BigUint::new(vec![1])
+    }
+
+    #[inline]
+    fn set_one(&mut self) {
+        self.data.clear();
+        self.data.push(1);
     }
 
     #[inline]
