@@ -10,6 +10,8 @@ mod mul;
 mod shl;
 mod shr;
 mod sub;
+mod pxgcd;
+
 
 pub use self::add::*;
 pub use self::bits::*;
@@ -23,3 +25,4 @@ pub use self::mul::*;
 pub use self::shl::*;
 pub use self::shr::*;
 pub use self::sub::*;
+pub use self::pxgcd::*;
