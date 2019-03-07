@@ -82,8 +82,6 @@ pub fn partial_extended_gcd(
             r = d;
         }
         
-        
-        // TODO: rr2 = mpz_get_si(inst->r);  
         rr2 = r.to_isize().unwrap();
 
         //r = R1 / (2 ^ T); truncate r 
@@ -104,7 +102,6 @@ pub fn partial_extended_gcd(
     
         //positive sign or no sign 
 
-        //TODO: rr1 = mpz_get_si(inst->r);
         rr1 = r.to_isize().unwrap();
 
         //r = R1 / (2 ^ T); truncate r 
@@ -126,8 +123,6 @@ pub fn partial_extended_gcd(
             r = d;
         }
         
-
-        //TODO: bb = mpz_get_si(inst->r);
         bb = r.to_isize().unwrap(); //might need tobe isize
 
         //reset values
