@@ -12,7 +12,7 @@ use std::borrow::Cow;
 use bigint::ToBigInt;
 
 
-///This function is an implementation of Lehmer extended GCD with early termination.
+/// This function is an implementation of Lehmer extended GCD with early termination.
 /// It terminates early when remainders fall below the specified bound. 
 /// The initial values r1 and r2 are treated as successive remainders in the Euclidean algorithm 
 /// and are replaced with the last two remainders computed. The values co1 and co2 are the last two 
