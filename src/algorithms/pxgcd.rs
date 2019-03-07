@@ -1,12 +1,6 @@
 // Partial Euclidean algorithm.
 // Lehmer's version for computing GCD
-// Flint-2.4.1 Book
-// This function is an implementation of Lehmer extended GCD with early termination, 
-// as used in the qfb module. It terminates early when remainders fall below the specified bound. 
-// The initial values r1 and r2 are treated as successive remainders in the Euclidean algorithm 
-// and are replaced with the last two remainders computed. The values co1 and co2 are the last two 
-// cofactors and satisfy the identity co2*r1 - co1*r2 == +/- r2_orig upon termination, where 
-// r2_orig is the starting value of r2 supplied, and r1 and r2 are the final values.
+// Ported from Flint-2.4.1 
 
 
 use crate::bigint::{Sign, BigInt};
@@ -20,6 +14,12 @@ use bigint::ToBigInt;
 
 //This function is an implementation of Lehmer extended GCD with early termination.
 //It terminates early when remainders fall below the specified bound. 
+// The initial values r1 and r2 are treated as successive remainders in the Euclidean algorithm 
+// and are replaced with the last two remainders computed. The values co1 and co2 are the last two 
+// cofactors and satisfy the identity co2*r1 - co1*r2 == +/- r2_orig upon termination, where 
+// r2_orig is the starting value of r2 supplied, and r1 and r2 are the final values.
+
+
 pub fn partial_extended_gcd(
     r2_in: Cow<BigInt>, 
     r1_in: Cow<BigInt>, 
@@ -231,9 +231,9 @@ pub fn partial_extended_gcd(
     
     // make sure R2 is positive
     if r2.sign() == Sign::Minus {
-        co1.sign = co1.sign.neg();
-        co2.sign = co2.sign.neg();
-        r2.sign = r2.sign.neg();
+        co1.negate_sign();
+        co2.negate_sign();
+        r2.negate_sign();
     }
 
     //return back
