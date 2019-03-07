@@ -2671,6 +2671,13 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::new(digits))
     }
 
+    /// Negates the sign of BigInt.
+    ///
+    #[inline]
+    pub fn negate_sign(&mut self) {
+        self.sign.neg()
+    }
+
     /// Creates and initializes a `BigInt`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
