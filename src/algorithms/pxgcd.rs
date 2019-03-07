@@ -12,14 +12,12 @@ use std::borrow::Cow;
 use bigint::ToBigInt;
 
 
-//This function is an implementation of Lehmer extended GCD with early termination.
-//It terminates early when remainders fall below the specified bound. 
-// The initial values r1 and r2 are treated as successive remainders in the Euclidean algorithm 
-// and are replaced with the last two remainders computed. The values co1 and co2 are the last two 
-// cofactors and satisfy the identity co2*r1 - co1*r2 == +/- r2_orig upon termination, where 
-// r2_orig is the starting value of r2 supplied, and r1 and r2 are the final values.
-
-
+///This function is an implementation of Lehmer extended GCD with early termination.
+/// It terminates early when remainders fall below the specified bound. 
+/// The initial values r1 and r2 are treated as successive remainders in the Euclidean algorithm 
+/// and are replaced with the last two remainders computed. The values co1 and co2 are the last two 
+/// cofactors and satisfy the identity co2*r1 - co1*r2 == +/- r2_orig upon termination, where 
+/// r2_orig is the starting value of r2 supplied, and r1 and r2 are the final values.
 pub fn partial_extended_gcd(
     r2_in: Cow<BigInt>, 
     r1_in: Cow<BigInt>, 
