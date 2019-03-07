@@ -2675,7 +2675,7 @@ impl BigInt {
     ///
     #[inline]
     pub fn negate_sign(&mut self) {
-        self.sign.neg()
+        self.sign.neg();
     }
 
     /// Creates and initializes a `BigInt`.
