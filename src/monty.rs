@@ -1,3 +1,5 @@
+#![allow(clippy::many_single_char_names)]
+
 use num_traits::{One, Zero};
 use std::ops::Shl;
 

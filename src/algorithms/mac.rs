@@ -297,16 +297,17 @@ fn toom3(acc: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) {
     //
     // Evaluate at w(t) where t is our given base to get the result.
     add2(acc, r0.digits());
-    add2(acc, (comp1 << BITS * 1 * i).digits());
-    add2(acc, (comp2 << BITS * 2 * i).digits());
-    add2(acc, (comp3 << BITS * 3 * i).digits());
-    add2(acc, (r4 << BITS * 4 * i).digits());
+    add2(acc, (comp1 << (BITS * 1 * i)).digits());
+    add2(acc, (comp2 << (BITS * 2 * i)).digits());
+    add2(acc, (comp3 << (BITS * 3 * i)).digits());
+    add2(acc, (r4 << (BITS * 4 * i)).digits());
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[cfg(feature = "u64_digit")]
     #[test]
     fn test_mac3_regression() {
         let b: Vec<BigDigit> = vec![
