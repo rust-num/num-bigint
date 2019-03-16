@@ -18,6 +18,9 @@ use std::{u64, u8};
 #[cfg(feature = "serde")]
 use serde;
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 use integer::{Integer, Roots};
 use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
@@ -48,6 +51,13 @@ use UsizePromotion;
 #[derive(Clone, Debug, Hash)]
 pub struct BigUint {
     pub(crate) data: SmallVec<[BigDigit; VEC_SIZE]>,
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for BigUint {
+    fn zeroize(&mut self) {
+        self.data.zeroize();
+    }
 }
 
 impl PartialEq for BigUint {

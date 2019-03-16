@@ -17,6 +17,9 @@ use std::{i64, u64};
 #[cfg(feature = "serde")]
 use serde;
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 use integer::{Integer, Roots};
 use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
@@ -117,6 +120,15 @@ impl<'de> serde::Deserialize<'de> for Sign {
 pub struct BigInt {
     pub(crate) sign: Sign,
     pub(crate) data: BigUint,
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for BigInt {
+    fn zeroize(&mut self) {
+        // TODO: Figure out how to better clear the sign.
+        self.sign = Sign::NoSign;
+        self.data.zeroize();
+    }
 }
 
 /// Return the magnitude of a `BigInt`.
