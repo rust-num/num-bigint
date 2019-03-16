@@ -1,21 +1,25 @@
+#![allow(clippy::suspicious_arithmetic_impl)]
 #[allow(deprecated, unused_imports)]
 use std::borrow::Cow;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::default::Default;
-use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::iter::{Product, Sum};
-use std::mem;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use std::str::{self, FromStr};
+use std::{fmt, mem};
 #[cfg(has_i128)]
 use std::{i128, u128};
 use std::{i64, u64};
 
 #[cfg(feature = "serde")]
 use serde;
+
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 use integer::{Integer, Roots};
 use num_traits::{
@@ -113,10 +117,19 @@ impl<'de> serde::Deserialize<'de> for Sign {
 }
 
 /// A big signed integer type.
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug)]
 pub struct BigInt {
     pub(crate) sign: Sign,
     pub(crate) data: BigUint,
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for BigInt {
+    fn zeroize(&mut self) {
+        // TODO: Figure out how to better clear the sign.
+        self.sign = Sign::NoSign;
+        self.data.zeroize();
+    }
 }
 
 /// Return the magnitude of a `BigInt`.
@@ -143,6 +156,13 @@ impl PartialEq for BigInt {
 }
 
 impl Eq for BigInt {}
+
+impl Hash for BigInt {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.sign.hash(state);
+        self.data.hash(state);
+    }
+}
 
 impl PartialOrd for BigInt {
     #[inline]
@@ -824,9 +844,7 @@ impl Signed for BigInt {
 fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
     if other.is_zero() {
         Plus
-    } else if sign != Minus {
-        sign
-    } else if other.is_odd() {
+    } else if sign != Minus || other.is_odd() {
         sign
     } else {
         -sign
@@ -2147,21 +2165,21 @@ impl<'a> Neg for &'a BigInt {
 impl CheckedAdd for BigInt {
     #[inline]
     fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
 impl CheckedSub for BigInt {
     #[inline]
     fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.sub(v));
+        Some(self.sub(v))
     }
 }
 
 impl CheckedMul for BigInt {
     #[inline]
     fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -2169,9 +2187,10 @@ impl CheckedDiv for BigInt {
     #[inline]
     fn checked_div(&self, v: &BigInt) -> Option<BigInt> {
         if v.is_zero() {
-            return None;
+            None
+        } else {
+            Some(self.div(v))
         }
-        return Some(self.div(v));
     }
 }
 
@@ -2245,7 +2264,7 @@ impl Integer for BigInt {
     /// Deprecated, use `is_multiple_of` instead.
     #[inline]
     fn divides(&self, other: &BigInt) -> bool {
-        return self.is_multiple_of(other);
+        self.is_multiple_of(other)
     }
 
     /// Returns `true` if the number is a multiple of `other`.
@@ -2682,10 +2701,7 @@ impl BigInt {
             sign = NoSign;
         }
 
-        BigInt {
-            sign: sign,
-            data: data,
-        }
+        BigInt { sign, data }
     }
 
     /// Creates and initializes a `BigInt`.
@@ -3044,25 +3060,26 @@ impl BigInt {
 
     #[inline]
     pub fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 
     #[inline]
     pub fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.sub(v));
+        Some(self.sub(v))
     }
 
     #[inline]
     pub fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 
     #[inline]
     pub fn checked_div(&self, v: &BigInt) -> Option<BigInt> {
         if v.is_zero() {
-            return None;
+            None
+        } else {
+            Some(self.div(v))
         }
-        return Some(self.div(v));
     }
 
     /// Returns `(self ^ exponent) mod modulus`

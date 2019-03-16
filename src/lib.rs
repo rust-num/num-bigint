@@ -90,6 +90,9 @@ extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
 
+#[cfg(feature = "zeroize")]
+extern crate zeroize;
+
 #[macro_use]
 extern crate smallvec;
 
