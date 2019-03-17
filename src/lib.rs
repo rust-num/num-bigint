@@ -199,6 +199,6 @@ mod big_digit {
     /// Join two `BigDigit`s into one `DoubleBigDigit`
     #[inline]
     pub fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
-        (lo as DoubleBigDigit) | ((hi as DoubleBigDigit) << BITS)
+        DoubleBigDigit::from(lo) | (DoubleBigDigit::from(hi) << BITS)
     }
 }

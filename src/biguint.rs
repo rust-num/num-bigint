@@ -124,7 +124,7 @@ impl FromStr for BigUint {
 // BigDigit::BITS
 fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits == 0);
-    debug_assert!(v.iter().all(|&c| (c as BigDigit) < (1 << bits)));
+    debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
     let digits_per_big_digit = big_digit::BITS / bits;
 
@@ -134,7 +134,7 @@ fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
             chunk
                 .iter()
                 .rev()
-                .fold(0, |acc, &c| (acc << bits) | c as BigDigit)
+                .fold(0, |acc, &c| (acc << bits) | BigDigit::from(c))
         })
         .collect();
 
@@ -145,7 +145,7 @@ fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
 // BigDigit::BITS
 fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits != 0);
-    debug_assert!(v.iter().all(|&c| (c as BigDigit) < (1 << bits)));
+    debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
     let big_digits = (v.len() * bits + big_digit::BITS - 1) / big_digit::BITS;
     let mut data = Vec::with_capacity(big_digits);
@@ -156,7 +156,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
     // walk v accumululating bits in d; whenever we accumulate big_digit::BITS in d, spit out a
     // big_digit:
     for &c in v {
-        d |= (c as BigDigit) << dbits;
+        d |= BigDigit::from(c) << dbits;
         dbits += bits;
 
         if dbits >= big_digit::BITS {
@@ -164,7 +164,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
             dbits -= big_digit::BITS;
             // if dbits was > big_digit::BITS, we dropped some of the bits in c (they couldn't fit
             // in d) - grab the bits we lost here:
-            d = (c as BigDigit) >> (bits - dbits);
+            d = BigDigit::from(c) >> (bits - dbits);
         }
     }
 
@@ -179,10 +179,10 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
 // Read little-endian radix digits
 fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     debug_assert!(!v.is_empty() && !radix.is_power_of_two());
-    debug_assert!(v.iter().all(|&c| (c as u32) < radix));
+    debug_assert!(v.iter().all(|&c| u32::from(c) < radix));
 
     // Estimate how big the result will be, so we can pre-allocate it.
-    let bits = (radix as f64).log2() * v.len() as f64;
+    let bits = f64::from(radix).log2() * v.len() as f64;
     let big_digits = (bits / big_digit::BITS as f64).ceil();
     let mut data = Vec::with_capacity(big_digits as usize);
 
@@ -193,7 +193,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     let i = if r == 0 { power } else { r };
     let (head, tail) = v.split_at(i);
 
-    let first = head.iter().fold(0, |acc, &d| acc * radix + d as BigDigit);
+    let first = head.iter().fold(0, |acc, &d| acc * radix + BigDigit::from(d));
     data.push(first);
 
     debug_assert!(tail.len() % power == 0);
@@ -208,7 +208,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
         }
         debug_assert!(carry == 0);
 
-        let n = chunk.iter().fold(0, |acc, &d| acc * radix + d as BigDigit);
+        let n = chunk.iter().fold(0, |acc, &d| acc * radix + BigDigit::from(d));
         add2(&mut data, &[n]);
     }
 
@@ -605,7 +605,7 @@ impl Add<u128> for BigUint {
 impl AddAssign<u128> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u128) {
-        if other <= u64::max_value() as u128 {
+        if other <= u128::from(u64::max_value()) {
             *self += other as u64
         } else {
             let (a, b, c, d) = u32_from_u128(other);
@@ -834,7 +834,7 @@ impl MulAssign<u64> for BigUint {
     fn mul_assign(&mut self, other: u64) {
         if other == 0 {
             self.data.clear();
-        } else if other <= BigDigit::max_value() as u64 {
+        } else if other <= u64::from(BigDigit::max_value()) {
             *self *= other as BigDigit
         } else {
             let (hi, lo) = big_digit::from_doublebigdigit(other);
@@ -859,7 +859,7 @@ impl MulAssign<u128> for BigUint {
     fn mul_assign(&mut self, other: u128) {
         if other == 0 {
             self.data.clear();
-        } else if other <= BigDigit::max_value() as u128 {
+        } else if other <= u128::from(BigDigit::max_value()) {
             *self *= other as BigDigit
         } else {
             let (a, b, c, d) = u32_from_u128(other);
@@ -946,7 +946,7 @@ impl Div<BigUint> for u64 {
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
             0 => panic!(),
-            1 => From::from(self / other.data[0] as u64),
+            1 => From::from(self / u64::from(other.data[0])),
             2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             _ => Zero::zero(),
         }
@@ -979,9 +979,9 @@ impl Div<BigUint> for u128 {
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
             0 => panic!(),
-            1 => From::from(self / other.data[0] as u128),
+            1 => From::from(self / u128::from(other.data[0])),
             2 => From::from(
-                self / big_digit::to_doublebigdigit(other.data[1], other.data[0]) as u128,
+                self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             ),
             3 => From::from(self / u32_to_u128(0, other.data[2], other.data[1], other.data[0])),
             4 => From::from(
@@ -1437,7 +1437,7 @@ impl Roots for BigUint {
 fn high_bits_to_u64(v: &BigUint) -> u64 {
     match v.data.len() {
         0 => 0,
-        1 => v.data[0] as u64,
+        1 => u64::from(v.data[0]),
         _ => {
             let mut bits = v.bits();
             let mut ret = 0u64;
@@ -1450,7 +1450,7 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
                 if bits_want != 64 {
                     ret <<= bits_want;
                 }
-                ret |= *d as u64 >> (digit_bits - bits_want);
+                ret |= u64::from(*d) >> (digit_bits - bits_want);
                 ret_bits += bits_want;
                 bits -= bits_want;
 
@@ -1486,7 +1486,7 @@ impl ToPrimitive for BigUint {
                 return None;
             }
 
-            ret += (*i as u64) << bits;
+            ret += u64::from(*i) << bits;
             bits += big_digit::BITS;
         }
 
@@ -1504,7 +1504,7 @@ impl ToPrimitive for BigUint {
                 return None;
             }
 
-            ret |= (*i as u128) << bits;
+            ret |= u128::from(*i) << bits;
             bits += big_digit::BITS;
         }
 
@@ -1768,7 +1768,7 @@ fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     debug_assert!(!u.is_zero() && !radix.is_power_of_two());
 
     // Estimate how big the result will be, so we can pre-allocate it.
-    let radix_digits = ((u.bits() as f64) / (radix as f64).log2()).ceil();
+    let radix_digits = ((u.bits() as f64) / f64::from(radix).log2()).ceil();
     let mut res = Vec::with_capacity(radix_digits as usize);
     let mut digits = u.clone();
 
@@ -1824,7 +1824,7 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
 
     // Now convert everything to ASCII digits.
     for r in &mut res {
-        debug_assert!((*r as u32) < radix);
+        debug_assert!(u32::from(*r) < radix);
         if *r < 10 {
             *r += b'0';
         } else {

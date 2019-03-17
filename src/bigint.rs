@@ -219,7 +219,7 @@ impl fmt::UpperHex for BigInt {
 // ff ff -> ...f 00 01
 #[inline]
 fn negate_carry(a: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += (!a) as DoubleBigDigit;
+    *acc += DoubleBigDigit::from(!a);
     let lo = *acc as BigDigit;
     *acc >>= big_digit::BITS;
     lo

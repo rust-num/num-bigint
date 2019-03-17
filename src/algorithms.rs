@@ -19,8 +19,8 @@ use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 // Add with carry:
 #[inline]
 fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += a as DoubleBigDigit;
-    *acc += b as DoubleBigDigit;
+    *acc += DoubleBigDigit::from(a);
+    *acc += DoubleBigDigit::from(b);
     let lo = *acc as BigDigit;
     *acc >>= big_digit::BITS;
     lo
@@ -29,8 +29,8 @@ fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
 // Subtract with borrow:
 #[inline]
 fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
-    *acc += a as SignedDoubleBigDigit;
-    *acc -= b as SignedDoubleBigDigit;
+    *acc += SignedDoubleBigDigit::from(a);
+    *acc -= SignedDoubleBigDigit::from(b);
     let lo = *acc as BigDigit;
     *acc >>= big_digit::BITS;
     lo
@@ -38,8 +38,8 @@ fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
 
 #[inline]
 pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += a as DoubleBigDigit;
-    *acc += (b as DoubleBigDigit) * (c as DoubleBigDigit);
+    *acc += DoubleBigDigit::from(a);
+    *acc += DoubleBigDigit::from(b) * DoubleBigDigit::from(c);
     let lo = *acc as BigDigit;
     *acc >>= big_digit::BITS;
     lo
@@ -47,7 +47,7 @@ pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBig
 
 #[inline]
 pub fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += (a as DoubleBigDigit) * (b as DoubleBigDigit);
+    *acc += DoubleBigDigit::from(a) * DoubleBigDigit::from(b);
     let lo = *acc as BigDigit;
     *acc >>= big_digit::BITS;
     lo
@@ -64,7 +64,7 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
     debug_assert!(hi < divisor);
 
     let lhs = big_digit::to_doublebigdigit(hi, lo);
-    let rhs = divisor as DoubleBigDigit;
+    let rhs = DoubleBigDigit::from(divisor);
     ((lhs / rhs) as BigDigit, (lhs % rhs) as BigDigit)
 }
 

@@ -16,8 +16,8 @@ fn inv_mod_u32(num: u32) -> u32 {
     // num needs to be relatively prime to 2**32 -- i.e. it must be odd.
     assert!(num % 2 != 0);
 
-    let mut a: i64 = num as i64;
-    let mut b: i64 = (u32::max_value() as i64) + 1;
+    let mut a: i64 = i64::from(num);
+    let mut b: i64 = i64::from(u32::max_value()) + 1;
 
     // ExtendedGcd
     // Input: positive integers a and b
