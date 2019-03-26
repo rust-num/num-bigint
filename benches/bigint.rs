@@ -37,6 +37,14 @@ fn divide_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
     b.iter(|| &x / &y);
 }
 
+fn remainder_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
+    let mut rng = get_rng();
+    let x = rng.gen_bigint(xbits);
+    let y = rng.gen_bigint(ybits);
+
+    b.iter(|| &x % &y);
+}
+
 fn factorial(n: usize) -> BigUint {
     let mut f: BigUint = One::one();
     for i in 1..(n + 1) {
@@ -102,6 +110,21 @@ fn divide_1(b: &mut Bencher) {
 #[bench]
 fn divide_2(b: &mut Bencher) {
     divide_bench(b, 1 << 16, 1 << 12);
+}
+
+#[bench]
+fn remainder_0(b: &mut Bencher) {
+    remainder_bench(b, 1 << 8, 1 << 6);
+}
+
+#[bench]
+fn remainder_1(b: &mut Bencher) {
+    remainder_bench(b, 1 << 12, 1 << 8);
+}
+
+#[bench]
+fn remainder_2(b: &mut Bencher) {
+    remainder_bench(b, 1 << 16, 1 << 12);
 }
 
 #[bench]
