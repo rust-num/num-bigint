@@ -80,6 +80,16 @@ pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
     (a.normalized(), rem)
 }
 
+pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
+    let mut rem: DoubleBigDigit = 0;
+    for &digit in a.data.iter().rev() {
+        rem = (rem << big_digit::BITS) + digit as DoubleBigDigit;
+        rem %= b as DoubleBigDigit;
+    }
+
+    rem as BigDigit
+}
+
 // Only for the Add impl:
 #[inline]
 pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
