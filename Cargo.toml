@@ -46,7 +46,7 @@ default-features = false
 features = ["std"]
 
 [dependencies.zeroize]
-version = "0.5"
+version = "0.6"
 optional = true
 
 [dependencies.serde]

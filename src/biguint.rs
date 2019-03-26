@@ -48,15 +48,9 @@ use UsizePromotion;
 
 /// A big unsigned integer type.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct BigUint {
     pub(crate) data: SmallVec<[BigDigit; VEC_SIZE]>,
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for BigUint {
-    fn zeroize(&mut self) {
-        self.data.zeroize();
-    }
 }
 
 impl PartialEq for BigUint {
