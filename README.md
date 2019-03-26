@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-num-bigint-dig = "0.2"
+num-bigint-dig = ^0.4"
 ```
 
 and this to your crate root:
