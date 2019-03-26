@@ -21,6 +21,8 @@ harness = false
 name = "bench_main"
 required-features = ["prime"]
 
+[dependencies]
+
 [dependencies.smallvec]
 version = "0.6.7"
 default-features = false
@@ -37,10 +39,9 @@ default-features = false
 version = "0.1.37"
 default-features = false
 
-
 [dependencies.rand]
 optional = true
-version = "0.5"
+version = "0.6"
 default-features = false
 features = ["std"]
 
@@ -63,6 +64,8 @@ version = "1.2.7"
 [dev-dependencies]
 criterion = "0.2"
 rand_chacha = "0.1"
+rand_xorshift = "0.1"
+rand_isaac = "0.1"
 
 [dev-dependencies.serde_test]
 version = "1.0"
@@ -70,7 +73,7 @@ version = "1.0"
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
-std = ["num-integer/std", "num-traits/std", "smallvec/std"]
+std = ["num-integer/std", "num-traits/std", "smallvec/std", "rand/std"]
 u64_digit = []
 prime = ["rand"]
-nightly = ["zeroize/nightly"]
+nightly = ["zeroize/nightly", "rand/nightly"]

@@ -86,6 +86,12 @@
 
 #[cfg(feature = "rand")]
 extern crate rand;
+#[cfg(all(test, feature = "rand"))]
+extern crate rand_chacha;
+#[cfg(all(test, feature = "rand"))]
+extern crate rand_isaac;
+#[cfg(all(test, feature = "rand"))]
+extern crate rand_xorshift;
 
 #[cfg(feature = "serde")]
 extern crate serde;
