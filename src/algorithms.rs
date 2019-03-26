@@ -114,7 +114,7 @@ pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     carry as BigDigit
 }
 
-/// /Two argument addition of raw slices:
+/// Two argument addition of raw slices:
 /// a += b
 ///
 /// The caller _must_ ensure that a is big enough to store the result - typically this means
@@ -502,17 +502,67 @@ pub fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     carry as BigDigit
 }
 
-pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+pub fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     if d.is_zero() {
         panic!()
     }
     if u.is_zero() {
         return (Zero::zero(), Zero::zero());
     }
-    if d.data == [1] {
-        return (u.clone(), Zero::zero());
-    }
+
     if d.data.len() == 1 {
+        if d.data == [1] {
+            return (u, Zero::zero());
+        }
+        let (div, rem) = div_rem_digit(u, d.data[0]);
+        // reuse d
+        d.data.clear();
+        d += rem;
+        return (div, d);
+    }
+
+    // Required or the q_len calculation below can underflow:
+    match u.cmp(&d) {
+        Less => return (Zero::zero(), u),
+        Equal => {
+            // TODO: use One::set_one in case it gets added to num_traits
+            u.data.clear();
+            u.data.push(1);
+            return (u, Zero::zero());
+        }
+        Greater => {} // Do nothing
+    }
+
+    // This algorithm is from Knuth, TAOCP vol 2 section 4.3, algorithm D:
+    //
+    // First, normalize the arguments so the highest bit in the highest digit of the divisor is
+    // set: the main loop uses the highest digit of the divisor for generating guesses, so we
+    // want it to be the largest number we can efficiently divide by.
+    //
+    let shift = d.data.last().unwrap().leading_zeros() as usize;
+    let (q, r) = if shift == 0 {
+        // no need to clone d
+        div_rem_core(u, &d)
+    } else {
+        div_rem_core(u << shift, &(d << shift))
+    };
+    // renormalize the remainder
+    (q, r >> shift)
+}
+
+pub fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+    if d.is_zero() {
+        panic!()
+    }
+    if u.is_zero() {
+        return (Zero::zero(), Zero::zero());
+    }
+
+    if d.data.len() == 1 {
+        if d.data == [1] {
+            return (u.clone(), Zero::zero());
+        }
+
         let (div, rem) = div_rem_digit(u.clone(), d.data[0]);
         return (div, rem.into());
     }
@@ -531,9 +581,27 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     // want it to be the largest number we can efficiently divide by.
     //
     let shift = d.data.last().unwrap().leading_zeros() as usize;
-    let mut a = u << shift;
-    let b = d << shift;
 
+    let (q, r) = if shift == 0 {
+        // no need to clone d
+        div_rem_core(u.clone(), d)
+    } else {
+        div_rem_core(u << shift, &(d << shift))
+    };
+    // renormalize the remainder
+    (q, r >> shift)
+}
+
+/// an implementation of Knuth, TAOCP vol 2 section 4.3, algorithm D
+///
+/// # Correctness
+///
+/// This function requires the following conditions to run correctly and/or effectively
+///
+/// - `a > b`
+/// - `d.data.len() > 1`
+/// - `d.data.last().unwrap().leading_zeros() == 0`
+fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
     // The algorithm works by incrementally calculating "guesses", q0, for part of the
     // remainder. Once we have any number q0 such that q0 * b <= a, we can set
     //
@@ -586,12 +654,12 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
          * smaller numbers.
          */
         let (mut q0, _) = div_rem_digit(a0, bn);
-        let mut prod = &b * &q0;
+        let mut prod = b * &q0;
 
         while cmp_slice(&prod.data[..], &a.data[j..]) == Greater {
             let one: BigUint = One::one();
             q0 = q0 - one;
-            prod = prod - &b;
+            prod = prod - b;
         }
 
         add2(&mut q.data[j..], &q0.data[..]);
@@ -601,9 +669,9 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         tmp = q0;
     }
 
-    debug_assert!(a < b);
+    debug_assert!(&a < b);
 
-    (q.normalized(), a >> shift)
+    (q.normalized(), a)
 }
 
 /// Find last set bit
