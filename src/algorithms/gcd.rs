@@ -325,7 +325,9 @@ mod tests {
     #[cfg(feature = "rand")]
     use num_traits::{One, Zero};
     #[cfg(feature = "rand")]
-    use rand::{SeedableRng, XorShiftRng};
+    use rand::SeedableRng;
+    #[cfg(feature = "rand")]
+    use rand_xorshift::XorShiftRng;
 
     #[cfg(feature = "rand")]
     fn extended_gcd_euclid(a: Cow<BigUint>, b: Cow<BigUint>) -> (BigInt, BigInt, BigInt) {

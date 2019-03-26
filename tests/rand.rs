@@ -3,6 +3,9 @@
 extern crate num_bigint_dig as num_bigint;
 extern crate num_traits;
 extern crate rand;
+extern crate rand_chacha;
+extern crate rand_isaac;
+extern crate rand_xorshift;
 
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
@@ -135,7 +138,7 @@ mod biguint {
 
     #[test]
     fn test_chacha_value_stability() {
-        use rand::prng::ChaChaRng;
+        use rand_chacha::ChaChaRng;
         seeded_value_stability::<ChaChaRng>(EXPECTED_CHACHA);
     }
 
@@ -170,7 +173,7 @@ mod biguint {
     ];
     #[test]
     fn test_isaac_value_stability() {
-        use rand::prng::IsaacRng;
+        use rand_isaac::IsaacRng;
         seeded_value_stability::<IsaacRng>(EXPECTED_ISAAC);
     }
 
@@ -204,7 +207,7 @@ mod biguint {
 
     #[test]
     fn test_xorshift_value_stability() {
-        use rand::prng::XorShiftRng;
+        use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED_XOR);
     }
 }
@@ -344,7 +347,7 @@ mod bigint {
 
     #[test]
     fn test_chacha_value_stability() {
-        use rand::prng::ChaChaRng;
+        use rand_chacha::ChaChaRng;
         seeded_value_stability::<ChaChaRng>(EXPECTED_CHACHA);
     }
 
@@ -379,7 +382,7 @@ mod bigint {
 
     #[test]
     fn test_isaac_value_stability() {
-        use rand::prng::IsaacRng;
+        use rand_isaac::IsaacRng;
         seeded_value_stability::<IsaacRng>(EXPECTED_ISAAC);
     }
 
@@ -415,7 +418,7 @@ mod bigint {
 
     #[test]
     fn test_xorshift_value_stability() {
-        use rand::prng::XorShiftRng;
+        use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED_XOR);
     }
 }

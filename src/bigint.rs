@@ -51,6 +51,14 @@ pub enum Sign {
     Plus,
 }
 
+#[cfg(feature = "zeroize")]
+impl Zeroize for Sign {
+    fn zeroize(&mut self) {
+        // TODO: Figure out how to better clear the sign.
+        *self = Sign::NoSign;
+    }
+}
+
 impl Neg for Sign {
     type Output = Sign;
 
@@ -118,18 +126,10 @@ impl<'de> serde::Deserialize<'de> for Sign {
 
 /// A big signed integer type.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct BigInt {
     pub(crate) sign: Sign,
     pub(crate) data: BigUint,
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for BigInt {
-    fn zeroize(&mut self) {
-        // TODO: Figure out how to better clear the sign.
-        self.sign = Sign::NoSign;
-        self.data.zeroize();
-    }
 }
 
 /// Return the magnitude of a `BigInt`.
