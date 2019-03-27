@@ -1007,7 +1007,7 @@ forward_all_scalar_binop_to_val_val!(impl Rem<u64> for BigUint, rem);
 #[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Rem<u128> for BigUint, rem);
 
-impl Rem<u32> for &BigUint {
+impl<'a> Rem<u32> for &'a BigUint {
     type Output = BigUint;
 
     #[inline]
@@ -1022,11 +1022,11 @@ impl RemAssign<u32> for BigUint {
     }
 }
 
-impl Rem<&BigUint> for u32 {
+impl<'a> Rem<&'a BigUint> for u32 {
     type Output = BigUint;
 
     #[inline]
-    fn rem(mut self, other: &BigUint) -> BigUint {
+    fn rem(mut self, other: &'a BigUint) -> BigUint {
         self %= other;
         From::from(self)
     }
