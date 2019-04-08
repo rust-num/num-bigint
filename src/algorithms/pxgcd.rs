@@ -58,6 +58,7 @@ pub fn partial_extended_gcd(
         //t = (std::cmp::max(r2.bits(), r1.bits()) - (LIMB_BITS + 1)) as isize;
         println!("Will i panic ? ");
         let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
+        println!("Will i panic ? T = {:?} ", T);
         let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
          println!("Why i panic =< ");
         //Bits
