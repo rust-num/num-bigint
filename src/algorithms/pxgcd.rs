@@ -57,9 +57,13 @@ pub fn partial_extended_gcd(
         //get bits length
         //t = (std::cmp::max(r2.bits(), r1.bits()) - (LIMB_BITS + 1)) as isize;
         println!("Will i panic ? ");
+        let r2_bits = r2.bits();
         println!("r2 bits = {:?} ", r2.bits());
+        let one_under_limb =  LIMB_BITS - 1;
         println!("LIMB_BITS - 1 = {:?} ", LIMB_BITS - 1);
-        println!("T = {:?} ", (r2.bits() - (LIMB_BITS - 1)));
+        println!("T = {:?} ", r2_bits - one_under_limb);
+
+        
         let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
         println!("Will i panic ? T = {:?} ", T);
         let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
