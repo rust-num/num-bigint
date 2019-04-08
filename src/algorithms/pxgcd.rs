@@ -56,19 +56,14 @@ pub fn partial_extended_gcd(
     while !r1.is_zero() && r1 > *bound {
 
         //get bits length
-        //t = (std::cmp::max(r2.bits(), r1.bits()) - (LIMB_BITS + 1)) as isize;
-        println!("Will i panic ? ");
         let r2_bits = r2.bits();
-        println!("r2 bits = {:?} ", r2.bits());
+        let r1_bits = r1.bits();
         let one_under_limb =  LIMB_BITS - 1;
-        println!("LIMB_BITS - 1 = {:?} ", LIMB_BITS - 1);
-        println!("T = {:?} ", (r2_bits as isize) - (one_under_limb as isize));
 
+        let mut T = (r2_bits as isize) - (one_under_limb as isize);
+        let mut T1 = (r1_bits as isize) - (one_under_limb as isize);
 
-        let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
-        println!("Will i panic ? T = {:?} ", T);
-        let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
-         println!("Why i panic =< ");
+        println!("Why i panic =< ");
         //Bits
         if T < T1 { T = T1 }
         if T < 0 { T = 0 }
