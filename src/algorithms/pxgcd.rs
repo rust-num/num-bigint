@@ -59,6 +59,7 @@ pub fn partial_extended_gcd(
         println!("Will i panic ? ");
         println!("r2 bits = {:?} ", r2.bits());
         println!("LIMB_BITS - 1 = {:?} ", LIMB_BITS - 1);
+        println!("T = {:?} ", (r2.bits() - (LIMB_BITS - 1)));
         let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
         println!("Will i panic ? T = {:?} ", T);
         let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
