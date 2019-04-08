@@ -56,9 +56,10 @@ pub fn partial_extended_gcd(
 
         //get bits length
         //t = (std::cmp::max(r2.bits(), r1.bits()) - (LIMB_BITS + 1)) as isize;
-
+        println!("Will i panic ? ");
         let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
         let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
+         println!("Why i panic =< ");
         //Bits
         if T < T1 { T = T1 }
         if T < 0 { T = 0 }
@@ -74,7 +75,7 @@ pub fn partial_extended_gcd(
         //positive sign or no sign 
         if d.sign() == Sign::Minus {
             //negative numbers we all to ceil 
-            println!("suckerssss 1");
+           
             if m.is_zero() {
                 r = d;
             } else {
