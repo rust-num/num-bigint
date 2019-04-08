@@ -12,6 +12,7 @@ use std::borrow::Cow;
 use bigint::ToBigInt;
 
 
+
 /// This function is an implementation of Lehmer extended GCD with early termination.
 /// It terminates early when remainders fall below the specified bound. 
 /// The initial values r1 and r2 are treated as successive remainders in the Euclidean algorithm 
@@ -61,9 +62,9 @@ pub fn partial_extended_gcd(
         println!("r2 bits = {:?} ", r2.bits());
         let one_under_limb =  LIMB_BITS - 1;
         println!("LIMB_BITS - 1 = {:?} ", LIMB_BITS - 1);
-        println!("T = {:?} ", r2_bits - one_under_limb);
+        println!("T = {:?} ", (r2_bits as isize) - (one_under_limb as isize));
 
-        
+
         let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
         println!("Will i panic ? T = {:?} ", T);
         let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
