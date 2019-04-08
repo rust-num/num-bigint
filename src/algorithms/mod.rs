@@ -7,11 +7,10 @@ mod jacobi;
 mod mac;
 mod mod_inverse;
 mod mul;
+mod partial;
 mod shl;
 mod shr;
 mod sub;
-mod pxgcd;
-
 
 pub use self::add::*;
 pub use self::bits::*;
@@ -22,7 +21,7 @@ pub use self::jacobi::*;
 pub use self::mac::*;
 pub use self::mod_inverse::*;
 pub use self::mul::*;
+pub use self::partial::*;
 pub use self::shl::*;
 pub use self::shr::*;
 pub use self::sub::*;
-pub use self::pxgcd::*;

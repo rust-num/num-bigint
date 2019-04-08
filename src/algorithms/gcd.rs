@@ -329,8 +329,6 @@ mod tests {
 
     #[cfg(feature = "rand")]
     fn extended_gcd_euclid(a: Cow<BigUint>, b: Cow<BigUint>) -> (BigInt, BigInt, BigInt) {
-        use crate::bigint::ToBigInt;
-
         if a.is_zero() && b.is_zero() {
             return (0.into(), 0.into(), 0.into());
         }
