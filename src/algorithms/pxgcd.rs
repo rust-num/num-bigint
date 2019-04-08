@@ -1,6 +1,6 @@
 // Partial Euclidean algorithm.
 // Lehmer's version for computing GCD
-// Ported from Flint-2.4.1 
+// Ported from Flint-2.4.1, fmpz_xgcd_partial
 
 
 use crate::bigint::{Sign, BigInt};
@@ -25,17 +25,17 @@ pub fn partial_extended_gcd(
 ) -> (BigInt, BigInt, BigInt, BigInt) {
 
     //Temp Computing helper variables 
-    let mut A2 : isize = 0;
-    let mut A1 : isize = 0;
-    let mut B2 : isize = 0;
-    let mut B1 : isize = 0;
-    let mut T : isize = 0;
-    let mut T1 : isize = 0;
+    let mut a2 : isize = 0;
+    let mut a1 : isize = 0;
+    let mut b2 : isize = 0;
+    let mut b1 : isize = 0;
+    let mut t : isize = 0;
     let mut rr2 : isize = 0;
     let mut rr1 : isize = 0;
     let mut qq : isize = 0;
     let mut bb : isize = 0;
     
+    //
     let mut q: BigInt = Zero::zero();
     let mut r: BigInt = Zero::zero();
  
@@ -55,19 +55,21 @@ pub fn partial_extended_gcd(
     while !r1.is_zero() && r1 > *bound {
 
         //get bits length
-        T = (std::cmp::max(r2.bits(), r1.bits()) - LIMB_BITS + 1) as isize;
+        //t = (std::cmp::max(r2.bits(), r1.bits()) - (LIMB_BITS + 1)) as isize;
 
-        // T = (r2.bits() - (LIMB_BITS - 1)) as isize;
-        // T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
+        let mut T = (r2.bits() - (LIMB_BITS - 1)) as isize;
+        let mut T1 = (r1.bits() - (LIMB_BITS - 1)) as isize;
         //Bits
-        // if T < T1 { T = T1 }
+        if T < T1 { T = T1 }
         if T < 0 { T = 0 }
+
+        t = T;
 
         //truncate for a positive number is same as floor
         //truncate for a negative number is same as ceil
 
         //r = R2 / (2 ^ T); truncate r 
-        let (d, m) = r2.div_mod_floor(&BigInt::from(2).pow(T as usize));
+        let (d, m) = r2.div_mod_floor(&BigInt::from(2).pow(t as usize));
 
         //positive sign or no sign 
         if d.sign() == Sign::Minus {
@@ -85,7 +87,7 @@ pub fn partial_extended_gcd(
         rr2 = r.to_isize().unwrap();
 
         //r = R1 / (2 ^ T); truncate r 
-        let (d, m) = r1.div_mod_floor(&BigInt::from(2).pow(T as usize));
+        let (d, m) = r1.div_mod_floor(&BigInt::from(2).pow(t as usize));
 
         //positive sign or no sign 
         if d.sign() == Sign::Minus {
@@ -105,15 +107,15 @@ pub fn partial_extended_gcd(
         rr1 = r.to_isize().unwrap();
 
         //r = R1 / (2 ^ T); truncate r 
-        r = bound.div_floor(&BigInt::from(2).pow(T as usize));
+        r = bound.div_floor(&BigInt::from(2).pow(t as usize));
 
         //r = bound / (2 ^ T); truncate r 
-        let (d, m) = bound.div_mod_floor(&BigInt::from(2).pow(T as usize));
+        let (d, m) = bound.div_mod_floor(&BigInt::from(2).pow(t as usize));
 
         //positive sign or no sign 
         if d.sign() == Sign::Minus {
             //negative numbers we all to ceil 
-            println!("suckerssss 2");
+            
             if m.is_zero() {
                 r = d;
             } else {
@@ -126,10 +128,10 @@ pub fn partial_extended_gcd(
         bb = r.to_isize().unwrap(); //might need tobe isize
 
         //reset values
-        A1 = 1;
-        A2 = 0;  
-        B1 = 0;
-        B2 = 1;  
+        a1 = 1;
+        a2 = 0;  
+        b1 = 0;
+        b2 = 1;  
 
         //reset inner loop index
         index = 0;
@@ -139,25 +141,27 @@ pub fn partial_extended_gcd(
             qq = rr2/rr1;
 
             //t1
-            T = rr2 - qq*rr1; 
+            t = rr2 - qq*rr1; 
             rr2 = rr1; 
-            rr1 = T;
+            rr1 = t;
+            
             //t2
-            T = A2 - qq*A1; 
-            A2 = A1; 
-            A1 = T;
+            t = a2 - qq*a1; 
+            a2 = a1; 
+            a1 = t;
+
             //t3
-            T = B2 - qq*B1; 
-            B2 = B1; 
-            B1 = T;
+            t = b2 - qq*b1; 
+            b2 = b1; 
+            b1 = t;
 
             //check if it is even or odd
             if index % 2 != 0 { //index & 1
                 //its odd
-                if rr1 < -B1 || rr2 - rr1 < A1 - A2 { break }
+                if rr1 < -b1 || rr2 - rr1 < a1 - a2 { break }
             } else {
                 //its even
-                if rr1 < -A1 || rr2 - rr1 < B1 - B2 { break }
+                if rr1 < -a1 || rr2 - rr1 < b1 - b2 { break }
             }
 
             //increment counter
@@ -174,34 +178,36 @@ pub fn partial_extended_gcd(
           
         } else {
             // recombination
-            r = &r2 * &B2;
-            if A2 >= 0 {
-                r = &r + &r1*&A2;  
+            r = &r2 * &b2;
+
+            if a2 >= 0 {
+                r = &r + &r1*&a2;  
             } else {
-                r = &r - (&r1* &-A2);  
+                r = &r - (&r1* &-a2);  
             }
 
-            r1 = &r1 * &A1;
-            if B1 >= 0 {
-                r1 = &r1 + &r2*&B1;  
+            r1 = &r1 * &a1;
+            if b1 >= 0 {
+                r1 = &r1 + &r2 * &b1;  
             } else {
-                r1 = &r1 - (&r2 * &-B1);  
+                r1 = &r1 - (&r2 * &-b1);  
             }
 
             r2 = r.clone();
 
-            r = &co2 * &B2;
-            if A2 >= 0 {
-                r = &r + &co1*&A2;  
+            r = &co2 * &b2;
+
+            if a2 >= 0 {
+                r = &r + &co1*&a2;  
             } else {
-                r = &r - (&co1 * &-A2);  
+                r = &r - (&co1 * &-a2);  
             }
             
-            co1 = &co1 * &A1;
-            if B1 >= 0 {
-                co1 = &co1 + &co2*&B1;  
+            co1 = &co1 * &a1;
+            if b1 >= 0 {
+                co1 = &co1 + &co2*&b1;  
             } else {
-                co1 = &co1 - (&co2 * &-B1);  
+                co1 = &co1 - (&co2 * &-b1);  
             }
 
             // C2 = r;
@@ -236,7 +242,7 @@ pub fn partial_extended_gcd(
 
 #[cfg(test)]
 mod test {
-    use super::*;
+
     #[cfg(feature = "rand")]
     use rand::{SeedableRng, XorShiftRng};
     #[cfg(feature = "rand")]
@@ -279,9 +285,11 @@ mod test {
     //     }
     // }
 
-     #[test]
+    #[test]
     #[cfg(feature = "rand")]
     fn test_partial_extended_gcd() {
+        use super::*;
+
         let mut rng = XorShiftRng::from_seed([1u8; 16]);
       
         /* Test co2*r1 - co1*r2 = r2_orig */   
@@ -313,8 +321,6 @@ mod test {
 
         assert_eq!(&t1, &t2);
 
-
-      
     }
 
 }
