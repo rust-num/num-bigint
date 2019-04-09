@@ -138,31 +138,32 @@ pub fn extended_gcd(
                 t.data.set_digit(ua_word);
                 s.data.set_digit(va);
 
-                println!("extended gcd: t pre = {:?}", t);
-                println!("extended gcd: s pre = {:?}", s);
+                // println!("extended gcd: t pre = {:?}", t);
+                // println!("extended gcd: s pre = {:?}", s);
 
                 t.sign = if even { 
                     Plus 
-                } else if t.data.is_zero() {
+                } else if t.data == 0u32.into() {
                     Plus
                 } else { Minus };
+
                 s.sign = if even { Minus } else { Plus };
 
-                println!("extended gcd: t pre = {:?}", t);
-                println!("extended gcd: s pre = {:?}", s);
+                //println!("extended gcd: t pre = {:?}", t);
+                //println!("extended gcd: s pre = {:?}", s);
 
                 if let Some(ua) = ua.as_mut() {
-                    println!("extended gcd: enter ua = {:?}", ua);
-                    println!("extended gcd: enter ua = t pre = {:?}", t);
-                    println!("extended gcd: enter ua = s pre = {:?}", s);
+                    // println!("extended gcd: enter ua = {:?}", ua);
+                    // println!("extended gcd: enter ua = t pre = {:?}", t);
+                    // println!("extended gcd: enter ua = s pre = {:?}", s);
                     
                     t *= &*ua;
-                    println!("extended gcd: enter ua = t = {:?}", t);
+                   // println!("extended gcd: enter ua = t = {:?}", t);
                     s *= ub.unwrap();
-                    println!("extended gcd: enter ua = s = {:?}", s);
+                    //println!("extended gcd: enter ua = s = {:?}", s);
 
                     *ua = &t + &s;
-                    println!("extended gcd: ua = {:?}", ua);
+                    //println!("extended gcd: ua = {:?}", ua);
                 }
             } else {
                 while b_word != 0 {
