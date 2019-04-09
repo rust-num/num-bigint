@@ -66,7 +66,7 @@ fn signed_shift(op: u64, shift: i32) -> u64 {
 
 
 fn log2_64(mut value: u64) -> u32 {
-    let tab64 = [
+    let table = [
         63,  0, 58,  1, 59, 47, 53,  2,
         60, 39, 48, 27, 54, 33, 42,  3,
         61, 51, 37, 40, 49, 18, 28, 20,
@@ -84,7 +84,8 @@ fn log2_64(mut value: u64) -> u32 {
     value |= value >> 16;
     value |= value >> 32;
 
-    return tab64[((((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58) as usize];
+    return table[((value * 0x03f6eaf2cd271461) >> 58) as usize];
+    //return tab64[((((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58) as usize];
 }
 
 // const int tab32[32] = {
