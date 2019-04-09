@@ -137,6 +137,10 @@ pub fn extended_gcd(
 
                 t.data.set_digit(ua_word);
                 s.data.set_digit(va);
+                
+                println!("extended gcd: t pre = {:?}", t);
+                println!("extended gcd: s pre = {:?}", s);
+
                 t.sign = if even { Plus } else { Minus };
                 s.sign = if even { Minus } else { Plus };
 
