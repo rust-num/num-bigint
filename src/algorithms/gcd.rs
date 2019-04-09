@@ -141,10 +141,12 @@ pub fn extended_gcd(
                 s.sign = if even { Minus } else { Plus };
 
                 if let Some(ua) = ua.as_mut() {
+
                     t *= &*ua;
                     s *= ub.unwrap();
 
                     *ua = &t + &s;
+                    println!("extended gcd: ua = {:?}", ua);
                 }
             } else {
                 while b_word != 0 {
@@ -165,7 +167,7 @@ pub fn extended_gcd(
     } else {
         None
     };
-
+    //println!("exteneded gcd: {:?}", (a, ua, y));
     (a, ua, y)
 }
 
