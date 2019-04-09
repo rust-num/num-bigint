@@ -142,7 +142,8 @@ pub fn extended_gcd(
 
                 if let Some(ua) = ua.as_mut() {
                     println!("extended gcd: enter ua = {:?}", ua);
-
+                    println!("extended gcd: enter ua = t pre = {:?}", t);
+                    println!("extended gcd: enter ua = s pre = {:?}", s);
                     t *= &*ua;
                     println!("extended gcd: enter ua = t = {:?}", t);
                     s *= ub.unwrap();
