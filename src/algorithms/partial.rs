@@ -83,6 +83,7 @@ fn log2_64(mut value: u64) -> u32 {
     value |= value >> 8;
     value |= value >> 16;
     value |= value >> 32;
+     println!("-------lg2 value------: {:?}", value);
 
     return table[((value * 0x03f6eaf2cd271461) >> 58) as usize];
     //return tab64[((((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58) as usize];
