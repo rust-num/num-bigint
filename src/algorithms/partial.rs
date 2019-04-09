@@ -14,8 +14,8 @@ use biguint::IntDigits;
 
 
 #[inline]
-fn signed_shift(op: u64, shift: i64) -> u64 {
-    let ushift = shift as u64;
+fn signed_shift(op: u64, shift: i32) -> u64 {
+    let ushift = shift as u32;
 
     if shift > 0 {
         return op << ushift;
@@ -28,7 +28,38 @@ fn signed_shift(op: u64, shift: i64) -> u64 {
     return op >> (-shift);
 }
 
-
+//https://github.com/thomaso-mirodin/intmath/blob/master/u64/log2.go#L5
+// Log2 returns log base 2 of n. It's the same as index of the highest
+// bit set in n. n == 0 returns 0
+// fn Log2(n: u64) -> u64 {
+// 	// Using uint instead of uint64 is about 25% faster
+// 	// on x86 systems with the default Go compiler.
+// 	var r, v uint
+// 	if n < 1<<32 {
+// 		v = uint(n)
+// 	} else {
+// 		r = 32
+// 		v = uint(n >> 32)
+// 	}
+// 	if v >= 1<<16 {
+// 		r += 16
+// 		v >>= 16
+// 	}
+// 	if v >= 1<<8 {
+// 		r += 8
+// 		v >>= 8
+// 	}
+// 	if v >= 1<<4 {
+// 		r += 4
+// 		v >>= 4
+// 	}
+// 	if v >= 1<<2 {
+// 		r += 2
+// 		v >>= 2
+// 	}
+// 	r += v >> 1
+// 	return uint64(r)
+// }
 
 
 //Port to rust from c++
@@ -36,10 +67,11 @@ fn signed_shift(op: u64, shift: i64) -> u64 {
 // Return an approximation x of the large mpz_t op by an int64_t and the exponent e adjustment.
 // We must have (x * 2^e) / op = constant approximately.
 #[inline]
-pub fn partial_bigint(op: &BigInt) -> (i64, i64) {
+pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //uint64_t size = mpz_size(op);
     //number if limbs used to represent this number
     let size = op.len();
+    //
     let last: u64 = op.digits()[size-1];
 
     //uint64_t last = mpz_getlimbn(op, size - 1);
@@ -47,17 +79,21 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i64) {
     //uint64_t ret;
     let mut _ret = 0u64;
 
-    let lg2: f64 = (last as f64).log2() + 1.0;
+    //let lg2: f64 = (last as f64).log2() + 1.0;
+    //  // extract the top word of bits from a and b
+    // let h = a.digits()[n - 1].leading_zeros();
+    let lg2 = last.leading_zeros();
 
-    let mut exp = lg2 as i64;
+
+    let mut exp = lg2 as i32;
 
     _ret = signed_shift(last, 63 - exp);
 
     if size > 1 {
-        exp += ((size as i64) - 1) * 64;
+        exp += ((size as i32) - 1) * 64;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
         let prev: u64 = op.digits()[size-2];
-        _ret += signed_shift(prev, -1 - (lg2 as i64));
+        _ret += signed_shift(prev, -1 - (lg2 as i32));
     }
 
     //if (mpz_sgn(op) < 0) return - ((int64_t)ret);
