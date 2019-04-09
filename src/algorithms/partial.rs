@@ -15,10 +15,10 @@ use biguint::IntDigits;
 
 #[inline]
 fn signed_shift(op: u64, shift: i32) -> u64 {
-    let ushift = shift as u32;
+    //let ushift = shift as u32;
 
     if shift > 0 {
-        return op << ushift;
+        return op << shift;
     }
 
     if shift <= -64 {
@@ -93,7 +93,7 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
         exp += ((size as i32) - 1) * 64;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
         let prev: u64 = op.digits()[size-2];
-        _ret += signed_shift(prev, -1 - (lg2 as i32));
+        _ret += signed_shift(prev, -1i32 - (lg2 as i32));
     }
 
     //if (mpz_sgn(op) < 0) return - ((int64_t)ret);
