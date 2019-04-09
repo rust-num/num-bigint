@@ -86,7 +86,7 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //  // extract the top word of bits from a and b
     // let h = a.digits()[n - 1].leading_zeros();
     //let lg2 = last.leading_zeros();
-    let lg2 = u64_log2(last);
+    let lg2 = u64_log2(last) + 1;
     println!("-------lg2 ------: {:?}", lg2);
     let mut exp = lg2 as i32;
 
