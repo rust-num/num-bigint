@@ -9,6 +9,66 @@ use integer::Integer;
 use num_traits::{One, Pow, ToPrimitive, Zero};
 use std::borrow::Cow;
 use std::ops::Neg;
+use biguint::IntDigits;
+
+
+
+#[inline]
+fn signed_shift(op: u64, shift: isize) -> u64 {
+    let ushift = shift as u64;
+
+    if shift > 0 {
+        return op << ushift;
+    }
+
+    if shift <= -64 {
+        return 0;
+    }
+
+    return op >> (-shift);
+}
+
+
+
+//Port to rust from c++
+//https://github.com/Chia-Network/vdftrack1results/blob/b171a420ecfffb2d956979da7b1b183c4c88d2a0/akashnil/entry/vdf4.cpp#L82
+// Return an approximation x of the large mpz_t op by an int64_t and the exponent e adjustment.
+// We must have (x * 2^e) / op = constant approximately.
+#[inline]
+pub fn partial_bigint(op: &BigInt) -> (i64, f64) {
+    //uint64_t size = mpz_size(op);
+    //number if limbs used to represent this number
+    let size = op.digits().len();
+    let last: u64 = op.digits()[size-1];
+
+    //uint64_t last = mpz_getlimbn(op, size - 1);
+    //let last: f64 = (size % LIMB_BITS) as f64;
+    //uint64_t ret;
+    let mut _ret = 0u64;
+
+    let lg2: f64 = (last as f64).log2() + 1.0;
+
+    let mut exp = lg2;
+
+    _ret = signed_shift(last, 63isize - (exp as isize));
+
+    if size > 1 {
+        exp += ((size as f64) - 1.0) * 64.0;
+        // uint64_t prev = mpz_getlimbn(op, size - 2);
+        let prev: u64 = (size % LIMB_BITS) as u64;
+        _ret += signed_shift(prev, -1isize - (lg2 as isize));
+    }
+
+    //if (mpz_sgn(op) < 0) return - ((int64_t)ret);
+    if op.sign() == Sign::Minus {
+        return (-(_ret as i64), exp);
+    }
+
+    return ((_ret as i64), exp);
+}
+
+
+
 
 /// This function is an implementation of Lehmer extended GCD with early termination.
 /// It terminates early when remainders fall below the specified bound.

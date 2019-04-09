@@ -138,27 +138,18 @@ pub fn extended_gcd(
                 t.data.set_digit(ua_word);
                 s.data.set_digit(va);
 
-                println!("extended gcd: t pre = {:?}", t);
-                println!("extended gcd: s pre = {:?}", s);
-
                 t.sign = if even { Plus } else { Minus };
                 s.sign = if even { Minus } else { Plus };
-
-                println!("extended gcd: t pre = {:?}", t);
-                println!("extended gcd: s pre = {:?}", s);
+                
 
                 if let Some(ua) = ua.as_mut() {
-                    use num_traits::Signed;
-                    println!("extended gcd: enter ua = {:?}", ua);
-                    println!("extended gcd: enter ua = t pre = {:?}", t);
-                    println!("extended gcd: enter ua = s pre = {:?}", s);
-                    t = t.abs() * &*ua;
-                    println!("extended gcd: enter ua = t = {:?}", t);
+                
+                    t *= &*ua;
+             
                     s *= ub.unwrap();
-                    println!("extended gcd: enter ua = s = {:?}", s);
 
                     *ua = &t + &s;
-                    println!("extended gcd: ua = {:?}", ua);
+                   
                 }
             } else {
                 while b_word != 0 {
