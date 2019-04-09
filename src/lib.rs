@@ -183,6 +183,7 @@ pub use biguint::BigUint;
 pub use biguint::IntoBigUint;
 pub use biguint::ToBigUint;
 
+pub use bigint::negate_sign;
 pub use bigint::BigInt;
 pub use bigint::IntoBigInt;
 pub use bigint::Sign;
