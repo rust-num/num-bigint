@@ -14,7 +14,7 @@ use biguint::IntDigits;
 
 
 #[inline]
-fn signed_shift(op: u64, shift: isize) -> u64 {
+fn signed_shift(op: u64, shift: i64) -> u64 {
     let ushift = shift as u64;
 
     if shift > 0 {
@@ -50,13 +50,13 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i64) {
 
     let mut exp = lg2 as i64;
 
-    _ret = signed_shift(last, 63isize - (exp as isize));
+    _ret = signed_shift(last, 63 - exp);
 
     if size > 1 {
         exp += ((size as i64) - 1) * 64;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
         let prev: u64 = (size % LIMB_BITS) as u64;
-        _ret += signed_shift(prev, -1isize - (lg2 as isize));
+        _ret += signed_shift(prev, -1 - (lg2 as i64));
     }
 
     //if (mpz_sgn(op) < 0) return - ((int64_t)ret);
