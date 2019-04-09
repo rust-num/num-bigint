@@ -39,7 +39,7 @@ fn signed_shift(op: u64, shift: i64) -> u64 {
 pub fn partial_bigint(op: &BigInt) -> (i64, i64) {
     //uint64_t size = mpz_size(op);
     //number if limbs used to represent this number
-    let size = op.digits().len();
+    let size = op.len();
     let last: u64 = op.digits()[size-1];
 
     //uint64_t last = mpz_getlimbn(op, size - 1);
