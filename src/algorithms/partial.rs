@@ -35,7 +35,7 @@ fn signed_shift(op: u64, shift: isize) -> u64 {
 // Return an approximation x of the large mpz_t op by an int64_t and the exponent e adjustment.
 // We must have (x * 2^e) / op = constant approximately.
 #[inline]
-pub fn partial_bigint(op: &BigInt) -> (i64, f64) {
+pub fn partial_bigint(op: &BigInt) -> (i64, i64) {
     //uint64_t size = mpz_size(op);
     //number if limbs used to represent this number
     let size = op.digits().len();
@@ -48,12 +48,12 @@ pub fn partial_bigint(op: &BigInt) -> (i64, f64) {
 
     let lg2: f64 = (last as f64).log2() + 1.0;
 
-    let mut exp = lg2;
+    let mut exp = lg2 as i64;
 
     _ret = signed_shift(last, 63isize - (exp as isize));
 
     if size > 1 {
-        exp += ((size as f64) - 1.0) * 64.0;
+        exp += ((size as i64) - 1) * 64;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
         let prev: u64 = (size % LIMB_BITS) as u64;
         _ret += signed_shift(prev, -1isize - (lg2 as isize));
