@@ -72,7 +72,8 @@ fn u64_log2(n: u64) -> u64 {
 pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //uint64_t size = mpz_size(op);
     //number if limbs used to represent this number
-    let size = op.len();
+    //let size = op.len();
+    let size = op.digits().len();
     //
     let last: u64 = op.digits()[size-1];
 
