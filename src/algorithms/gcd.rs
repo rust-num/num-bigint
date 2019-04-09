@@ -137,17 +137,21 @@ pub fn extended_gcd(
 
                 t.data.set_digit(ua_word);
                 s.data.set_digit(va);
-                
+
                 println!("extended gcd: t pre = {:?}", t);
                 println!("extended gcd: s pre = {:?}", s);
 
-                t.sign = if even { Plus } else { Minus };
+                t.sign = if even || t.data.is_zero() { Plus } else { Minus };
                 s.sign = if even { Minus } else { Plus };
+
+                println!("extended gcd: t pre = {:?}", t);
+                println!("extended gcd: s pre = {:?}", s);
 
                 if let Some(ua) = ua.as_mut() {
                     println!("extended gcd: enter ua = {:?}", ua);
                     println!("extended gcd: enter ua = t pre = {:?}", t);
                     println!("extended gcd: enter ua = s pre = {:?}", s);
+                    
                     t *= &*ua;
                     println!("extended gcd: enter ua = t = {:?}", t);
                     s *= ub.unwrap();
