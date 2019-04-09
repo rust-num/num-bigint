@@ -31,35 +31,37 @@ fn signed_shift(op: u64, shift: i32) -> u64 {
 //https://github.com/thomaso-mirodin/intmath/blob/master/u64/log2.go#L5
 // Log2 returns log base 2 of n. It's the same as index of the highest
 // bit set in n. n == 0 returns 0
-// fn Log2(n: u64) -> u64 {
-// 	// Using uint instead of uint64 is about 25% faster
-// 	// on x86 systems with the default Go compiler.
-// 	var r, v uint
-// 	if n < 1<<32 {
-// 		v = uint(n)
-// 	} else {
-// 		r = 32
-// 		v = uint(n >> 32)
-// 	}
-// 	if v >= 1<<16 {
-// 		r += 16
-// 		v >>= 16
-// 	}
-// 	if v >= 1<<8 {
-// 		r += 8
-// 		v >>= 8
-// 	}
-// 	if v >= 1<<4 {
-// 		r += 4
-// 		v >>= 4
-// 	}
-// 	if v >= 1<<2 {
-// 		r += 2
-// 		v >>= 2
-// 	}
-// 	r += v >> 1
-// 	return uint64(r)
-// }
+fn u64_log2(n: u64) -> u64 {
+	// Using uint instead of uint64 is about 25% faster
+	// on x86 systems with the default Go compiler.
+	let mut r: usize = 0;
+    let mut _v: usize = 0;
+
+	if n < 1<<32 {
+		_v = n as usize;
+	} else {
+		r = 32;
+		_v = (n >> 32) as usize;
+	}
+	if _v >= 1<<16 {
+		r += 16;
+		_v >>= 16;
+	}
+	if _v >= 1<<8 {
+		r += 8;
+		_v >>= 8;
+	}
+	if _v >= 1<<4 {
+		r += 4;
+		_v >>= 4;
+	}
+	if _v >= 1<<2 {
+		r += 2;
+		_v >>= 2;
+	}
+	r += _v >> 1;
+	return r as u64;
+}
 
 
 //Port to rust from c++
@@ -82,8 +84,8 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //let lg2: f64 = (last as f64).log2() + 1.0;
     //  // extract the top word of bits from a and b
     // let h = a.digits()[n - 1].leading_zeros();
-    let lg2 = last.leading_zeros();
-
+    //let lg2 = last.leading_zeros();
+    let lg2 = u64_log2(last);
 
     let mut exp = lg2 as i32;
 
