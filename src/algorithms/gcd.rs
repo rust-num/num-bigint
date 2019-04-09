@@ -141,7 +141,11 @@ pub fn extended_gcd(
                 println!("extended gcd: t pre = {:?}", t);
                 println!("extended gcd: s pre = {:?}", s);
 
-                t.sign = if even || t.data.is_zero() { Plus } else { Minus };
+                t.sign = if even { 
+                    Plus 
+                } else if t.data.is_zero() {
+                    Plus
+                } else { Minus };
                 s.sign = if even { Minus } else { Plus };
 
                 println!("extended gcd: t pre = {:?}", t);
