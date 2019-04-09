@@ -56,7 +56,7 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i64) {
     if size > 1 {
         exp += ((size as i64) - 1) * 64;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
-        let prev: u64 = (size % LIMB_BITS) as u64;
+        let prev: u64 = op.digits()[size-2];
         _ret += signed_shift(prev, -1 - (lg2 as i64));
     }
 
