@@ -3,7 +3,7 @@
 // Ported from Flint-2.4.1, fmpz_xgcd_partial
 
 use crate::big_digit::BITS as LIMB_BITS;
-use crate::bigint::{BigInt, Sign, negate_sign};
+use crate::bigint::{BigInt, Sign};
 use bigint::ToBigInt;
 use integer::Integer;
 use num_traits::{One, Pow, ToPrimitive, Zero};

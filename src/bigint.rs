@@ -2666,9 +2666,7 @@ impl_to_bigint!(f64, FromPrimitive::from_f64);
 ///
 #[inline]
 pub fn negate_sign(i: &mut BigInt) {
-        println!("negate_sign: {:?}", i);
         i.sign = i.sign.neg();
-        println!("negate_sign: {:?}", i);
 }
 
 impl BigInt {
@@ -3338,14 +3336,14 @@ fn test_assign_from_slice() {
 
 #[test]
 fn test_bigint_negate() {
-    // let mut a = BigInt {
-    //         sign: Plus,
-    //         data: FromPrimitive::from_usize(1).unwrap(),
-    // };
+    let mut a = BigInt {
+            sign: Plus,
+            data: FromPrimitive::from_usize(1).unwrap(),
+    };
 
-    // a.negate_sign();
+    negate_sign(&mut a);
 
-    // assert_eq!(a.sign, Minus);
+    assert_eq!(a.sign, Minus);
 
 
 
