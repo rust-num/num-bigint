@@ -72,10 +72,10 @@ fn u64_log2(n: u64) -> u64 {
 pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //uint64_t size = mpz_size(op);
     //number if limbs used to represent this number
-    //let size = op.len();
-    let size = op.digits().len();
+    let digies = op.digits();
+    let size = digies.len();
     //
-    let last: u64 = op.digits()[size-1];
+    let last: u64 = digies[size-1];
 
     //uint64_t last = mpz_getlimbn(op, size - 1);
     //let last: f64 = (size % LIMB_BITS) as f64;
@@ -85,8 +85,8 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //let lg2: f64 = (last as f64).log2() + 1.0;
     //  // extract the top word of bits from a and b
     // let h = a.digits()[n - 1].leading_zeros();
-    //let lg2 = last.leading_zeros();
-    let lg2 = u64_log2(last) + 1;
+    let lg2 = last.leading_zeros();
+    //let lg2 = u64_log2(last) + 1;
     // println!("-------lg2 ------: {:?}", lg2);
     let mut exp = lg2 as i32;
 
@@ -95,7 +95,7 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     if size > 1 {
         exp += ((size as i32) - 1) * 64;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
-        let prev: u64 = op.digits()[size-2];
+        let prev: u64 = digies[size-2];
         _ret += signed_shift(prev, -1i32 - (lg2 as i32));
     }
 
