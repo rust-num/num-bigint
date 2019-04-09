@@ -28,40 +28,80 @@ fn signed_shift(op: u64, shift: i32) -> u64 {
     return op >> (-shift);
 }
 
-//https://github.com/thomaso-mirodin/intmath/blob/master/u64/log2.go#L5
-// Log2 returns log base 2 of n. It's the same as index of the highest
-// bit set in n. n == 0 returns 0
-fn u64_log2(n: u64) -> u64 {
-	// Using uint instead of uint64 is about 25% faster
-	// on x86 systems with the default Go compiler.
-	let mut r: usize = 0;
-    let mut _v: usize = 0;
+// //https://github.com/thomaso-mirodin/intmath/blob/master/u64/log2.go#L5
+// // Log2 returns log base 2 of n. It's the same as index of the highest
+// // bit set in n. n == 0 returns 0
+// fn log2_64(n: u64) -> u64 {
+// 	// Using uint instead of uint64 is about 25% faster
+// 	// on x86 systems with the default Go compiler.
+// 	let mut r: usize = 0;
+//     let mut _v: usize = 0;
 
-	if n < 1<<32 {
-		_v = n as usize;
-	} else {
-		r = 32;
-		_v = (n >> 32) as usize;
-	}
-	if _v >= 1<<16 {
-		r += 16;
-		_v >>= 16;
-	}
-	if _v >= 1<<8 {
-		r += 8;
-		_v >>= 8;
-	}
-	if _v >= 1<<4 {
-		r += 4;
-		_v >>= 4;
-	}
-	if _v >= 1<<2 {
-		r += 2;
-		_v >>= 2;
-	}
-	r += _v >> 1;
-	return r as u64;
+// 	if n < 1<<32 {
+// 		_v = n as usize;
+// 	} else {
+// 		r = 32;
+// 		_v = (n >> 32) as usize;
+// 	}
+// 	if _v >= 1<<16 {
+// 		r += 16;
+// 		_v >>= 16;
+// 	}
+// 	if _v >= 1<<8 {
+// 		r += 8;
+// 		_v >>= 8;
+// 	}
+// 	if _v >= 1<<4 {
+// 		r += 4;
+// 		_v >>= 4;
+// 	}
+// 	if _v >= 1<<2 {
+// 		r += 2;
+// 		_v >>= 2;
+// 	}
+// 	r += _v >> 1;
+// 	return r as u64;
+// }
+
+
+
+fn log2_64(mut value: u64) -> u32 {
+    let tab64 = [
+        63,  0, 58,  1, 59, 47, 53,  2,
+        60, 39, 48, 27, 54, 33, 42,  3,
+        61, 51, 37, 40, 49, 18, 28, 20,
+        55, 30, 34, 11, 43, 14, 22,  4,
+        62, 57, 46, 52, 38, 26, 32, 41,
+        50, 36, 17, 19, 29, 10, 13, 21,
+        56, 45, 25, 31, 35, 16,  9, 12,
+        44, 24, 15,  8, 23,  7,  6,  5
+    ];
+
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    value |= value >> 32;
+
+    return tab64[((((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58) as usize];
 }
+
+// const int tab32[32] = {
+//      0,  9,  1, 10, 13, 21,  2, 29,
+//     11, 14, 16, 18, 22, 25,  3, 30,
+//      8, 12, 20, 28, 15, 17, 24,  7,
+//     19, 27, 23,  6, 26,  5,  4, 31};
+
+// int log2_32 (uint32_t value)
+// {
+//     value |= value >> 1;
+//     value |= value >> 2;
+//     value |= value >> 4;
+//     value |= value >> 8;
+//     value |= value >> 16;
+//     return tab32[(uint32_t)(value*0x07C4ACDD) >> 27];
+// }
 
 
 //Port to rust from c++
@@ -85,15 +125,17 @@ pub fn partial_bigint(op: &BigInt) -> (i64, i32) {
     //let lg2: f64 = (last as f64).log2() + 1.0;
     //  // extract the top word of bits from a and b
     // let h = a.digits()[n - 1].leading_zeros();
-    let lg2 = last.leading_zeros();
-    //let lg2 = u64_log2(last) + 1;
-    // println!("-------lg2 ------: {:?}", lg2);
+    //let lg2 = last.leading_zeros();
+    let lg2 = log2_64(last) + 1;
+    println!("-------lg2 ------: {:?}", lg2);
     let mut exp = lg2 as i32;
 
     _ret = signed_shift(last, 63 - exp);
 
     if size > 1 {
-        exp += ((size as i32) - 1) * 64;
+        let side = size - 1;
+        println!("-------lside ------: {:?}", side);
+        exp += (side * 64) as i32;
         // uint64_t prev = mpz_getlimbn(op, size - 2);
         let prev: u64 = digies[size-2];
         _ret += signed_shift(prev, -1i32 - (lg2 as i32));
