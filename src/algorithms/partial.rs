@@ -30,6 +30,7 @@ fn signed_shift(op: u64, shift: i64) -> u64 {
 
 
 
+
 //Port to rust from c++
 //https://github.com/Chia-Network/vdftrack1results/blob/b171a420ecfffb2d956979da7b1b183c4c88d2a0/akashnil/entry/vdf4.cpp#L82
 // Return an approximation x of the large mpz_t op by an int64_t and the exponent e adjustment.
