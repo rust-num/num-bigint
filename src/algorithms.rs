@@ -610,6 +610,7 @@ pub fn ilog2<T: traits::PrimInt>(v: T) -> usize {
 pub fn biguint_shl(n: Cow<BigUint>, bits: usize) -> BigUint {
     let n_unit = bits / big_digit::BITS;
     let mut data = match n_unit {
+        #[cfg(not(feature = "zeroize"))]
         0 => n.into_owned().data,
         _ => {
             let len = n_unit + n.data.len() + 1;
@@ -644,6 +645,9 @@ pub fn biguint_shr(n: Cow<BigUint>, bits: usize) -> BigUint {
     }
     let mut data = match n {
         Cow::Borrowed(n) => n.data[n_unit..].to_vec(),
+        #[cfg(feature = "zeroize")]
+        Cow::Owned(mut n) => n.data[n_unit..].to_vec(),
+        #[cfg(not(feature = "zeroize"))]
         Cow::Owned(mut n) => {
             n.data.drain(..n_unit);
             n.data

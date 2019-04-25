@@ -84,6 +84,8 @@
 extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
+#[cfg(feature = "zeroize")]
+extern crate zeroize;
 
 extern crate num_integer as integer;
 extern crate num_traits as traits;
