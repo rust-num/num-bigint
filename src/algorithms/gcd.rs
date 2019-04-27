@@ -11,14 +11,11 @@ use crate::biguint::{BigUint, IntDigits};
 /// Uses the lehemer algorithm.
 /// Based on https://github.com/golang/go/blob/master/src/math/big/int.go#L612
 /// If `extended` is set, the Bezout coefficients are calculated, otherwise they are `None`.
-/// If x or y are not nil, GCD sets their value such that z = a*x + b*y.
-/// If either a or b is <= 0, GCD sets z = x = y = 0.
 pub fn extended_gcd(
     a_in: Cow<BigUint>,
     b_in: Cow<BigUint>,
     extended: bool,
 ) -> (BigInt, Option<BigInt>, Option<BigInt>) {
-
     if a_in.is_zero() && b_in.is_zero() {
         if extended {
             return (b_in.to_bigint().unwrap(), Some(0.into()), Some(0.into()));
@@ -42,7 +39,6 @@ pub fn extended_gcd(
             return (a_in.to_bigint().unwrap(), None, None);
         }
     }
-    
 
     let a_in = a_in.to_bigint().unwrap();
     let b_in = b_in.to_bigint().unwrap();
@@ -60,17 +56,14 @@ pub fn extended_gcd(
         std::mem::swap(&mut ua, &mut ub);
     }
 
-    // temp variables for multiprecision update
     let mut q: BigInt = 0.into();
     let mut r: BigInt = 0.into();
     let mut s: BigInt = 0.into();
     let mut t: BigInt = 0.into();
 
-    // loop invariant A >= B
     while b.len() > 1 {
         // Attempt to calculate in single-precision using leading words of a and b.
         let (u0, u1, v0, v1, even) = lehmer_simulate(&a, &b);
-
         // multiprecision step
         if v0 != 0 {
             // Simulate the effect of the single-precision steps using cosequences.
@@ -144,19 +137,14 @@ pub fn extended_gcd(
 
                 t.data.set_digit(ua_word);
                 s.data.set_digit(va);
-
                 t.sign = if even { Plus } else { Minus };
                 s.sign = if even { Minus } else { Plus };
-                
 
                 if let Some(ua) = ua.as_mut() {
-                
                     t *= &*ua;
-             
                     s *= ub.unwrap();
 
                     *ua = &t + &s;
-                   
                 }
             } else {
                 while b_word != 0 {
@@ -177,11 +165,9 @@ pub fn extended_gcd(
     } else {
         None
     };
-    //println!("exteneded gcd: {:?}", (a, ua, y));
+
     (a, ua, y)
 }
-
-
 
 /// Attempts to simulate several Euclidean update steps using leading digits of `a` and `b`.
 /// It returns `u0`, `u1`, `v0`, `v1` such that `a` and `b` can be updated as:
@@ -219,14 +205,9 @@ fn lehmer_simulate(a: &BigInt, b: &BigInt) -> (BigDigit, BigDigit, BigDigit, Big
         0
     };
 
-    // Since we are calculating with full words to avoid overflow,
-	// we use 'even' to track the sign of the cosequences.
-	// For even iterations: u0, v1 >= 0 && u1, v0 <= 0
-	// For odd  iterations: u0, v1 <= 0 && u1, v0 >= 0
-	// The first iteration starts with k=1 (odd).
+    // odd, even tracking
     let mut even = false;
 
-    // variables to track the cosequences
     let mut u0 = 0;
     let mut u1 = 1;
     let mut u2 = 0;
@@ -235,10 +216,7 @@ fn lehmer_simulate(a: &BigInt, b: &BigInt) -> (BigDigit, BigDigit, BigDigit, Big
     let mut v1 = 0;
     let mut v2 = 1;
 
-    // Calculate the quotient and cosequences using Collins' stopping condition.
-	// Note that overflow of a Word is not possible when computing the remainder
-	// sequence and cosequences since the cosequence size is bounded by the input size.
-	// See section 4.2 of Jebelean for details.
+    // Calculate the quotient and cosequences using Collins' stoppting condition.
     while a2 >= v2 && a1.wrapping_sub(a2) >= v1 + v2 {
         let q = a1 / a2;
         let r = a1 % a2;
@@ -262,13 +240,6 @@ fn lehmer_simulate(a: &BigInt, b: &BigInt) -> (BigDigit, BigDigit, BigDigit, Big
     (u0, u1, v0, v1, even)
 }
 
-// lehmerUpdate updates the inputs A and B such that:
-//		A = u0*A + v0*B
-//		B = u1*A + v1*B
-// where the signs of u0, u1, v0, v1 are given by even
-// For even == true: u0, v1 >= 0 && u1, v0 <= 0
-// For even == false: u0, v1 <= 0 && u1, v0 >= 0
-// q, r, s, t are temporary variables to avoid allocations in the multiplication
 fn lehmer_update(
     a: &mut BigInt,
     b: &mut BigInt,
@@ -282,26 +253,13 @@ fn lehmer_update(
     v1: BigDigit,
     even: bool,
 ) {
-
     t.data.set_digit(u0);
     s.data.set_digit(v0);
-
-    //We handle to edge case that s or t is a zero and make sure that we dont have negative zero.
     if even {
         t.sign = Plus;
-        if s.data.is_zero() {
-            s.sign = Plus;
-        } else {
-            s.sign = Minus;
-        }
-        
+        s.sign = Minus
     } else {
-        // t.sign = Minus;
-        if t.data.is_zero() {
-            t.sign = Plus;
-        } else {
-            t.sign = Minus;
-        }
+        t.sign = Minus;
         s.sign = Plus;
     }
 
@@ -325,8 +283,6 @@ fn lehmer_update(
     *b = r + q;
 }
 
-// euclidUpdate performs a single step of the Euclidean GCD algorithm
-// if extended is true, it also updates the cosequence Ua, Ub
 fn euclid_udpate(
     a: &mut BigInt,
     b: &mut BigInt,
@@ -369,10 +325,14 @@ mod tests {
     #[cfg(feature = "rand")]
     use num_traits::{One, Zero};
     #[cfg(feature = "rand")]
-    use rand::{SeedableRng, XorShiftRng};
+    use rand::SeedableRng;
+    #[cfg(feature = "rand")]
+    use rand_xorshift::XorShiftRng;
 
     #[cfg(feature = "rand")]
     fn extended_gcd_euclid(a: Cow<BigUint>, b: Cow<BigUint>) -> (BigInt, BigInt, BigInt) {
+        use crate::bigint::ToBigInt;
+
         if a.is_zero() && b.is_zero() {
             return (0.into(), 0.into(), 0.into());
         }
@@ -436,6 +396,25 @@ mod tests {
         assert_eq!(q, BigInt::from_i32(2).unwrap());
         assert_eq!(s_k, None);
         assert_eq!(t_k, None);
+    }
+
+    #[test]
+    fn test_extended_gcd_example_wolfram() {
+        // https://www.wolframalpha.com/input/?i=ExtendedGCD%5B-565721958+,+4486780496%5D
+        // https://github.com/Chia-Network/oldvdf-competition/blob/master/tests/test_classgroup.py#L109
+
+        let a = BigInt::from(-565721958);
+        let b = BigInt::from(4486780496u64);
+
+        let (q, _s_k, _t_k) = extended_gcd(
+            Cow::Owned(a.to_biguint().unwrap()),
+            Cow::Owned(b.to_biguint().unwrap()),
+            true,
+        );
+
+        assert_eq!(q, BigInt::from(2));
+        assert_eq!(_s_k, Some(BigInt::from(-1090996795)));
+        assert_eq!(_t_k, Some(BigInt::from(-137559848)));
     }
 
     #[test]
