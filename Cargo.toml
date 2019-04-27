@@ -7,7 +7,7 @@ keywords = ["mathematics", "numerics", "bignum"]
 categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT/Apache-2.0"
 name = "num-bigint-dig"
-repository = "https://github.com/dignifiedquier/num-bigint"
+repository = "https://github.com/dignifiedquire/num-bigint"
 version = "0.3.1-alpha.0"
 readme = "README.md"
 build = "build.rs"
@@ -20,6 +20,8 @@ features = ["std", "serde", "rand", "prime"]
 harness = false
 name = "bench_main"
 required-features = ["prime"]
+
+[dependencies]
 
 [dependencies.smallvec]
 version = "0.6.7"
@@ -37,21 +39,21 @@ default-features = false
 version = "0.1.37"
 default-features = false
 
-
 [dependencies.rand]
 optional = true
-version = "0.5"
+version = "0.6"
 default-features = false
 features = ["std"]
+
+[dependencies.zeroize]
+version = "0.6"
+optional = true
 
 [dependencies.serde]
 optional = true
 version = "1.0"
 default-features = false
 features = ["std"]
-
-[dev-dependencies.serde_test]
-version = "1.0"
 
 [dependencies.lazy_static]
 version = "1.2.0"
@@ -62,10 +64,16 @@ version = "1.2.7"
 [dev-dependencies]
 criterion = "0.2"
 rand_chacha = "0.1"
+rand_xorshift = "0.1"
+rand_isaac = "0.1"
+
+[dev-dependencies.serde_test]
+version = "1.0"
 
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
-std = ["num-integer/std", "num-traits/std", "smallvec/std"]
+std = ["num-integer/std", "num-traits/std", "smallvec/std", "rand/std"]
 u64_digit = []
 prime = ["rand"]
+nightly = ["zeroize/nightly", "rand/nightly"]
