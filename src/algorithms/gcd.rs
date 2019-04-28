@@ -637,6 +637,7 @@ mod tests {
 
     #[test]
     fn test_extended_gcd_example_wolfram() {
+        ::std::env::set_var("RUST_BACKTRACE", "1");
         // https://www.wolframalpha.com/input/?i=ExtendedGCD%5B-565721958+,+4486780496%5D
         // https://github.com/Chia-Network/oldvdf-competition/blob/master/tests/test_classgroup.py#L109
 
