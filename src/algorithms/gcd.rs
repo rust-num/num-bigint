@@ -1,16 +1,10 @@
-use std::borrow::Cow;
-use integer::Integer;
-use num_traits::{
-    Zero,
-    One,
-    Signed
-};
 use crate::big_digit::{BigDigit, DoubleBigDigit, BITS};
 use crate::bigint::Sign::*;
 use crate::bigint::{BigInt, ToBigInt};
 use crate::biguint::{BigUint, IntDigits};
-use std::ops::Neg;
-
+use integer::Integer;
+use num_traits::{One, Signed, Zero};
+use std::borrow::Cow;
 
 /// XGCD sets z to the greatest common divisor of a and b and returns z.
 /// If extended is true, XGCD returns their value such that z = a*x + b*y.
@@ -28,7 +22,6 @@ pub fn xgcd(
     b_in: &BigInt,
     extended: bool,
 ) -> (BigInt, Option<BigInt>, Option<BigInt>) {
-
     if a_in.abs().len() == 0 || b_in.abs().len() == 0 {
         let len_a = a_in.abs().len();
         let len_b = b_in.abs().len();
@@ -42,13 +35,13 @@ pub fn xgcd(
             neg_b = true;
         }
 
-		let mut z = a_in | b_in;
+        let mut z = a_in | b_in;
 
         z.sign = Plus;
 
         if extended {
-            let mut x:  BigInt;
-            let mut y:  BigInt;
+            let mut x: BigInt;
+            let mut y: BigInt;
 
             if len_a == 0 {
                 x = BigInt::zero();
@@ -58,7 +51,7 @@ pub fn xgcd(
                     x.sign = Minus;
                 } else {
                     x.sign = Plus;
-                } 
+                }
             }
 
             if len_b == 0 {
@@ -70,18 +63,17 @@ pub fn xgcd(
                     y.sign = Minus;
                 } else {
                     y.sign = Plus;
-                } 
+                }
             }
 
             return (z, Some(x), Some(y));
         }
 
         return (z, None, None);
-	}
+    }
 
     lehmer_gcd(a_in, b_in, extended)
 }
-
 
 /// lehmerGCD sets z to the greatest common divisor of a and b,
 /// which both must be != 0, and returns z.
@@ -93,8 +85,11 @@ pub fn xgcd(
 /// Design and Implementation of Symbolic Computation Systems, pp 45-58.
 /// The cosequences are updated according to Algorithm 10.45 from
 /// Cohen et al. "Handbook of Elliptic and Hyperelliptic Curve Cryptography" pp 192.
-fn lehmer_gcd(a_in: &BigInt, b_in: &BigInt, extended: bool) -> (BigInt, Option<BigInt>, Option<BigInt>) {
-
+fn lehmer_gcd(
+    a_in: &BigInt,
+    b_in: &BigInt,
+    extended: bool,
+) -> (BigInt, Option<BigInt>, Option<BigInt>) {
     let mut a = a_in.clone().abs();
     let mut b = b_in.clone().abs();
 
@@ -146,17 +141,13 @@ fn lehmer_gcd(a_in: &BigInt, b_in: &BigInt, extended: bool) -> (BigInt, Option<B
                 );
             }
         } else {
-
             // Single-digit calculations failed to simulate any quotients.
             // Do a standard Euclidean step.
             euclid_udpate(
                 &mut a, &mut b, &mut ua, &mut ub, &mut q, &mut r, &mut s, &mut t, extended,
             );
-
         }
     }
-
-
 
     if b.digits().len() > 0 {
         // extended Euclidean algorithm base case if B is a single Word
@@ -228,9 +219,9 @@ fn lehmer_gcd(a_in: &BigInt, b_in: &BigInt, extended: bool) -> (BigInt, Option<B
 
     let y = if let Some(ref mut ua) = ua {
         // y = (z - a * x) / b
-       
+
         //a_in*x
-        let mut tmp = (a_in * &*ua);
+        let mut tmp = a_in * &*ua;
         //z - (a_in * x)
         tmp = &a - &tmp;
         tmp = &tmp / b_in;
@@ -239,10 +230,10 @@ fn lehmer_gcd(a_in: &BigInt, b_in: &BigInt, extended: bool) -> (BigInt, Option<B
             // println!("tmp:nega_aaa");
             // println!("a_in: {:?}", &a_in);
             // println!("tmp: {:?}", &tmp);
-			tmp.sign = Minus;
+            tmp.sign = Minus;
             //println!("tmp after: {:?}", &tmp);
             ua.sign = Minus;
-		}
+        }
 
         //Some((&a - (a_in * &*ua)) / b_in)
         //println!("tmp: {:?}", &tmp);
@@ -254,8 +245,6 @@ fn lehmer_gcd(a_in: &BigInt, b_in: &BigInt, extended: bool) -> (BigInt, Option<B
     (a, ua, y)
 }
 
-
-
 /// Uses the lehemer algorithm.
 /// Based on https://github.com/golang/go/blob/master/src/math/big/int.go#L612
 /// If `extended` is set, the Bezout coefficients are calculated, otherwise they are `None`.
@@ -264,8 +253,6 @@ pub fn extended_gcd(
     b_in: Cow<BigUint>,
     extended: bool,
 ) -> (BigInt, Option<BigInt>, Option<BigInt>) {
-
-
     if a_in.is_zero() && b_in.is_zero() {
         if extended {
             return (b_in.to_bigint().unwrap(), Some(0.into()), Some(0.into()));
@@ -581,7 +568,7 @@ mod tests {
 
     #[cfg(feature = "rand")]
     fn extended_gcd_euclid(a: Cow<BigUint>, b: Cow<BigUint>) -> (BigInt, BigInt, BigInt) {
-        use crate::bigint::ToBigInt;
+        // use crate::bigint::ToBigInt;
 
         if a.is_zero() && b.is_zero() {
             return (0.into(), 0.into(), 0.into());
@@ -656,16 +643,38 @@ mod tests {
         let a = BigInt::from(-565721958);
         let b = BigInt::from(4486780496u64);
 
-        let (q, _s_k, _t_k) = xgcd(
-            &a,
-            &b,
-            true,
-        );
+        let (q, _s_k, _t_k) = xgcd(&a, &b, true);
 
         assert_eq!(q, BigInt::from(2));
         assert_eq!(_s_k, Some(BigInt::from(-1090996795)));
         assert_eq!(_t_k, Some(BigInt::from(-137559848)));
     }
+
+    // #[test]
+    // fn test_golang_bignum_negative() {
+    //     	// a <= 0 || b <= 0
+    // {"0", "0", "0", "0", "0"},
+    // {"7", "0", "1", "0", "7"},
+    // {"7", "0", "-1", "0", "-7"},
+    // {"11", "1", "0", "11", "0"},
+    // {"7", "-1", "-2", "-77", "35"},
+    // {"935", "-3", "8", "64515", "24310"},
+    // {"935", "-3", "-8", "64515", "-24310"},
+    // {"935", "3", "-8", "-64515", "-24310"},
+
+    //     let a = BigInt::from(-565721958);
+    //     let b = BigInt::from(4486780496u64);
+
+    //     let (q, _s_k, _t_k) = xgcd(
+    //         &a,
+    //         &b,
+    //         true,
+    //     );
+
+    //     assert_eq!(q, BigInt::from(2));
+    //     assert_eq!(_s_k, Some(BigInt::from(-1090996795)));
+    //     assert_eq!(_t_k, Some(BigInt::from(-137559848)));
+    // }
 
     #[test]
     #[cfg(feature = "rand")]
