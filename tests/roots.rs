@@ -13,7 +13,7 @@ mod biguint {
     fn check<T: Into<BigUint>>(x: T, n: u32) {
         let x: BigUint = x.into();
         let root = x.nth_root(n);
-        println!("check {}.nth_root({}) = {}", x, n, root);
+        //println!("check {}.nth_root({}) = {}", x, n, root);
 
         if n == 2 {
             assert_eq!(root, x.sqrt())

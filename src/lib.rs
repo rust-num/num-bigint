@@ -44,7 +44,7 @@
 //! }
 //!
 //! // This is a very large number.
-//! println!("fib(1000) = {}", fib(1000));
+//! //println!("fib(1000) = {}", fib(1000));
 //! # }
 //! ```
 //!
@@ -67,7 +67,7 @@
 //! let b = rng.gen_bigint_range(&low, &high);
 //!
 //! // Probably an even larger number.
-//! println!("{}", a * b);
+//! //println!("{}", a * b);
 //! # }
 //!
 //! # #[cfg(not(feature = "rand"))]
