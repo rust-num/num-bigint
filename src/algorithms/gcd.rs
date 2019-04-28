@@ -96,13 +96,13 @@ fn lehmer_gcd(
     let mut t: BigInt = 0.into();
 
     // Ensure that a >= b
-    if a.digits().len() >= b.digits().len() {
+    if a.len() < b.len() {
         std::mem::swap(&mut a, &mut b);
         std::mem::swap(&mut ua, &mut ub);
     }
 
     // loop invariant A >= B
-    while b.digits().len() > 1 {
+    while b.len() > 1 {
         // Attempt to calculate in single-precision using leading words of a and b.
         let (u0, u1, v0, v1, even) = lehmer_simulate(&a, &b);
 
@@ -142,16 +142,16 @@ fn lehmer_gcd(
     }
 
     //b digits is less than 2
-    if b.digits().len() > 0 {
+    if b.len() > 0 {
         // extended Euclidean algorithm base case if B is a single Word
-        if a.digits().len() > 1 {
+        if a.len() > 1 {
             // a is longer than a single word, so one update is needed
             euclid_udpate(
                 &mut a, &mut b, &mut ua, &mut ub, &mut q, &mut r, &mut s, &mut t, extended,
             );
         }
 
-        if b.digits().len() > 0 {
+        if b.len() > 0 {
             // a and b are both single word
             let mut a_word = a.digits()[0];
             let mut b_word = b.digits()[0];
@@ -637,16 +637,8 @@ mod tests {
 
         let a = BigInt::from_str("-565721958").unwrap();
         let b = BigInt::from_str("4486780496").unwrap();
-       
-
-        println!("a len is {:?}", a.len());
-        println!("b len is {:?}", b.len());
-        println!("a is {:?}", &a);
-        println!("b is {:?}", &b);
 
         let (q, _s_k, _t_k) = xgcd(&a, &b, true);
-
-        println!("q output is {:?}", &q);
 
         assert_eq!(q, BigInt::from(2));
         assert_eq!(_s_k, Some(BigInt::from(-1090996795)));
@@ -669,20 +661,20 @@ mod tests {
             ["1", "-9", "47", "120", "23"],
             ["7", "1", "-2", "77", "35"],
             ["935", "-3", "8", "64515", "24310"],
-            // [
-            //     "935000000000000000",
-            //     "-3",
-            //     "8",
-            //     "64515000000000000000",
-            //     "24310000000000000000",
-            // ],
-            // [
-            //     "1",
-            //     "-221",
-            //     "22059940471369027483332068679400581064239780177629666810348940098015901108344",
-            //     "98920366548084643601728869055592650835572950932266967461790948584315647051443",
-            //     "991",
-            // ],
+            [
+                "935000000000000000",
+                "-3",
+                "8",
+                "64515000000000000000",
+                "24310000000000000000",
+            ],
+            [
+                "1",
+                "-221",
+                "22059940471369027483332068679400581064239780177629666810348940098015901108344",
+                "98920366548084643601728869055592650835572950932266967461790948584315647051443",
+                "991",
+            ],
         ];
 
 
