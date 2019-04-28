@@ -1,12 +1,260 @@
 use std::borrow::Cow;
-
 use integer::Integer;
-use num_traits::Zero;
-
+use num_traits::{
+    Zero,
+    One,
+    Signed
+};
 use crate::big_digit::{BigDigit, DoubleBigDigit, BITS};
 use crate::bigint::Sign::*;
 use crate::bigint::{BigInt, ToBigInt};
 use crate::biguint::{BigUint, IntDigits};
+use std::ops::Neg;
+
+
+/// XGCD sets z to the greatest common divisor of a and b and returns z.
+/// If extended is true, XGCD returns their value such that z = a*x + b*y.
+///
+/// Allow the inputs a and b to be zero or negative to GCD
+/// with the following definitions.
+///
+/// If x or y are not nil, GCD sets their value such that z = a*x + b*y.
+/// Regardless of the signs of a and b, z is always >= 0.
+/// If a == b == 0, GCD sets z = x = y = 0.
+/// If a == 0 and b != 0, GCD sets z = |b|, x = 0, y = sign(b) * 1.
+/// If a != 0 and b == 0, GCD sets z = |a|, x = sign(a) * 1, y = 0.
+pub fn xgcd(
+    a_in: &BigInt,
+    b_in: &BigInt,
+    extended: bool,
+) -> (BigInt, Option<BigInt>, Option<BigInt>) {
+
+    if a_in.abs().len() == 0 || b_in.abs().len() == 0 {
+        let len_a = a_in.abs().len();
+        let len_b = b_in.abs().len();
+        let mut neg_a: bool = false;
+        if a_in.sign == Minus {
+            neg_a = true;
+        }
+
+        let mut neg_b: bool = false;
+        if b_in.sign == Minus {
+            neg_b = true;
+        }
+
+		let mut z = a_in | b_in;
+
+        z.sign = Plus;
+
+        if extended {
+            let mut x:  BigInt;
+            let mut y:  BigInt;
+
+            if len_a == 0 {
+                x = BigInt::zero();
+            } else {
+                x = BigInt::one();
+                if neg_a {
+                    x.sign = Minus;
+                } else {
+                    x.sign = Plus;
+                } 
+            }
+
+            if len_b == 0 {
+                y = BigInt::zero();
+            } else {
+                y = BigInt::one();
+
+                if neg_b {
+                    y.sign = Minus;
+                } else {
+                    y.sign = Plus;
+                } 
+            }
+
+            return (z, Some(x), Some(y));
+        }
+
+        return (z, None, None);
+	}
+
+    lehmer_gcd(a_in, b_in, extended)
+}
+
+
+/// lehmerGCD sets z to the greatest common divisor of a and b,
+/// which both must be != 0, and returns z.
+/// If x or y are not nil, their values are set such that z = a*x + b*y.
+/// See Knuth, The Art of Computer Programming, Vol. 2, Section 4.5.2, Algorithm L.
+/// This implementation uses the improved condition by Collins requiring only one
+/// quotient and avoiding the possibility of single Word overflow.
+/// See Jebelean, "Improving the multiprecision Euclidean algorithm",
+/// Design and Implementation of Symbolic Computation Systems, pp 45-58.
+/// The cosequences are updated according to Algorithm 10.45 from
+/// Cohen et al. "Handbook of Elliptic and Hyperelliptic Curve Cryptography" pp 192.
+fn lehmer_gcd(a_in: &BigInt, b_in: &BigInt, extended: bool) -> (BigInt, Option<BigInt>, Option<BigInt>) {
+
+    let mut a = a_in.clone().abs();
+    let mut b = b_in.clone().abs();
+
+    // `ua` (`ub`) tracks how many times input `a_in` has beeen accumulated into `a` (`b`).
+    let mut ua = if extended { Some(1.into()) } else { None };
+    let mut ub = if extended { Some(0.into()) } else { None };
+
+    // temp variables for multiprecision update
+    let mut q: BigInt = 0.into();
+    let mut r: BigInt = 0.into();
+    let mut s: BigInt = 0.into();
+    let mut t: BigInt = 0.into();
+
+    // Ensure that a >= b
+    if a.digits().len() >= b.digits().len() {
+        std::mem::swap(&mut a, &mut b);
+        std::mem::swap(&mut ua, &mut ub);
+    }
+
+    // loop invariant A >= B
+    while b.digits().len() > 1 {
+        // Attempt to calculate in single-precision using leading words of a and b.
+        let (u0, u1, v0, v1, even) = lehmer_simulate(&a, &b);
+
+        // multiprecision step
+        if v0 != 0 {
+            // Simulate the effect of the single-precision steps using cosequences.
+            // a = u0 * a + v0 * b
+            // b = u1 * a + v1 * b
+            lehmer_update(
+                &mut a, &mut b, &mut q, &mut r, &mut s, &mut t, u0, u1, v0, v1, even,
+            );
+
+            if extended {
+                // ua = u0 * ua + v0 * ub
+                // ub = u1 * ua + v1 * ub
+                lehmer_update(
+                    ua.as_mut().unwrap(),
+                    ub.as_mut().unwrap(),
+                    &mut q,
+                    &mut r,
+                    &mut s,
+                    &mut t,
+                    u0,
+                    u1,
+                    v0,
+                    v1,
+                    even,
+                );
+            }
+        } else {
+
+            // Single-digit calculations failed to simulate any quotients.
+            // Do a standard Euclidean step.
+            euclid_udpate(
+                &mut a, &mut b, &mut ua, &mut ub, &mut q, &mut r, &mut s, &mut t, extended,
+            );
+
+        }
+    }
+
+
+
+    if b.digits().len() > 0 {
+        // extended Euclidean algorithm base case if B is a single Word
+        if a.digits().len() > 1 {
+            // a is longer than a single word, so one update is needed
+            euclid_udpate(
+                &mut a, &mut b, &mut ua, &mut ub, &mut q, &mut r, &mut s, &mut t, extended,
+            );
+        }
+
+        if b.digits().len() > 0 {
+            // a and b are both single word
+            let mut a_word = a.digits()[0];
+            let mut b_word = b.digits()[0];
+
+            if extended {
+                let mut ua_word: BigDigit = 1;
+                let mut ub_word: BigDigit = 0;
+                let mut va: BigDigit = 0;
+                let mut vb: BigDigit = 1;
+                let mut even = true;
+
+                while b_word != 0 {
+                    let q = a_word / b_word;
+                    let r = a_word % b_word;
+                    a_word = b_word;
+                    b_word = r;
+
+                    //let k = ua_word.wrapping_add(q.wrapping_mul(ub_word));
+                    let k = &ua_word + (&q * &ub_word);
+                    ua_word = ub_word;
+                    ub_word = k;
+
+                    //let k = va.wrapping_add(q.wrapping_mul(vb));
+                    let k = &va + (&q * &vb);
+                    va = vb;
+                    vb = k;
+
+                    even = !even;
+                }
+
+                t.data.set_digit(ua_word);
+                s.data.set_digit(va);
+                t.sign = if even { Plus } else { Minus };
+                s.sign = if even { Minus } else { Plus };
+
+                if let Some(ua) = ua.as_mut() {
+                    t *= &*ua;
+                    s *= ub.unwrap();
+
+                    *ua = &t + &s;
+                }
+            } else {
+                while b_word != 0 {
+                    let quotient = a_word % b_word;
+                    a_word = b_word;
+                    b_word = quotient;
+                }
+            }
+            a.digits_mut()[0] = a_word;
+        }
+    }
+
+    //Sign fixing
+    let mut neg_a: bool = false;
+    if a_in.sign == Minus {
+        neg_a = true;
+    }
+
+    let y = if let Some(ref mut ua) = ua {
+        // y = (z - a * x) / b
+       
+        //a_in*x
+        let mut tmp = (a_in * &*ua);
+        //z - (a_in * x)
+        tmp = &a - &tmp;
+        tmp = &tmp / b_in;
+
+        if neg_a {
+            // println!("tmp:nega_aaa");
+            // println!("a_in: {:?}", &a_in);
+            // println!("tmp: {:?}", &tmp);
+			tmp.sign = Minus;
+            //println!("tmp after: {:?}", &tmp);
+            ua.sign = Minus;
+		}
+
+        //Some((&a - (a_in * &*ua)) / b_in)
+        //println!("tmp: {:?}", &tmp);
+        Some(tmp)
+    } else {
+        None
+    };
+
+    (a, ua, y)
+}
+
+
 
 /// Uses the lehemer algorithm.
 /// Based on https://github.com/golang/go/blob/master/src/math/big/int.go#L612
@@ -16,6 +264,8 @@ pub fn extended_gcd(
     b_in: Cow<BigUint>,
     extended: bool,
 ) -> (BigInt, Option<BigInt>, Option<BigInt>) {
+
+
     if a_in.is_zero() && b_in.is_zero() {
         if extended {
             return (b_in.to_bigint().unwrap(), Some(0.into()), Some(0.into()));
@@ -406,9 +656,9 @@ mod tests {
         let a = BigInt::from(-565721958);
         let b = BigInt::from(4486780496u64);
 
-        let (q, _s_k, _t_k) = extended_gcd(
-            Cow::Owned(a.to_biguint().unwrap()),
-            Cow::Owned(b.to_biguint().unwrap()),
+        let (q, _s_k, _t_k) = xgcd(
+            &a,
+            &b,
             true,
         );
 
