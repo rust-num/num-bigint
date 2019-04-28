@@ -548,6 +548,7 @@ fn euclid_udpate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     use num_traits::FromPrimitive;
 
@@ -629,27 +630,28 @@ mod tests {
         assert_eq!(t_k, None);
     }
 
-    // #[test]
-    // fn test_extended_gcd_example_wolfram() {
-    //     // https://www.wolframalpha.com/input/?i=ExtendedGCD%5B-565721958+,+4486780496%5D
-    //     // https://github.com/Chia-Network/oldvdf-competition/blob/master/tests/test_classgroup.py#L109
+    #[test]
+    fn test_extended_gcd_example_wolfram() {
+        // https://www.wolframalpha.com/input/?i=ExtendedGCD%5B-565721958+,+4486780496%5D
+        // https://github.com/Chia-Network/oldvdf-competition/blob/master/tests/test_classgroup.py#L109
 
-    //     let a = BigInt::from(-565721958i64);
-    //     let b = BigInt::from(4486780496u64);
+        let a = BigInt::from_str("-565721958").unwrap();
+        let b = BigInt::from_str("4486780496").unwrap();
+       
 
-    //     println!("a len is {:?}", a.len());
-    //     println!("b len is {:?}", b.len());
-    //     println!("a is {:?}", &a);
-    //     println!("b is {:?}", &b);
+        println!("a len is {:?}", a.len());
+        println!("b len is {:?}", b.len());
+        println!("a is {:?}", &a);
+        println!("b is {:?}", &b);
 
-    //     let (q, _s_k, _t_k) = xgcd(&a, &b, true);
+        let (q, _s_k, _t_k) = xgcd(&a, &b, true);
 
-    //     println!("q output is {:?}", &q);
+        println!("q output is {:?}", &q);
 
-    //     assert_eq!(q, BigInt::from(2));
-    //     assert_eq!(_s_k, Some(BigInt::from(-1090996795)));
-    //     assert_eq!(_t_k, Some(BigInt::from(-137559848)));
-    // }
+        assert_eq!(q, BigInt::from(2));
+        assert_eq!(_s_k, Some(BigInt::from(-1090996795)));
+        assert_eq!(_t_k, Some(BigInt::from(-137559848)));
+    }
 
     #[test]
     fn test_golang_bignum_negative() {
@@ -667,23 +669,23 @@ mod tests {
             ["1", "-9", "47", "120", "23"],
             ["7", "1", "-2", "77", "35"],
             ["935", "-3", "8", "64515", "24310"],
-            [
-                "935000000000000000",
-                "-3",
-                "8",
-                "64515000000000000000",
-                "24310000000000000000",
-            ],
-            [
-                "1",
-                "-221",
-                "22059940471369027483332068679400581064239780177629666810348940098015901108344",
-                "98920366548084643601728869055592650835572950932266967461790948584315647051443",
-                "991",
-            ],
+            // [
+            //     "935000000000000000",
+            //     "-3",
+            //     "8",
+            //     "64515000000000000000",
+            //     "24310000000000000000",
+            // ],
+            // [
+            //     "1",
+            //     "-221",
+            //     "22059940471369027483332068679400581064239780177629666810348940098015901108344",
+            //     "98920366548084643601728869055592650835572950932266967461790948584315647051443",
+            //     "991",
+            // ],
         ];
 
-        use std::str::FromStr;
+
 
         for t in 0..gcd_test_cases.len() {
             //d, x, y, a, b string
