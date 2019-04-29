@@ -86,9 +86,6 @@ fn lehmer_gcd(
     a.sign = Plus;
     b.sign = Plus;
 
-    println!("a x {:?}", &a);
-    println!("b x {:?}", &b);
-
     // `ua` (`ub`) tracks how many times input `a_in` has beeen accumulated into `a` (`b`).
     let mut ua = if extended { Some(1.into()) } else { None };
     let mut ub = if extended { Some(0.into()) } else { None };
@@ -273,9 +270,6 @@ pub fn extended_gcd(
 
     let mut a = a_in.clone();
     let mut b = b_in.clone();
-
-    println!("a ex {:?}", &a);
-    println!("b ex {:?}", &b);
 
     // `ua` (`ub`) tracks how many times input `a_in` has beeen accumulated into `a` (`b`).
     let mut ua = if extended { Some(1.into()) } else { None };
