@@ -33,7 +33,8 @@ pub fn xgcd(
     }
 
     //If a == 0 and b != 0, GCD sets z = |b|, x = 0, y = sign(b) * 1.
-    if a_in.is_zero() && !b_in.is_zero() {
+    // if a_in.is_zero() && !b_in.is_zero() {
+    if a_in.is_zero() {
         if extended {
             let mut y = BigInt::one();
             if b_in.sign == Minus {
@@ -47,7 +48,8 @@ pub fn xgcd(
     }
 
     //If a != 0 and b == 0, GCD sets z = |a|, x = sign(a) * 1, y = 0.
-    if !a_in.is_zero() && b_in.is_zero() {
+    //if !a_in.is_zero() && b_in.is_zero() {
+    if b_in.is_zero() {
         if extended {
             let mut x = BigInt::one();
             if a_in.sign == Minus {
@@ -59,7 +61,6 @@ pub fn xgcd(
             return (a_in.abs(), None, None);
         }
     }
-
     lehmer_gcd(a_in, b_in, extended)
 }
 
@@ -85,6 +86,9 @@ fn lehmer_gcd(
     a.sign = Plus;
     b.sign = Plus;
 
+    println!("a x {:?}", &a);
+    println!("b x {:?}", &b);
+
     // `ua` (`ub`) tracks how many times input `a_in` has beeen accumulated into `a` (`b`).
     let mut ua = if extended { Some(1.into()) } else { None };
     let mut ub = if extended { Some(0.into()) } else { None };
@@ -96,7 +100,7 @@ fn lehmer_gcd(
     let mut t: BigInt = 0.into();
 
     // Ensure that a >= b
-    if a.len() < b.len() {
+    if a < b {
         std::mem::swap(&mut a, &mut b);
         std::mem::swap(&mut ua, &mut ub);
     }
@@ -134,16 +138,14 @@ fn lehmer_gcd(
             }
         } else {
             // Single-digit calculations failed to simulate any quotients.
-            // Do a standard Euclidean step.
             euclid_udpate(
                 &mut a, &mut b, &mut ua, &mut ub, &mut q, &mut r, &mut s, &mut t, extended,
             );
         }
     }
 
-    //b digits is less than 2
     if b.len() > 0 {
-        // extended Euclidean algorithm base case if B is a single Word
+        // base case if b is a single digit
         if a.len() > 1 {
             // a is longer than a single word, so one update is needed
             euclid_udpate(
@@ -169,16 +171,13 @@ fn lehmer_gcd(
                     a_word = b_word;
                     b_word = r;
 
-                    //let k = ua_word.wrapping_add(q.wrapping_mul(ub_word));
-                    let k = &ua_word + (&q * &ub_word);
+                    let k = ua_word.wrapping_add(q.wrapping_mul(ub_word));
                     ua_word = ub_word;
                     ub_word = k;
 
-                    //let k = va.wrapping_add(q.wrapping_mul(vb));
-                    let k = &va + (&q * &vb);
+                    let k = va.wrapping_add(q.wrapping_mul(vb));
                     va = vb;
                     vb = k;
-
                     even = !even;
                 }
 
@@ -203,6 +202,8 @@ fn lehmer_gcd(
             a.digits_mut()[0] = a_word;
         }
     }
+
+    a.normalize();
 
     //Sign fixing
     let mut neg_a: bool = false;
@@ -272,6 +273,9 @@ pub fn extended_gcd(
 
     let mut a = a_in.clone();
     let mut b = b_in.clone();
+
+    println!("a ex {:?}", &a);
+    println!("b ex {:?}", &b);
 
     // `ua` (`ub`) tracks how many times input `a_in` has beeen accumulated into `a` (`b`).
     let mut ua = if extended { Some(1.into()) } else { None };
@@ -676,8 +680,6 @@ mod tests {
                 "991",
             ],
         ];
-
-
 
         for t in 0..gcd_test_cases.len() {
             //d, x, y, a, b string
