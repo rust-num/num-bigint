@@ -2126,36 +2126,13 @@ impl BigUint {
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
         assert!(!modulus.is_zero(), "divide by zero!");
 
-        // For an odd modulus, we can use Montgomery multiplication in base 2^32.
         if modulus.is_odd() {
-            return monty_modpow(self, exponent, modulus);
+            // For an odd modulus, we can use Montgomery multiplication in base 2^32.
+            monty_modpow(self, exponent, modulus)
+        } else {
+            // Otherwise do basically the same as `num::pow`, but with a modulus.
+            plain_modpow(self, &exponent.data, modulus)
         }
-
-        // Otherwise do basically the same as `num::pow`, but with a modulus.
-        let one = BigUint::one();
-        if exponent.is_zero() {
-            return one;
-        }
-
-        let mut base = self % modulus;
-        let mut exp = exponent.clone();
-        while exp.is_even() {
-            base = &base * &base % modulus;
-            exp >>= 1;
-        }
-        if exp == one {
-            return base;
-        }
-
-        let mut acc = base.clone();
-        while exp > one {
-            exp >>= 1;
-            base = &base * &base % modulus;
-            if exp.is_odd() {
-                acc = acc * &base % modulus;
-            }
-        }
-        acc
     }
 
     /// Returns the truncated principal square root of `self` --
@@ -2175,6 +2152,107 @@ impl BigUint {
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
+}
+
+fn plain_modpow<'a, T>(base: &BigUint, exp_data: &Vec<T>, modulus: &BigUint) -> BigUint
+where
+    T: Copy + PartialOrd + Unsigned + ShrAssign + BitAnd<Output = T>,
+{
+    assert!(!modulus.is_zero(), "divide by zero!");
+
+    if exp_data.len() == 0 {
+        return BigUint::one();
+    }
+
+    let digit_bits = mem::size_of::<T>() * 8;
+    let one = One::one();
+    let last_i = exp_data.len() - 1;
+    let mut base = base.clone();
+    let mut i = 0usize;
+    while exp_data[i].is_zero() {
+        for _ in 0..digit_bits {
+            base = &base * &base % modulus;
+        }
+        i += 1;
+    }
+
+    let mut b = 0usize;
+    let mut r = exp_data[i];
+    while (r & one).is_zero() {
+        base = &base * &base % modulus;
+        r >>= one;
+        b += 1;
+    }
+
+    let last = i == last_i;
+    if last && r.is_one() {
+        return base;
+    }
+
+    let mut acc = base.clone();
+    {
+        let mut unit = |bit| {
+            base = &base * &base % modulus;
+            if bit == one {
+                acc = &acc * &base % modulus;
+            }
+        };
+
+        r >>= one;
+        b += 1;
+        if !last {
+            // consume exp_data[i]
+            for _ in b..digit_bits {
+                unit(r & one);
+                r >>= one;
+            }
+            for i in (i + 1)..last_i {
+                r = exp_data[i];
+                for _ in 0..digit_bits {
+                    unit(r & one);
+                    r >>= one;
+                }
+            }
+            r = exp_data[last_i];
+        }
+        while !r.is_zero() {
+            unit(r & one);
+            r >>= one;
+        }
+    }
+    acc
+}
+
+#[test]
+fn test_plain_modpow() {
+    let two = BigUint::from(2u32);
+    let modulus = BigUint::from(0x1100u32);
+
+    let exp: Vec<u8> = vec![0, 0b1];
+    assert_eq!(
+        two.pow(0b1_00000000_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp: Vec<u8> = vec![0, 0b10];
+    assert_eq!(
+        two.pow(0b10_00000000_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp: Vec<u8> = vec![0, 0b110010];
+    assert_eq!(
+        two.pow(0b110010_00000000_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp: Vec<u8> = vec![0b1, 0b1];
+    assert_eq!(
+        two.pow(0b1_00000001_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp: Vec<u8> = vec![0b1100, 0, 0b1];
+    assert_eq!(
+        two.pow(0b1_00000000_00001100_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
 }
 
 /// Returns the number of least-significant bits that are zero,
