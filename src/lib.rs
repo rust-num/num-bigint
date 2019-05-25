@@ -210,7 +210,7 @@ pub const VEC_SIZE: usize = 8;
 #[cfg(feature = "u64_digit")]
 pub const VEC_SIZE: usize = 4;
 
-pub mod big_digit {
+mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.
     #[cfg(not(feature = "u64_digit"))]
     pub type BigDigit = u32;
