@@ -38,7 +38,7 @@ version = "0.1.39"
 default-features = false
 
 [dependencies.num-traits]
-version = "0.2.4"
+version = "0.2.7"
 default-features = false
 
 [dependencies.rand]
