@@ -193,7 +193,9 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     let i = if r == 0 { power } else { r };
     let (head, tail) = v.split_at(i);
 
-    let first = head.iter().fold(0, |acc, &d| acc * radix + BigDigit::from(d));
+    let first = head
+        .iter()
+        .fold(0, |acc, &d| acc * radix + BigDigit::from(d));
     data.push(first);
 
     debug_assert!(tail.len() % power == 0);
@@ -208,7 +210,9 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
         }
         debug_assert!(carry == 0);
 
-        let n = chunk.iter().fold(0, |acc, &d| acc * radix + BigDigit::from(d));
+        let n = chunk
+            .iter()
+            .fold(0, |acc, &d| acc * radix + BigDigit::from(d));
         add2(&mut data, &[n]);
     }
 
