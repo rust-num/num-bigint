@@ -46,9 +46,9 @@ mod tests {
             let element = BigInt::parse_bytes(test[0].as_bytes(), 10).unwrap();
             let modulus = BigInt::parse_bytes(test[1].as_bytes(), 10).unwrap();
 
-            println!("{} modinv {}", element, modulus);
+            //println!("{} modinv {}", element, modulus);
             let inverse = element.clone().mod_inverse(&modulus).unwrap();
-            println!("inverse: {}", &inverse);
+            //println!("inverse: {}", &inverse);
             let cmp = (inverse * &element).mod_floor(&modulus);
 
             assert_eq!(
@@ -77,7 +77,7 @@ mod tests {
 
                     let inverse = element.clone().mod_inverse(&modulus).unwrap();
                     let cmp = (&inverse * &element).mod_floor(&modulus);
-                    println!("inverse: {}", &inverse);
+                    //println!("inverse: {}", &inverse);
                     assert_eq!(
                         cmp,
                         BigInt::one(),

@@ -1659,7 +1659,7 @@ mod tests {
         let mut a2: Vec<BigDigit> = vec![0; 1341];
         let mut a3: Vec<BigDigit> = vec![0; 1341];
 
-        print!("{} {}", b.len(), c.len());
+        //print!("{} {}", b.len(), c.len());
         long(&mut a1, &b, &c);
         karatsuba(&mut a2, &b, &c);
 

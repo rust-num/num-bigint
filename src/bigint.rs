@@ -2681,6 +2681,13 @@ impl_to_bigint!(u128, FromPrimitive::from_u128);
 impl_to_bigint!(f32, FromPrimitive::from_f32);
 impl_to_bigint!(f64, FromPrimitive::from_f64);
 
+/// Negates the sign of BigInt.
+///
+#[inline]
+pub fn negate_sign(i: &mut BigInt) {
+    i.sign = i.sign.neg();
+}
+
 impl BigInt {
     /// Creates and initializes a BigInt.
     ///
@@ -2689,6 +2696,15 @@ impl BigInt {
     pub fn new(sign: Sign, digits: Vec<u32>) -> BigInt {
         BigInt::from_biguint(sign, BigUint::new(digits))
     }
+
+    // /// Negates the sign of BigInt.
+    // ///
+    // #[inline]
+    // pub fn negate_sign(&mut self) {
+    //     println!("negate_sign: {:?}", self);
+    //     self.sign = self.sign.neg();
+    //     println!("negate_sign: {:?}", self);
+    // }
 
     /// Creates and initializes a `BigInt`.
     ///
@@ -3332,4 +3348,26 @@ fn test_assign_from_slice() {
     check(Plus, 0, NoSign, 0);
     check(Minus, 1, Minus, 1);
     check(NoSign, 1, NoSign, 0);
+}
+
+#[test]
+fn test_bigint_negate() {
+    let mut a = BigInt {
+        sign: Plus,
+        data: FromPrimitive::from_usize(1).unwrap(),
+    };
+
+    negate_sign(&mut a);
+
+    assert_eq!(a.sign, Minus);
+
+    // fn check(inp_s: Sign, inp_n: usize, ans_s: Sign, ans_n: usize) {
+    //     let inp = BigInt::from_biguint(inp_s, FromPrimitive::from_usize(inp_n).unwrap());
+    //     let ans =
+
+    // }
+    // check(Plus, 1, Plus, 1);
+    // check(Plus, 0, NoSign, 0);
+    // check(Minus, 1, Minus, 1);
+    // check(NoSign, 1, NoSign, 0);
 }
