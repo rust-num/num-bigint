@@ -2479,7 +2479,9 @@ impl<'de> serde::Deserialize<'de> for BigInt {
     }
 }
 
-/// A generic trait for converting a value to a `BigInt`.
+/// A generic trait for converting a value to a `BigInt`. This may return
+/// `None` when converting from `f32` or `f64`, and will always succeed
+/// when converting from any integer or unsigned primitive, or `BigUint`.
 pub trait ToBigInt {
     /// Converts the value of `self` to a `BigInt`.
     fn to_bigint(&self) -> Option<BigInt>;
