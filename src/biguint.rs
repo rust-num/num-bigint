@@ -42,7 +42,7 @@ use UsizePromotion;
 use ParseBigIntError;
 
 #[cfg(test)]
-use quickcheck::{Arbitrary, Gen, TestResult};
+use quickcheck::{Arbitrary, Gen};
 
 /// A big unsigned integer type.
 #[derive(Clone, Debug, Hash)]
@@ -58,7 +58,7 @@ impl Arbitrary for BigUint {
         Self::from_slice(&num)
     }
     //Use the shrinker for Vec
-    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+    fn shrink(&self) -> Box<Iterator<Item = Self>> {
         Box::new(
             self.data
                 .shrink()
@@ -2869,13 +2869,13 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
 #[cfg(has_i128)]
 quickcheck! {
 /// Compares the results of adding BigUints to adding u128s
-    fn quickcheck_add_primitive(a: u128, b: u128) -> TestResult {
+    fn quickcheck_add_primitive(a: u64, b: u64) -> bool {
+        let a = a as u128;
+        let b = b as u128;
         let a_big = BigUint::from(a);
         let b_big = BigUint::from(b);
-        match a.checked_add(b) {
-                None => TestResult::discard(),
-                Some(sum) => TestResult::from_bool(sum == (a_big + b_big).to_u128().unwrap()),
-        }
+        //maximum value of u64 means no overflow
+        a + b == (a_big + b_big).to_u128().unwrap()
     }
 }
 
@@ -2903,7 +2903,7 @@ quickcheck! {
 #[cfg(test)]
 #[cfg(has_i128)]
 quickcheck! {
-    /// Compares the results of multiplying BigUints to multiplying u128s
+    /// Compares the results of multiplying BigUints to multiplying u64s
     fn quickcheck_mul_primitive(a: u64, b: u64) -> bool {
         let a = a as u128;
         let b = b as u128;
