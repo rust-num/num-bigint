@@ -2868,16 +2868,13 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
 #[cfg(test)]
 #[cfg(has_i128)]
 quickcheck! {
-/// Compares the results of addint BigUints to adding u128s
-    fn quickcheck_add_primitive(a: BigUint, b: BigUint) -> TestResult {
-        let a_prim = a.to_u128();
-        let b_prim = b.to_u128();
-        match (a_prim, b_prim) {
-            (Some(a_prim), Some(b_prim)) => match a_prim.checked_add(b_prim) {
+/// Compares the results of adding BigUints to adding u128s
+    fn quickcheck_add_primitive(a: u128, b: u128) -> TestResult {
+        let a_big = BigUint::from(a);
+        let b_big = BigUint::from(b);
+        match a.checked_add(b) {
                 None => TestResult::discard(),
-                Some(sum) => TestResult::from_bool(sum == (a + b).to_u128().unwrap()),
-            },
-            (_, _) => TestResult::discard(),
+                Some(sum) => TestResult::from_bool(sum == (a_big + b_big).to_u128().unwrap()),
         }
     }
 }
@@ -2906,17 +2903,14 @@ quickcheck! {
 #[cfg(test)]
 #[cfg(has_i128)]
 quickcheck! {
-    /// Compares the results of addint BigUints to adding u128s
-    fn quickcheck_mul_primitive(a: BigUint, b: BigUint) -> TestResult {
-        let a_prim = a.to_u128();
-        let b_prim = b.to_u128();
-        match (a_prim, b_prim) {
-            (Some(a_prim), Some(b_prim)) => match a_prim.checked_mul(b_prim) {
-                None => TestResult::discard(),
-                Some(sum) => TestResult::from_bool(sum == (a * b).to_u128().unwrap()),
-            },
-            (_, _) => TestResult::discard(),
-        }
+    /// Compares the results of multiplying BigUints to multiplying u128s
+    fn quickcheck_mul_primitive(a: u64, b: u64) -> bool {
+        let a = a as u128;
+        let b = b as u128;
+        let a_big = BigUint::from(a);
+        let b_big = BigUint::from(b);
+        //maximum value of u64 means no overflow
+        a * b == (a_big * b_big).to_u128().unwrap()
     }
 }
 
