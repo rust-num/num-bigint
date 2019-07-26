@@ -2865,118 +2865,132 @@ fn get_radix_base(radix: u32) -> (BigDigit, usize) {
     }
 }
 
-/// Compares the results of addint BigUints to adding u128s
 #[cfg(test)]
 #[cfg(has_i128)]
-#[quickcheck]
-fn quickcheck_add_primitive(a: BigUint, b: BigUint) -> TestResult {
-    let a_prim = a.to_u128();
-    let b_prim = b.to_u128();
-    match (a_prim, b_prim) {
-        (Some(a_prim), Some(b_prim)) => match a_prim.checked_add(b_prim) {
-            None => TestResult::discard(),
-            Some(sum) => TestResult::from_bool(sum == (a + b).to_u128().unwrap()),
-        },
-        (_, _) => TestResult::discard(),
+quickcheck! {
+/// Compares the results of addint BigUints to adding u128s
+    fn quickcheck_add_primitive(a: BigUint, b: BigUint) -> TestResult {
+        let a_prim = a.to_u128();
+        let b_prim = b.to_u128();
+        match (a_prim, b_prim) {
+            (Some(a_prim), Some(b_prim)) => match a_prim.checked_add(b_prim) {
+                None => TestResult::discard(),
+                Some(sum) => TestResult::from_bool(sum == (a + b).to_u128().unwrap()),
+            },
+            (_, _) => TestResult::discard(),
+        }
     }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_add_commutative(a: BigUint, b: BigUint) -> bool {
-    a.clone() + b.clone() == b + a
+quickcheck! {
+    fn quickcheck_add_commutative(a: BigUint, b: BigUint) -> bool {
+        a.clone() + b.clone() == b + a
+    }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_add_zero(a: BigUint) -> bool {
-    a.clone() == a + BigUint::from(0_u32)
+quickcheck! {
+    fn quickcheck_add_zero(a: BigUint) -> bool {
+        a.clone() == a + BigUint::from(0_u32)
+    }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_add_associative(a: BigUint, b: BigUint, c: BigUint) -> bool {
-    (a.clone() + b.clone()) + c.clone() == a + (b + c)
+quickcheck! {
+    fn quickcheck_add_associative(a: BigUint, b: BigUint, c: BigUint) -> bool {
+        (a.clone() + b.clone()) + c.clone() == a + (b + c)
+    }
 }
 
-/// Compares the results of addint BigUints to adding u128s
 #[cfg(test)]
 #[cfg(has_i128)]
-#[quickcheck]
-fn quickcheck_mul_primitive(a: BigUint, b: BigUint) -> TestResult {
-    let a_prim = a.to_u128();
-    let b_prim = b.to_u128();
-    match (a_prim, b_prim) {
-        (Some(a_prim), Some(b_prim)) => match a_prim.checked_mul(b_prim) {
-            None => TestResult::discard(),
-            Some(sum) => TestResult::from_bool(sum == (a * b).to_u128().unwrap()),
-        },
-        (_, _) => TestResult::discard(),
+quickcheck! {
+    /// Compares the results of addint BigUints to adding u128s
+    fn quickcheck_mul_primitive(a: BigUint, b: BigUint) -> TestResult {
+        let a_prim = a.to_u128();
+        let b_prim = b.to_u128();
+        match (a_prim, b_prim) {
+            (Some(a_prim), Some(b_prim)) => match a_prim.checked_mul(b_prim) {
+                None => TestResult::discard(),
+                Some(sum) => TestResult::from_bool(sum == (a * b).to_u128().unwrap()),
+            },
+            (_, _) => TestResult::discard(),
+        }
     }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_mul_commutative(a: BigUint, b: BigUint) -> bool {
-    a.clone() * b.clone() == b * a
-}
-
-#[cfg(test)]
-#[quickcheck]
-fn quickcheck_mul_associative(a: BigUint, b: BigUint, c: BigUint) -> bool {
-    (a.clone() * b.clone()) * c.clone() == a * (b * c)
-}
-
-#[cfg(test)]
-#[quickcheck]
-fn quickcheck_distributive(a: BigUint, b: BigUint, c: BigUint) -> bool {
-    a.clone() * (b.clone() + c.clone()) == a.clone() * b + a * c
-}
-
-///Tests that exactly one of a<b a>b a=b is true
-#[cfg(test)]
-#[quickcheck]
-fn quickcheck_ge_le_eq_mut_exclusive(a: BigUint, b: BigUint) -> bool {
-    let gt_lt_eq = vec![a > b, a < b, a == b];
-    gt_lt_eq
-        .iter()
-        .fold(0, |acc, e| if *e { acc + 1 } else { acc })
-        == 1
-}
-
-/// Tests correctness of subtraction assuming addition is correct
-#[cfg(test)]
-#[quickcheck]
-fn quickcheck_sub(a: BigUint, b: BigUint) -> bool {
-    if b < a {
-        a.clone() - b.clone() + b == a
-    } else {
-        b.clone() - a.clone() + a == b
+quickcheck! {
+    fn quickcheck_mul_commutative(a: BigUint, b: BigUint) -> bool {
+        a.clone() * b.clone() == b * a
     }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_pow_zero(a: BigUint) -> bool {
-    a.pow(0_u32) == BigUint::one()
+quickcheck! {
+    fn quickcheck_mul_associative(a: BigUint, b: BigUint, c: BigUint) -> bool {
+        (a.clone() * b.clone()) * c.clone() == a * (b * c)
+    }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_pow_one(a: BigUint) -> bool {
-    a.pow(1_u32) == a
+quickcheck! {
+    fn quickcheck_distributive(a: BigUint, b: BigUint, c: BigUint) -> bool {
+        a.clone() * (b.clone() + c.clone()) == a.clone() * b + a * c
+    }
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_sqrt(a: BigUint) -> bool {
-    (a.clone() * a.clone()).sqrt() == a
+quickcheck! {
+    ///Tests that exactly one of a<b a>b a=b is true
+    fn quickcheck_ge_le_eq_mut_exclusive(a: BigUint, b: BigUint) -> bool {
+        let gt_lt_eq = vec![a > b, a < b, a == b];
+        gt_lt_eq
+            .iter()
+            .fold(0, |acc, e| if *e { acc + 1 } else { acc })
+            == 1
+}
 }
 
 #[cfg(test)]
-#[quickcheck]
-fn quickcheck_cbrt(a: BigUint) -> bool {
-    (a.clone() * a.clone() * a.clone()).cbrt() == a
+quickcheck! {
+    /// Tests correctness of subtraction assuming addition is correct
+    fn quickcheck_sub(a: BigUint, b: BigUint) -> bool {
+        if b < a {
+            a.clone() - b.clone() + b == a
+        } else {
+            b.clone() - a.clone() + a == b
+        }
+    }
+}
+
+#[cfg(test)]
+quickcheck! {
+    fn quickcheck_pow_zero(a: BigUint) -> bool {
+        a.pow(0_u32) == BigUint::one()
+    }
+}
+
+#[cfg(test)]
+quickcheck! {
+    fn quickcheck_pow_one(a: BigUint) -> bool {
+        a.pow(1_u32) == a
+    }
+}
+
+#[cfg(test)]
+quickcheck! {
+    fn quickcheck_sqrt(a: BigUint) -> bool {
+        (a.clone() * a.clone()).sqrt() == a
+    }
+}
+
+#[cfg(test)]
+quickcheck! {
+    fn quickcheck_cbrt(a: BigUint) -> bool {
+        (a.clone() * a.clone() * a.clone()).cbrt() == a
+    }
 }
 
 //this test takes too long (no surprise)

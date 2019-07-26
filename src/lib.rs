@@ -88,10 +88,8 @@ extern crate serde;
 extern crate num_integer as integer;
 extern crate num_traits as traits;
 #[cfg(test)]
-extern crate quickcheck;
-#[cfg(test)]
 #[macro_use]
-extern crate quickcheck_macros;
+extern crate quickcheck;
 
 use std::error::Error;
 use std::fmt;
