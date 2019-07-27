@@ -13,7 +13,7 @@ readme = "README.md"
 build = "build.rs"
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand"]
+features = ["std", "serde", "rand", "quickcheck"]
 
 [[bench]]
 name = "bigint"
@@ -53,13 +53,13 @@ version = "1.0"
 default-features = false
 features = ["std"]
 
+[dependencies.quickcheck]
+optional = true
+version = "0.8"
+default-features = false
+
 [dev-dependencies.serde_test]
 version = "1.0"
-
-[dev-dependencies.quickcheck]
-version = "0.7"
-default-features = false
-features = []
 
 [features]
 default = ["std"]
