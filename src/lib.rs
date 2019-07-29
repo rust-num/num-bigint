@@ -87,9 +87,7 @@ extern crate serde;
 
 extern crate num_integer as integer;
 extern crate num_traits as traits;
-#[cfg(test)]
 #[cfg(feature = "quickcheck")]
-#[macro_use]
 extern crate quickcheck;
 
 use std::error::Error;
