@@ -34,6 +34,9 @@ use biguint::{BigUint, IntDigits};
 use IsizePromotion;
 use UsizePromotion;
 
+#[cfg(feature = "quickcheck")]
+use quickcheck::{Arbitrary, Gen};
+
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
 pub enum Sign {
@@ -112,6 +115,32 @@ impl<'de> serde::Deserialize<'de> for Sign {
 pub struct BigInt {
     sign: Sign,
     data: BigUint,
+}
+
+#[cfg(feature = "quickcheck")]
+impl Arbitrary for BigInt {
+    //Use arbitrary for Vec
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        let num = Vec::<u32>::arbitrary(g);
+        let positive = bool::arbitrary(g);
+        let sign: Sign;
+        if positive {
+            sign = Sign::Plus;
+        } else {
+            sign = Sign::Minus;
+        }
+        Self::from_slice(sign, &num)
+    }
+    //Use the shrinker for BigUnit
+    fn shrink(&self) -> Box<Iterator<Item = Self>> {
+        let sign = self.sign();
+        let unsigned_shrink: Box<Iterator<Item = BigUint>> = self.data.shrink();
+        Box::new(unsigned_shrink.map(move |x: BigUint| {
+            let mut tmp: BigInt = BigInt::from(x);
+            tmp.sign = sign;
+            tmp
+        }))
+    }
 }
 
 /// Return the magnitude of a `BigInt`.

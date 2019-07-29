@@ -10,7 +10,7 @@ pub extern crate quickcheck;
 #[cfg(test)]
 #[cfg(feature = "quickcheck")]
 mod quickchecks {
-    use num_bigint::BigUint;
+    use num_bigint::{BigInt, BigUint};
     use num_traits::{Num, One, Pow, ToPrimitive};
     use quickcheck::TestResult;
 
@@ -29,7 +29,27 @@ mod quickchecks {
     }
 
     quickcheck! {
+        fn quickcheck_add_primitive_signed(a: i128, b: i128) -> TestResult {
+            let a = a;
+            let b = b;
+            let a_big = BigInt::from(a);
+            let b_big = BigInt::from(b);
+            //maximum value of u64 means no overflow
+            match a.checked_add(b) {
+                None => TestResult::discard(),
+                Some(sum) => TestResult::from_bool(sum == (a_big + b_big).to_i128().unwrap())
+            }
+        }
+    }
+
+    quickcheck! {
         fn quickcheck_add_commutative(a: BigUint, b: BigUint) -> bool {
+            a.clone() + b.clone() == b + a
+        }
+    }
+
+    quickcheck! {
+        fn quickcheck_add_commutative_signed(a: BigInt, b: BigInt) -> bool {
             a.clone() + b.clone() == b + a
         }
     }
