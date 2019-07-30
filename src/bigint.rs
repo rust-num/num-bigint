@@ -122,7 +122,7 @@ impl Arbitrary for BigInt {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let num = BigUint::arbitrary(g);
         let positive = bool::arbitrary(g);
-        let sign = if positive {Sign::Plus} else {Sign::Minus};
+        let sign = if positive { Sign::Plus } else { Sign::Minus };
         Self::from_biguint(sign, num)
     }
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
