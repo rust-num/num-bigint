@@ -119,27 +119,16 @@ pub struct BigInt {
 
 #[cfg(feature = "quickcheck")]
 impl Arbitrary for BigInt {
-    //Use arbitrary for Vec
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let num = Vec::<u32>::arbitrary(g);
+        let num = BigUint::arbitrary(g);
         let positive = bool::arbitrary(g);
-        let sign: Sign;
-        if positive {
-            sign = Sign::Plus;
-        } else {
-            sign = Sign::Minus;
-        }
-        Self::from_slice(sign, &num)
+        let sign = if positive {Sign::Plus} else {Sign::Minus};
+        Self::from_biguint(sign, num)
     }
-    //Use the shrinker for BigUnit
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
         let sign = self.sign();
         let unsigned_shrink: Box<Iterator<Item = BigUint>> = self.data.shrink();
-        Box::new(unsigned_shrink.map(move |x: BigUint| {
-            let mut tmp: BigInt = BigInt::from(x);
-            tmp.sign = sign;
-            tmp
-        }))
+        Box::new(unsigned_shrink.map(move |x: BigUint| BigInt::from_biguint(sign, x)))
     }
 }
 
