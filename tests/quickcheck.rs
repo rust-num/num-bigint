@@ -10,8 +10,8 @@ pub extern crate quickcheck;
 #[cfg(test)]
 #[cfg(feature = "quickcheck")]
 mod quickchecks {
-    use num_bigint::{BigInt, BigUint};
-    use num_traits::{Num, One, Pow};
+    use num_bigint::{BigInt, BigUint, Sign};
+    use num_traits::{Num, One, Pow, Zero};
     use quickcheck::TestResult;
 
     quickcheck! {
@@ -80,13 +80,13 @@ mod quickchecks {
 
     quickcheck! {
         fn quickcheck_unsigned_add_zero(a: BigUint) -> bool {
-            a.clone() == a + 0_u32
+            a.clone() == a + BigUint::zero()
         }
     }
 
     quickcheck! {
         fn quickcheck_signed_add_zero(a: BigInt) -> bool {
-            a.clone() == a + 0
+            a.clone() == a + BigInt::zero()
         }
     }
 
@@ -118,25 +118,25 @@ mod quickchecks {
 
     quickcheck! {
         fn quickcheck_unsigned_mul_zero(a: BigUint) -> bool {
-            a * 0_u32 == BigUint::from(0_u32)
+            a * BigUint::zero() == BigUint::zero()
         }
     }
 
     quickcheck! {
         fn quickcheck_signed_mul_zero(a: BigInt) -> bool {
-            a * 0 == BigInt::from(0)
+            a * BigInt::zero() == BigInt::zero()
         }
     }
 
     quickcheck! {
         fn quickcheck_unsigned_mul_one(a: BigUint) -> bool {
-            a.clone() * 1_u32 == a
+            a.clone() * BigUint::one() == a
         }
     }
 
     quickcheck! {
         fn quickcheck_signed_mul_one(a: BigInt) -> bool {
-            a.clone() * 1 == a
+            a.clone() * BigInt::one() == a
         }
     }
 
@@ -313,11 +313,11 @@ mod quickchecks {
     }
 
     quickcheck! {
-        fn quickcheck_unsigned_modpow(a:BigUint, exp:u8, modulus:u64) -> TestResult {
-            if modulus == 0 {
+        fn quickcheck_unsigned_modpow(a:BigUint, exp:u8, modulus:BigUint) -> TestResult {
+            if modulus.clone().is_zero() {
                 TestResult::discard()
             } else {
-                let expected = a.clone().pow(exp) % modulus;
+                let expected = a.clone().pow(exp) % modulus.clone();
                 let result = a.modpow(&BigUint::from(exp), &BigUint::from(modulus));
                 TestResult::from_bool(expected == result)
             }
