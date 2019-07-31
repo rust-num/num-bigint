@@ -10,7 +10,7 @@ pub extern crate quickcheck;
 #[cfg(test)]
 #[cfg(feature = "quickcheck")]
 mod quickchecks {
-    use num_bigint::{BigInt, BigUint, Sign};
+    use num_bigint::{BigInt, BigUint};
     use num_traits::{Num, One, Pow, Zero};
     use quickcheck::TestResult;
 
