@@ -13,7 +13,7 @@ readme = "README.md"
 build = "build.rs"
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand", "quickcheck"]
+features = ["std", "serde", "rand", "quick_check"]
 
 [[bench]]
 name = "bigint"
@@ -58,6 +58,11 @@ optional = true
 version = "0.8"
 default-features = false
 
+[dependencies.quickcheck_macros]
+optional = true
+version = "0.8"
+default-features = false
+
 [dev-dependencies.serde_test]
 version = "1.0"
 
@@ -65,6 +70,7 @@ version = "1.0"
 default = ["std"]
 i128 = ["num-integer/i128", "num-traits/i128"]
 std = ["num-integer/std", "num-traits/std"]
+quick_check = ["quickcheck","quickcheck_macros"]
 
 [build-dependencies]
 autocfg = "0.1.2"
