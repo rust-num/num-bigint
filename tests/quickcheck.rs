@@ -252,32 +252,21 @@ fn quickcheck_signed_cbrt(a: BigInt) -> bool {
 }
 
 #[quickcheck]
-fn quickcheck_unsigned_conversion(a: BigUint) -> bool {
-    let mut success = true;
-    for radix in 2..=36 {
-        let string = a.to_str_radix(radix);
-        success &= a == BigUint::from_str_radix(&string, radix).unwrap()
+fn quickcheck_unsigned_conversion(a: BigUint, radix: u8) -> TestResult {
+    let radix = radix as u32;
+    if radix > 36 || radix < 2 {
+        return TestResult::discard();
     }
-    success
+    let string = a.to_str_radix(radix);
+    TestResult::from_bool(a == BigUint::from_str_radix(&string, radix).unwrap())
 }
 
 #[quickcheck]
-fn quickcheck_signed_conversion(a: BigInt) -> bool {
-    let mut success = true;
-    for radix in 2..=36 {
-        let string = a.to_str_radix(radix);
-        success &= a == BigInt::from_str_radix(&string, radix).unwrap()
+fn quickcheck_signed_conversion(a: BigInt, radix: u8) -> TestResult {
+    let radix = radix as u32;
+    if radix > 36 || radix < 2 {
+        return TestResult::discard();
     }
-    success
-}
-
-#[quickcheck]
-fn quickcheck_unsigned_modpow(a: BigUint, exp: u8, modulus: BigUint) -> TestResult {
-    if modulus.clone().is_zero() {
-        TestResult::discard()
-    } else {
-        let expected = a.clone().pow(exp) % modulus.clone();
-        let result = a.modpow(&BigUint::from(exp), &BigUint::from(modulus));
-        TestResult::from_bool(expected == result)
-    }
+    let string = a.to_str_radix(radix);
+    TestResult::from_bool(a == BigInt::from_str_radix(&string, radix).unwrap())
 }
