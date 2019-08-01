@@ -52,18 +52,14 @@ pub struct BigUint {
 
 #[cfg(feature = "quickcheck")]
 impl Arbitrary for BigUint {
-    //Use arbitrary for Vec
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let num = Vec::<u32>::arbitrary(g);
-        Self::from_slice(&num)
+        //Use arbitrary from Vec
+        Self::new(Vec::<u32>::arbitrary(g))
     }
-    //Use the shrinker for Vec
+
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
-        Box::new(
-            self.data
-                .shrink()
-                .map(|x| BigUint::from_slice(x.as_slice())),
-        )
+        //Use shrinker from Vec
+        Box::new(self.data.shrink().map(|x| BigUint::new(x)))
     }
 }
 
