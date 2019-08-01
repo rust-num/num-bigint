@@ -1,27 +1,31 @@
-#[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
-use std::borrow::Cow;
-use std::cmp;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::default::Default;
-use std::fmt;
-use std::iter::{Product, Sum};
-use std::mem;
-use std::ops::{
+use core::cmp;
+use core::cmp::Ordering::{self, Equal, Greater, Less};
+use core::default::Default;
+use core::fmt;
+use core::iter::{Product, Sum};
+use core::mem;
+use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
-use std::str::{self, FromStr};
-use std::{f32, f64};
-use std::{u32, u64, u8};
+use core::str::{self, FromStr};
+use core::{f32, f64};
+use core::{u32, u64, u8};
+#[cfg(feature = "std")]
+#[allow(deprecated, unused_imports)]
+use std::ascii::AsciiExt;
+#[cfg(feature = "quickcheck")]
+use std_alloc::Box;
+use std_alloc::{Cow, String, Vec};
 
 #[cfg(feature = "serde")]
 use serde;
 
 use integer::{Integer, Roots};
+use traits::float::FloatCore;
 use traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
-    ToPrimitive, Unsigned, Zero,
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
+    Unsigned, Zero,
 };
 
 use big_digit::{self, BigDigit};
@@ -215,10 +219,15 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     debug_assert!(!v.is_empty() && !radix.is_power_of_two());
     debug_assert!(v.iter().all(|&c| u32::from(c) < radix));
 
+    #[cfg(feature = "std")]
+    let radix_log2 = f64::from(radix).log2();
+    #[cfg(not(feature = "std"))]
+    let radix_log2 = ilog2(radix.next_power_of_two()) as f64;
+
     // Estimate how big the result will be, so we can pre-allocate it.
-    let bits = f64::from(radix).log2() * v.len() as f64;
+    let bits = radix_log2 * v.len() as f64;
     let big_digits = (bits / big_digit::BITS as f64).ceil();
-    let mut data = Vec::with_capacity(big_digits as usize);
+    let mut data = Vec::with_capacity(big_digits.to_usize().unwrap_or(0));
 
     let (base, power) = get_radix_base(radix, big_digit::BITS);
     let radix = radix as BigDigit;
@@ -1586,6 +1595,7 @@ impl Roots for BigUint {
 
         let max_bits = bits / n as usize + 1;
 
+        #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
             // We fit in `f64` (lossy), so get a better initial guess from that.
             BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
@@ -1602,6 +1612,9 @@ impl Roots for BigUint {
                 BigUint::one() << max_bits
             }
         };
+
+        #[cfg(not(feature = "std"))]
+        let guess = BigUint::one() << max_bits;
 
         let n_min_1 = n - 1;
         fixpoint(guess, max_bits, move |s| {
@@ -1626,6 +1639,7 @@ impl Roots for BigUint {
         let bits = self.bits();
         let max_bits = bits / 2 as usize + 1;
 
+        #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
             // We fit in `f64` (lossy), so get a better initial guess from that.
             BigUint::from_f64(f.sqrt()).unwrap()
@@ -1637,6 +1651,9 @@ impl Roots for BigUint {
             let scale = root_scale * 2;
             (self >> scale).sqrt() << root_scale
         };
+
+        #[cfg(not(feature = "std"))]
+        let guess = BigUint::one() << max_bits;
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / s;
@@ -1658,6 +1675,7 @@ impl Roots for BigUint {
         let bits = self.bits();
         let max_bits = bits / 3 as usize + 1;
 
+        #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
             // We fit in `f64` (lossy), so get a better initial guess from that.
             BigUint::from_f64(f.cbrt()).unwrap()
@@ -1669,6 +1687,9 @@ impl Roots for BigUint {
             let scale = root_scale * 3;
             (self >> scale).cbrt() << root_scale
         };
+
+        #[cfg(not(feature = "std"))]
+        let guess = BigUint::one() << max_bits;
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / (s * s);
@@ -1836,7 +1857,7 @@ impl FromPrimitive for BigUint {
             return Some(BigUint::zero());
         }
 
-        let (mantissa, exponent, sign) = Float::integer_decode(n);
+        let (mantissa, exponent, sign) = FloatCore::integer_decode(n);
 
         if sign == -1 {
             return None;
@@ -2011,9 +2032,15 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
 fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     debug_assert!(!u.is_zero() && !radix.is_power_of_two());
 
+    #[cfg(feature = "std")]
+    let radix_log2 = f64::from(radix).log2();
+    #[cfg(not(feature = "std"))]
+    let radix_log2 = ilog2(radix) as f64;
+
     // Estimate how big the result will be, so we can pre-allocate it.
-    let radix_digits = ((u.bits() as f64) / f64::from(radix).log2()).ceil();
-    let mut res = Vec::with_capacity(radix_digits as usize);
+    let radix_digits = ((u.bits() as f64) / radix_log2).ceil();
+    let mut res = Vec::with_capacity(radix_digits.to_usize().unwrap_or(0));
+
     let mut digits = u.clone();
 
     let (base, power) = get_radix_base(radix, big_digit::HALF_BITS);

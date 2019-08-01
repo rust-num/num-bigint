@@ -20,7 +20,7 @@ use std::{i16, i32, i64, i8, isize};
 use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
-use num_traits::{Float, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
+use num_traits::{pow, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
 use consts::*;
@@ -392,14 +392,14 @@ fn test_convert_f32() {
 
     check(&BigInt::zero(), 0.0);
     check(&BigInt::one(), 1.0);
-    check(&BigInt::from(u16::MAX), 2.0.powi(16) - 1.0);
-    check(&BigInt::from(1u64 << 32), 2.0.powi(32));
-    check(&BigInt::from_slice(Plus, &[0, 0, 1]), 2.0.powi(64));
+    check(&BigInt::from(u16::MAX), pow(2.0_f32, 16) - 1.0);
+    check(&BigInt::from(1u64 << 32), pow(2.0_f32, 32));
+    check(&BigInt::from_slice(Plus, &[0, 0, 1]), pow(2.0_f32, 64));
     check(
         &((BigInt::one() << 100) + (BigInt::one() << 123)),
-        2.0.powi(100) + 2.0.powi(123),
+        pow(2.0_f32, 100) + pow(2.0_f32, 123),
     );
-    check(&(BigInt::one() << 127), 2.0.powi(127));
+    check(&(BigInt::one() << 127), pow(2.0_f32, 127));
     check(&(BigInt::from((1u64 << 24) - 1) << (128 - 24)), f32::MAX);
 
     // keeping all 24 digits with the bits at different offsets to the BigDigits
@@ -480,14 +480,14 @@ fn test_convert_f64() {
 
     check(&BigInt::zero(), 0.0);
     check(&BigInt::one(), 1.0);
-    check(&BigInt::from(u32::MAX), 2.0.powi(32) - 1.0);
-    check(&BigInt::from(1u64 << 32), 2.0.powi(32));
-    check(&BigInt::from_slice(Plus, &[0, 0, 1]), 2.0.powi(64));
+    check(&BigInt::from(u32::MAX), pow(2.0_f64, 32) - 1.0);
+    check(&BigInt::from(1u64 << 32), pow(2.0_f64, 32));
+    check(&BigInt::from_slice(Plus, &[0, 0, 1]), pow(2.0_f64, 64));
     check(
         &((BigInt::one() << 100) + (BigInt::one() << 152)),
-        2.0.powi(100) + 2.0.powi(152),
+        pow(2.0_f64, 100) + pow(2.0_f64, 152),
     );
-    check(&(BigInt::one() << 1023), 2.0.powi(1023));
+    check(&(BigInt::one() << 1023), pow(2.0_f64, 1023));
     check(&(BigInt::from((1u64 << 53) - 1) << (1024 - 53)), f64::MAX);
 
     // keeping all 53 digits with the bits at different offsets to the BigDigits

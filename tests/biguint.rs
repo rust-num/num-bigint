@@ -19,8 +19,8 @@ use std::{i128, u128};
 use std::{u16, u32, u64, u8, usize};
 
 use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
-    ToPrimitive, Zero,
+    pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
+    Zero,
 };
 
 mod consts;
@@ -624,14 +624,14 @@ fn test_convert_f32() {
 
     check(&BigUint::zero(), 0.0);
     check(&BigUint::one(), 1.0);
-    check(&BigUint::from(u16::MAX), 2.0.powi(16) - 1.0);
-    check(&BigUint::from(1u64 << 32), 2.0.powi(32));
-    check(&BigUint::from_slice(&[0, 0, 1]), 2.0.powi(64));
+    check(&BigUint::from(u16::MAX), pow(2.0_f32, 16) - 1.0);
+    check(&BigUint::from(1u64 << 32), pow(2.0_f32, 32));
+    check(&BigUint::from_slice(&[0, 0, 1]), pow(2.0_f32, 64));
     check(
         &((BigUint::one() << 100) + (BigUint::one() << 123)),
-        2.0.powi(100) + 2.0.powi(123),
+        pow(2.0_f32, 100) + pow(2.0_f32, 123),
     );
-    check(&(BigUint::one() << 127), 2.0.powi(127));
+    check(&(BigUint::one() << 127), pow(2.0_f32, 127));
     check(&(BigUint::from((1u64 << 24) - 1) << (128 - 24)), f32::MAX);
 
     // keeping all 24 digits with the bits at different offsets to the BigDigits
@@ -701,14 +701,14 @@ fn test_convert_f64() {
 
     check(&BigUint::zero(), 0.0);
     check(&BigUint::one(), 1.0);
-    check(&BigUint::from(u32::MAX), 2.0.powi(32) - 1.0);
-    check(&BigUint::from(1u64 << 32), 2.0.powi(32));
-    check(&BigUint::from_slice(&[0, 0, 1]), 2.0.powi(64));
+    check(&BigUint::from(u32::MAX), pow(2.0_f64, 32) - 1.0);
+    check(&BigUint::from(1u64 << 32), pow(2.0_f64, 32));
+    check(&BigUint::from_slice(&[0, 0, 1]), pow(2.0_f64, 64));
     check(
         &((BigUint::one() << 100) + (BigUint::one() << 152)),
-        2.0.powi(100) + 2.0.powi(152),
+        pow(2.0_f64, 100) + pow(2.0_f64, 152),
     );
-    check(&(BigUint::one() << 1023), 2.0.powi(1023));
+    check(&(BigUint::one() << 1023), pow(2.0_f64, 1023));
     check(&(BigUint::from((1u64 << 53) - 1) << (1024 - 53)), f64::MAX);
 
     // keeping all 53 digits with the bits at different offsets to the BigDigits
