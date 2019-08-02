@@ -53,7 +53,7 @@ pub struct BigUint {
 #[cfg(feature = "quickcheck")]
 impl Arbitrary for BigUint {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        //Use arbitrary from Vec
+        // Use arbitrary from Vec
         Self::new(Vec::<u32>::arbitrary(g))
     }
 
