@@ -58,7 +58,7 @@ impl Arbitrary for BigUint {
     }
 
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
-        //Use shrinker from Vec
+        // Use shrinker from Vec
         Box::new(self.data.shrink().map(|x| BigUint::new(x)))
     }
 }
