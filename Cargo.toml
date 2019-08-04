@@ -13,7 +13,7 @@ readme = "README.md"
 build = "build.rs"
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand", "quick_check"]
+features = ["std", "serde", "rand", "quickcheck"]
 
 [[bench]]
 name = "bigint"
@@ -70,7 +70,6 @@ version = "1.0"
 default = ["std"]
 i128 = ["num-integer/i128", "num-traits/i128"]
 std = ["num-integer/std", "num-traits/std"]
-quick_check = ["quickcheck","quickcheck_macros"]
 
 [build-dependencies]
 autocfg = "0.1.2"
