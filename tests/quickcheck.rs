@@ -10,7 +10,7 @@ extern crate quickcheck_macros;
 
 use num_bigint::{BigInt, BigUint};
 use num_traits::{Num, One, Pow, Zero};
-use quickcheck::TestResult;
+use quickcheck::{QuickCheck, StdThreadGen, TestResult};
 
 #[quickcheck]
 fn quickcheck_unsigned_eq_reflexive(a: BigUint) -> bool {
@@ -269,4 +269,37 @@ fn quickcheck_signed_conversion(a: BigInt, radix: u8) -> TestResult {
     }
     let string = a.to_str_radix(radix);
     TestResult::from_bool(a == BigInt::from_str_radix(&string, radix).unwrap())
+}
+
+#[test]
+fn quicktest_shift() {
+    let gen = StdThreadGen::new(usize::max_value());
+    let mut qc = QuickCheck::with_gen(gen);
+    fn test_shr_unsigned(a: u64, shift: u8) -> TestResult {
+        let shift = (shift % 64) as usize; //shift at most 64 bits
+        let big_a = BigUint::from(a);
+        TestResult::from_bool(BigUint::from(a >> shift) == big_a >> shift)
+    }
+    fn test_shr_signed(a: i64, shift: u8) -> TestResult {
+        let shift = (shift % 64) as usize; //shift at most 64 bits
+        let big_a = BigInt::from(a);
+        TestResult::from_bool(BigInt::from(a >> shift) == big_a >> shift)
+    }
+    fn test_shl_unsigned(a: u32, shift: u8) -> TestResult {
+        let shift = (shift % 32) as usize; //shift at most 32 bits
+        let a = a as u64; //leave room for the shifted bits
+        let big_a = BigUint::from(a);
+        TestResult::from_bool(BigUint::from(a >> shift) == big_a >> shift)
+    }
+    fn test_shl_signed(a: i32, shift: u8) -> TestResult {
+        let shift = (shift % 32) as usize;
+        let a = a as u64; //leave room for the shifted bits
+        let big_a = BigInt::from(a);
+        TestResult::from_bool(BigInt::from(a >> shift) == big_a >> shift)
+    }
+
+    qc.quickcheck(test_shr_unsigned as fn(u64, u8) -> TestResult);
+    qc.quickcheck(test_shr_signed as fn(i64, u8) -> TestResult);
+    qc.quickcheck(test_shl_unsigned as fn(u32, u8) -> TestResult);
+    qc.quickcheck(test_shl_signed as fn(i32, u8) -> TestResult);
 }
