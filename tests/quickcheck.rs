@@ -1,4 +1,5 @@
 #![cfg(feature = "quickcheck")]
+#![cfg(feature = "quickcheck_macros")]
 
 extern crate num_bigint;
 extern crate num_integer;
