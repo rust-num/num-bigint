@@ -12,7 +12,7 @@ if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable|1.31.0|1.26.0)$ ]]; then
   FEATURES="$FEATURES i128"
 fi
 if [[ "$TRAVIS_RUST_VERSION" =~ ^(nightly|beta|stable|1.31.0)$ ]]; then
-  FEATURES="$FEATURES quickcheck quickcheck_testing"
+  FEATURES="$FEATURES quickcheck"
 fi
 
 # num-bigint should build and test everywhere.
