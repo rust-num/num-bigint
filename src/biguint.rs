@@ -2140,36 +2140,13 @@ impl BigUint {
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
         assert!(!modulus.is_zero(), "divide by zero!");
 
-        // For an odd modulus, we can use Montgomery multiplication in base 2^32.
         if modulus.is_odd() {
-            return monty_modpow(self, exponent, modulus);
+            // For an odd modulus, we can use Montgomery multiplication in base 2^32.
+            monty_modpow(self, exponent, modulus)
+        } else {
+            // Otherwise do basically the same as `num::pow`, but with a modulus.
+            plain_modpow(self, &exponent.data, modulus)
         }
-
-        // Otherwise do basically the same as `num::pow`, but with a modulus.
-        let one = BigUint::one();
-        if exponent.is_zero() {
-            return one;
-        }
-
-        let mut base = self % modulus;
-        let mut exp = exponent.clone();
-        while exp.is_even() {
-            base = &base * &base % modulus;
-            exp >>= 1;
-        }
-        if exp == one {
-            return base;
-        }
-
-        let mut acc = base.clone();
-        while exp > one {
-            exp >>= 1;
-            base = &base * &base % modulus;
-            if exp.is_odd() {
-                acc = acc * &base % modulus;
-            }
-        }
-        acc
     }
 
     /// Returns the truncated principal square root of `self` --
@@ -2189,6 +2166,105 @@ impl BigUint {
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
+}
+
+fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
+    assert!(!modulus.is_zero(), "divide by zero!");
+
+    let i = match exp_data.iter().position(|&r| r != 0) {
+        None => return BigUint::one(),
+        Some(i) => i,
+    };
+
+    let mut base = base.clone();
+    for _ in 0..i {
+        for _ in 0..big_digit::BITS {
+            base = &base * &base % modulus;
+        }
+    }
+
+    let mut r = exp_data[i];
+    let mut b = 0usize;
+    while r.is_even() {
+        base = &base * &base % modulus;
+        r >>= 1;
+        b += 1;
+    }
+
+    let mut exp_iter = exp_data[i + 1..].iter();
+    if exp_iter.len() == 0 && r.is_one() {
+        return base;
+    }
+
+    let mut acc = base.clone();
+    r >>= 1;
+    b += 1;
+
+    {
+        let mut unit = |exp_is_odd| {
+            base = &base * &base % modulus;
+            if exp_is_odd {
+                acc = &acc * &base % modulus;
+            }
+        };
+
+        if let Some(&last) = exp_iter.next_back() {
+            // consume exp_data[i]
+            for _ in b..big_digit::BITS {
+                unit(r.is_odd());
+                r >>= 1;
+            }
+
+            // consume all other digits before the last
+            for &r in exp_iter {
+                let mut r = r;
+                for _ in 0..big_digit::BITS {
+                    unit(r.is_odd());
+                    r >>= 1;
+                }
+            }
+            r = last;
+        }
+
+        debug_assert_ne!(r, 0);
+        while !r.is_zero() {
+            unit(r.is_odd());
+            r >>= 1;
+        }
+    }
+    acc
+}
+
+#[test]
+fn test_plain_modpow() {
+    let two = BigUint::from(2u32);
+    let modulus = BigUint::from(0x1100u32);
+
+    let exp = vec![0, 0b1];
+    assert_eq!(
+        two.pow(0b1_00000000_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp = vec![0, 0b10];
+    assert_eq!(
+        two.pow(0b10_00000000_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp = vec![0, 0b110010];
+    assert_eq!(
+        two.pow(0b110010_00000000_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp = vec![0b1, 0b1];
+    assert_eq!(
+        two.pow(0b1_00000001_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
+    let exp = vec![0b1100, 0, 0b1];
+    assert_eq!(
+        two.pow(0b1_00000000_00001100_u32) % &modulus,
+        plain_modpow(&two, &exp, &modulus)
+    );
 }
 
 /// Returns the number of least-significant bits that are zero,
