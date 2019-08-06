@@ -2157,34 +2157,35 @@ impl BigUint {
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
     assert!(!modulus.is_zero(), "divide by zero!");
 
-    if exp_data.len() == 0 {
-        return BigUint::one();
-    }
+    let i = match exp_data.iter().position(|&r| r != 0) {
+        None => return BigUint::one(),
+        Some(i) => i,
+    };
 
-    let last_i = exp_data.len() - 1;
     let mut base = base.clone();
-    let mut i = 0usize;
-    while exp_data[i].is_zero() {
+    for _ in 0..i {
         for _ in 0..big_digit::BITS {
             base = &base * &base % modulus;
         }
-        i += 1;
     }
 
-    let mut b = 0usize;
     let mut r = exp_data[i];
+    let mut b = 0usize;
     while r.is_even() {
         base = &base * &base % modulus;
         r >>= 1;
         b += 1;
     }
 
-    let last = i == last_i;
-    if last && r.is_one() {
+    let mut exp_iter = exp_data[i + 1..].iter();
+    if exp_iter.len() == 0 && r.is_one() {
         return base;
     }
 
     let mut acc = base.clone();
+    r >>= 1;
+    b += 1;
+
     {
         let mut unit = |exp_is_odd| {
             base = &base * &base % modulus;
@@ -2193,23 +2194,25 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
             }
         };
 
-        r >>= 1;
-        b += 1;
-        if !last {
+        if let Some(&last) = exp_iter.next_back() {
             // consume exp_data[i]
             for _ in b..big_digit::BITS {
                 unit(r.is_odd());
                 r >>= 1;
             }
-            for i in (i + 1)..last_i {
-                r = exp_data[i];
+
+            // consume all other digits before the last
+            for &r in exp_iter {
+                let mut r = r;
                 for _ in 0..big_digit::BITS {
                     unit(r.is_odd());
                     r >>= 1;
                 }
             }
-            r = exp_data[last_i];
+            r = last;
         }
+
+        debug_assert_ne!(r, 0);
         while !r.is_zero() {
             unit(r.is_odd());
             r >>= 1;
