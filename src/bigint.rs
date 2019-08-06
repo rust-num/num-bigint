@@ -840,24 +840,6 @@ fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
     }
 }
 
-impl<'a> Pow<BigUint> for &'a BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn pow(self, rhs: BigUint) -> BigInt {
-        BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
-    }
-}
-
-impl<'a, 'b> Pow<&'b BigUint> for &'a BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn pow(self, rhs: &BigUint) -> BigInt {
-        BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
-    }
-}
-
 macro_rules! pow_impl {
     ($T:ty) => {
         impl<'a> Pow<$T> for &'a BigInt {
@@ -887,6 +869,7 @@ pow_impl!(u64);
 pow_impl!(usize);
 #[cfg(has_i128)]
 pow_impl!(u128);
+pow_impl!(BigUint);
 
 // A convenience method for getting the absolute value of an i32 in a u32.
 #[inline]
