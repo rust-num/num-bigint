@@ -2154,23 +2154,18 @@ impl BigUint {
     }
 }
 
-fn plain_modpow<'a, T>(base: &BigUint, exp_data: &Vec<T>, modulus: &BigUint) -> BigUint
-where
-    T: Copy + PartialOrd + Unsigned + ShrAssign + BitAnd<Output = T>,
-{
+fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
     assert!(!modulus.is_zero(), "divide by zero!");
 
     if exp_data.len() == 0 {
         return BigUint::one();
     }
 
-    let digit_bits = mem::size_of::<T>() * 8;
-    let one = One::one();
     let last_i = exp_data.len() - 1;
     let mut base = base.clone();
     let mut i = 0usize;
     while exp_data[i].is_zero() {
-        for _ in 0..digit_bits {
+        for _ in 0..big_digit::BITS {
             base = &base * &base % modulus;
         }
         i += 1;
@@ -2178,9 +2173,9 @@ where
 
     let mut b = 0usize;
     let mut r = exp_data[i];
-    while (r & one).is_zero() {
+    while r.is_even() {
         base = &base * &base % modulus;
-        r >>= one;
+        r >>= 1;
         b += 1;
     }
 
@@ -2191,33 +2186,33 @@ where
 
     let mut acc = base.clone();
     {
-        let mut unit = |bit| {
+        let mut unit = |exp_is_odd| {
             base = &base * &base % modulus;
-            if bit == one {
+            if exp_is_odd {
                 acc = &acc * &base % modulus;
             }
         };
 
-        r >>= one;
+        r >>= 1;
         b += 1;
         if !last {
             // consume exp_data[i]
-            for _ in b..digit_bits {
-                unit(r & one);
-                r >>= one;
+            for _ in b..big_digit::BITS {
+                unit(r.is_odd());
+                r >>= 1;
             }
             for i in (i + 1)..last_i {
                 r = exp_data[i];
-                for _ in 0..digit_bits {
-                    unit(r & one);
-                    r >>= one;
+                for _ in 0..big_digit::BITS {
+                    unit(r.is_odd());
+                    r >>= 1;
                 }
             }
             r = exp_data[last_i];
         }
         while !r.is_zero() {
-            unit(r & one);
-            r >>= one;
+            unit(r.is_odd());
+            r >>= 1;
         }
     }
     acc
@@ -2228,27 +2223,27 @@ fn test_plain_modpow() {
     let two = BigUint::from(2u32);
     let modulus = BigUint::from(0x1100u32);
 
-    let exp: Vec<u8> = vec![0, 0b1];
+    let exp = vec![0, 0b1];
     assert_eq!(
         two.pow(0b1_00000000_u32) % &modulus,
         plain_modpow(&two, &exp, &modulus)
     );
-    let exp: Vec<u8> = vec![0, 0b10];
+    let exp = vec![0, 0b10];
     assert_eq!(
         two.pow(0b10_00000000_u32) % &modulus,
         plain_modpow(&two, &exp, &modulus)
     );
-    let exp: Vec<u8> = vec![0, 0b110010];
+    let exp = vec![0, 0b110010];
     assert_eq!(
         two.pow(0b110010_00000000_u32) % &modulus,
         plain_modpow(&two, &exp, &modulus)
     );
-    let exp: Vec<u8> = vec![0b1, 0b1];
+    let exp = vec![0b1, 0b1];
     assert_eq!(
         two.pow(0b1_00000001_u32) % &modulus,
         plain_modpow(&two, &exp, &modulus)
     );
-    let exp: Vec<u8> = vec![0b1100, 0, 0b1];
+    let exp = vec![0b1100, 0, 0b1];
     assert_eq!(
         two.pow(0b1_00000000_00001100_u32) % &modulus,
         plain_modpow(&two, &exp, &modulus)
