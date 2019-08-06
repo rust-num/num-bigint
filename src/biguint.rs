@@ -453,6 +453,34 @@ impl One for BigUint {
 
 impl Unsigned for BigUint {}
 
+impl<'a> Pow<BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: BigUint) -> Self::Output {
+        self.pow(&exp)
+    }
+}
+
+impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: &BigUint) -> Self::Output {
+        if self.is_one() || exp.is_zero() {
+            BigUint::one()
+        } else if self.is_zero() {
+            BigUint::zero()
+        } else if let Some(exp) = exp.to_u64() {
+            self.pow(exp)
+        } else {
+            // At this point, `self >= 2` and `exp >= 2⁶⁴`.  The smallest possible result
+            // given `2.pow(2⁶⁴)` would take 2.3 exabytes of memory!
+            panic!("memory overflow")
+        }
+    }
+}
+
 macro_rules! pow_impl {
     ($T:ty) => {
         impl<'a> Pow<$T> for &'a BigUint {
@@ -3027,4 +3055,12 @@ fn test_u128_u32_roundtrip() {
         let (a, b, c, d) = u32_from_u128(*val);
         assert_eq!(u32_to_u128(a, b, c, d), *val);
     }
+}
+
+#[test]
+fn test_pow_biguint() {
+    let base = BigUint::from(5u8);
+    let exponent = BigUint::from(3u8);
+
+    assert_eq!(BigUint::from(125u8), base.pow(exponent));
 }

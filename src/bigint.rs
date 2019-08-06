@@ -869,6 +869,7 @@ pow_impl!(u64);
 pow_impl!(usize);
 #[cfg(has_i128)]
 pow_impl!(u128);
+pow_impl!(BigUint);
 
 // A convenience method for getting the absolute value of an i32 in a u32.
 #[inline]
