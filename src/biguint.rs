@@ -456,43 +456,29 @@ impl<'a> Pow<BigUint> for &'a BigUint {
     type Output = BigUint;
 
     #[inline]
-    fn pow(self, mut exp: BigUint) -> Self::Output {
-        if exp.is_zero() {
-            return BigUint::one();
-        }
-        let mut base = self.clone();
-
-        while exp.is_even() {
-            base = &base * &base;
-            exp >>= 1_usize;
-        }
-
-        if exp.is_one() {
-            return base;
-        }
-
-        let mut acc = base.clone();
-
-        while !exp.is_one() {
-            exp >>= 1_usize;
-            base = &base * &base;
-            if exp.is_odd() {
-                acc *= &base;
-            }
-        }
-        acc
+    fn pow(self, exp: BigUint) -> Self::Output {
+        self.pow(&exp)
     }
 }
 
 impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
-        type Output = BigUint;
+    type Output = BigUint;
 
-        #[inline]
-        fn pow(self, exp: &BigUint) -> Self::Output {
-            let exp = exp.clone();
+    #[inline]
+    fn pow(self, exp: &BigUint) -> Self::Output {
+        if self.is_one() || exp.is_zero() {
+            BigUint::one()
+        } else if self.is_zero() {
+            BigUint::zero()
+        } else if let Some(exp) = exp.to_u64() {
             self.pow(exp)
+        } else {
+            // At this point, `self >= 2` and `exp >= 2⁶⁴`.  The smallest possible result
+            // given `2.pow(2⁶⁴)` would take 2.3 exabytes of memory!
+            panic!("memory overflow")
         }
     }
+}
 
 macro_rules! pow_impl {
     ($T:ty) => {
