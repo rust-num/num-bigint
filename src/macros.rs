@@ -284,6 +284,8 @@ macro_rules! promote_scalars {
             impl $imp<$scalar> for $res {
                 type Output = $res;
 
+                #[cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+                #[cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
                 #[inline]
                 fn $method(self, other: $scalar) -> $res {
                     $imp::$method(self, other as $promo)
@@ -293,6 +295,8 @@ macro_rules! promote_scalars {
             impl $imp<$res> for $scalar {
                 type Output = $res;
 
+                #[cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+                #[cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
                 #[inline]
                 fn $method(self, other: $res) -> $res {
                     $imp::$method(self as $promo, other)
@@ -305,6 +309,8 @@ macro_rules! promote_scalars_assign {
     (impl $imp:ident<$promo:ty> for $res:ty, $method:ident, $( $scalar:ty ),*) => {
         $(
             impl $imp<$scalar> for $res {
+                #[cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+                #[cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
                 #[inline]
                 fn $method(&mut self, other: $scalar) {
                     self.$method(other as $promo);
