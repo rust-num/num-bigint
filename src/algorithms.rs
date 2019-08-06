@@ -525,9 +525,7 @@ pub fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     match u.cmp(&d) {
         Less => return (Zero::zero(), u),
         Equal => {
-            // TODO: use One::set_one in case it gets added to num_traits
-            u.data.clear();
-            u.data.push(1);
+            u.set_one();
             return (u, Zero::zero());
         }
         Greater => {} // Do nothing
