@@ -204,7 +204,7 @@ macro_rules! forward_scalar_val_ref_binop_to_ref_val {
 
             #[inline]
             fn $method(self, other: $res) -> $res {
-                $imp::$method(*self, other)
+                $imp::$method(*self, &other)
             }
         }
     };
