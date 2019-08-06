@@ -34,7 +34,7 @@ mod monty;
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
-use self::algorithms::{div_rem, div_rem_digit, rem_digit, mac_with_carry, mul3, scalar_mul};
+use self::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, rem_digit, scalar_mul};
 use self::monty::monty_modpow;
 
 use UsizePromotion;
