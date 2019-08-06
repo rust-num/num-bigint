@@ -34,7 +34,8 @@ mod monty;
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
-use self::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, rem_digit, scalar_mul};
+use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
+use self::algorithms::{mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
 
 use UsizePromotion;
@@ -872,8 +873,19 @@ impl MulAssign<u128> for BigUint {
     }
 }
 
-forward_all_binop_to_ref_ref!(impl Div for BigUint, div);
+forward_val_ref_binop!(impl Div for BigUint, div);
+forward_ref_val_binop!(impl Div for BigUint, div);
 forward_val_assign!(impl DivAssign for BigUint, div_assign);
+
+impl Div<BigUint> for BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn div(self, other: BigUint) -> BigUint {
+        let (q, _) = div_rem(self, other);
+        q
+    }
+}
 
 impl<'a, 'b> Div<&'b BigUint> for &'a BigUint {
     type Output = BigUint;
@@ -932,14 +944,16 @@ impl Div<u64> for BigUint {
 
     #[inline]
     fn div(self, other: u64) -> BigUint {
-        let (q, _) = self.div_rem(&From::from(other));
+        let (q, _) = div_rem(self, From::from(other));
         q
     }
 }
 impl DivAssign<u64> for BigUint {
     #[inline]
     fn div_assign(&mut self, other: u64) {
-        *self = &*self / other;
+        // a vec of size 0 does not allocate, so this is fairly cheap
+        let temp = mem::replace(self, Zero::zero());
+        *self = temp / other;
     }
 }
 
@@ -963,7 +977,7 @@ impl Div<u128> for BigUint {
 
     #[inline]
     fn div(self, other: u128) -> BigUint {
-        let (q, _) = self.div_rem(&From::from(other));
+        let (q, _) = div_rem(self, From::from(other));
         q
     }
 }
@@ -996,8 +1010,19 @@ impl Div<BigUint> for u128 {
     }
 }
 
-forward_all_binop_to_ref_ref!(impl Rem for BigUint, rem);
+forward_val_ref_binop!(impl Rem for BigUint, rem);
+forward_ref_val_binop!(impl Rem for BigUint, rem);
 forward_val_assign!(impl RemAssign for BigUint, rem_assign);
+
+impl Rem<BigUint> for BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn rem(self, other: BigUint) -> BigUint {
+        let (_, r) = div_rem(self, other);
+        r
+    }
+}
 
 impl<'a, 'b> Rem<&'b BigUint> for &'a BigUint {
     type Output = BigUint;
@@ -1083,7 +1108,7 @@ impl Rem<u64> for BigUint {
 
     #[inline]
     fn rem(self, other: u64) -> BigUint {
-        let (_, r) = self.div_rem(&From::from(other));
+        let (_, r) = div_rem(self, From::from(other));
         r
     }
 }
@@ -1110,7 +1135,7 @@ impl Rem<u128> for BigUint {
 
     #[inline]
     fn rem(self, other: u128) -> BigUint {
-        let (_, r) = self.div_rem(&From::from(other));
+        let (_, r) = div_rem(self, From::from(other));
         r
     }
 }
@@ -1189,24 +1214,24 @@ impl CheckedDiv for BigUint {
 impl Integer for BigUint {
     #[inline]
     fn div_rem(&self, other: &BigUint) -> (BigUint, BigUint) {
-        div_rem(self, other)
+        div_rem_ref(self, other)
     }
 
     #[inline]
     fn div_floor(&self, other: &BigUint) -> BigUint {
-        let (d, _) = div_rem(self, other);
+        let (d, _) = div_rem_ref(self, other);
         d
     }
 
     #[inline]
     fn mod_floor(&self, other: &BigUint) -> BigUint {
-        let (_, m) = div_rem(self, other);
+        let (_, m) = div_rem_ref(self, other);
         m
     }
 
     #[inline]
     fn div_mod_floor(&self, other: &BigUint) -> (BigUint, BigUint) {
-        div_rem(self, other)
+        div_rem_ref(self, other)
     }
 
     /// Calculates the Greatest Common Divisor (GCD) of the number and `other`.
