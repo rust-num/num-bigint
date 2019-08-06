@@ -94,7 +94,7 @@ impl Context {
     }
 }
 
-fn pidigits(n: isize, out: &mut io::Write) -> io::Result<()> {
+fn pidigits(n: isize, out: &mut dyn io::Write) -> io::Result<()> {
     let mut k = 0;
     let mut context = Context::new();
 

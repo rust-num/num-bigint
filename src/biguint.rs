@@ -246,6 +246,7 @@ impl Num for BigUint {
         // First normalize all characters to plain digit values
         let mut v = Vec::with_capacity(s.len());
         for b in s.bytes() {
+            #[allow(unknown_lints, ellipsis_inclusive_range_patterns)]
             let d = match b {
                 b'0'...b'9' => b - b'0',
                 b'a'...b'z' => b - b'a' + 10,
