@@ -117,6 +117,7 @@ macro_rules! forward_val_assign {
         }
     };
 }
+
 macro_rules! forward_val_assign_scalar {
     (impl $imp:ident for $res:ty, $scalar:ty, $method:ident) => {
         impl $imp<$res> for $scalar {
@@ -128,6 +129,7 @@ macro_rules! forward_val_assign_scalar {
     };
 }
 
+/// use this if val_val_binop is already implemented and the reversed order is required
 macro_rules! forward_scalar_val_val_binop_commutative {
     (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl $imp<$res> for $scalar {
@@ -141,8 +143,75 @@ macro_rules! forward_scalar_val_val_binop_commutative {
     };
 }
 
-macro_rules! forward_scalar_val_ref_binop {
-    (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
+// Forward scalar to ref-val, when reusing storage is not helpful
+macro_rules! forward_scalar_val_val_binop_to_ref_val {
+    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+        impl $imp<$scalar> for $res {
+            type Output = $res;
+
+            #[inline]
+            fn $method(self, other: $scalar) -> $res {
+                $imp::$method(&self, other)
+            }
+        }
+
+        impl $imp<$res> for $scalar {
+            type Output = $res;
+
+            #[inline]
+            fn $method(self, other: $res) -> $res {
+                $imp::$method(self, &other)
+            }
+        }
+    };
+}
+
+macro_rules! forward_scalar_ref_ref_binop_to_ref_val {
+    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+        impl<'a, 'b> $imp<&'b $scalar> for &'a $res {
+            type Output = $res;
+
+            #[inline]
+            fn $method(self, other: &$scalar) -> $res {
+                $imp::$method(self, *other)
+            }
+        }
+
+        impl<'a, 'b> $imp<&'a $res> for &'b $scalar {
+            type Output = $res;
+
+            #[inline]
+            fn $method(self, other: &$res) -> $res {
+                $imp::$method(*self, other)
+            }
+        }
+    };
+}
+
+macro_rules! forward_scalar_val_ref_binop_to_ref_val {
+    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+        impl<'a> $imp<&'a $scalar> for $res {
+            type Output = $res;
+
+            #[inline]
+            fn $method(self, other: &$scalar) -> $res {
+                $imp::$method(&self, *other)
+            }
+        }
+
+        impl<'a> $imp<$res> for &'a $scalar {
+            type Output = $res;
+
+            #[inline]
+            fn $method(self, other: $res) -> $res {
+                $imp::$method(*self, &other)
+            }
+        }
+    };
+}
+
+macro_rules! forward_scalar_val_ref_binop_to_val_val {
+    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
         impl<'a> $imp<&'a $scalar> for $res {
             type Output = $res;
 
@@ -163,7 +232,7 @@ macro_rules! forward_scalar_val_ref_binop {
     };
 }
 
-macro_rules! forward_scalar_ref_val_binop {
+macro_rules! forward_scalar_ref_val_binop_to_val_val {
     (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl<'a> $imp<$scalar> for &'a $res {
             type Output = $res;
@@ -185,8 +254,8 @@ macro_rules! forward_scalar_ref_val_binop {
     };
 }
 
-macro_rules! forward_scalar_ref_ref_binop {
-    (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
+macro_rules! forward_scalar_ref_ref_binop_to_val_val {
+    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
         impl<'a, 'b> $imp<&'b $scalar> for &'a $res {
             type Output = $res;
 
@@ -300,11 +369,19 @@ macro_rules! forward_all_binop_to_val_ref_commutative {
     };
 }
 
+macro_rules! forward_all_scalar_binop_to_ref_val {
+    (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
+        forward_scalar_val_val_binop_to_ref_val!(impl $imp<$scalar> for $res, $method);
+        forward_scalar_val_ref_binop_to_ref_val!(impl $imp<$scalar> for $res, $method);
+        forward_scalar_ref_ref_binop_to_ref_val!(impl $imp<$scalar> for $res, $method);
+    }
+}
+
 macro_rules! forward_all_scalar_binop_to_val_val {
     (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
-        forward_scalar_val_ref_binop!(impl $imp<$scalar> for $res, $method);
-        forward_scalar_ref_val_binop!(impl $imp<$scalar> for $res, $method);
-        forward_scalar_ref_ref_binop!(impl $imp<$scalar> for $res, $method);
+        forward_scalar_val_ref_binop_to_val_val!(impl $imp<$scalar> for $res, $method);
+        forward_scalar_ref_val_binop_to_val_val!(impl $imp<$scalar> for $res, $method);
+        forward_scalar_ref_ref_binop_to_val_val!(impl $imp<$scalar> for $res, $method);
     }
 }
 

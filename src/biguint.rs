@@ -34,7 +34,7 @@ mod monty;
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
-use self::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
+use self::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, rem_digit, scalar_mul};
 use self::monty::monty_modpow;
 
 use UsizePromotion;
@@ -1013,18 +1013,17 @@ impl<'a> RemAssign<&'a BigUint> for BigUint {
 
 promote_unsigned_scalars!(impl Rem for BigUint, rem);
 promote_unsigned_scalars_assign!(impl RemAssign for BigUint, rem_assign);
-forward_all_scalar_binop_to_val_val!(impl Rem<u32> for BigUint, rem);
+forward_all_scalar_binop_to_ref_val!(impl Rem<u32> for BigUint, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<u64> for BigUint, rem);
 #[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Rem<u128> for BigUint, rem);
 
-impl Rem<u32> for BigUint {
+impl<'a> Rem<u32> for &'a BigUint {
     type Output = BigUint;
 
     #[inline]
     fn rem(self, other: u32) -> BigUint {
-        let (_, r) = div_rem_digit(self, other as BigDigit);
-        From::from(r)
+        From::from(rem_digit(self, other as BigDigit))
     }
 }
 impl RemAssign<u32> for BigUint {
@@ -1034,11 +1033,11 @@ impl RemAssign<u32> for BigUint {
     }
 }
 
-impl Rem<BigUint> for u32 {
+impl<'a> Rem<&'a BigUint> for u32 {
     type Output = BigUint;
 
     #[inline]
-    fn rem(mut self, other: BigUint) -> BigUint {
+    fn rem(mut self, other: &'a BigUint) -> BigUint {
         self %= other;
         From::from(self)
     }
