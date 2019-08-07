@@ -13,7 +13,7 @@ use std::ops::{
 };
 use std::str::{self, FromStr};
 use std::{f32, f64};
-use std::{u64, u8};
+use std::{u32, u64, u8};
 
 #[cfg(feature = "serde")]
 use serde;
@@ -2635,7 +2635,25 @@ impl serde::Serialize for BigUint {
     where
         S: serde::Serializer,
     {
-        unimplemented!()
+        use serde::ser::SerializeSeq;
+        if let Some((&last, data)) = self.data.split_last() {
+            let last_lo = last as u32;
+            let last_hi = (last >> 32) as u32;
+            let u32_len = self.data.len() * 2 - (last_hi == 0) as usize;
+            let mut seq = serializer.serialize_seq(Some(u32_len))?;
+            for &x in data {
+                seq.serialize_element(&(x as u32))?;
+                seq.serialize_element(&((x >> 32) as u32))?;
+            }
+            seq.serialize_element(&last_lo)?;
+            if last_hi != 0 {
+                seq.serialize_element(&last_hi)?;
+            }
+            seq.end()
+        } else {
+            let data: &[u32] = &[];
+            data.serialize(serializer)
+        }
     }
 }
 
@@ -2658,7 +2676,38 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     where
         D: serde::Deserializer<'de>,
     {
-        unimplemented!()
+        use serde::de::{SeqAccess, Visitor};
+
+        struct U32Visitor;
+
+        impl<'de> Visitor<'de> for U32Visitor {
+            type Value = BigUint;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a sequence of unsigned 32-bit numbers")
+            }
+
+            fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+            where
+                S: SeqAccess<'de>,
+            {
+                let u32_len = seq.size_hint().unwrap_or(0);
+                let len = u32_len.div_ceil(&2);
+                let mut data = Vec::with_capacity(len);
+
+                while let Some(lo) = seq.next_element::<u32>()? {
+                    let mut value = BigDigit::from(lo);
+                    if let Some(hi) = seq.next_element::<u32>()? {
+                        value |= BigDigit::from(hi) << 32;
+                    }
+                    data.push(value);
+                }
+
+                Ok(BigUint::new_native(data))
+            }
+        }
+
+        deserializer.deserialize_seq(U32Visitor)
     }
 }
 

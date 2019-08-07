@@ -34,7 +34,7 @@ name = "shootout-pidigits"
 [dependencies]
 
 [dependencies.num-integer]
-version = "0.1.39"
+version = "0.1.41"
 default-features = false
 
 [dependencies.num-traits]

@@ -101,3 +101,30 @@ fn bigint_factorial_100() {
 
     assert_tokens(&n, &tokens);
 }
+
+#[test]
+fn big_digits() {
+    // Try a few different lengths for u32/u64 digit coverage
+    for len in 1..10 {
+        let digits = 1u32..len + 1;
+        let n = BigUint::new(digits.clone().collect());
+
+        let mut tokens = vec![];
+        tokens.push(Token::Seq {
+            len: Some(len as usize),
+        });
+        tokens.extend(digits.map(Token::U32));
+        tokens.push(Token::SeqEnd);
+
+        assert_tokens(&n, &tokens);
+
+        let n = BigInt::from(n);
+        tokens.insert(0, Token::Tuple { len: 2 });
+        tokens.insert(1, Token::I8(1));
+        tokens.push(Token::TupleEnd);
+        assert_tokens(&n, &tokens);
+
+        tokens[1] = Token::I8(-1);
+        assert_tokens(&-n, &tokens);
+    }
+}
