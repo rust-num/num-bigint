@@ -83,8 +83,8 @@ pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
 pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
     let mut rem: DoubleBigDigit = 0;
     for &digit in a.data.iter().rev() {
-        rem = (rem << big_digit::BITS) + digit as DoubleBigDigit;
-        rem %= b as DoubleBigDigit;
+        rem = (rem << big_digit::BITS) + DoubleBigDigit::from(digit);
+        rem %= DoubleBigDigit::from(b);
     }
 
     rem as BigDigit
