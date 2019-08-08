@@ -41,22 +41,77 @@ fn quickcheck_signed_eq_symmetric(a: BigInt, b: BigInt) -> bool {
     }
 }
 
-#[quickcheck]
-fn quickcheck_unsigned_add_primitive(a: u128, b: u128) -> TestResult {
-    let actual = BigUint::from(a) + BigUint::from(b);
-    match a.checked_add(b) {
-        None => TestResult::discard(),
-        Some(expected) => TestResult::from_bool(BigUint::from(expected) == actual),
-    }
-}
+#[test]
+fn quickcheck_arith_primitive() {
+    let gen = StdThreadGen::new(usize::max_value());
+    let mut qc = QuickCheck::with_gen(gen);
 
-#[quickcheck]
-fn quickcheck_signed_add_primitive(a: i128, b: i128) -> TestResult {
-    let actual = BigInt::from(a) + BigInt::from(b);
-    match a.checked_add(b) {
-        None => TestResult::discard(),
-        Some(expected) => TestResult::from_bool(BigInt::from(expected) == actual),
+    fn test_unsigned_add_primitive(a: usize, b: usize) -> TestResult {
+        let actual = BigUint::from(a) + BigUint::from(b);
+        match a.checked_add(b) {
+            None => TestResult::discard(),
+            Some(expected) => TestResult::from_bool(BigUint::from(expected) == actual),
+        }
     }
+
+    fn test_signed_add_primitive(a: isize, b: isize) -> TestResult {
+        let actual = BigInt::from(a) + BigInt::from(b);
+        match a.checked_add(b) {
+            None => TestResult::discard(),
+            Some(expected) => TestResult::from_bool(BigInt::from(expected) == actual),
+        }
+    }
+
+    fn test_unsigned_mul_primitive(a: u64, b: u64) -> bool {
+        //maximum value of u64 means no overflow
+        BigUint::from(a as u128 * b as u128) == BigUint::from(a) * BigUint::from(b)
+    }
+
+    fn test_signed_mul_primitive(a: i64, b: i64) -> bool {
+        //maximum value of i64 means no overflow
+        BigInt::from(a as i128 * b as i128) == BigInt::from(a) * BigInt::from(b)
+    }
+
+    fn test_unsigned_sub_primitive(a: u128, b: u128) -> bool {
+        if b < a {
+            BigUint::from(a - b) == BigUint::from(a) - BigUint::from(b)
+        } else {
+            BigUint::from(b - a) == BigUint::from(b) - BigUint::from(a)
+        }
+    }
+
+    fn test_signed_sub_primitive(a: i128, b: i128) -> bool {
+        if b < a {
+            BigInt::from(a - b) == BigInt::from(a) - BigInt::from(b)
+        } else {
+            BigInt::from(b - a) == BigInt::from(b) - BigInt::from(a)
+        }
+    }
+
+    fn test_unsigned_div_primitive(a: u128, b: u128) -> TestResult {
+        if b == 0 {
+            TestResult::discard()
+        } else {
+            TestResult::from_bool(BigUint::from(a / b) == BigUint::from(a) / BigUint::from(b))
+        }
+    }
+
+    fn test_signed_div_primitive(a: i128, b: i128) -> TestResult {
+        if b == 0 {
+            TestResult::discard()
+        } else {
+            TestResult::from_bool(BigInt::from(a / b) == BigInt::from(a) / BigInt::from(b))
+        }
+    }
+
+    qc.quickcheck(test_unsigned_add_primitive as fn(usize, usize) -> TestResult);
+    qc.quickcheck(test_signed_add_primitive as fn(isize, isize) -> TestResult);
+    qc.quickcheck(test_unsigned_mul_primitive as fn(u64, u64) -> bool);
+    qc.quickcheck(test_signed_mul_primitive as fn(i64, i64) -> bool);
+    qc.quickcheck(test_unsigned_sub_primitive as fn(u128, u128) -> bool);
+    qc.quickcheck(test_signed_sub_primitive as fn(i128, i128) -> bool);
+    qc.quickcheck(test_unsigned_div_primitive as fn(u128, u128) -> TestResult);
+    qc.quickcheck(test_signed_div_primitive as fn(i128, i128) -> TestResult);
 }
 
 #[quickcheck]
@@ -87,18 +142,6 @@ fn quickcheck_unsigned_add_associative(a: BigUint, b: BigUint, c: BigUint) -> bo
 #[quickcheck]
 fn quickcheck_signed_add_associative(a: BigInt, b: BigInt, c: BigInt) -> bool {
     (a.clone() + b.clone()) + c.clone() == a + (b + c)
-}
-
-#[quickcheck]
-fn quickcheck_unsigned_mul_primitive(a: u64, b: u64) -> bool {
-    //maximum value of u64 means no overflow
-    BigUint::from(a as u128 * b as u128) == BigUint::from(a) * BigUint::from(b)
-}
-
-#[quickcheck]
-fn quickcheck_signed_mul_primitive(a: i64, b: i64) -> bool {
-    //maximum value of i64 means no overflow
-    BigInt::from(a as i128 * b as i128) == BigInt::from(a) * BigInt::from(b)
 }
 
 #[quickcheck]
@@ -172,24 +215,6 @@ fn quickcheck_signed_ge_le_eq_mut_exclusive(a: BigInt, b: BigInt) -> bool {
 }
 
 #[quickcheck]
-fn quickcheck_unsigned_sub_primitive(a: u128, b: u128) -> bool {
-    if b < a {
-        BigUint::from(a - b) == BigUint::from(a) - BigUint::from(b)
-    } else {
-        BigUint::from(b - a) == BigUint::from(b) - BigUint::from(a)
-    }
-}
-
-#[quickcheck]
-fn quickcheck_signed_sub_primitive(a: i128, b: i128) -> bool {
-    if b < a {
-        BigInt::from(a - b) == BigInt::from(a) - BigInt::from(b)
-    } else {
-        BigInt::from(b - a) == BigInt::from(b) - BigInt::from(a)
-    }
-}
-
-#[quickcheck]
 /// Tests correctness of subtraction assuming addition is correct
 fn quickcheck_unsigned_sub(a: BigUint, b: BigUint) -> bool {
     if b < a {
@@ -206,24 +231,6 @@ fn quickcheck_signed_sub(a: BigInt, b: BigInt) -> bool {
         a.clone() - b.clone() + b == a
     } else {
         b.clone() - a.clone() + a == b
-    }
-}
-
-#[quickcheck]
-fn quickcheck_unsigned_div_primitive(a: u128, b: u128) -> TestResult {
-    if b == 0 {
-        TestResult::discard()
-    } else {
-        TestResult::from_bool(BigUint::from(a / b) == BigUint::from(a) / BigUint::from(b))
-    }
-}
-
-#[quickcheck]
-fn quickcheck_signed_div_primitive(a: i128, b: i128) -> TestResult {
-    if b == 0 {
-        TestResult::discard()
-    } else {
-        TestResult::from_bool(BigInt::from(a / b) == BigInt::from(a) / BigInt::from(b))
     }
 }
 
