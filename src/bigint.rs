@@ -729,10 +729,7 @@ impl ShlAssign<usize> for BigInt {
 // Negative values need a rounding adjustment if there are any ones in the
 // bits that are getting shifted out.
 fn shr_round_down(i: &BigInt, rhs: usize) -> bool {
-    i.is_negative()
-        && biguint::trailing_zeros(&i.data)
-            .map(|n| n < rhs)
-            .unwrap_or(false)
+    i.is_negative() && i.trailing_zeros().map(|n| n < rhs).unwrap_or(false)
 }
 
 impl Shr<usize> for BigInt {
@@ -3028,6 +3025,8 @@ impl BigInt {
         Roots::nth_root(self, n)
     }
 
+    /// Returns the number of least-significant bits that are zero,
+    /// or `None` if the entire number is zero.
     pub fn trailing_zeros(&self) -> Option<usize> {
         self.data.trailing_zeros()
     }

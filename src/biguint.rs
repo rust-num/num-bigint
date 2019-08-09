@@ -1437,7 +1437,7 @@ impl Integer for BigUint {
     fn gcd(&self, other: &Self) -> Self {
         #[inline]
         fn twos(x: &BigUint) -> usize {
-            trailing_zeros(x).unwrap_or(0)
+            x.trailing_zeros().unwrap_or(0)
         }
 
         // Stein's algorithm
@@ -2450,8 +2450,14 @@ impl BigUint {
         Roots::nth_root(self, n)
     }
 
+    /// Returns the number of least-significant bits that are zero,
+    /// or `None` if the entire number is zero.
     pub fn trailing_zeros(&self) -> Option<usize> {
-        trailing_zeros(self)
+        self.data
+            .iter()
+            .enumerate()
+            .find(|&(_, &digit)| digit != 0)
+            .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
     }
 }
 
@@ -2552,16 +2558,6 @@ fn test_plain_modpow() {
         two.pow(0b1_00000000_00001100_u32) % &modulus,
         plain_modpow(&two, &exp, &modulus)
     );
-}
-
-/// Returns the number of least-significant bits that are zero,
-/// or `None` if the entire number is zero.
-pub fn trailing_zeros(u: &BigUint) -> Option<usize> {
-    u.data
-        .iter()
-        .enumerate()
-        .find(|&(_, &digit)| digit != 0)
-        .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
 }
 
 impl_sum_iter_type!(BigUint);
