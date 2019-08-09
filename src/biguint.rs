@@ -2604,6 +2604,7 @@ impl IntDigits for BigUint {
 
 /// Combine four `u32`s into a single `u128`.
 #[cfg(has_i128)]
+#[cfg(any(test, not(feature = "u64_digit")))]
 #[inline]
 fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
     u128::from(d) | (u128::from(c) << 32) | (u128::from(b) << 64) | (u128::from(a) << 96)
@@ -2611,6 +2612,7 @@ fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
 
 /// Split a single `u128` into four `u32`.
 #[cfg(has_i128)]
+#[cfg(any(test, not(feature = "u64_digit")))]
 #[inline]
 fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
     (
