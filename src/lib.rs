@@ -193,6 +193,9 @@ mod big_digit {
     #[cfg(feature = "u64_digit")]
     pub const BITS: usize = 64;
 
+    pub const HALF_BITS: usize = BITS / 2;
+    pub const HALF: BigDigit = (1 << HALF_BITS) - 1;
+
     #[cfg(not(feature = "u64_digit"))]
     const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
     #[cfg(feature = "u64_digit")]

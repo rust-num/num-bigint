@@ -1853,8 +1853,14 @@ impl<'a, 'b> Rem<&'b BigInt> for &'a BigInt {
 
     #[inline]
     fn rem(self, other: &BigInt) -> BigInt {
-        let (_, r) = self.div_rem(other);
-        r
+        if let Some(other) = other.to_u32() {
+            self % other
+        } else if let Some(other) = other.to_i32() {
+            self % other
+        } else {
+            let (_, r) = self.div_rem(other);
+            r
+        }
     }
 }
 

@@ -113,6 +113,11 @@ fn divide_2(b: &mut Bencher) {
 }
 
 #[bench]
+fn divide_big_little(b: &mut Bencher) {
+    divide_bench(b, 1 << 16, 1 << 4);
+}
+
+#[bench]
 fn remainder_0(b: &mut Bencher) {
     remainder_bench(b, 1 << 8, 1 << 6);
 }
@@ -125,6 +130,11 @@ fn remainder_1(b: &mut Bencher) {
 #[bench]
 fn remainder_2(b: &mut Bencher) {
     remainder_bench(b, 1 << 16, 1 << 12);
+}
+
+#[bench]
+fn remainder_big_little(b: &mut Bencher) {
+    remainder_bench(b, 1 << 16, 1 << 4);
 }
 
 #[bench]

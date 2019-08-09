@@ -1207,8 +1207,12 @@ impl Rem<BigUint> for BigUint {
 
     #[inline]
     fn rem(self, other: BigUint) -> BigUint {
-        let (_, r) = div_rem(self, other);
-        r
+        if let Some(other) = other.to_u32() {
+            &self % other
+        } else {
+            let (_, r) = div_rem(self, other);
+            r
+        }
     }
 }
 
@@ -1217,8 +1221,12 @@ impl<'a, 'b> Rem<&'b BigUint> for &'a BigUint {
 
     #[inline]
     fn rem(self, other: &BigUint) -> BigUint {
-        let (_, r) = self.div_rem(other);
-        r
+        if let Some(other) = other.to_u32() {
+            self % other
+        } else {
+            let (_, r) = self.div_rem(other);
+            r
+        }
     }
 }
 impl<'a> RemAssign<&'a BigUint> for BigUint {
@@ -1240,7 +1248,7 @@ impl<'a> Rem<u32> for &'a BigUint {
 
     #[inline]
     fn rem(self, other: u32) -> BigUint {
-        From::from(rem_digit(self, other as BigDigit))
+        rem_digit(self, other as BigDigit).into()
     }
 }
 impl RemAssign<u32> for BigUint {
