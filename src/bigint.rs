@@ -400,7 +400,7 @@ impl<'a> BitAndAssign<&'a BigInt> for BigInt {
     fn bitand_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (NoSign, _) => {}
-            (_, NoSign) => self.assign_from_slice_native(NoSign, &[]),
+            (_, NoSign) => self.set_zero(),
             (Plus, Plus) => {
                 self.data &= &other.data;
                 if self.data.is_zero() {
@@ -536,7 +536,7 @@ impl<'a> BitOrAssign<&'a BigInt> for BigInt {
     fn bitor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
-            (NoSign, _) => self.assign_from_slice_native(other.sign, other.digits()),
+            (NoSign, _) => self.clone_from(other),
             (Plus, Plus) => self.data |= &other.data,
             (Plus, Minus) => {
                 bitor_pos_neg(self.digits_mut(), other.digits());
@@ -662,7 +662,7 @@ impl<'a> BitXorAssign<&'a BigInt> for BigInt {
     fn bitxor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
-            (NoSign, _) => self.assign_from_slice_native(other.sign, other.digits()),
+            (NoSign, _) => self.clone_from(other),
             (Plus, Plus) => {
                 self.data ^= &other.data;
                 if self.data.is_zero() {
@@ -2632,25 +2632,9 @@ impl BigInt {
     #[inline]
     pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
         if sign == NoSign {
-            self.data.assign_from_slice(&[]);
-            self.sign = NoSign;
+            self.set_zero();
         } else {
             self.data.assign_from_slice(slice);
-            self.sign = match self.data.is_zero() {
-                true => NoSign,
-                false => sign,
-            }
-        }
-    }
-
-    /// Reinitializes a `BigInt`, using native `BigDigit`s.
-    #[inline]
-    pub fn assign_from_slice_native(&mut self, sign: Sign, slice: &[BigDigit]) {
-        if sign == NoSign {
-            self.data.assign_from_slice_native(&[]);
-            self.sign = NoSign;
-        } else {
-            self.data.assign_from_slice_native(slice);
             self.sign = match self.data.is_zero() {
                 true => NoSign,
                 false => sign,

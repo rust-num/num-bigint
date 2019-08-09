@@ -451,7 +451,9 @@ impl ShrAssign<usize> for BigUint {
 impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
-        BigUint::new(Vec::new())
+        BigUint {
+            data: Vec::new(),
+        }
     }
 
     #[inline]
@@ -468,7 +470,9 @@ impl Zero for BigUint {
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint::new(vec![1])
+        BigUint {
+            data: vec![1],
+        }
     }
 
     #[inline]
@@ -2076,40 +2080,24 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
-#[cfg(not(u64_digit))]
-#[inline]
-fn ensure_big_digit(raw: Vec<u32>) -> Vec<BigDigit> {
-    raw
-}
-
-#[cfg(u64_digit)]
-#[inline]
-fn ensure_big_digit(raw: Vec<u32>) -> Vec<BigDigit> {
-    ensure_big_digit_slice(&raw)
-}
-
-#[cfg(u64_digit)]
-#[inline]
-fn ensure_big_digit_slice(raw: &[u32]) -> Vec<BigDigit> {
-    raw.chunks(2)
-        .map(|chunk| {
-            // raw could have odd length
-            if chunk.len() < 2 {
-                chunk[0] as BigDigit
-            } else {
-                BigDigit::from(chunk[0]) | (BigDigit::from(chunk[1]) << 32)
-            }
-        })
-        .collect()
-}
-
 impl BigUint {
     /// Creates and initializes a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
-        Self::new_native(ensure_big_digit(digits))
+        let mut big = BigUint::zero();
+
+        #[cfg(not(u64_digit))]
+        {
+            big.data = digits;
+            big.normalize();
+        }
+
+        #[cfg(u64_digit)]
+        big.assign_from_slice(&digits);
+
+        big
     }
 
     /// Creates and initializes a `BigUint`.
@@ -2125,7 +2113,9 @@ impl BigUint {
     /// The digits are in little-endian base 2<sup>32</sup>.
     #[inline]
     pub fn from_slice(slice: &[u32]) -> BigUint {
-        BigUint::new(slice.to_vec())
+        let mut big = BigUint::zero();
+        big.assign_from_slice(slice);
+        big
     }
 
     /// Creates and initializes a `BigUint`.
@@ -2139,25 +2129,23 @@ impl BigUint {
     /// Assign a value to a `BigUint`.
     ///
     /// The digits are in little-endian base 2<sup>32</sup>.
-    #[cfg(not(u64_digit))]
     #[inline]
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
-        self.assign_from_slice_native(slice);
-    }
-    #[cfg(u64_digit)]
-    #[inline]
-    pub fn assign_from_slice(&mut self, slice: &[u32]) {
-        let slice_digits = ensure_big_digit_slice(slice);
-        self.assign_from_slice_native(&slice_digits);
-    }
+        self.data.clear();
 
-    /// Assign a value to a `BigUint`.
-    ///
-    /// The digits are in little-endian with the base matching `BigDigit`.
-    #[inline]
-    pub fn assign_from_slice_native(&mut self, slice: &[BigDigit]) {
-        self.data.resize(slice.len(), 0);
-        self.data.clone_from_slice(slice);
+        #[cfg(not(u64_digit))]
+        self.data.extend_from_slice(slice);
+
+        #[cfg(u64_digit)]
+        self.data.extend(slice.chunks(2).map(|chunk| {
+            // raw could have odd length
+            let mut digit = BigDigit::from(chunk[0]);
+            if let Some(&hi) = chunk.get(1) {
+                digit |= BigDigit::from(hi) << 32;
+            }
+            digit
+        }));
+
         self.normalize();
     }
 
@@ -2797,21 +2785,6 @@ fn test_from_slice() {
 fn test_from_slice_native() {
     fn check(slice: &[BigDigit], data: &[BigDigit]) {
         assert!(BigUint::from_slice_native(slice).data == data);
-    }
-    check(&[1], &[1]);
-    check(&[0, 0, 0], &[]);
-    check(&[1, 2, 0, 0], &[1, 2]);
-    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
-    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
-    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
-}
-
-#[test]
-fn test_assign_from_slice_native() {
-    fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        let mut p = BigUint::from_slice_native(&[2627, 0, 9182, 42]);
-        p.assign_from_slice_native(slice);
-        assert!(p.data == data);
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);
