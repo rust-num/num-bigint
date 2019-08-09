@@ -81,6 +81,7 @@ fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, Big
     ((hi << HALF_BITS) | lo, rem)
 }
 
+#[inline]
 pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
     let mut rem = 0;
 
@@ -101,6 +102,7 @@ pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
     (a.normalized(), rem)
 }
 
+#[inline]
 pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
     let mut rem = 0;
 
