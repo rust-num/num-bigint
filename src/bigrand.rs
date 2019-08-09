@@ -54,6 +54,8 @@ impl<R: Rng + ?Sized> RandBigInt for R {
 
     #[cfg(u64_digit)]
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
+        use std::slice;
+
         let (digits, rem) = bit_size.div_rem(&32);
         let native_digits = bit_size.div_ceil(&64);
         let mut data = vec![0u64; native_digits];
@@ -62,7 +64,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
             let ptr = data.as_mut_ptr() as *mut u32;
             let len = digits + (rem > 0) as usize;
             debug_assert!(native_digits * 2 >= len);
-            let data = std::slice::from_raw_parts_mut(ptr, len);
+            let data = slice::from_raw_parts_mut(ptr, len);
             gen_bits(self, data, rem);
         }
         #[cfg(target_endian = "big")]
