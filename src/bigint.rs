@@ -111,10 +111,26 @@ impl<'de> serde::Deserialize<'de> for Sign {
 }
 
 /// A big signed integer type.
-#[derive(Clone, Debug, Hash)]
+#[derive(Debug, Hash)]
 pub struct BigInt {
     sign: Sign,
     data: BigUint,
+}
+
+impl Clone for BigInt {
+    #[inline]
+    fn clone(&self) -> Self {
+        BigInt {
+            sign: self.sign,
+            data: self.data.clone(),
+        }
+    }
+
+    #[inline]
+    fn clone_from(&mut self, other: &Self) {
+        self.sign = other.sign;
+        self.data.clone_from(&other.data);
+    }
 }
 
 #[cfg(feature = "quickcheck")]

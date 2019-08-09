@@ -46,9 +46,23 @@ use ParseBigIntError;
 use quickcheck::{Arbitrary, Gen};
 
 /// A big unsigned integer type.
-#[derive(Clone, Debug, Hash)]
+#[derive(Debug, Hash)]
 pub struct BigUint {
     data: Vec<BigDigit>,
+}
+
+impl Clone for BigUint {
+    #[inline]
+    fn clone(&self) -> Self {
+        BigUint {
+            data: self.data.clone(),
+        }
+    }
+
+    #[inline]
+    fn clone_from(&mut self, other: &Self) {
+        self.data.clone_from(&other.data);
+    }
 }
 
 #[cfg(feature = "quickcheck")]
