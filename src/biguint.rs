@@ -2453,10 +2453,6 @@ impl BigUint {
     pub fn trailing_zeros(&self) -> Option<usize> {
         trailing_zeros(self)
     }
-
-    pub fn get_limb(&self, n: usize) -> BigDigit {
-        self.data[n]
-    }
 }
 
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
