@@ -44,7 +44,7 @@ fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: usize) {
 }
 
 impl<R: Rng + ?Sized> RandBigInt for R {
-    #[cfg(not(feature = "u64_digit"))]
+    #[cfg(not(u64_digit))]
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
         let (digits, rem) = bit_size.div_rem(&32);
         let mut data = vec![0u32; digits + (rem > 0) as usize];
@@ -52,7 +52,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         BigUint::new_native(data)
     }
 
-    #[cfg(feature = "u64_digit")]
+    #[cfg(u64_digit)]
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
         let (digits, rem) = bit_size.div_rem(&32);
         let native_digits = bit_size.div_ceil(&64);

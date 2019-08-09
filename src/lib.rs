@@ -169,37 +169,34 @@ pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.
-    #[cfg(not(feature = "u64_digit"))]
+    #[cfg(not(u64_digit))]
     pub type BigDigit = u32;
-    #[cfg(feature = "u64_digit")]
+    #[cfg(u64_digit)]
     pub type BigDigit = u64;
 
     /// A `DoubleBigDigit` is the internal type used to do the computations.  Its
     /// size is the double of the size of `BigDigit`.
-    #[cfg(not(feature = "u64_digit"))]
+    #[cfg(not(u64_digit))]
     pub type DoubleBigDigit = u64;
-    #[cfg(feature = "u64_digit")]
+    #[cfg(u64_digit)]
     pub type DoubleBigDigit = u128;
 
     /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
-    #[cfg(not(feature = "u64_digit"))]
+    #[cfg(not(u64_digit))]
     pub type SignedDoubleBigDigit = i64;
-    #[cfg(feature = "u64_digit")]
+    #[cfg(u64_digit)]
     pub type SignedDoubleBigDigit = i128;
 
     // `DoubleBigDigit` size dependent
-    #[cfg(not(feature = "u64_digit"))]
+    #[cfg(not(u64_digit))]
     pub const BITS: usize = 32;
-    #[cfg(feature = "u64_digit")]
+    #[cfg(u64_digit)]
     pub const BITS: usize = 64;
 
     pub const HALF_BITS: usize = BITS / 2;
     pub const HALF: BigDigit = (1 << HALF_BITS) - 1;
 
-    #[cfg(not(feature = "u64_digit"))]
-    const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
-    #[cfg(feature = "u64_digit")]
-    const LO_MASK: DoubleBigDigit = (-1i64 as DoubleBigDigit) >> BITS;
+    const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
 
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {
