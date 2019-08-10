@@ -8,6 +8,7 @@ use traits::{One, Zero};
 
 use biguint::BigUint;
 use biguint::IntDigits;
+use biguint::biguint_from_vec;
 
 use bigint::BigInt;
 use bigint::Sign;
@@ -225,12 +226,12 @@ pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
         Greater => {
             let mut a = a.to_vec();
             sub2(&mut a, b);
-            (Plus, BigUint::new_native(a))
+            (Plus, biguint_from_vec(a))
         }
         Less => {
             let mut b = b.to_vec();
             sub2(&mut b, a);
-            (Minus, BigUint::new_native(b))
+            (Minus, biguint_from_vec(b))
         }
         _ => (NoSign, Zero::zero()),
     }
@@ -749,7 +750,7 @@ pub fn biguint_shl(n: Cow<BigUint>, bits: usize) -> BigUint {
         }
     }
 
-    BigUint::new_native(data)
+    biguint_from_vec(data)
 }
 
 #[inline]
@@ -776,7 +777,7 @@ pub fn biguint_shr(n: Cow<BigUint>, bits: usize) -> BigUint {
         }
     }
 
-    BigUint::new_native(data)
+    biguint_from_vec(data)
 }
 
 pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {

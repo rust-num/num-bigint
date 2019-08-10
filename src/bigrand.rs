@@ -8,6 +8,7 @@ use BigUint;
 use Sign::*;
 
 use bigint::{into_magnitude, magnitude};
+use biguint::biguint_from_vec;
 
 use integer::Integer;
 use traits::Zero;
@@ -49,7 +50,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         let (digits, rem) = bit_size.div_rem(&32);
         let mut data = vec![0u32; digits + (rem > 0) as usize];
         gen_bits(self, &mut data, rem);
-        BigUint::new_native(data)
+        biguint_from_vec(data)
     }
 
     #[cfg(u64_digit)]
@@ -72,7 +73,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
             // swap u32 digits into u64 endianness
             *digit = (*digit << 32) | (*digit >> 32);
         }
-        BigUint::new_native(data)
+        biguint_from_vec(data)
     }
 
     fn gen_bigint(&mut self, bit_size: usize) -> BigInt {
