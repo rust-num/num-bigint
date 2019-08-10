@@ -8,7 +8,6 @@ use traits::{One, Zero};
 
 use biguint::biguint_from_vec;
 use biguint::BigUint;
-use biguint::IntDigits;
 
 use bigint::BigInt;
 use bigint::Sign;
@@ -259,10 +258,7 @@ pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
 }
 
 fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
-    let mut u = BigUint::zero();
-    u.digits_mut().extend_from_slice(slice);
-    u.normalize();
-    BigInt::from(u)
+    BigInt::from(biguint_from_vec(slice.to_vec()))
 }
 
 /// Three argument multiply accumulate:
