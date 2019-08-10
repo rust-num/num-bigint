@@ -798,7 +798,6 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 mod algorithm_tests {
     use big_digit::BigDigit;
     use traits::Num;
-    use Sign::Plus;
     use {BigInt, BigUint};
 
     #[test]
@@ -812,8 +811,8 @@ mod algorithm_tests {
 
         let a = BigUint::from_str_radix("265252859812191058636308480000000", 10).unwrap();
         let b = BigUint::from_str_radix("26525285981219105863630848000000", 10).unwrap();
-        let a_i = BigInt::from_biguint(Plus, a.clone());
-        let b_i = BigInt::from_biguint(Plus, b.clone());
+        let a_i = BigInt::from(a.clone());
+        let b_i = BigInt::from(b.clone());
 
         assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
         assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);

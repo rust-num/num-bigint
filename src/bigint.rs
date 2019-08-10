@@ -287,8 +287,9 @@ impl<'a> Not for &'a BigInt {
 
     fn not(self) -> BigInt {
         match self.sign {
-            NoSign | Plus => BigInt::from_biguint(Minus, &self.data + 1u32),
-            Minus => BigInt::from_biguint(Plus, &self.data - 1u32),
+            NoSign => -BigInt::one(),
+            Plus => -BigInt::from(&self.data + 1u32),
+            Minus => BigInt::from(&self.data - 1u32),
         }
     }
 }
@@ -368,8 +369,8 @@ impl<'a, 'b> BitAnd<&'b BigInt> for &'a BigInt {
     #[inline]
     fn bitand(self, other: &BigInt) -> BigInt {
         match (self.sign, other.sign) {
-            (NoSign, _) | (_, NoSign) => BigInt::from_slice(NoSign, &[]),
-            (Plus, Plus) => BigInt::from_biguint(Plus, &self.data & &other.data),
+            (NoSign, _) | (_, NoSign) => BigInt::zero(),
+            (Plus, Plus) => BigInt::from(&self.data & &other.data),
             (Plus, Minus) => self.clone() & other,
             (Minus, Plus) => other.clone() & self,
             (Minus, Minus) => {
@@ -505,7 +506,7 @@ impl<'a, 'b> BitOr<&'b BigInt> for &'a BigInt {
         match (self.sign, other.sign) {
             (NoSign, _) => other.clone(),
             (_, NoSign) => self.clone(),
-            (Plus, Plus) => BigInt::from_biguint(Plus, &self.data | &other.data),
+            (Plus, Plus) => BigInt::from(&self.data | &other.data),
             (Plus, Minus) => other.clone() | self,
             (Minus, Plus) => self.clone() | other,
             (Minus, Minus) => {
@@ -785,7 +786,10 @@ impl ShrAssign<usize> for BigInt {
 impl Zero for BigInt {
     #[inline]
     fn zero() -> BigInt {
-        BigInt::from_biguint(NoSign, Zero::zero())
+        BigInt {
+            sign: NoSign,
+            data: BigUint::zero(),
+        }
     }
 
     #[inline]
@@ -803,7 +807,10 @@ impl Zero for BigInt {
 impl One for BigInt {
     #[inline]
     fn one() -> BigInt {
-        BigInt::from_biguint(Plus, One::one())
+        BigInt {
+            sign: Plus,
+            data: BigUint::one(),
+        }
     }
 
     #[inline]
@@ -823,7 +830,7 @@ impl Signed for BigInt {
     fn abs(&self) -> BigInt {
         match self.sign {
             Plus | NoSign => self.clone(),
-            Minus => BigInt::from_biguint(Plus, self.data.clone()),
+            Minus => BigInt::from(self.data.clone()),
         }
     }
 
@@ -839,9 +846,9 @@ impl Signed for BigInt {
     #[inline]
     fn signum(&self) -> BigInt {
         match self.sign {
-            Plus => BigInt::from_biguint(Plus, One::one()),
-            Minus => BigInt::from_biguint(Minus, One::one()),
-            NoSign => Zero::zero(),
+            Plus => BigInt::one(),
+            Minus => -BigInt::one(),
+            NoSign => BigInt::zero(),
         }
     }
 
@@ -1020,11 +1027,11 @@ impl Add<u32> for BigInt {
     fn add(self, other: u32) -> BigInt {
         match self.sign {
             NoSign => From::from(other),
-            Plus => BigInt::from_biguint(Plus, self.data + other),
+            Plus => BigInt::from(self.data + other),
             Minus => match self.data.cmp(&From::from(other)) {
                 Equal => Zero::zero(),
-                Less => BigInt::from_biguint(Plus, other - self.data),
-                Greater => BigInt::from_biguint(Minus, self.data - other),
+                Less => BigInt::from(other - self.data),
+                Greater => -BigInt::from(self.data - other),
             },
         }
     }
@@ -1045,11 +1052,11 @@ impl Add<u64> for BigInt {
     fn add(self, other: u64) -> BigInt {
         match self.sign {
             NoSign => From::from(other),
-            Plus => BigInt::from_biguint(Plus, self.data + other),
+            Plus => BigInt::from(self.data + other),
             Minus => match self.data.cmp(&From::from(other)) {
                 Equal => Zero::zero(),
-                Less => BigInt::from_biguint(Plus, other - self.data),
-                Greater => BigInt::from_biguint(Minus, self.data - other),
+                Less => BigInt::from(other - self.data),
+                Greater => -BigInt::from(self.data - other),
             },
         }
     }
@@ -1070,12 +1077,12 @@ impl Add<u128> for BigInt {
     #[inline]
     fn add(self, other: u128) -> BigInt {
         match self.sign {
-            NoSign => From::from(other),
-            Plus => BigInt::from_biguint(Plus, self.data + other),
+            NoSign => BigInt::from(other),
+            Plus => BigInt::from(self.data + other),
             Minus => match self.data.cmp(&From::from(other)) {
-                Equal => Zero::zero(),
-                Less => BigInt::from_biguint(Plus, other - self.data),
-                Greater => BigInt::from_biguint(Minus, self.data - other),
+                Equal => BigInt::zero(),
+                Less => BigInt::from(other - self.data),
+                Greater => -BigInt::from(self.data - other),
             },
         }
     }
@@ -1250,12 +1257,12 @@ impl Sub<u32> for BigInt {
     #[inline]
     fn sub(self, other: u32) -> BigInt {
         match self.sign {
-            NoSign => BigInt::from_biguint(Minus, From::from(other)),
-            Minus => BigInt::from_biguint(Minus, self.data + other),
+            NoSign => -BigInt::from(other),
+            Minus => -BigInt::from(self.data + other),
             Plus => match self.data.cmp(&From::from(other)) {
                 Equal => Zero::zero(),
-                Greater => BigInt::from_biguint(Plus, self.data - other),
-                Less => BigInt::from_biguint(Minus, other - self.data),
+                Greater => BigInt::from(self.data - other),
+                Less => -BigInt::from(other - self.data),
             },
         }
     }
@@ -1301,12 +1308,12 @@ impl Sub<u64> for BigInt {
     #[inline]
     fn sub(self, other: u64) -> BigInt {
         match self.sign {
-            NoSign => BigInt::from_biguint(Minus, From::from(other)),
-            Minus => BigInt::from_biguint(Minus, self.data + other),
+            NoSign => -BigInt::from(other),
+            Minus => -BigInt::from(self.data + other),
             Plus => match self.data.cmp(&From::from(other)) {
                 Equal => Zero::zero(),
-                Greater => BigInt::from_biguint(Plus, self.data - other),
-                Less => BigInt::from_biguint(Minus, other - self.data),
+                Greater => BigInt::from(self.data - other),
+                Less => -BigInt::from(other - self.data),
             },
         }
     }
@@ -1326,12 +1333,12 @@ impl Sub<u128> for BigInt {
     #[inline]
     fn sub(self, other: u128) -> BigInt {
         match self.sign {
-            NoSign => BigInt::from_biguint(Minus, From::from(other)),
-            Minus => BigInt::from_biguint(Minus, self.data + other),
+            NoSign => -BigInt::from(other),
+            Minus => -BigInt::from(self.data + other),
             Plus => match self.data.cmp(&From::from(other)) {
                 Equal => Zero::zero(),
-                Greater => BigInt::from_biguint(Plus, self.data - other),
-                Less => BigInt::from_biguint(Minus, other - self.data),
+                Greater => BigInt::from(self.data - other),
+                Less => -BigInt::from(other - self.data),
             },
         }
     }
@@ -1916,7 +1923,7 @@ impl Rem<BigInt> for u32 {
 
     #[inline]
     fn rem(self, other: BigInt) -> BigInt {
-        BigInt::from_biguint(Plus, self % other.data)
+        BigInt::from(self % other.data)
     }
 }
 
@@ -1944,7 +1951,7 @@ impl Rem<BigInt> for u64 {
 
     #[inline]
     fn rem(self, other: BigInt) -> BigInt {
-        BigInt::from_biguint(Plus, self % other.data)
+        BigInt::from(self % other.data)
     }
 }
 
@@ -1975,7 +1982,7 @@ impl Rem<BigInt> for u128 {
 
     #[inline]
     fn rem(self, other: BigInt) -> BigInt {
-        BigInt::from_biguint(Plus, self % other.data)
+        BigInt::from(self % other.data)
     }
 }
 
@@ -2175,8 +2182,8 @@ impl Integer for BigInt {
     fn div_mod_floor(&self, other: &BigInt) -> (BigInt, BigInt) {
         // m.sign == other.sign
         let (d_ui, m_ui) = self.data.div_rem(&other.data);
-        let d = BigInt::from_biguint(Plus, d_ui);
-        let m = BigInt::from_biguint(Plus, m_ui);
+        let d = BigInt::from(d_ui);
+        let m = BigInt::from(m_ui);
         let one: BigInt = One::one();
         match (self.sign, other.sign) {
             (_, NoSign) => panic!(),
@@ -2204,13 +2211,13 @@ impl Integer for BigInt {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &BigInt) -> BigInt {
-        BigInt::from_biguint(Plus, self.data.gcd(&other.data))
+        BigInt::from(self.data.gcd(&other.data))
     }
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
     #[inline]
     fn lcm(&self, other: &BigInt) -> BigInt {
-        BigInt::from_biguint(Plus, self.data.lcm(&other.data))
+        BigInt::from(self.data.lcm(&other.data))
     }
 
     /// Deprecated, use `is_multiple_of` instead.
@@ -2358,9 +2365,9 @@ impl FromPrimitive for BigInt {
     #[inline]
     fn from_f64(n: f64) -> Option<BigInt> {
         if n >= 0.0 {
-            BigUint::from_f64(n).map(|x| BigInt::from_biguint(Plus, x))
+            BigUint::from_f64(n).map(|x| BigInt::from(x))
         } else {
-            BigUint::from_f64(-n).map(|x| BigInt::from_biguint(Minus, x))
+            BigUint::from_f64(-n).map(|x| -BigInt::from(x))
         }
     }
 }
