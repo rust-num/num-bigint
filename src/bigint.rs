@@ -2034,7 +2034,7 @@ impl Rem<i64> for BigInt {
     #[inline]
     fn rem(self, other: i64) -> BigInt {
         if other >= 0 {
-            self % other as i64
+            self % other as u64
         } else {
             self % i64_abs_as_u64(other)
         }
