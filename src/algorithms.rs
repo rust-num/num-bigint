@@ -6,9 +6,9 @@ use std::mem;
 use traits;
 use traits::{One, Zero};
 
+use biguint::biguint_from_vec;
 use biguint::BigUint;
 use biguint::IntDigits;
-use biguint::biguint_from_vec;
 
 use bigint::BigInt;
 use bigint::Sign;
