@@ -57,13 +57,12 @@ impl<'a> MontyReducer<'a> {
 //
 // Reference:
 // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 2.6
-fn monty_redc(a: BigUint, mr: &MontyReducer) -> BigUint {
-    let mut c = a.data;
+fn monty_redc(mut a: BigUint, mr: &MontyReducer) -> BigUint {
     let n = &mr.n.data;
     let n_size = n.len();
 
     // Allocate sufficient work space
-    c.resize(2 * n_size + 2, 0);
+    a.data.resize(2 * n_size + 2, 0);
 
     // β is the size of a word, in this case 32 bits. So "a mod β" is
     // equivalent to masking a to 32 bits.
@@ -73,15 +72,15 @@ fn monty_redc(a: BigUint, mr: &MontyReducer) -> BigUint {
     // 1: for i = 0 to (n-1)
     for i in 0..n_size {
         // 2: q_i <- mu*c_i mod β
-        let q_i = c[i].wrapping_mul(mu);
+        let q_i = a.data[i].wrapping_mul(mu);
 
         // 3: C <- C + q_i * N * β^i
-        super::algorithms::mac_digit(&mut c[i..], n, q_i);
+        super::algorithms::mac_digit(&mut a.data[i..], n, q_i);
     }
 
     // 4: R <- C * β^(-n)
     // This is an n-word bitshift, equivalent to skipping n words.
-    let ret = BigUint::new(c[n_size..].to_vec());
+    let ret = BigUint::new(a.data[n_size..].to_vec());
 
     // 5: if R >= β^n then return R-N else return R.
     if &ret < mr.n {

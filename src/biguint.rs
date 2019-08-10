@@ -80,6 +80,14 @@ impl Default for BigUint {
     }
 }
 
+#[cfg(feature = "zeroize")]
+impl Drop for BigUint {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.data.zeroize();
+    }
+}
+
 impl fmt::Display for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad_integral(true, "", &self.to_str_radix(10))

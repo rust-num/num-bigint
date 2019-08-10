@@ -33,6 +33,10 @@ Implementations for `i128` and `u128` are only available with Rust 1.26 and
 later.  The build script automatically detects this, but you can make it
 mandatory by enabling the `i128` crate feature.
 
+The [`zeroize`](https://crates.io/crates/zeroize) feature causes
+`BigInt`/`BigUint` to be wiped from memory on `Drop`, which may improve security
+in some applications. `zeroize` requires Rust 1.31.
+
 ## Releases
 
 Release notes are available in [RELEASES.md](RELEASES.md).
