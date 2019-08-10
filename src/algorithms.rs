@@ -7,6 +7,7 @@ use traits;
 use traits::{One, Zero};
 
 use biguint::BigUint;
+use biguint::IntDigits;
 
 use bigint::BigInt;
 use bigint::Sign;
@@ -256,6 +257,13 @@ pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
     }
 }
 
+fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
+    let mut u = BigUint::zero();
+    u.digits_mut().extend_from_slice(slice);
+    u.normalize();
+    BigInt::from(u)
+}
+
 /// Three argument multiply accumulate:
 /// acc += b * c
 fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
@@ -418,14 +426,14 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // in place of multiplications.
         //
         // x(t) = x2*t^2 + x1*t + x0
-        let x0 = BigInt::from_slice_native(Plus, &x[..x0_len]);
-        let x1 = BigInt::from_slice_native(Plus, &x[x0_len..x0_len + x1_len]);
-        let x2 = BigInt::from_slice_native(Plus, &x[x0_len + x1_len..]);
+        let x0 = bigint_from_slice(&x[..x0_len]);
+        let x1 = bigint_from_slice(&x[x0_len..x0_len + x1_len]);
+        let x2 = bigint_from_slice(&x[x0_len + x1_len..]);
 
         // y(t) = y2*t^2 + y1*t + y0
-        let y0 = BigInt::from_slice_native(Plus, &y[..y0_len]);
-        let y1 = BigInt::from_slice_native(Plus, &y[y0_len..y0_len + y1_len]);
-        let y2 = BigInt::from_slice_native(Plus, &y[y0_len + y1_len..]);
+        let y0 = bigint_from_slice(&y[..y0_len]);
+        let y1 = bigint_from_slice(&y[y0_len..y0_len + y1_len]);
+        let y2 = bigint_from_slice(&y[y0_len + y1_len..]);
 
         // Let w(t) = x(t) * y(t)
         //

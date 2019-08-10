@@ -2629,12 +2629,6 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::from_slice(slice))
     }
 
-    /// Creates and initializes a `BigInt` using `BigDigit`s.
-    #[inline]
-    pub fn from_slice_native(sign: Sign, slice: &[BigDigit]) -> BigInt {
-        BigInt::from_biguint(sign, BigUint::from_slice_native(slice))
-    }
-
     /// Reinitializes a `BigInt`.
     #[inline]
     pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
