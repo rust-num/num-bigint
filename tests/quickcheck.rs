@@ -116,32 +116,32 @@ fn quickcheck_arith_primitive() {
 
 #[quickcheck]
 fn quickcheck_unsigned_add_commutative(a: BigUint, b: BigUint) -> bool {
-    a.clone() + b.clone() == b + a
+    &a + &b == b + a
 }
 
 #[quickcheck]
 fn quickcheck_signed_add_commutative(a: BigInt, b: BigInt) -> bool {
-    a.clone() + b.clone() == b + a
+    &a + &b == b + a
 }
 
 #[quickcheck]
 fn quickcheck_unsigned_add_zero(a: BigUint) -> bool {
-    a.clone() == a + BigUint::zero()
+    a == &a + BigUint::zero()
 }
 
 #[quickcheck]
 fn quickcheck_signed_add_zero(a: BigInt) -> bool {
-    a.clone() == a + BigInt::zero()
+    a == &a + BigInt::zero()
 }
 
 #[quickcheck]
 fn quickcheck_unsigned_add_associative(a: BigUint, b: BigUint, c: BigUint) -> bool {
-    (a.clone() + b.clone()) + c.clone() == a + (b + c)
+    (&a + &b) + &c == a + (b + c)
 }
 
 #[quickcheck]
 fn quickcheck_signed_add_associative(a: BigInt, b: BigInt, c: BigInt) -> bool {
-    (a.clone() + b.clone()) + c.clone() == a + (b + c)
+    (&a + &b) + &c == a + (b + c)
 }
 
 #[quickcheck]
@@ -156,42 +156,42 @@ fn quickcheck_signed_mul_zero(a: BigInt) -> bool {
 
 #[quickcheck]
 fn quickcheck_unsigned_mul_one(a: BigUint) -> bool {
-    a.clone() * BigUint::one() == a
+    &a * BigUint::one() == a
 }
 
 #[quickcheck]
 fn quickcheck_signed_mul_one(a: BigInt) -> bool {
-    a.clone() * BigInt::one() == a
+    &a * BigInt::one() == a
 }
 
 #[quickcheck]
 fn quickcheck_unsigned_mul_commutative(a: BigUint, b: BigUint) -> bool {
-    a.clone() * b.clone() == b * a
+    &a * &b == b * a
 }
 
 #[quickcheck]
 fn quickcheck_signed_mul_commutative(a: BigInt, b: BigInt) -> bool {
-    a.clone() * b.clone() == b * a
+    &a * &b == b * a
 }
 
 #[quickcheck]
 fn quickcheck_unsigned_mul_associative(a: BigUint, b: BigUint, c: BigUint) -> bool {
-    (a.clone() * b.clone()) * c.clone() == a * (b * c)
+    (&a * &b) * &c == a * (b * c)
 }
 
 #[quickcheck]
 fn quickcheck_signed_mul_associative(a: BigInt, b: BigInt, c: BigInt) -> bool {
-    (a.clone() * b.clone()) * c.clone() == a * (b * c)
+    (&a * &b) * &c == a * (b * c)
 }
 
 #[quickcheck]
 fn quickcheck_unsigned_distributive(a: BigUint, b: BigUint, c: BigUint) -> bool {
-    a.clone() * (b.clone() + c.clone()) == a.clone() * b + a * c
+    &a * (&b + &c) == &a * b + a * c
 }
 
 #[quickcheck]
 fn quickcheck_signed_distributive(a: BigInt, b: BigInt, c: BigInt) -> bool {
-    a.clone() * (b.clone() + c.clone()) == a.clone() * b + a * c
+    &a * (&b + &c) == &a * b + a * c
 }
 
 #[quickcheck]
@@ -218,9 +218,9 @@ fn quickcheck_signed_ge_le_eq_mut_exclusive(a: BigInt, b: BigInt) -> bool {
 /// Tests correctness of subtraction assuming addition is correct
 fn quickcheck_unsigned_sub(a: BigUint, b: BigUint) -> bool {
     if b < a {
-        a.clone() - b.clone() + b == a
+        &a - &b + b == a
     } else {
-        b.clone() - a.clone() + a == b
+        &b - &a + a == b
     }
 }
 
@@ -228,9 +228,9 @@ fn quickcheck_unsigned_sub(a: BigUint, b: BigUint) -> bool {
 /// Tests correctness of subtraction assuming addition is correct
 fn quickcheck_signed_sub(a: BigInt, b: BigInt) -> bool {
     if b < a {
-        a.clone() - b.clone() + b == a
+        &a - &b + b == a
     } else {
-        b.clone() - a.clone() + a == b
+        &b - &a + a == b
     }
 }
 
@@ -246,17 +246,17 @@ fn quickcheck_unsigned_pow_one(a: BigUint) -> bool {
 
 #[quickcheck]
 fn quickcheck_unsigned_sqrt(a: BigUint) -> bool {
-    (a.clone() * a.clone()).sqrt() == a
+    (&a * &a).sqrt() == a
 }
 
 #[quickcheck]
 fn quickcheck_unsigned_cbrt(a: BigUint) -> bool {
-    (a.clone() * a.clone() * a.clone()).cbrt() == a
+    (&a * &a * &a).cbrt() == a
 }
 
 #[quickcheck]
 fn quickcheck_signed_cbrt(a: BigInt) -> bool {
-    (a.clone() * a.clone() * a.clone()).cbrt() == a
+    (&a * &a * &a).cbrt() == a
 }
 
 #[quickcheck]
@@ -283,22 +283,26 @@ fn quickcheck_signed_conversion(a: BigInt, radix: u8) -> TestResult {
 fn quicktest_shift() {
     let gen = StdThreadGen::new(usize::max_value());
     let mut qc = QuickCheck::with_gen(gen);
+
     fn test_shr_unsigned(a: u64, shift: u8) -> TestResult {
         let shift = (shift % 64) as usize; //shift at most 64 bits
         let big_a = BigUint::from(a);
         TestResult::from_bool(BigUint::from(a >> shift) == big_a >> shift)
     }
+
     fn test_shr_signed(a: i64, shift: u8) -> TestResult {
         let shift = (shift % 64) as usize; //shift at most 64 bits
         let big_a = BigInt::from(a);
         TestResult::from_bool(BigInt::from(a >> shift) == big_a >> shift)
     }
+
     fn test_shl_unsigned(a: u32, shift: u8) -> TestResult {
         let shift = (shift % 32) as usize; //shift at most 32 bits
         let a = a as u64; //leave room for the shifted bits
         let big_a = BigUint::from(a);
         TestResult::from_bool(BigUint::from(a >> shift) == big_a >> shift)
     }
+
     fn test_shl_signed(a: i32, shift: u8) -> TestResult {
         let shift = (shift % 32) as usize;
         let a = a as u64; //leave room for the shifted bits
