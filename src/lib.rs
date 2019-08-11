@@ -87,6 +87,8 @@ extern crate serde;
 
 extern crate num_integer as integer;
 extern crate num_traits as traits;
+#[cfg(feature = "quickcheck")]
+extern crate quickcheck;
 
 use std::error::Error;
 use std::fmt;
