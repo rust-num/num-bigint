@@ -2120,6 +2120,23 @@ impl BigUint {
         }
     }
 
+    /// Returns the u32 digits representation of the `BigUint` in little-endian order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).to_u32_digits(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).to_u32_digits(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).to_u32_digits(), vec![0, 1]);
+    /// assert_eq!(BigUint::from(112500000000u64).to_u32_digits(), vec![830850304, 26]);
+    /// ```
+    #[inline]
+    pub fn to_u32_digits(&self) -> Vec<u32> {
+        self.data.clone()
+    }
+
     /// Returns the integer formatted as a string in the given radix.
     /// `radix` must be in the range `2...36`.
     ///
