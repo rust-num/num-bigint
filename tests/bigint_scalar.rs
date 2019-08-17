@@ -2,8 +2,8 @@ use num_bigint::BigInt;
 use num_bigint::Sign::Plus;
 use num_traits::{Signed, ToPrimitive, Zero};
 
-use std::ops::Neg;
 use std::cmp::Ordering;
+use std::ops::Neg;
 
 mod consts;
 use crate::consts::*;
