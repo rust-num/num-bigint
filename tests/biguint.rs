@@ -41,7 +41,7 @@ fn test_from_bytes_be() {
     check("AA", "16705");
     check("AB", "16706");
     check("Hello world!", "22405534230753963835153736737");
-    assert_eq!(BigUint::from_bytes_be(&[]), Zero::zero());
+    assert_eq!(BigUint::from_bytes_be(&[]), BigUint::zero());
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn test_from_bytes_le() {
     check("AA", "16705");
     check("BA", "16706");
     check("!dlrow olleH", "22405534230753963835153736737");
-    assert_eq!(BigUint::from_bytes_le(&[]), Zero::zero());
+    assert_eq!(BigUint::from_bytes_le(&[]), BigUint::zero());
 }
 
 #[test]
@@ -872,17 +872,17 @@ fn test_div_rem() {
 
         if !a.is_zero() {
             assert_op!(c / a == b);
-            assert_op!(c % a == Zero::zero());
+            assert_op!(c % a == BigUint::zero());
             assert_assign_op!(c /= a == b);
-            assert_assign_op!(c %= a == Zero::zero());
-            assert_eq!(c.div_rem(&a), (b.clone(), Zero::zero()));
+            assert_assign_op!(c %= a == BigUint::zero());
+            assert_eq!(c.div_rem(&a), (b.clone(), BigUint::zero()));
         }
         if !b.is_zero() {
             assert_op!(c / b == a);
-            assert_op!(c % b == Zero::zero());
+            assert_op!(c % b == BigUint::zero());
             assert_assign_op!(c /= b == a);
-            assert_assign_op!(c %= b == Zero::zero());
-            assert_eq!(c.div_rem(&b), (a.clone(), Zero::zero()));
+            assert_assign_op!(c %= b == BigUint::zero());
+            assert_eq!(c.div_rem(&b), (a.clone(), BigUint::zero()));
         }
     }
 
@@ -1638,8 +1638,8 @@ fn test_iter_sum() {
         FromPrimitive::from_u32(7).unwrap(),
     ];
 
-    assert_eq!(result, data.iter().sum());
-    assert_eq!(result, data.into_iter().sum());
+    assert_eq!(result, data.iter().sum::<BigUint>());
+    assert_eq!(result, data.into_iter().sum::<BigUint>());
 }
 
 #[test]
@@ -1657,8 +1657,8 @@ fn test_iter_product() {
         * data.get(3).unwrap()
         * data.get(4).unwrap();
 
-    assert_eq!(result, data.iter().product());
-    assert_eq!(result, data.into_iter().product());
+    assert_eq!(result, data.iter().product::<BigUint>());
+    assert_eq!(result, data.into_iter().product::<BigUint>());
 }
 
 #[test]
@@ -1666,8 +1666,8 @@ fn test_iter_sum_generic() {
     let result: BigUint = FromPrimitive::from_isize(1234567).unwrap();
     let data = vec![1000000_u32, 200000, 30000, 4000, 500, 60, 7];
 
-    assert_eq!(result, data.iter().sum());
-    assert_eq!(result, data.into_iter().sum());
+    assert_eq!(result, data.iter().sum::<BigUint>());
+    assert_eq!(result, data.into_iter().sum::<BigUint>());
 }
 
 #[test]
@@ -1679,8 +1679,8 @@ fn test_iter_product_generic() {
         * data[3].to_biguint().unwrap()
         * data[4].to_biguint().unwrap();
 
-    assert_eq!(result, data.iter().product());
-    assert_eq!(result, data.into_iter().product());
+    assert_eq!(result, data.iter().product::<BigUint>());
+    assert_eq!(result, data.into_iter().product::<BigUint>());
 }
 
 #[test]

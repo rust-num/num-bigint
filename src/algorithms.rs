@@ -739,6 +739,34 @@ pub fn biguint_shr(n: Cow<BigUint>, bits: usize) -> BigUint {
     BigUint::new(data)
 }
 
+pub fn cmp_zero_padded_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
+    let (a_len, b_len) = (a.len(), b.len());
+    if a_len < b_len {
+        if b.iter().rev().take(b_len - a_len).any(|v| *v > 0) {
+            return Less;
+        }
+    }
+    if a_len > b_len {
+        if a.iter().rev().take(a_len - b_len).any(|v| *v > 0) {
+            return Greater;
+        }
+    }
+
+    let shortest = std::cmp::min(a_len, b_len);
+    let ashort = &a[0..shortest];
+    let bshort = &b[0..shortest];
+
+    for (&ai, &bi) in ashort.iter().rev().zip(bshort.iter().rev()) {
+        if ai < bi {
+            return Less;
+        }
+        if ai > bi {
+            return Greater;
+        }
+    }
+    return Equal;
+}
+
 pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
     debug_assert!(a.last() != Some(&0));
     debug_assert!(b.last() != Some(&0));
@@ -786,4 +814,30 @@ mod algorithm_tests {
         assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
         assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
     }
+
+    #[test]
+    fn test_cmp_zero_padded_slice() {
+        use std::cmp::Ordering::*;
+        use super::cmp_zero_padded_slice;
+
+        assert!(cmp_zero_padded_slice(&[1, 0], &[1]) == Equal);
+        assert!(cmp_zero_padded_slice(&[1], &[1, 0]) == Equal);
+
+        assert!(cmp_zero_padded_slice(&[0], &[0]) == Equal);
+        assert!(cmp_zero_padded_slice(&[], &[0]) == Equal);
+        assert!(cmp_zero_padded_slice(&[0], &[]) == Equal);
+
+        assert!(cmp_zero_padded_slice(&[1], &[0]) == Greater);
+        assert!(cmp_zero_padded_slice(&[1000], &[0]) == Greater);
+        assert!(cmp_zero_padded_slice(&[1000], &[0, 0, 0]) == Greater);
+        assert!(cmp_zero_padded_slice(&[1000, 0], &[0, 0, 0]) == Greater);
+        assert!(cmp_zero_padded_slice(&[0, 1000, 0], &[0, 1000]) == Equal);
+
+        assert!(cmp_zero_padded_slice(&[0], &[1]) == Less);
+        assert!(cmp_zero_padded_slice(&[0], &[1000]) == Less);
+        assert!(cmp_zero_padded_slice(&[0, 0, 0], &[1000]) == Less);
+        assert!(cmp_zero_padded_slice(&[0, 0, 0], &[1000, 0]) == Less);
+        assert!(cmp_zero_padded_slice(&[0, 1000], &[0, 1000, 0]) == Equal);
+    }
+
 }

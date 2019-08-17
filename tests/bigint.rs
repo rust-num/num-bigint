@@ -40,8 +40,10 @@ fn test_from_bytes_be() {
     check("AA", "16705");
     check("AB", "16706");
     check("Hello world!", "22405534230753963835153736737");
-    assert_eq!(BigInt::from_bytes_be(Plus, &[]), Zero::zero());
-    assert_eq!(BigInt::from_bytes_be(Minus, &[]), Zero::zero());
+    assert_eq!(BigInt::from_bytes_be(Plus, &[]), BigInt::zero());
+    assert_eq!(BigInt::from_bytes_be(Plus, &[]), 0);
+    assert_eq!(BigInt::from_bytes_be(Minus, &[]), BigInt::zero());
+    assert_eq!(BigInt::from_bytes_be(Minus, &[]), 0);
 }
 
 #[test]
@@ -75,8 +77,8 @@ fn test_from_bytes_le() {
     check("AA", "16705");
     check("BA", "16706");
     check("!dlrow olleH", "22405534230753963835153736737");
-    assert_eq!(BigInt::from_bytes_le(Plus, &[]), Zero::zero());
-    assert_eq!(BigInt::from_bytes_le(Minus, &[]), Zero::zero());
+    assert_eq!(BigInt::from_bytes_le(Plus, &[]), BigInt::zero());
+    assert_eq!(BigInt::from_bytes_le(Minus, &[]), BigInt::zero());
 }
 
 #[test]
@@ -659,7 +661,7 @@ fn test_add() {
         assert_op!(a + nc == nb);
         assert_op!(b + nc == na);
         assert_op!(na + nb == nc);
-        assert_op!(a + na == Zero::zero());
+        assert_op!(a + na == BigInt::zero());
 
         assert_assign_op!(a += b == c);
         assert_assign_op!(b += a == c);
@@ -668,7 +670,7 @@ fn test_add() {
         assert_assign_op!(a += nc == nb);
         assert_assign_op!(b += nc == na);
         assert_assign_op!(na += nb == nc);
-        assert_assign_op!(a += na == Zero::zero());
+        assert_assign_op!(a += na == BigInt::zero());
     }
 }
 
@@ -688,7 +690,7 @@ fn test_sub() {
         assert_op!(b - na == c);
         assert_op!(a - nb == c);
         assert_op!(nc - na == nb);
-        assert_op!(a - a == Zero::zero());
+        assert_op!(a - a == BigInt::zero());
 
         assert_assign_op!(c -= a == b);
         assert_assign_op!(c -= b == a);
@@ -697,7 +699,7 @@ fn test_sub() {
         assert_assign_op!(b -= na == c);
         assert_assign_op!(a -= nb == c);
         assert_assign_op!(nc -= na == nb);
-        assert_assign_op!(a -= a == Zero::zero());
+        assert_assign_op!(a -= a == BigInt::zero());
     }
 }
 
@@ -859,7 +861,7 @@ fn test_checked_add() {
         assert!(a.checked_add(&(-&c)).unwrap() == (-&b));
         assert!(b.checked_add(&(-&c)).unwrap() == (-&a));
         assert!((-&a).checked_add(&(-&b)).unwrap() == (-&c));
-        assert!(a.checked_add(&(-&a)).unwrap() == Zero::zero());
+        assert!(a.checked_add(&(-&a)).unwrap() == BigInt::zero());
     }
 }
 
@@ -878,7 +880,7 @@ fn test_checked_sub() {
         assert!(b.checked_sub(&(-&a)).unwrap() == c);
         assert!(a.checked_sub(&(-&b)).unwrap() == c);
         assert!((-&c).checked_sub(&(-&a)).unwrap() == (-&b));
-        assert!(a.checked_sub(&a).unwrap() == Zero::zero());
+        assert!(a.checked_sub(&a).unwrap() == BigInt::zero());
     }
 }
 
@@ -1119,8 +1121,8 @@ fn test_iter_sum() {
         FromPrimitive::from_i32(-7).unwrap(),
     ];
 
-    assert_eq!(result, data.iter().sum());
-    assert_eq!(result, data.into_iter().sum());
+    assert_eq!(result, data.iter().sum::<BigInt>());
+    assert_eq!(result, data.into_iter().sum::<BigInt>());
 }
 
 #[test]
@@ -1138,8 +1140,8 @@ fn test_iter_product() {
         * data.get(3).unwrap()
         * data.get(4).unwrap();
 
-    assert_eq!(result, data.iter().product());
-    assert_eq!(result, data.into_iter().product());
+    assert_eq!(result, data.iter().product::<BigInt>());
+    assert_eq!(result, data.into_iter().product::<BigInt>());
 }
 
 #[test]
@@ -1147,8 +1149,8 @@ fn test_iter_sum_generic() {
     let result: BigInt = FromPrimitive::from_isize(-1234567).unwrap();
     let data = vec![-1000000, -200000, -30000, -4000, -500, -60, -7];
 
-    assert_eq!(result, data.iter().sum());
-    assert_eq!(result, data.into_iter().sum());
+    assert_eq!(result, data.iter().sum::<BigInt>());
+    assert_eq!(result, data.into_iter().sum::<BigInt>());
 }
 
 #[test]
@@ -1160,8 +1162,8 @@ fn test_iter_product_generic() {
         * data[3].to_bigint().unwrap()
         * data[4].to_bigint().unwrap();
 
-    assert_eq!(result, data.iter().product());
-    assert_eq!(result, data.into_iter().product());
+    assert_eq!(result, data.iter().product::<BigInt>());
+    assert_eq!(result, data.into_iter().product::<BigInt>());
 }
 
 #[test]
