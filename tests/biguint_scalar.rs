@@ -1,6 +1,8 @@
 use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 
+use std::cmp::Ordering;
+
 mod consts;
 use crate::consts::*;
 
@@ -66,8 +68,8 @@ fn test_scalar_mul() {
 
 #[test]
 fn test_scalar_rem_noncommutative() {
-    assert_eq!(5u8 % BigUint::from(7u8), 5u8.into());
-    assert_eq!(BigUint::from(5u8) % 7u8, 5u8.into());
+    assert_eq!(5u8 % BigUint::from(7u8), 5);
+    assert_eq!(BigUint::from(5u8) % 7u8, 5);
 }
 
 #[test]
@@ -110,4 +112,90 @@ fn test_scalar_div_rem() {
             assert_unsigned_scalar_assign_op!(a %= b == d);
         }
     }
+}
+
+#[test]
+fn test_biguint_scalar_cmp() {
+    use std::cmp::Ordering::*;
+
+    let zero = BigUint::from(0u32);
+    let one = BigUint::from(1u32);
+    let five = BigUint::from(5u32);
+
+    fn scalar_cmp_asserts(num: &BigUint, scalar: i32) {
+
+        assert!(num.partial_cmp(&(scalar as i8)) == Some(Equal));
+        assert!((scalar as i8).partial_cmp(num) == Some(Equal));
+        assert!(num.partial_cmp(&(scalar as i8 - 1)) == Some(Greater));
+        assert!((scalar as i8 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as i8 + 1)) == Some(Less));
+        assert!((scalar as i8 - 1).partial_cmp(num) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as u8)) == Some(Equal));
+        assert!((scalar as u8).partial_cmp(num) == Some(Equal));
+        assert!((scalar as u8 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as u8 + 1)) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as i16)) == Some(Equal));
+        assert!((scalar as i16).partial_cmp(num) == Some(Equal));
+        assert!(num.partial_cmp(&(scalar as i16 - 1)) == Some(Greater));
+        assert!((scalar as i16 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as i16 + 1)) == Some(Less));
+        assert!((scalar as i16 - 1).partial_cmp(num) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as u16)) == Some(Equal));
+        assert!((scalar as u16).partial_cmp(num) == Some(Equal));
+        assert!((scalar as u16 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as u16 + 1)) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as i32)) == Some(Equal));
+        assert!((scalar as i32).partial_cmp(num) == Some(Equal));
+        assert!(num.partial_cmp(&(scalar as i32 - 1)) == Some(Greater));
+        assert!((scalar as i32 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as i32 + 1)) == Some(Less));
+        assert!((scalar as i32 - 1).partial_cmp(num) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as u32)) == Some(Equal));
+        assert!((scalar as u32).partial_cmp(num) == Some(Equal));
+        assert!((scalar as u32 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as u32 + 1)) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as i64)) == Some(Equal));
+        assert!((scalar as i64).partial_cmp(num) == Some(Equal));
+        assert!(num.partial_cmp(&(scalar as i64 - 1)) == Some(Greater));
+        assert!((scalar as i64 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as i64 + 1)) == Some(Less));
+        assert!((scalar as i64 - 1).partial_cmp(num) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as u64)) == Some(Equal));
+        assert!((scalar as u64).partial_cmp(num) == Some(Equal));
+        assert!((scalar as u64 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as u64 + 1)) == Some(Less));
+
+        #[cfg(has_i128)]
+        {
+            assert!(num.partial_cmp(&(scalar as i128)) == Some(Equal));
+            assert!((scalar as i128).partial_cmp(num) == Some(Equal));
+            assert!(num.partial_cmp(&(scalar as i128 - 1)) == Some(Greater));
+            assert!((scalar as i128 + 1).partial_cmp(num) == Some(Greater));
+            assert!(num.partial_cmp(&(scalar as i128 + 1)) == Some(Less));
+            assert!((scalar as i128 - 1).partial_cmp(num) == Some(Less));
+
+            assert!(num.partial_cmp(&(scalar as u128)) == Some(Equal));
+            assert!((scalar as u128).partial_cmp(num) == Some(Equal));
+            assert!((scalar as u128 + 1).partial_cmp(num) == Some(Greater));
+            assert!(num.partial_cmp(&(scalar as u128 + 1)) == Some(Less));
+        }
+
+    }
+
+    scalar_cmp_asserts(&zero, 0);
+    scalar_cmp_asserts(&one, 1);
+    scalar_cmp_asserts(&five, 5);
+
+    let a = BigUint::from(10000000000u64);
+    assert!(a.partial_cmp(&10000000000u64) == Some(Equal));
+    assert!(a.partial_cmp(&1000000000u64) == Some(Greater));
+    assert!(a.partial_cmp(&100000000000u64) == Some(Less));
+
 }

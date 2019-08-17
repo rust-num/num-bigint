@@ -439,3 +439,110 @@ macro_rules! impl_product_iter_type {
         }
     };
 }
+
+/// Implements PartialEq based on PartialOrd
+macro_rules! impl_scalar_partialeq {
+    (impl PartialEq < $scalar:ty > for $res:ty) => {
+        impl PartialEq<$scalar> for $res {
+            #[inline]
+            fn eq(&self, other: &$scalar) -> bool {
+                match self.partial_cmp(other).unwrap() {
+                    Equal => true,
+                    _ => false,
+                }
+            }
+        }
+        impl PartialEq<$res> for $scalar {
+            #[inline]
+            fn eq(&self, other: &$res) -> bool {
+                match self.partial_cmp(other).unwrap() {
+                    Equal => true,
+                    _ => false,
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_trait_rev {
+    (impl $trait:ident < $scalar:ty > for $res:ty, $method:ident, $ret:ty) => {
+        impl $trait<$res> for $scalar {
+            #[inline]
+            fn $method(&self, other: &$res) -> $ret {
+                other.$method(self)
+            }
+        }
+    };
+}
+
+macro_rules! impl_partialord_rev {
+    (impl PartialOrd < $scalar:ty > for $typ:ty) => {
+        impl PartialOrd<$typ> for $scalar {
+            #[inline]
+            fn partial_cmp(&self, other: &$typ) -> Option<Ordering> {
+                other.partial_cmp(self).map(|o| o.reverse())
+            }
+        }
+    };
+}
+
+macro_rules! impl_partialord_partialeq_for_biguint_below_digit {
+    ($typ_signed:ty, $typ_unsigned:ty) => {
+        impl_scalar_partialeq!(impl PartialEq<$typ_unsigned> for BigUint);
+        impl_partialord_rev!(impl PartialOrd<$typ_unsigned> for BigUint);
+        impl PartialOrd<$typ_unsigned> for BigUint {
+            #[inline]
+            fn partial_cmp(&self, other: &$typ_unsigned) -> Option<Ordering> {
+                Some(cmp_zero_padded_slice(&self.data[..], &[*other as u32]))
+            }
+        }
+
+        impl_scalar_partialeq!(impl PartialEq<$typ_signed> for BigUint);
+        impl_partialord_rev!(impl PartialOrd<$typ_signed> for BigUint);
+        impl PartialOrd<$typ_signed> for BigUint {
+            #[inline]
+            fn partial_cmp(&self, other: &$typ_signed) -> Option<Ordering> {
+                if *other < 0 {
+                    Some(Greater)
+                } else {
+                    self.partial_cmp(&(*other as u32))
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_partialord_partialeq_for_bigint {
+    ($typ_signed:ty, $typ_unsigned:ty) => {
+        impl_scalar_partialeq!(impl PartialEq<$typ_signed> for BigInt);
+        impl_partialord_rev!(impl PartialOrd<$typ_signed> for BigInt);
+        impl PartialOrd<$typ_signed> for BigInt {
+            #[inline]
+            fn partial_cmp(&self, other: &$typ_signed) -> Option<Ordering> {
+                let scmp = self.sign().cmp(&sign(*other));
+                if scmp != Equal {
+                    return Some(scmp);
+                }
+
+                let abs = (*other).abs() as $typ_unsigned;
+                match self.sign {
+                    NoSign => Some(Equal),
+                    Plus => self.data.partial_cmp(&abs),
+                    Minus => abs.partial_cmp(&self.data),
+                }
+            }
+        }
+
+        impl_scalar_partialeq!(impl PartialEq<$typ_unsigned> for BigInt);
+        impl_partialord_rev!(impl PartialOrd<$typ_unsigned> for BigInt);
+        impl PartialOrd<$typ_unsigned> for BigInt {
+            #[inline]
+            fn partial_cmp(&self, other: &$typ_unsigned) -> Option<Ordering> {
+                match self.sign {
+                    Minus => Some(Less),
+                    _ => self.data.partial_cmp(other),
+                }
+            }
+        }
+    };
+}

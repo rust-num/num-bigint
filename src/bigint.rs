@@ -195,6 +195,23 @@ impl PartialOrd for BigInt {
     }
 }
 
+fn sign<T>(num: T) -> Sign where T: Ord + Zero {
+    if num < T::zero() {
+        Sign::Minus
+    } else if num > T::zero() {
+        Sign::Plus
+    } else {
+        Sign::NoSign
+    }
+}
+
+impl_partialord_partialeq_for_bigint!(i8, u8);
+impl_partialord_partialeq_for_bigint!(i16, u16);
+impl_partialord_partialeq_for_bigint!(i32, u32);
+impl_partialord_partialeq_for_bigint!(i64, u64);
+#[cfg(has_i128)]
+impl_partialord_partialeq_for_bigint!(i128, u128);
+
 impl Ord for BigInt {
     #[inline]
     fn cmp(&self, other: &BigInt) -> Ordering {
