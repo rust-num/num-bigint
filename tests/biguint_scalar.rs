@@ -1,8 +1,6 @@
 use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 
-use std::cmp::Ordering;
-
 mod consts;
 use crate::consts::*;
 

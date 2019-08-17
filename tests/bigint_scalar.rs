@@ -148,58 +148,6 @@ fn test_scalar_div_rem() {
     }
 }
 
-macro_rules! bigint_scalar_cmp_asserts {
-    ($big:expr, $scalar:expr) => {
-
-        assert!($big.partial_cmp(&($scalar as i8)) == Some(Ordering::Equal));
-        assert!(($scalar as i8).partial_cmp(&$big) == Some(Ordering::Equal));
-        assert!($big.partial_cmp(&($scalar as i8 - 1)) == Some(Ordering::Greater));
-        assert!(($scalar as i8 + 1).partial_cmp(&$big) == Some(Ordering::Greater));
-        assert!($big.partial_cmp(&($scalar as i8 + 1)) == Some(Ordering::Less));
-        assert!(($scalar as i8 - 1).partial_cmp(&$big) == Some(Ordering::Less));
-
-        assert!($big.partial_cmp(&($scalar as i16)) == Some(Ordering::Equal));
-        assert!(($scalar as i16).partial_cmp(&$big) == Some(Ordering::Equal));
-        assert!($big.partial_cmp(&($scalar as i16 - 1)) == Some(Ordering::Greater));
-        assert!(($scalar as i16 + 1).partial_cmp(&$big) == Some(Ordering::Greater));
-        assert!($big.partial_cmp(&($scalar as i16 + 1)) == Some(Ordering::Less));
-        assert!(($scalar as i16 - 1).partial_cmp(&$big) == Some(Ordering::Less));
-
-        assert!($big.partial_cmp(&($scalar as i32)) == Some(Ordering::Equal));
-        assert!(($scalar as i32).partial_cmp(&$big) == Some(Ordering::Equal));
-        assert!($big.partial_cmp(&($scalar as i32 - 1)) == Some(Ordering::Greater));
-        assert!(($scalar as i32 + 1).partial_cmp(&$big) == Some(Ordering::Greater));
-        assert!($big.partial_cmp(&($scalar as i32 + 1)) == Some(Ordering::Less));
-        assert!(($scalar as i32 - 1).partial_cmp(&$big) == Some(Ordering::Less));
-
-        assert!($big.partial_cmp(&($scalar as i64)) == Some(Ordering::Equal));
-        assert!(($scalar as i64).partial_cmp(&$big) == Some(Ordering::Equal));
-        assert!($big.partial_cmp(&($scalar as i64 - 1)) == Some(Ordering::Greater));
-        assert!(($scalar as i64 + 1).partial_cmp(&$big) == Some(Ordering::Greater));
-        assert!($big.partial_cmp(&($scalar as i64 + 1)) == Some(Ordering::Less));
-        assert!(($scalar as i64 - 1).partial_cmp(&$big) == Some(Ordering::Less));
-
-        assert!(($scalar as i8) == $big);
-        assert!($big == ($scalar as i16));
-        assert!(($scalar as i16) == $big);
-        assert!($big == ($scalar as i32));
-        assert!(($scalar as i32) == $big);
-        assert!($big == ($scalar as i64));
-        assert!(($scalar as i64) == $big);
-
-        if $scalar > 0 {
-            assert!($big == ($scalar as u8));
-            assert!(($scalar as u8) == $big);
-            assert!($big == ($scalar as u16));
-            assert!(($scalar as u16) == $big);
-            assert!($big == ($scalar as u32));
-            assert!(($scalar as u32) == $big);
-            assert!($big == ($scalar as u64));
-            assert!(($scalar as u64) == $big);
-        }
-    };
-}
-
 #[test]
 fn test_bigint_scalar_cmp() {
     let m_five = BigInt::from(-5);
