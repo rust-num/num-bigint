@@ -752,7 +752,7 @@ pub fn cmp_zero_padded_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
         }
     }
 
-    let shortest = core::cmp::min(a_len, b_len);
+    let shortest = ::std::cmp::min(a_len, b_len);
     let ashort = &a[0..shortest];
     let bshort = &b[0..shortest];
 
