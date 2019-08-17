@@ -164,7 +164,10 @@ impl PartialOrd for BigInt {
     }
 }
 
-fn sign<T>(num: T) -> Sign where T: Ord + Zero {
+fn sign<T>(num: T) -> Sign
+where
+    T: Ord + Zero,
+{
     if num < T::zero() {
         Sign::Minus
     } else if num > T::zero() {

@@ -117,7 +117,6 @@ fn test_biguint_scalar_cmp() {
     let five = BigUint::from(5u32);
 
     fn scalar_cmp_asserts(num: &BigUint, scalar: i32) {
-
         assert!(num.partial_cmp(&(scalar as i8)) == Some(Equal));
         assert!((scalar as i8).partial_cmp(num) == Some(Equal));
         assert!(num.partial_cmp(&(scalar as i8 - 1)) == Some(Greater));
@@ -180,7 +179,6 @@ fn test_biguint_scalar_cmp() {
             assert!((scalar as u128 + 1).partial_cmp(num) == Some(Greater));
             assert!(num.partial_cmp(&(scalar as u128 + 1)) == Some(Less));
         }
-
     }
 
     scalar_cmp_asserts(&zero, 0);
@@ -191,5 +189,4 @@ fn test_biguint_scalar_cmp() {
     assert!(a.partial_cmp(&10000000000u64) == Some(Equal));
     assert!(a.partial_cmp(&1000000000u64) == Some(Greater));
     assert!(a.partial_cmp(&100000000000u64) == Some(Less));
-
 }
