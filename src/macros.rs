@@ -469,8 +469,8 @@ macro_rules! impl_scalar_partialeq {
 }
 
 macro_rules! impl_trait_rev {
-    (impl $trait:ident < $scalar:ty > for $res:ty, $method:ident, $ret:ty) => {
-        impl $trait<$res> for $scalar {
+    (impl $trait_name:ident < $scalar:ty > for $res:ty, $method:ident, $ret:ty) => {
+        impl $trait_name<$res> for $scalar {
             #[inline]
             fn $method(&self, other: &$res) -> $ret {
                 other.$method(self)
