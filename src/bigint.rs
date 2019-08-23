@@ -2188,7 +2188,11 @@ impl Integer for BigInt {
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
     #[inline]
     fn lcm(&self, other: &BigInt) -> BigInt {
-        BigInt::from_biguint(Plus, self.data.lcm(&other.data))
+        if self.is_zero() && other.is_zero() {
+            Self::zero()
+        } else {
+            BigInt::from_biguint(Plus, self.data.lcm(&other.data))
+        }
     }
 
     /// Deprecated, use `is_multiple_of` instead.

@@ -962,6 +962,7 @@ fn test_lcm() {
         assert_eq!(big_a.lcm(&big_b), big_c);
     }
 
+    check(0, 0, 0);
     check(1, 0, 0);
     check(0, 1, 0);
     check(1, 1, 1);
