@@ -8,7 +8,7 @@ categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT/Apache-2.0"
 name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
-version = "0.2.2"
+version = "0.2.3"
 readme = "README.md"
 build = "build.rs"
 

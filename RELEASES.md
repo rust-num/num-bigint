@@ -1,3 +1,16 @@
+# Release 0.2.3 (2019-09-03)
+
+- [`Pow` is now implemented for `BigUint` exponents][77].
+- [The optional `quickcheck` feature enables implementations of `Arbitrary`][99].
+- See the [full comparison][compare-0.2.3] for performance enhancements and more!
+
+[77]: https://github.com/rust-num/num-bigint/pull/77
+[99]: https://github.com/rust-num/num-bigint/pull/99
+[compare-0.2.3]: https://github.com/rust-num/num-bigint/compare/num-bigint-0.2.2...num-bigint-0.2.3
+
+**Contributors**: @cuviper, @lcnr, @maxbla, @mikelodder7, @mikong,
+@TheLetterTheta, @tspiteri, @XAMPPRocky, @youknowone
+
 # Release 0.2.2 (2018-12-14)
 
 - [The `Roots` implementations now use better initial guesses][71].
