@@ -2424,7 +2424,7 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     where
         D: serde::Deserializer<'de>,
     {
-        let data: Vec<u32> = try!(Vec::deserialize(deserializer));
+        let data: Vec<u32> = Vec::deserialize(deserializer)?;
         Ok(BigUint::new(data))
     }
 }

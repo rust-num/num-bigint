@@ -694,7 +694,7 @@ impl Num for BigInt {
         } else {
             Plus
         };
-        let bu = try!(BigUint::from_str_radix(s, radix));
+        let bu = BigUint::from_str_radix(s, radix)?;
         Ok(BigInt::from_biguint(sign, bu))
     }
 }

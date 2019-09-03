@@ -109,9 +109,9 @@ fn pidigits(n: isize, out: &mut dyn io::Write) -> io::Result<()> {
             }
         }
 
-        try!(write!(out, "{}", d));
+        write!(out, "{}", d)?;
         if i % 10 == 0 {
-            try!(write!(out, "\t:{}\n", i));
+            write!(out, "\t:{}\n", i)?;
         }
 
         context.eliminate_digit(d);
@@ -120,9 +120,9 @@ fn pidigits(n: isize, out: &mut dyn io::Write) -> io::Result<()> {
     let m = n % 10;
     if m != 0 {
         for _ in m..10 {
-            try!(write!(out, " "));
+            write!(out, " ")?;
         }
-        try!(write!(out, "\t:{}\n", n));
+        write!(out, "\t:{}\n", n)?;
     }
     Ok(())
 }
