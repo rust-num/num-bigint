@@ -58,6 +58,7 @@ impl Arbitrary for BigUint {
         Self::new(Vec::<u32>::arbitrary(g))
     }
 
+    #[allow(bare_trait_objects)] // `dyn` needs Rust 1.27 to parse, even when cfg-disabled
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
         // Use shrinker from Vec
         Box::new(self.data.shrink().map(|x| BigUint::new(x)))
@@ -2424,7 +2425,7 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     where
         D: serde::Deserializer<'de>,
     {
-        let data: Vec<u32> = try!(Vec::deserialize(deserializer));
+        let data: Vec<u32> = Vec::deserialize(deserializer)?;
         Ok(BigUint::new(data))
     }
 }

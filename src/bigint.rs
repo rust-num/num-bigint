@@ -125,6 +125,7 @@ impl Arbitrary for BigInt {
         Self::from_biguint(sign, BigUint::arbitrary(g))
     }
 
+    #[allow(bare_trait_objects)] // `dyn` needs Rust 1.27 to parse, even when cfg-disabled
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
         let sign = self.sign();
         let unsigned_shrink = self.data.shrink();
@@ -694,7 +695,7 @@ impl Num for BigInt {
         } else {
             Plus
         };
-        let bu = try!(BigUint::from_str_radix(s, radix));
+        let bu = BigUint::from_str_radix(s, radix)?;
         Ok(BigInt::from_biguint(sign, bu))
     }
 }
