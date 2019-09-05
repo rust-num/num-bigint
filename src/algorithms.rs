@@ -692,8 +692,7 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
         let mut prod = b * &q0;
 
         while cmp_slice(&prod.data[..], &a.data[j..]) == Greater {
-            let one: BigDigit = 1;
-            q0 -= one;
+            q0 -= 1u32;
             prod -= b;
         }
 
