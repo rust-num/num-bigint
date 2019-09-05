@@ -51,6 +51,8 @@ pub struct BigUint {
     data: Vec<BigDigit>,
 }
 
+// Note: derived `Clone` doesn't specialize `clone_from`,
+// but we want to keep the allocation in `data`.
 impl Clone for BigUint {
     #[inline]
     fn clone(&self) -> Self {

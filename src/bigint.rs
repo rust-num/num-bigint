@@ -117,6 +117,8 @@ pub struct BigInt {
     data: BigUint,
 }
 
+// Note: derived `Clone` doesn't specialize `clone_from`,
+// but we want to keep the allocation in `data`.
 impl Clone for BigInt {
     #[inline]
     fn clone(&self) -> Self {
