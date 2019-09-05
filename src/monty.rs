@@ -1,3 +1,4 @@
+use std::mem;
 use std::ops::Shl;
 use traits::{One, Zero};
 
@@ -190,7 +191,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
                 mr.n0inv,
                 num_words,
             );
-            ::std::mem::swap(&mut z, &mut zz);
+            mem::swap(&mut z, &mut zz);
             yi <<= n;
             j += n;
         }
