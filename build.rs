@@ -25,6 +25,15 @@ fn main() {
     write_radix_bases().unwrap();
 }
 
+/// Write tables of the greatest power of each radix for the given bit size.  These are returned
+/// from `biguint::get_radix_base` to batch the multiplication/division of radix conversions on
+/// full `BigUint` values, operating on primitive integers as much as possible.
+///
+/// e.g. BASES_16[3] = (59049, 10) // 3¹⁰ fits in u16, but 3¹¹ is too big
+///      BASES_32[3] = (3486784401, 20)
+///      BASES_64[3] = (12157665459056928801, 40)
+///
+/// Powers of two are not included, just zeroed, as they're implemented with shifts.
 #[allow(unknown_lints, bare_trait_objects)]
 fn write_radix_bases() -> Result<(), Box<Error>> {
     let out_dir = env::var("OUT_DIR")?;
