@@ -13,6 +13,18 @@ script:
   - ./ci/test_full.sh
 matrix:
   include:
+    - name: "i686"
+      rust: stable
+      env: TARGET=i686-unknown-linux-gnu
+      addons:
+        apt:
+          packages:
+            - gcc-multilib
+      before_script:
+        - rustup target add $TARGET
+      script:
+        - cargo build --verbose --target $TARGET --all-features
+        - cargo test --verbose --target $TARGET --all-features
     - name: "rustfmt"
       rust: 1.31.0
       before_script:
