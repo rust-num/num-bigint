@@ -122,7 +122,12 @@ pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
     rem
 }
 
-// Only for the Add impl:
+/// Two argument addition of raw slices, `a += b`, returning the carry.
+///
+/// This is used when the data `Vec` might need to resize to push a non-zero carry, so we perform
+/// the addition first hoping that it will fit.
+///
+/// The caller _must_ ensure that `a` is at least as long as `b`.
 #[inline]
 pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     debug_assert!(a.len() >= b.len());
