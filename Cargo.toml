@@ -44,9 +44,9 @@ default-features = false
 
 [dependencies.rand]
 optional = true
-version = "0.5"
+version = "0.7"
 default-features = false
-features = ["std"]
+features = ["std", "small_rng"]
 
 [dependencies.serde]
 optional = true
@@ -55,13 +55,22 @@ default-features = false
 
 [dependencies.quickcheck]
 optional = true
-version = "0.8"
+version = "0.9"
 default-features = false
 
 [dependencies.quickcheck_macros]
 optional = true
 version = "0.8"
 default-features = false
+
+[dev-dependencies.rand_xorshift]
+version = "0.2.0"
+
+[dev-dependencies.rand_chacha]
+version = "0.2.0"
+
+[dev-dependencies.rand_isaac]
+version = "0.2.0"
 
 [features]
 default = ["std"]

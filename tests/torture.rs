@@ -6,6 +6,7 @@ extern crate rand;
 
 use num_bigint::RandBigInt;
 use num_traits::Zero;
+use rand::rngs::SmallRng;
 use rand::prelude::*;
 
 fn get_rng() -> SmallRng {

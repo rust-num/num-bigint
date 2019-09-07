@@ -3,6 +3,9 @@
 extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
+extern crate rand_chacha;
+extern crate rand_isaac;
+extern crate rand_xorshift;
 
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
@@ -118,7 +121,7 @@ mod biguint {
             "57401636903146945411652549098818446911814352529449356393690984105383482703074355\
              67088360974672291353736011718191813678720755501317478656550386324355699624671",
         ];
-        use rand::prng::ChaChaRng;
+        use rand_chacha::ChaChaRng;
         seeded_value_stability::<ChaChaRng>(EXPECTED);
     }
 
@@ -137,7 +140,7 @@ mod biguint {
             "37805949268912387809989378008822038725134260145886913321084097194957861133272558\
              43458183365174899239251448892645546322463253898288141861183340823194379722556",
         ];
-        use rand::prng::IsaacRng;
+        use rand_isaac::IsaacRng;
         seeded_value_stability::<IsaacRng>(EXPECTED);
     }
 
@@ -156,7 +159,7 @@ mod biguint {
             "53041498719137109355568081064978196049094604705283682101683207799515709404788873\
              53417136457745727045473194367732849819278740266658219147356315674940229288531",
         ];
-        use rand::prng::XorShiftRng;
+        use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED);
     }
 }
@@ -280,7 +283,7 @@ mod bigint {
             "501454570554170484799723603981439288209930393334472085317977614690773821680884844\
              8530978478667288338327570972869032358120588620346111979053742269317702532328",
         ];
-        use rand::prng::ChaChaRng;
+        use rand_chacha::ChaChaRng;
         seeded_value_stability::<ChaChaRng>(EXPECTED);
     }
 
@@ -299,7 +302,7 @@ mod bigint {
             "-14563174552421101848999036239003801073335703811160945137332228646111920972691151\
              88341090358094331641182310792892459091016794928947242043358702692294695845817",
         ];
-        use rand::prng::IsaacRng;
+        use rand_isaac::IsaacRng;
         seeded_value_stability::<IsaacRng>(EXPECTED);
     }
 
@@ -318,7 +321,7 @@ mod bigint {
             "49920038676141573457451407325930326489996232208489690499754573826911037849083623\
              24546142615325187412887314466195222441945661833644117700809693098722026764846",
         ];
-        use rand::prng::XorShiftRng;
+        use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED);
     }
 }

@@ -1,6 +1,6 @@
 //! Randomization of big integers
 
-use rand::distributions::uniform::{SampleUniform, UniformSampler};
+use rand::distributions::uniform::{SampleUniform, UniformSampler, SampleBorrow};
 use rand::prelude::*;
 
 use BigInt;
@@ -147,16 +147,26 @@ impl UniformSampler for UniformBigUint {
     type X = BigUint;
 
     #[inline]
-    fn new(low: Self::X, high: Self::X) -> Self {
+    fn new<B1, B2>(low_b: B1, high_b: B2) -> Self
+        where B1: SampleBorrow<Self::X> + Sized,
+              B2: SampleBorrow<Self::X> + Sized
+    {
+        let low = low_b.borrow();
+        let high = high_b.borrow();
         assert!(low < high);
         UniformBigUint {
-            len: high - &low,
-            base: low,
+            len: high - low,
+            base: low.clone(),
         }
     }
 
     #[inline]
-    fn new_inclusive(low: Self::X, high: Self::X) -> Self {
+    fn new_inclusive<B1, B2>(low_b: B1, high_b: B2) -> Self
+        where B1: SampleBorrow<Self::X> + Sized,
+              B2: SampleBorrow<Self::X> + Sized
+    {
+        let low = low_b.borrow();
+        let high = high_b.borrow();
         assert!(low <= high);
         Self::new(low, high + 1u32)
     }
@@ -167,8 +177,11 @@ impl UniformSampler for UniformBigUint {
     }
 
     #[inline]
-    fn sample_single<R: Rng + ?Sized>(low: Self::X, high: Self::X, rng: &mut R) -> Self::X {
-        rng.gen_biguint_range(&low, &high)
+    fn sample_single<R: Rng + ?Sized, B1, B2>(low: B1, high: B2, rng: &mut R) -> Self::X
+        where B1: SampleBorrow<Self::X> + Sized,
+              B2: SampleBorrow<Self::X> + Sized
+    {
+        rng.gen_biguint_range(low.borrow(), high.borrow())
     }
 }
 
@@ -187,16 +200,26 @@ impl UniformSampler for UniformBigInt {
     type X = BigInt;
 
     #[inline]
-    fn new(low: Self::X, high: Self::X) -> Self {
+    fn new<B1, B2>(low_b: B1, high_b: B2) -> Self
+        where B1: SampleBorrow<Self::X> + Sized,
+              B2: SampleBorrow<Self::X> + Sized
+    {
+        let low = low_b.borrow();
+        let high = high_b.borrow();
         assert!(low < high);
         UniformBigInt {
-            len: into_magnitude(high - &low),
-            base: low,
+            len: into_magnitude(high - low),
+            base: low.clone(),
         }
     }
 
     #[inline]
-    fn new_inclusive(low: Self::X, high: Self::X) -> Self {
+    fn new_inclusive<B1, B2>(low_b: B1, high_b: B2) -> Self
+        where B1: SampleBorrow<Self::X> + Sized,
+              B2: SampleBorrow<Self::X> + Sized
+    {
+        let low = low_b.borrow();
+        let high = high_b.borrow();
         assert!(low <= high);
         Self::new(low, high + 1u32)
     }
@@ -207,8 +230,11 @@ impl UniformSampler for UniformBigInt {
     }
 
     #[inline]
-    fn sample_single<R: Rng + ?Sized>(low: Self::X, high: Self::X, rng: &mut R) -> Self::X {
-        rng.gen_bigint_range(&low, &high)
+    fn sample_single<R: Rng + ?Sized, B1, B2>(low: B1, high: B2, rng: &mut R) -> Self::X
+        where B1: SampleBorrow<Self::X> + Sized,
+              B2: SampleBorrow<Self::X> + Sized
+    {
+        rng.gen_bigint_range(low.borrow(), high.borrow())
     }
 }
 
