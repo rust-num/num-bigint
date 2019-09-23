@@ -2125,6 +2125,40 @@ impl BigUint {
         }
     }
 
+    /// Returns the representation of the `BigUint` in little-endian base 2<sup>32</sup>.
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// let slice = &[1, 2, 3, 4];
+    /// let i = BigUint::from_slice(slice);
+    /// assert_eq!(i.to_slice(), slice);
+    /// ```
+    #[inline]
+    pub fn to_slice(&self) -> &[BigDigit] {
+        &self.data
+    }
+
+    /// Returns the representation of the `BigUint` in little-endian base 2<sup>32</sup>.
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// let slice = &[1, 2, 3, 4];
+    /// let i = BigUint::from_slice(slice);
+    /// assert_eq!(i.to_vec(), slice);
+    /// ```
+    #[inline]
+    pub fn to_vec(self) -> Vec<BigDigit> {
+        self.data
+    }
+
     /// Returns the integer formatted as a string in the given radix.
     /// `radix` must be in the range `2...36`.
     ///
