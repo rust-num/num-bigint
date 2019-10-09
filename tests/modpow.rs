@@ -115,7 +115,7 @@ mod biguint {
 mod bigint {
     use num_bigint::BigInt;
     use num_integer::Integer;
-    use num_traits::{Num, One, Signed, Zero};
+    use num_traits::{Num, One, Signed};
 
     fn check_modpow<T: Into<BigInt>>(b: T, e: T, m: T, r: T) {
         fn check(b: &BigInt, e: &BigInt, m: &BigInt, r: &BigInt) {
@@ -134,31 +134,20 @@ mod bigint {
         let e: BigInt = e.into();
         let m: BigInt = m.into();
         let r: BigInt = r.into();
+        eprintln!("{} {} {} {}", b, e, m, r);
 
-        let neg_b_r = if r.is_zero() {
-            BigInt::zero()
+        let neg_b_r = if e.is_odd() {
+            (-&r).mod_floor(&m)
         } else {
-            if e.is_odd() {
-                &m - &r
-            } else {
-                r.clone()
-            }
+            r.clone()
         };
-
-        let neg_m_r = if r.is_zero() {
-            BigInt::zero()
-        } else {
-            if b.is_negative() || (-&m).is_negative() {
-                &r - &m
-            } else {
-                &m - &r
-            }
-        };
+        let neg_m_r = r.mod_floor(&-&m);
+        let neg_bm_r = neg_b_r.mod_floor(&-&m);
 
         check(&b, &e, &m, &r);
         check(&-&b, &e, &m, &neg_b_r);
         check(&b, &e, &-&m, &neg_m_r);
-        // check(&-b, &e, &-m, &neg_bm_r);
+        check(&-b, &e, &-&m, &neg_bm_r);
     }
 
     #[test]
@@ -175,7 +164,7 @@ mod bigint {
     fn test_modpow_small() {
         for b in -10i64..11 {
             for e in 0i64..11 {
-                for m in 0..11 {
+                for m in -10..11 {
                     if m == 0 {
                         continue;
                     }
