@@ -134,7 +134,6 @@ mod bigint {
         let e: BigInt = e.into();
         let m: BigInt = m.into();
         let r: BigInt = r.into();
-        eprintln!("{} {} {} {}", b, e, m, r);
 
         let neg_b_r = if e.is_odd() {
             (-&r).mod_floor(&m)
