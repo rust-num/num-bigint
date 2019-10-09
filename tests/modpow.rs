@@ -135,12 +135,30 @@ mod bigint {
         let m: BigInt = m.into();
         let r: BigInt = r.into();
 
-        let neg_r = if r.is_zero() { BigInt::zero() } else { &m - &r };
+        let neg_b_r = if r.is_zero() {
+            BigInt::zero()
+        } else {
+            if e.is_odd() {
+                &m - &r
+            } else {
+                r.clone()
+            }
+        };
+
+        let neg_m_r = if r.is_zero() {
+            BigInt::zero()
+        } else {
+            if b.is_negative() || (-&m).is_negative() {
+                &r - &m
+            } else {
+                &m - &r
+            }
+        };
 
         check(&b, &e, &m, &r);
-        check(&-&b, &e, &m, &neg_r);
-        check(&b, &e, &-&m, &-neg_r);
-        check(&-b, &e, &-m, &-r);
+        check(&-&b, &e, &m, &neg_b_r);
+        check(&b, &e, &-&m, &neg_m_r);
+        // check(&-b, &e, &-m, &neg_bm_r);
     }
 
     #[test]
@@ -151,6 +169,20 @@ mod bigint {
         check_modpow(5, 117, 19, 1);
         check_modpow(-20, 1, 2, 0);
         check_modpow(-20, 1, 3, 1);
+    }
+
+    #[test]
+    fn test_modpow_small() {
+        for b in -10i64..11 {
+            for e in 0i64..11 {
+                for m in 0..11 {
+                    if m == 0 {
+                        continue;
+                    }
+                    check_modpow(b, e, m, b.pow(e as u32).mod_floor(&m));
+                }
+            }
+        }
     }
 
     #[test]
