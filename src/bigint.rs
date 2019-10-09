@@ -2990,7 +2990,10 @@ impl BigInt {
         }
 
         // The sign of the result follows the modulus, like `mod_floor`.
-        let (sign, mag) = match (self.is_negative(), modulus.is_negative()) {
+        let (sign, mag) = match (
+            self.is_negative() && exponent.is_odd(),
+            modulus.is_negative(),
+        ) {
             (false, false) => (Plus, result),
             (true, false) => (Plus, &modulus.data - result),
             (false, true) => (Minus, &modulus.data - result),
