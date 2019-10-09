@@ -81,6 +81,19 @@ mod biguint {
         check_modpow::<u32>(0, 15, 11, 0);
         check_modpow::<u32>(3, 7, 11, 9);
         check_modpow::<u32>(5, 117, 19, 1);
+        check_modpow::<u32>(20, 1, 2, 0);
+        check_modpow::<u32>(20, 1, 3, 2);
+    }
+
+    #[test]
+    fn test_modpow_small() {
+        for b in 0u64..11 {
+            for e in 0u64..11 {
+                for m in 1..11 {
+                    check_modpow::<u64>(b, e, m, b.pow(e as u32) % m);
+                }
+            }
+        }
     }
 
     #[test]
@@ -136,6 +149,8 @@ mod bigint {
         check_modpow(0, 15, 11, 0);
         check_modpow(3, 7, 11, 9);
         check_modpow(5, 117, 19, 1);
+        check_modpow(-20, 1, 2, 0);
+        check_modpow(-20, 1, 3, 1);
     }
 
     #[test]

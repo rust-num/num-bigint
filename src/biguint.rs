@@ -2268,7 +2268,7 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
         Some(i) => i,
     };
 
-    let mut base = base.clone();
+    let mut base = base % modulus;
     for _ in 0..i {
         for _ in 0..big_digit::BITS {
             base = &base * &base % modulus;
