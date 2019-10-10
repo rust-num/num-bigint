@@ -487,26 +487,13 @@ macro_rules! impl_partialord_rev {
 }
 
 macro_rules! impl_partialord_partialeq_for_biguint_below_digit {
-    ($typ_signed:ty, $typ_unsigned:ty) => {
+    ($typ_unsigned:ty) => {
         impl_scalar_partialeq!(impl PartialEq<$typ_unsigned> for BigUint);
         impl_partialord_rev!(impl PartialOrd<$typ_unsigned> for BigUint);
         impl PartialOrd<$typ_unsigned> for BigUint {
             #[inline]
             fn partial_cmp(&self, other: &$typ_unsigned) -> Option<Ordering> {
                 Some(cmp_zero_padded_slice(&self.data[..], &[*other as u32]))
-            }
-        }
-
-        impl_scalar_partialeq!(impl PartialEq<$typ_signed> for BigUint);
-        impl_partialord_rev!(impl PartialOrd<$typ_signed> for BigUint);
-        impl PartialOrd<$typ_signed> for BigUint {
-            #[inline]
-            fn partial_cmp(&self, other: &$typ_signed) -> Option<Ordering> {
-                if *other < 0 {
-                    Some(Greater)
-                } else {
-                    self.partial_cmp(&(*other as u32))
-                }
             }
         }
     };
