@@ -40,9 +40,9 @@ version = "0.6"
 default-features = false
 
 [dependencies.zeroize]
-version = "0.6"
-optional = true
+version = "0.10.1"
 default-features = false
+optional = true
 features = ["zeroize_derive"]
 
 [dependencies.serde]
@@ -78,7 +78,7 @@ version = "1.0"
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
-std = ["num-integer/std", "num-traits/std", "smallvec/std", "rand/std", "serde/std", "zeroize/std"]
+std = ["num-integer/std", "num-traits/std", "smallvec/std", "rand/std", "serde/std"]
 u64_digit = []
 prime = ["rand"]
-nightly = ["zeroize/nightly", "rand/nightly"]
+nightly = ["rand/nightly"]
