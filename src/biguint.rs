@@ -1,7 +1,7 @@
 #[allow(deprecated, unused_imports)]
 use alloc::borrow::Cow;
-use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::hash::{Hash, Hasher};
@@ -13,7 +13,7 @@ use core::ops::{
 use core::str::{self, FromStr};
 use core::{cmp, fmt, mem};
 use core::{f32, f64};
-use core::{u64, u32, u8};
+use core::{u32, u64, u8};
 
 #[cfg(not(feature = "std"))]
 use libm::F64Ext;
@@ -25,11 +25,11 @@ use serde;
 use zeroize::Zeroize;
 
 use integer::{Integer, Roots};
-use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow,
-    ToPrimitive, Unsigned, Zero,
-};
 use num_traits::float::FloatCore;
+use num_traits::{
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
+    Unsigned, Zero,
+};
 
 use BigInt;
 
@@ -44,7 +44,7 @@ use self::monty::monty_modpow;
 use super::VEC_SIZE;
 use crate::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use crate::algorithms::{biguint_shl, biguint_shr};
-use crate::algorithms::{cmp_slice, fls, ilog2, idiv_ceil};
+use crate::algorithms::{cmp_slice, fls, idiv_ceil, ilog2};
 use crate::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
 use crate::algorithms::{extended_gcd, mod_inverse};
 use crate::traits::{ExtendedGcd, ModInverse};
@@ -260,9 +260,9 @@ impl Num for BigUint {
         let mut v = Vec::with_capacity(s.len());
         for b in s.bytes() {
             let d = match b {
-                b'0'...b'9' => b - b'0',
-                b'a'...b'z' => b - b'a' + 10,
-                b'A'...b'Z' => b - b'A' + 10,
+                b'0'..=b'9' => b - b'0',
+                b'a'..=b'z' => b - b'a' + 10,
+                b'A'..=b'Z' => b - b'A' + 10,
                 b'_' => continue,
                 _ => u8::MAX,
             };
@@ -2542,7 +2542,7 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     where
         D: serde::Deserializer<'de>,
     {
-        let data: Vec<u32> = try!(Vec::deserialize(deserializer));
+        let data: Vec<u32> = Vec::deserialize(deserializer)?;
         Ok(BigUint::new(data))
     }
 }

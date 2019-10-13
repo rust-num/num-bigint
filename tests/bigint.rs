@@ -20,8 +20,8 @@ use std::{i16, i32, i64, i8, isize};
 use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
-use num_traits::{FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 use num_traits::float::FloatCore;
+use num_traits::{FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
 use consts::*;
@@ -677,9 +677,9 @@ fn test_add() {
 fn test_add_mut() {
     for elm in SUM_TRIPLES.iter() {
         let (a_vec, b_vec, c_vec) = *elm;
-        let mut a = BigInt::from_slice(Plus, a_vec);
-        let mut b = BigInt::from_slice(Plus, b_vec);
-        let mut c = BigInt::from_slice(Plus, c_vec);
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
         let (na, nb, nc) = (-&a, -&b, -&c);
 
         assert_op!(a + b == c);
@@ -1120,7 +1120,6 @@ fn test_negative_shr() {
 #[test]
 #[cfg(feature = "rand")]
 fn test_random_shr() {
-
     #[cfg(feature = "std")]
     fn thread_rng() -> impl rand::Rng {
         rand::thread_rng()
@@ -1132,8 +1131,8 @@ fn test_random_shr() {
         rand::rngs::StdRng::seed_from_u64(4)
     }
 
-    use rand::Rng;
     use rand::distributions::Standard;
+    use rand::Rng;
 
     let mut rng = thread_rng();
 
