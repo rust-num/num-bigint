@@ -26,10 +26,14 @@ extern crate num_bigint_dig as num_bigint;
 
 ## Features
 
-The `std` crate feature is mandatory and enabled by default.  If you depend on
-`num-bigint` with `default-features = false`, you must manually enable the
-`std` feature yourself.  In the future, we hope to support `#![no_std]` with
-the `alloc` crate when `std` is not enabled.
+The `std` feature is enabled by default and mandatory to compile on older rust
+version.
+
+On Rust 1.36 and later, it is possible to use this crate on no_std target. If
+you wish to compile for a target that does not have an `std` crate, you should
+use `num-bigint` with `default-features = false`. All other sub-features should
+be compatible with no_std. Note that in this mode, `num-bigint` still relies on
+the alloc crate, so make sure you define a `global_allocator`.
 
 Implementations for `i128` and `u128` are only available with Rust 1.26 and
 later.  The build script automatically detects this, but you can make it

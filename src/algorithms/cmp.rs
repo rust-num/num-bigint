@@ -1,4 +1,4 @@
-use std::cmp::Ordering::{self, Equal, Greater, Less};
+use core::cmp::Ordering::{self, Equal, Greater, Less};
 
 use crate::big_digit::BigDigit;
 

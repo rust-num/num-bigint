@@ -1,5 +1,5 @@
-use std::cmp;
-use std::iter::repeat;
+use core::cmp;
+use core::iter::repeat;
 
 use crate::algorithms::{adc, add2, sub2, sub_sign};
 use crate::big_digit::{BigDigit, DoubleBigDigit, BITS};
@@ -310,7 +310,7 @@ mod tests {
     #[cfg(feature = "u64_digit")]
     #[test]
     fn test_mac3_regression() {
-        let b: Vec<BigDigit> = vec![
+        let b = [
             6871754923702299421,
             18286959765922425554,
             16443042141374662930,
@@ -657,7 +657,7 @@ mod tests {
             17511662813348858473,
             12,
         ];
-        let c: Vec<BigDigit> = vec![
+        let c = [
             13147625290258353449,
             13817956093586917764,
             18028234882233861888,
@@ -1655,18 +1655,18 @@ mod tests {
             1305238720762,
         ];
 
-        let mut a1: Vec<BigDigit> = vec![0; 1341];
-        let mut a2: Vec<BigDigit> = vec![0; 1341];
-        let mut a3: Vec<BigDigit> = vec![0; 1341];
+        let mut a1 = &mut [0; 1341];
+        let mut a2 = &mut [0; 1341];
+        let mut a3 = &mut [0; 1341];
 
         //print!("{} {}", b.len(), c.len());
-        long(&mut a1, &b, &c);
-        karatsuba(&mut a2, &b, &c);
+        long(a1, &b, &c);
+        karatsuba(a2, &b, &c);
 
-        assert_eq!(a1, a2);
+        assert_eq!(&a1[..], &a2[..]);
 
         // println!("res: {:?}", &a1);
-        toom3(&mut a3, &b, &c);
-        assert_eq!(a1, a3);
+        toom3(a3, &b, &c);
+        assert_eq!(&a1[..], &a3[..]);
     }
 }

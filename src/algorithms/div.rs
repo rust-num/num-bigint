@@ -1,6 +1,6 @@
 use num_traits::{One, Zero};
 use smallvec::SmallVec;
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 
 use crate::algorithms::{add2, cmp_slice, sub2};
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};

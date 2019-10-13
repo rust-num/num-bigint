@@ -20,7 +20,8 @@ use std::{i16, i32, i64, i8, isize};
 use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
-use num_traits::{Float, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
+use num_traits::{FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
+use num_traits::float::FloatCore;
 
 mod consts;
 use consts::*;
@@ -1119,9 +1120,22 @@ fn test_negative_shr() {
 #[test]
 #[cfg(feature = "rand")]
 fn test_random_shr() {
-    use rand::distributions::Standard;
+
+    #[cfg(feature = "std")]
+    fn thread_rng() -> impl rand::Rng {
+        rand::thread_rng()
+    }
+    #[cfg(not(feature = "std"))]
+    fn thread_rng() -> impl rand::Rng {
+        use rand::SeedableRng;
+        // Chosen by fair dice roll
+        rand::rngs::StdRng::seed_from_u64(4)
+    }
+
     use rand::Rng;
-    let mut rng = rand::thread_rng();
+    use rand::distributions::Standard;
+
+    let mut rng = thread_rng();
 
     for p in rng.sample_iter::<i64, _>(&Standard).take(1000) {
         let big = BigInt::from(p);

@@ -1,5 +1,3 @@
-#![cfg(feature = "rand")]
-
 use criterion::Criterion;
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::Pow;

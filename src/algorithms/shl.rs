@@ -1,5 +1,5 @@
-use std::borrow::Cow;
-use std::iter::repeat;
+use alloc::borrow::Cow;
+use core::iter::repeat;
 
 use smallvec::SmallVec;
 

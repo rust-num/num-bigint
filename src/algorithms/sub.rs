@@ -1,5 +1,5 @@
-use std::cmp;
-use std::cmp::Ordering::*;
+use core::cmp;
+use core::cmp::Ordering::*;
 
 use num_traits::Zero;
 use smallvec::SmallVec;

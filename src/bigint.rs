@@ -1,19 +1,21 @@
 #![allow(clippy::suspicious_arithmetic_impl)]
 #[allow(deprecated, unused_imports)]
-use std::borrow::Cow;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::default::Default;
-use std::hash::{Hash, Hasher};
-use std::iter::{Product, Sum};
-use std::ops::{
+use alloc::borrow::Cow;
+use alloc::vec::Vec;
+use alloc::string::String;
+use core::cmp::Ordering::{self, Equal, Greater, Less};
+use core::default::Default;
+use core::hash::{Hash, Hasher};
+use core::iter::{Product, Sum};
+use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
-use std::str::{self, FromStr};
-use std::{fmt, mem};
+use core::str::{self, FromStr};
+use core::{fmt, mem};
 #[cfg(has_i128)]
-use std::{i128, u128};
-use std::{i64, u64};
+use core::{i128, u128};
+use core::{i64, u64};
 
 #[cfg(feature = "serde")]
 use serde;

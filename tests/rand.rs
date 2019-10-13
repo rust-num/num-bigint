@@ -11,8 +11,17 @@ mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
     use num_traits::Zero;
     use rand::distributions::Uniform;
-    use rand::thread_rng;
     use rand::{Rng, SeedableRng};
+
+    #[cfg(feature = "std")]
+    fn thread_rng() -> impl Rng {
+        rand::thread_rng()
+    }
+    #[cfg(not(feature = "std"))]
+    fn thread_rng() -> impl Rng {
+        // Chosen by fair dice roll
+        rand::StdRng::seed_from_u64(4)
+    }
 
     #[test]
     fn test_rand() {
@@ -216,8 +225,17 @@ mod bigint {
     use num_bigint::{BigInt, RandBigInt, RandomBits};
     use num_traits::Zero;
     use rand::distributions::Uniform;
-    use rand::thread_rng;
     use rand::{Rng, SeedableRng};
+
+    #[cfg(feature = "std")]
+    fn thread_rng() -> impl Rng {
+        rand::thread_rng()
+    }
+    #[cfg(not(feature = "std"))]
+    fn thread_rng() -> impl Rng {
+        // Chosen by fair dice roll
+        rand::rngs::StdRng::seed_from_u64(4)
+    }
 
     #[test]
     fn test_rand() {

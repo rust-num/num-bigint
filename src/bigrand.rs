@@ -270,7 +270,8 @@ impl Distribution<BigInt> for RandomBits {
 /// to provide actually random primes.
 ///
 /// # Example
-/// ```
+#[cfg_attr(feature = "std", doc = " ```")]
+#[cfg_attr(not(feature = "std"), doc = " ```ignore")]
 /// extern crate rand;
 /// extern crate num_bigint_dig as num_bigint;
 ///

@@ -16,11 +16,6 @@ autobenches = false
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand", "prime"]
 
-[[bench]]
-harness = false
-name = "bench_main"
-required-features = ["prime"]
-
 [dependencies]
 
 [dependencies.smallvec]
@@ -43,29 +38,39 @@ default-features = false
 optional = true
 version = "0.6"
 default-features = false
-features = ["std"]
 
 [dependencies.zeroize]
 version = "0.6"
 optional = true
+default-features = false
+features = ["zeroize_derive"]
 
 [dependencies.serde]
 optional = true
 version = "1.0"
 default-features = false
-features = ["std"]
+
+[dependencies.libm]
+version = "0.1.4"
 
 [dependencies.lazy_static]
 version = "1.2.0"
+default-features = false
+# no_std feature is an anti-pattern. Why, lazy_static, why?
+# See https://github.com/rust-lang-nursery/lazy-static.rs/issues/150
+features = ["spin_no_std"]
 
 [dependencies.byteorder]
 version = "1.2.7"
+default-features = false
 
 [dev-dependencies]
-criterion = "0.2"
 rand_chacha = "0.1"
 rand_xorshift = "0.1"
 rand_isaac = "0.1"
+
+[build-dependencies]
+autocfg = "0.1.5"
 
 [dev-dependencies.serde_test]
 version = "1.0"
@@ -73,7 +78,7 @@ version = "1.0"
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
-std = ["num-integer/std", "num-traits/std", "smallvec/std", "rand/std"]
+std = ["num-integer/std", "num-traits/std", "smallvec/std", "rand/std", "serde/std", "zeroize/std"]
 u64_digit = []
 prime = ["rand"]
 nightly = ["zeroize/nightly", "rand/nightly"]

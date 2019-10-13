@@ -388,7 +388,7 @@ pub fn probably_prime_lucas(n: &BigUint) -> bool {
         let mut t2 = &vk1 << 1;
 
         if t1 < t2 {
-            ::std::mem::swap(&mut t1, &mut t2);
+            core::mem::swap(&mut t1, &mut t2);
         }
 
         t1 -= t2;
@@ -440,6 +440,7 @@ fn get_bit(x: &BigUint, i: usize) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec::Vec;
     // use RandBigInt;
 
     use crate::biguint::ToBigUint;

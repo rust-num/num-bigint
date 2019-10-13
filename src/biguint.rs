@@ -1,18 +1,22 @@
 #[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
-use std::borrow::Cow;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::default::Default;
-use std::hash::{Hash, Hasher};
-use std::iter::{Product, Sum};
-use std::ops::{
+use alloc::borrow::Cow;
+use alloc::vec::Vec;
+use alloc::string::String;
+use core::cmp::Ordering::{self, Equal, Greater, Less};
+use core::default::Default;
+use core::hash::{Hash, Hasher};
+use core::iter::{Product, Sum};
+use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
-use std::str::{self, FromStr};
-use std::{cmp, fmt, mem};
-use std::{f32, f64};
-use std::{u64, u8};
+use core::str::{self, FromStr};
+use core::{cmp, fmt, mem};
+use core::{f32, f64};
+use core::{u64, u32, u8};
+
+#[cfg(not(feature = "std"))]
+use libm::F64Ext;
 
 #[cfg(feature = "serde")]
 use serde;
@@ -22,9 +26,11 @@ use zeroize::Zeroize;
 
 use integer::{Integer, Roots};
 use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow,
     ToPrimitive, Unsigned, Zero,
 };
+use num_traits::float::FloatCore;
+
 use BigInt;
 
 use big_digit::{self, BigDigit};
@@ -38,7 +44,7 @@ use self::monty::monty_modpow;
 use super::VEC_SIZE;
 use crate::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use crate::algorithms::{biguint_shl, biguint_shr};
-use crate::algorithms::{cmp_slice, fls, ilog2};
+use crate::algorithms::{cmp_slice, fls, ilog2, idiv_ceil};
 use crate::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul};
 use crate::algorithms::{extended_gcd, mod_inverse};
 use crate::traits::{ExtendedGcd, ModInverse};
@@ -194,9 +200,9 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     debug_assert!(v.iter().all(|&c| (c as u32) < radix));
 
     // Estimate how big the result will be, so we can pre-allocate it.
-    let bits = (radix as f64).log2() * v.len() as f64;
-    let big_digits = (bits / big_digit::BITS as f64).ceil();
-    let mut data = SmallVec::with_capacity(big_digits as usize);
+    let bits = ilog2(radix) * v.len();
+    let big_digits = idiv_ceil(bits, big_digit::BITS);
+    let mut data = SmallVec::with_capacity(big_digits);
 
     let (base, power) = get_radix_base(radix);
     let radix = radix as BigDigit;
@@ -1713,14 +1719,14 @@ impl FromPrimitive for BigUint {
         }
 
         // match the rounding of casting from float to int
-        n = n.trunc();
+        n = FloatCore::trunc(n);
 
         // handle 0.x, -0.x
         if n.is_zero() {
             return Some(BigUint::zero());
         }
 
-        let (mantissa, exponent, sign) = Float::integer_decode(n);
+        let (mantissa, exponent, sign) = FloatCore::integer_decode(n);
 
         if sign == -1 {
             return None;
@@ -1925,7 +1931,8 @@ fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     debug_assert!(!u.is_zero() && !radix.is_power_of_two());
 
     // Estimate how big the result will be, so we can pre-allocate it.
-    let radix_digits = ((u.bits() as f64) / (radix as f64).log2()).ceil();
+    let bits = ilog2(radix);
+    let radix_digits = idiv_ceil(u.bits(), bits);
     let mut res = Vec::with_capacity(radix_digits as usize);
     let mut digits = u.clone();
 
@@ -2518,7 +2525,7 @@ impl serde::Serialize for BigUint {
             .iter()
             .enumerate()
             .flat_map(|(i, n)| {
-                if i == last && n < &(::std::u32::MAX as u64) {
+                if i == last && n < &(u32::MAX as u64) {
                     vec![*n as u32]
                 } else {
                     vec![*n as u32, (n >> 32) as u32]

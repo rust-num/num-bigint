@@ -1,7 +1,8 @@
 #![allow(clippy::many_single_char_names)]
 
 use num_traits::{One, Zero};
-use std::ops::Shl;
+use core::ops::Shl;
+use alloc::vec::Vec;
 
 use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 use biguint::BigUint;
@@ -193,7 +194,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
                 mr.n0inv,
                 num_words,
             );
-            ::std::mem::swap(&mut z, &mut zz);
+            core::mem::swap(&mut z, &mut zz);
             yi <<= n;
             j += n;
         }

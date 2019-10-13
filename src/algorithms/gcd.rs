@@ -4,8 +4,8 @@ use crate::bigint::{BigInt, ToBigInt};
 use crate::biguint::{BigUint, IntDigits};
 use integer::Integer;
 use num_traits::{One, Signed, Zero};
-use std::borrow::Cow;
-use std::ops::Neg;
+use alloc::borrow::Cow;
+use core::ops::Neg;
 
 /// XGCD sets z to the greatest common divisor of a and b and returns z.
 /// If extended is true, XGCD returns their value such that z = a*x + b*y.
@@ -98,8 +98,8 @@ fn lehmer_gcd(
 
     // Ensure that a >= b
     if a < b {
-        std::mem::swap(&mut a, &mut b);
-        std::mem::swap(&mut ua, &mut ub);
+        core::mem::swap(&mut a, &mut b);
+        core::mem::swap(&mut ua, &mut ub);
     }
 
     // loop invariant A >= B
@@ -277,8 +277,8 @@ pub fn extended_gcd(
 
     // Ensure that a >= b
     if a < b {
-        std::mem::swap(&mut a, &mut b);
-        std::mem::swap(&mut ua, &mut ub);
+        core::mem::swap(&mut a, &mut b);
+        core::mem::swap(&mut ua, &mut ub);
     }
 
     let mut q: BigInt = 0.into();
@@ -527,8 +527,8 @@ fn euclid_udpate(
     *q = q_new;
     *r = r_new;
 
-    std::mem::swap(a, b);
-    std::mem::swap(b, r);
+    core::mem::swap(a, b);
+    core::mem::swap(b, r);
 
     if extended {
         // ua, ub = ub, ua - q * ub
@@ -546,7 +546,7 @@ fn euclid_udpate(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
+    use core::str::FromStr;
 
     use num_traits::FromPrimitive;
 
@@ -574,11 +574,11 @@ mod tests {
         while !r.is_zero() {
             let quotient = &old_r / &r;
             old_r = old_r - &quotient * &r;
-            std::mem::swap(&mut old_r, &mut r);
+            core::mem::swap(&mut old_r, &mut r);
             old_s = old_s - &quotient * &s;
-            std::mem::swap(&mut old_s, &mut s);
+            core::mem::swap(&mut old_s, &mut s);
             old_t = old_t - quotient * &t;
-            std::mem::swap(&mut old_t, &mut t);
+            core::mem::swap(&mut old_t, &mut t);
         }
 
         (old_r, old_s, old_t)

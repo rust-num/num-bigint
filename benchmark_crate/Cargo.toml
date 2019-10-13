@@ -1,0 +1,19 @@
+[package]
+name = "num-bigint-dig-benchmark"
+version = "0.0.0"
+autobenches = false
+publish = false
+
+[[bench]]
+harness = false
+name = "bench_main"
+
+[dependencies]
+num-bigint-dig = { path = "../", features = ["prime", "rand"] }
+num-integer = "0.1.39"
+num-traits = "0.2.4"
+rand = "0.6"
+rand_chacha = "0.1"
+
+[dev-dependencies]
+criterion = "0.2"

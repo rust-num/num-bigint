@@ -104,9 +104,21 @@ mod biguint {
     #[cfg(feature = "rand")]
     #[test]
     fn test_roots_rand() {
+
+        #[cfg(feature = "std")]
+        fn thread_rng() -> impl rand::Rng {
+            rand::thread_rng()
+        }
+        #[cfg(not(feature = "std"))]
+        fn thread_rng() -> impl rand::Rng {
+            use rand::SeedableRng;
+            // Chosen by fair dice roll
+            rand::rngs::StdRng::seed_from_u64(4)
+        }
+
         use num_bigint::RandBigInt;
+        use rand::Rng;
         use rand::distributions::Uniform;
-        use rand::{thread_rng, Rng};
 
         let mut rng = thread_rng();
         let bit_range = Uniform::new(0, 2048);
