@@ -1,8 +1,8 @@
 #![allow(clippy::suspicious_arithmetic_impl)]
 #[allow(deprecated, unused_imports)]
 use alloc::borrow::Cow;
-use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::hash::{Hash, Hasher};
@@ -703,7 +703,7 @@ impl Num for BigInt {
         } else {
             Plus
         };
-        let bu = try!(BigUint::from_str_radix(s, radix));
+        let bu = BigUint::from_str_radix(s, radix)?;
         Ok(BigInt::from_biguint(sign, bu))
     }
 }
