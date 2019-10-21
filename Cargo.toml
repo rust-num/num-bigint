@@ -34,16 +34,16 @@ name = "shootout-pidigits"
 [dependencies]
 
 [dependencies.num-integer]
-version = "0.1.39"
+version = "0.1.41"
 default-features = false
 
 [dependencies.num-traits]
-version = "0.2.7"
+version = "0.2.8"
 default-features = false
 
 [dependencies.rand]
 optional = true
-version = "0.5"
+version = "0.7.2"
 default-features = false
 features = ["std"]
 
@@ -65,6 +65,20 @@ default-features = false
 
 [dev-dependencies.serde_test]
 version = "1.0"
+
+[dev-dependencies.rand]
+version = "0.7.2"
+default-features = false
+features = ["std", "small_rng"]
+
+[dev-dependencies.rand_xorshift]
+version = "0.2"
+
+[dev-dependencies.rand_isaac]
+version = "0.2"
+
+[dev-dependencies.rand_chacha]
+version = "0.2"
 
 [features]
 default = ["std"]
