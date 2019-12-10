@@ -104,7 +104,6 @@ mod biguint {
     #[cfg(feature = "rand")]
     #[test]
     fn test_roots_rand() {
-
         #[cfg(feature = "std")]
         fn thread_rng() -> impl rand::Rng {
             rand::thread_rng()
@@ -117,10 +116,10 @@ mod biguint {
         }
 
         use num_bigint::RandBigInt;
-        use rand::Rng;
         use rand::distributions::Uniform;
+        use rand::Rng;
 
-        let mut rng = thread_rng();
+        let rng = &mut thread_rng();
         let bit_range = Uniform::new(0, 2048);
         let sample_bits: Vec<_> = rng.sample_iter(&bit_range).take(100).collect();
         for bits in sample_bits {

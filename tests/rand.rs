@@ -20,7 +20,7 @@ mod biguint {
     #[cfg(not(feature = "std"))]
     fn thread_rng() -> impl Rng {
         // Chosen by fair dice roll
-        rand::StdRng::seed_from_u64(4)
+        rand::rngs::StdRng::seed_from_u64(4)
     }
 
     #[test]

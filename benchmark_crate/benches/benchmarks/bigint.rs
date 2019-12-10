@@ -1,7 +1,7 @@
 use criterion::Criterion;
 use num_bigint::{BigInt, BigUint, RandBigInt};
 use num_traits::{FromPrimitive, Num, One, Pow, Zero};
-use rand::{SeedableRng, StdRng};
+use rand::{rngs::StdRng, SeedableRng};
 use std::mem::replace;
 
 fn get_rng() -> StdRng {

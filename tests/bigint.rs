@@ -1134,7 +1134,7 @@ fn test_random_shr() {
     use rand::distributions::Standard;
     use rand::Rng;
 
-    let mut rng = thread_rng();
+    let rng = thread_rng();
 
     for p in rng.sample_iter::<i64, _>(&Standard).take(1000) {
         let big = BigInt::from(p);

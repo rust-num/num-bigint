@@ -2,12 +2,13 @@
 
 [![crate](https://img.shields.io/crates/v/num-bigint-dig.svg)](https://crates.io/crates/num-bigint-dig)
 [![documentation](https://docs.rs/num-bigint-dig/badge.svg)](https://docs.rs/num-bigint-dig)
-![minimum rustc 1.31](https://img.shields.io/badge/rustc-1.31+-red.svg)
+![minimum rustc 1.36](https://img.shields.io/badge/rustc-1.36+-red.svg)
 [![Travis status](https://travis-ci.org/dignifiedquire/num-bigint.svg?branch=master)](https://travis-ci.org/dignifiedquire/num-bigint)
 
 Big integer types for Rust, `BigInt` and `BigUint`.
 
 > **Warning** This is a fork of [`rust-num/num-bigint`](https://github.com/rust-num/num-bigint) with a focus on providing functionality, needed to implement cryptographic operations.
+
 
 ## Usage
 
@@ -29,7 +30,7 @@ extern crate num_bigint_dig as num_bigint;
 The `std` feature is enabled by default and mandatory to compile on older rust
 version.
 
-On Rust 1.36 and later, it is possible to use this crate on no_std target. If
+It is possible to use this crate on no_std target. If
 you wish to compile for a target that does not have an `std` crate, you should
 use `num-bigint` with `default-features = false`. All other sub-features should
 be compatible with no_std. Note that in this mode, `num-bigint` still relies on
@@ -49,7 +50,7 @@ Release notes are available in [RELEASES.md](RELEASES.md).
 
 ## Compatibility
 
-The `num-bigint` crate is tested for rustc 1.31 and greater.
+The `num-bigint` crate is tested for rustc 1.36 and greater.
 
 ## Alternatives
 
@@ -59,7 +60,7 @@ table offers a brief comparison to a few alternatives.
 
 | Crate                | License        | Min rustc | Implementation |
 | :------------------- | :------------- | :-------- | :------------- |
-| **`num-bigint-dig`** | MIT/Apache-2.0 | 1.31      | pure rust |
+| **`num-bigint-dig`** | MIT/Apache-2.0 | 1.36      | pure rust |
 | [`num-bigint`]       | MIT/Apache-2.0 | 1.15      | pure rust |
 | [`ramp`]             | Apache-2.0     | nightly   | rust and inline assembly |
 | [`rug`]              | LGPL-3.0+      | 1.18      | bundles [GMP] via [`gmp-mpfr-sys`] |

@@ -12,8 +12,8 @@ name = "bench_main"
 num-bigint-dig = { path = "../", features = ["prime", "rand"] }
 num-integer = "0.1.39"
 num-traits = "0.2.4"
-rand = "0.6"
-rand_chacha = "0.1"
+rand = "0.7"
+rand_chacha = "0.2"
 
 [dev-dependencies]
 criterion = "0.2"

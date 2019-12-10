@@ -15,14 +15,51 @@ use core::{cmp, fmt, mem};
 use core::{f32, f64};
 use core::{u32, u64, u8};
 
-#[cfg(not(feature = "std"))]
-use libm::F64Ext;
-
 #[cfg(feature = "serde")]
 use serde;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
+
+#[cfg(feature = "std")]
+fn sqrt(a: f64) -> f64 {
+    a.sqrt()
+}
+
+#[cfg(not(feature = "std"))]
+fn sqrt(a: f64) -> f64 {
+    libm::sqrt(a)
+}
+
+#[cfg(feature = "std")]
+fn ln(a: f64) -> f64 {
+    a.ln()
+}
+
+#[cfg(not(feature = "std"))]
+fn ln(a: f64) -> f64 {
+    libm::log(a)
+}
+
+#[cfg(feature = "std")]
+fn cbrt(a: f64) -> f64 {
+    a.cbrt()
+}
+
+#[cfg(not(feature = "std"))]
+fn cbrt(a: f64) -> f64 {
+    libm::cbrt(a)
+}
+
+#[cfg(feature = "std")]
+fn exp(a: f64) -> f64 {
+    a.exp()
+}
+
+#[cfg(not(feature = "std"))]
+fn exp(a: f64) -> f64 {
+    libm::exp(a)
+}
 
 use integer::{Integer, Roots};
 use num_traits::float::FloatCore;
@@ -1478,7 +1515,7 @@ impl Roots for BigUint {
 
         let guess = if let Some(f) = self.to_f64() {
             // We fit in `f64` (lossy), so get a better initial guess from that.
-            BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
+            BigUint::from_f64(exp(ln(f) / f64::from(n))).unwrap()
         } else {
             // Try to guess by scaling down such that it does fit in `f64`.
             // With some (x * 2ⁿᵏ), its nth root ≈ (ⁿ√x * 2ᵏ)
@@ -1518,7 +1555,7 @@ impl Roots for BigUint {
 
         let guess = if let Some(f) = self.to_f64() {
             // We fit in `f64` (lossy), so get a better initial guess from that.
-            BigUint::from_f64(f.sqrt()).unwrap()
+            BigUint::from_f64(sqrt(f)).unwrap()
         } else {
             // Try to guess by scaling down such that it does fit in `f64`.
             // With some (x * 2²ᵏ), its sqrt ≈ (√x * 2ᵏ)
@@ -1550,7 +1587,7 @@ impl Roots for BigUint {
 
         let guess = if let Some(f) = self.to_f64() {
             // We fit in `f64` (lossy), so get a better initial guess from that.
-            BigUint::from_f64(f.cbrt()).unwrap()
+            BigUint::from_f64(cbrt(f)).unwrap()
         } else {
             // Try to guess by scaling down such that it does fit in `f64`.
             // With some (x * 2³ᵏ), its cbrt ≈ (∛x * 2ᵏ)

@@ -1,7 +1,7 @@
 use criterion::Criterion;
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::Pow;
-use rand::{SeedableRng, StdRng};
+use rand::{rngs::StdRng, SeedableRng};
 
 // The `big64` cases demonstrate the speed of cases where the value
 // can be converted to a `u64` primitive for faster calculation.

@@ -2,7 +2,7 @@ use criterion::Criterion;
 use num_bigint::{BigUint, RandBigInt};
 use num_integer::Integer;
 use num_traits::Zero;
-use rand::{SeedableRng, StdRng};
+use rand::{rngs::StdRng, SeedableRng};
 
 fn get_rng() -> StdRng {
     let mut seed = [0; 32];

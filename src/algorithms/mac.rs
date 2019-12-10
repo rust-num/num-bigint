@@ -1655,9 +1655,9 @@ mod tests {
             1305238720762,
         ];
 
-        let mut a1 = &mut [0; 1341];
-        let mut a2 = &mut [0; 1341];
-        let mut a3 = &mut [0; 1341];
+        let a1 = &mut [0; 1341];
+        let a2 = &mut [0; 1341];
+        let a3 = &mut [0; 1341];
 
         //print!("{} {}", b.len(), c.len());
         long(a1, &b, &c);
