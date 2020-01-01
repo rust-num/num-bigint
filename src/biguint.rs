@@ -61,7 +61,7 @@ impl Arbitrary for BigUint {
     #[allow(bare_trait_objects)] // `dyn` needs Rust 1.27 to parse, even when cfg-disabled
     fn shrink(&self) -> Box<Iterator<Item = Self>> {
         // Use shrinker from Vec
-        Box::new(self.data.shrink().map(|x| BigUint::new(x)))
+        Box::new(self.data.shrink().map(BigUint::new))
     }
 }
 
@@ -600,7 +600,7 @@ impl AddAssign<u32> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u32) {
         if other != 0 {
-            if self.data.len() == 0 {
+            if self.data.is_empty() {
                 self.data.push(0);
             }
 
@@ -745,7 +745,7 @@ impl Sub<BigUint> for u32 {
 
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.len() == 0 {
+        if other.data.is_empty() {
             other.data.push(self as BigDigit);
         } else {
             sub2rev(&[self as BigDigit], &mut other.data[..]);
@@ -1225,7 +1225,7 @@ impl<'a> Neg for &'a BigUint {
 impl CheckedAdd for BigUint {
     #[inline]
     fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
@@ -1243,7 +1243,7 @@ impl CheckedSub for BigUint {
 impl CheckedMul for BigUint {
     #[inline]
     fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -1253,7 +1253,7 @@ impl CheckedDiv for BigUint {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 }
 
@@ -1678,9 +1678,9 @@ impl FromPrimitive for BigUint {
 
         let mut ret = BigUint::from(mantissa);
         if exponent > 0 {
-            ret = ret << exponent as usize;
+            ret <<= exponent as usize;
         } else if exponent < 0 {
-            ret = ret >> (-exponent) as usize;
+            ret >>= (-exponent) as usize;
         }
         Some(ret)
     }
@@ -2207,7 +2207,7 @@ impl BigUint {
             return 0;
         }
         let zeros = self.data.last().unwrap().leading_zeros();
-        return self.data.len() * big_digit::BITS - zeros as usize;
+        self.data.len() * big_digit::BITS - zeros as usize
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to

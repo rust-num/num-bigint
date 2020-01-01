@@ -2097,21 +2097,21 @@ impl<'a> Neg for &'a BigInt {
 impl CheckedAdd for BigInt {
     #[inline]
     fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
 impl CheckedSub for BigInt {
     #[inline]
     fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.sub(v));
+        Some(self.sub(v))
     }
 }
 
 impl CheckedMul for BigInt {
     #[inline]
     fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -2121,7 +2121,7 @@ impl CheckedDiv for BigInt {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 }
 
@@ -2195,7 +2195,7 @@ impl Integer for BigInt {
     /// Deprecated, use `is_multiple_of` instead.
     #[inline]
     fn divides(&self, other: &BigInt) -> bool {
-        return self.is_multiple_of(other);
+        self.is_multiple_of(other)
     }
 
     /// Returns `true` if the number is a multiple of `other`.
@@ -2809,7 +2809,7 @@ impl BigInt {
     #[inline]
     pub fn to_signed_bytes_be(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_be();
-        let first_byte = bytes.first().map(|v| *v).unwrap_or(0);
+        let first_byte = bytes.first().cloned().unwrap_or(0);
         if first_byte > 0x7f
             && !(first_byte == 0x80
                 && bytes.iter().skip(1).all(Zero::is_zero)
@@ -2837,7 +2837,7 @@ impl BigInt {
     #[inline]
     pub fn to_signed_bytes_le(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_le();
-        let last_byte = bytes.last().map(|v| *v).unwrap_or(0);
+        let last_byte = bytes.last().cloned().unwrap_or(0);
         if last_byte > 0x7f
             && !(last_byte == 0x80
                 && bytes.iter().rev().skip(1).all(Zero::is_zero)
@@ -2948,17 +2948,17 @@ impl BigInt {
 
     #[inline]
     pub fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 
     #[inline]
     pub fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.sub(v));
+        Some(self.sub(v))
     }
 
     #[inline]
     pub fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 
     #[inline]
@@ -2966,7 +2966,7 @@ impl BigInt {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 
     /// Returns `(self ^ exponent) mod modulus`
