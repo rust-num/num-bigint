@@ -1678,9 +1678,9 @@ impl FromPrimitive for BigUint {
 
         let mut ret = BigUint::from(mantissa);
         if exponent > 0 {
-            ret = ret << exponent as usize;
+            ret <<= exponent as usize;
         } else if exponent < 0 {
-            ret = ret >> (-exponent) as usize;
+            ret >>= (-exponent) as usize;
         }
         Some(ret)
     }

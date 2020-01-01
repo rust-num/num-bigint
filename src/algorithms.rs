@@ -470,8 +470,8 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let mut comp1: BigInt = (r1 - &r2) / 2;
         let mut comp2: BigInt = r2 - &r0;
         comp3 = (&comp2 - comp3) / 2 + &r4 * 2;
-        comp2 = comp2 + &comp1 - &r4;
-        comp1 = comp1 - &comp3;
+        comp2 += &comp1 - &r4;
+        comp1 -= &comp3;
 
         // Recomposition. The coefficients of the polynomial are now known.
         //
@@ -656,8 +656,8 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
         while cmp_slice(&prod.data[..], &a.data[j..]) == Greater {
             let one: BigUint = One::one();
-            q0 = q0 - one;
-            prod = prod - b;
+            q0 -= one;
+            prod -= b;
         }
 
         add2(&mut q.data[j..], &q0.data[..]);
