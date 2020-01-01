@@ -600,7 +600,7 @@ impl AddAssign<u32> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u32) {
         if other != 0 {
-            if self.data.len() == 0 {
+            if self.data.is_empty() {
                 self.data.push(0);
             }
 
@@ -745,7 +745,7 @@ impl Sub<BigUint> for u32 {
 
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.len() == 0 {
+        if other.data.is_empty() {
             other.data.push(self as BigDigit);
         } else {
             sub2rev(&[self as BigDigit], &mut other.data[..]);
