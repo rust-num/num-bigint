@@ -477,10 +477,10 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         //
         // Evaluate at w(t) where t is our given base to get the result.
         let result = r0
-            + (comp1 << 32 * i)
-            + (comp2 << 2 * 32 * i)
-            + (comp3 << 3 * 32 * i)
-            + (r4 << 4 * 32 * i);
+            + (comp1 << (32 * i))
+            + (comp2 << (2 * 32 * i))
+            + (comp3 << (3 * 32 * i))
+            + (r4 << (4 * 32 * i));
         let result_pos = result.to_biguint().unwrap();
         add2(&mut acc[..], &result_pos.data);
     }
