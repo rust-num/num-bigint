@@ -667,7 +667,7 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
         tmp = q0;
     }
 
-    debug_assert!(&a < b);
+    debug_assert!(a < *b);
 
     (q.normalized(), a)
 }
