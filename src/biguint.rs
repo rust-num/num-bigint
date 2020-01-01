@@ -1225,7 +1225,7 @@ impl<'a> Neg for &'a BigUint {
 impl CheckedAdd for BigUint {
     #[inline]
     fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
@@ -1243,7 +1243,7 @@ impl CheckedSub for BigUint {
 impl CheckedMul for BigUint {
     #[inline]
     fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -1253,7 +1253,7 @@ impl CheckedDiv for BigUint {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 }
 
@@ -2207,7 +2207,7 @@ impl BigUint {
             return 0;
         }
         let zeros = self.data.last().unwrap().leading_zeros();
-        return self.data.len() * big_digit::BITS - zeros as usize;
+        self.data.len() * big_digit::BITS - zeros as usize
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to

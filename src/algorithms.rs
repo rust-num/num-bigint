@@ -759,7 +759,7 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
             return Greater;
         }
     }
-    return Equal;
+    Equal
 }
 
 #[cfg(test)]
