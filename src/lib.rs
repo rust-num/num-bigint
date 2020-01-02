@@ -182,6 +182,24 @@ impl Error for ParseBigIntError {
     }
 }
 
+#[cfg(has_try_from)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash)]
+pub struct TryFromBigIntError(());
+
+#[cfg(has_try_from)]
+impl std::error::Error for TryFromBigIntError {
+    fn description(&self) -> &str {
+        "out of range conversion regarding big integer attempted"
+    }
+}
+
+#[cfg(has_try_from)]
+impl fmt::Display for TryFromBigIntError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        std::error::Error::description(self).fmt(f)
+    }
+}
+
 pub use crate::biguint::BigUint;
 pub use crate::biguint::ToBigUint;
 

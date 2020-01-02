@@ -5,6 +5,8 @@
 use crate::std_alloc::Box;
 use crate::std_alloc::{String, Vec};
 use core::cmp::Ordering::{self, Equal, Greater, Less};
+#[cfg(has_try_from)]
+use core::convert::TryFrom;
 use core::default::Default;
 use core::fmt;
 use core::hash;
@@ -29,11 +31,13 @@ use num_traits::{
 
 use self::Sign::{Minus, NoSign, Plus};
 
-use super::ParseBigIntError;
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::biguint;
 use crate::biguint::to_str_radix_reversed;
 use crate::biguint::{BigUint, IntDigits};
+use crate::ParseBigIntError;
+#[cfg(has_try_from)]
+use crate::TryFromBigIntError;
 
 use crate::IsizePromotion;
 use crate::UsizePromotion;
@@ -2442,6 +2446,36 @@ impl ToPrimitive for BigInt {
     }
 }
 
+macro_rules! impl_try_from_bigint {
+    ($T:ty, $to_ty:path) => {
+        #[cfg(has_try_from)]
+        impl TryFrom<&BigInt> for $T {
+            type Error = TryFromBigIntError;
+
+            #[inline]
+            fn try_from(value: &BigInt) -> Result<$T, TryFromBigIntError> {
+                $to_ty(value).ok_or(TryFromBigIntError(()))
+            }
+        }
+    };
+}
+
+impl_try_from_bigint!(u8, ToPrimitive::to_u8);
+impl_try_from_bigint!(u16, ToPrimitive::to_u16);
+impl_try_from_bigint!(u32, ToPrimitive::to_u32);
+impl_try_from_bigint!(u64, ToPrimitive::to_u64);
+impl_try_from_bigint!(usize, ToPrimitive::to_usize);
+#[cfg(has_i128)]
+impl_try_from_bigint!(u128, ToPrimitive::to_u128);
+
+impl_try_from_bigint!(i8, ToPrimitive::to_i8);
+impl_try_from_bigint!(i16, ToPrimitive::to_i16);
+impl_try_from_bigint!(i32, ToPrimitive::to_i32);
+impl_try_from_bigint!(i64, ToPrimitive::to_i64);
+impl_try_from_bigint!(isize, ToPrimitive::to_isize);
+#[cfg(has_i128)]
+impl_try_from_bigint!(i128, ToPrimitive::to_i128);
+
 impl FromPrimitive for BigInt {
     #[inline]
     fn from_i64(n: i64) -> Option<BigInt> {
@@ -2664,6 +2698,16 @@ impl biguint::ToBigUint for BigInt {
             NoSign => Some(Zero::zero()),
             Minus => None,
         }
+    }
+}
+
+#[cfg(has_try_from)]
+impl TryFrom<&BigInt> for BigUint {
+    type Error = TryFromBigIntError;
+
+    #[inline]
+    fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError> {
+        value.to_biguint().ok_or(TryFromBigIntError(()))
     }
 }
 

@@ -3,6 +3,8 @@ use crate::std_alloc::Box;
 use crate::std_alloc::{Cow, String, Vec};
 use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
+#[cfg(has_try_from)]
+use core::convert::TryFrom;
 use core::default::Default;
 use core::fmt;
 use core::hash;
@@ -43,6 +45,8 @@ use self::monty::monty_modpow;
 use crate::UsizePromotion;
 
 use crate::ParseBigIntError;
+#[cfg(has_try_from)]
+use crate::TryFromBigIntError;
 
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};
@@ -1929,6 +1933,36 @@ impl ToPrimitive for BigUint {
     }
 }
 
+macro_rules! impl_try_from_biguint {
+    ($T:ty, $to_ty:path) => {
+        #[cfg(has_try_from)]
+        impl TryFrom<&BigUint> for $T {
+            type Error = TryFromBigIntError;
+
+            #[inline]
+            fn try_from(value: &BigUint) -> Result<$T, TryFromBigIntError> {
+                $to_ty(value).ok_or(TryFromBigIntError(()))
+            }
+        }
+    };
+}
+
+impl_try_from_biguint!(u8, ToPrimitive::to_u8);
+impl_try_from_biguint!(u16, ToPrimitive::to_u16);
+impl_try_from_biguint!(u32, ToPrimitive::to_u32);
+impl_try_from_biguint!(u64, ToPrimitive::to_u64);
+impl_try_from_biguint!(usize, ToPrimitive::to_usize);
+#[cfg(has_i128)]
+impl_try_from_biguint!(u128, ToPrimitive::to_u128);
+
+impl_try_from_biguint!(i8, ToPrimitive::to_i8);
+impl_try_from_biguint!(i16, ToPrimitive::to_i16);
+impl_try_from_biguint!(i32, ToPrimitive::to_i32);
+impl_try_from_biguint!(i64, ToPrimitive::to_i64);
+impl_try_from_biguint!(isize, ToPrimitive::to_isize);
+#[cfg(has_i128)]
+impl_try_from_biguint!(i128, ToPrimitive::to_i128);
+
 impl FromPrimitive for BigUint {
     #[inline]
     fn from_i64(n: i64) -> Option<BigUint> {
@@ -2033,6 +2067,28 @@ impl_biguint_from_uint!(u8);
 impl_biguint_from_uint!(u16);
 impl_biguint_from_uint!(u32);
 impl_biguint_from_uint!(usize);
+
+macro_rules! impl_biguint_try_from_int {
+    ($T:ty, $from_ty:path) => {
+        #[cfg(has_try_from)]
+        impl TryFrom<$T> for BigUint {
+            type Error = TryFromBigIntError;
+
+            #[inline]
+            fn try_from(value: $T) -> Result<BigUint, TryFromBigIntError> {
+                $from_ty(value).ok_or(TryFromBigIntError(()))
+            }
+        }
+    };
+}
+
+impl_biguint_try_from_int!(i8, FromPrimitive::from_i8);
+impl_biguint_try_from_int!(i16, FromPrimitive::from_i16);
+impl_biguint_try_from_int!(i32, FromPrimitive::from_i32);
+impl_biguint_try_from_int!(i64, FromPrimitive::from_i64);
+impl_biguint_try_from_int!(isize, FromPrimitive::from_isize);
+#[cfg(has_i128)]
+impl_biguint_try_from_int!(i128, FromPrimitive::from_i128);
 
 /// A generic trait for converting a value to a `BigUint`.
 pub trait ToBigUint {

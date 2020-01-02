@@ -9,6 +9,8 @@ fn main() {
     if pointer_width.as_ref().map(String::as_str) == Ok("64") {
         autocfg::emit("u64_digit");
     }
+    let ac = autocfg::new();
+    ac.emit_path_cfg("std::convert::TryFrom", "has_try_from");
 
     autocfg::rerun_path("build.rs");
 
