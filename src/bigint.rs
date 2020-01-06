@@ -2572,7 +2572,7 @@ impl_to_bigint!(f64, FromPrimitive::from_f64);
 impl BigInt {
     /// Creates and initializes a BigInt.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn new(sign: Sign, digits: Vec<u32>) -> BigInt {
         BigInt::from_biguint(sign, BigUint::new(digits))
@@ -2580,7 +2580,7 @@ impl BigInt {
 
     /// Creates and initializes a `BigInt`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn from_biguint(mut sign: Sign, mut data: BigUint) -> BigInt {
         if sign == NoSign {
@@ -2596,12 +2596,16 @@ impl BigInt {
     }
 
     /// Creates and initializes a `BigInt`.
+    ///
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn from_slice(sign: Sign, slice: &[u32]) -> BigInt {
         BigInt::from_biguint(sign, BigUint::from_slice(slice))
     }
 
     /// Reinitializes a `BigInt`.
+    ///
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
         if sign == NoSign {
@@ -2778,7 +2782,8 @@ impl BigInt {
         (self.sign, self.data.to_bytes_le())
     }
 
-    /// Returns the sign and the u32 digits representation of the `BigInt` in little-endian order.
+    /// Returns the sign and the `u32` digits representation of the `BigInt` ordered least
+    /// significant digit first.
     ///
     /// # Examples
     ///
@@ -2796,7 +2801,7 @@ impl BigInt {
         (self.sign, self.data.to_u32_digits())
     }
 
-    /// Returns the two's complement byte representation of the `BigInt` in big-endian byte order.
+    /// Returns the two's-complement byte representation of the `BigInt` in big-endian byte order.
     ///
     /// # Examples
     ///
@@ -2824,7 +2829,7 @@ impl BigInt {
         bytes
     }
 
-    /// Returns the two's complement byte representation of the `BigInt` in little-endian byte order.
+    /// Returns the two's-complement byte representation of the `BigInt` in little-endian byte order.
     ///
     /// # Examples
     ///
