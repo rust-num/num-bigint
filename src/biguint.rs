@@ -1915,7 +1915,7 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
 impl BigUint {
     /// Creates and initializes a `BigUint`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
         BigUint { data: digits }.normalized()
@@ -1923,7 +1923,7 @@ impl BigUint {
 
     /// Creates and initializes a `BigUint`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn from_slice(slice: &[u32]) -> BigUint {
         BigUint::new(slice.to_vec())
@@ -1931,7 +1931,7 @@ impl BigUint {
 
     /// Assign a value to a `BigUint`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
         self.data.resize(slice.len(), 0);
@@ -2125,7 +2125,8 @@ impl BigUint {
         }
     }
 
-    /// Returns the u32 digits representation of the `BigUint` in little-endian order.
+    /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
+    /// first.
     ///
     /// # Examples
     ///
