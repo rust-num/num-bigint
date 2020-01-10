@@ -1,3 +1,11 @@
+# Release 0.2.5 (2020-01-09)
+
+- [Updated the `autocfg` build dependency to 1.0][126].
+
+**Contributors**: @cuviper, @tspiteri
+
+[126]: https://github.com/rust-num/num-bigint/pull/126
+
 # Release 0.2.4 (2020-01-01)
 
 - [The new `BigUint::to_u32_digits` method][104] returns the number as a
