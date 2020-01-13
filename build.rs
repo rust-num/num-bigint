@@ -20,7 +20,7 @@ fn main() {
         panic!("i128 support was not detected!");
     }
 
-    autocfg::rerun_path(file!());
+    autocfg::rerun_path("build.rs");
 
     write_radix_bases().unwrap();
 }

@@ -616,7 +616,7 @@ impl AddAssign<u32> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u32) {
         if other != 0 {
-            if self.data.len() == 0 {
+            if self.data.is_empty() {
                 self.data.push(0);
             }
 
@@ -661,7 +661,7 @@ impl AddAssign<u64> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u64) {
         if other != 0 {
-            if self.data.len() == 0 {
+            if self.data.is_empty() {
                 self.data.push(0);
             }
 
@@ -808,7 +808,7 @@ impl Sub<BigUint> for u32 {
     #[cfg(u64_digit)]
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.len() == 0 {
+        if other.data.is_empty() {
             other.data.push(self as BigDigit);
         } else {
             sub2rev(&[self as BigDigit], &mut other.data[..]);
@@ -862,7 +862,7 @@ impl Sub<BigUint> for u64 {
     #[cfg(u64_digit)]
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.len() == 0 {
+        if other.data.is_empty() {
             other.data.push(self);
         } else {
             sub2rev(&[self], &mut other.data[..]);
@@ -1391,7 +1391,7 @@ impl<'a> Neg for &'a BigUint {
 impl CheckedAdd for BigUint {
     #[inline]
     fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
@@ -1409,7 +1409,7 @@ impl CheckedSub for BigUint {
 impl CheckedMul for BigUint {
     #[inline]
     fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -1419,7 +1419,7 @@ impl CheckedDiv for BigUint {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 }
 
@@ -1844,9 +1844,9 @@ impl FromPrimitive for BigUint {
 
         let mut ret = BigUint::from(mantissa);
         if exponent > 0 {
-            ret = ret << exponent as usize;
+            ret <<= exponent as usize;
         } else if exponent < 0 {
-            ret = ret >> (-exponent) as usize;
+            ret >>= (-exponent) as usize;
         }
         Some(ret)
     }
@@ -2091,7 +2091,7 @@ pub fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
 impl BigUint {
     /// Creates and initializes a `BigUint`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
         let mut big = BigUint::zero();
@@ -2110,7 +2110,7 @@ impl BigUint {
 
     /// Creates and initializes a `BigUint`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn from_slice(slice: &[u32]) -> BigUint {
         let mut big = BigUint::zero();
@@ -2120,7 +2120,7 @@ impl BigUint {
 
     /// Assign a value to a `BigUint`.
     ///
-    /// The digits are in little-endian base 2<sup>32</sup>.
+    /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
         self.data.clear();
@@ -2327,6 +2327,47 @@ impl BigUint {
         }
     }
 
+    /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
+    /// first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).to_u32_digits(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).to_u32_digits(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).to_u32_digits(), vec![0, 1]);
+    /// assert_eq!(BigUint::from(112500000000u64).to_u32_digits(), vec![830850304, 26]);
+    /// ```
+    #[inline]
+    pub fn to_u32_digits(&self) -> Vec<u32> {
+        let mut digits = Vec::new();
+
+        #[cfg(not(u64_digit))]
+        digits.clone_from(&self.data);
+
+        #[cfg(u64_digit)]
+        {
+            if let Some((&last, data)) = self.data.split_last() {
+                let last_lo = last as u32;
+                let last_hi = (last >> 32) as u32;
+                let u32_len = data.len() * 2 + 1 + (last_hi != 0) as usize;
+                digits.reserve_exact(u32_len);
+                for &x in data {
+                    digits.push(x as u32);
+                    digits.push((x >> 32) as u32);
+                }
+                digits.push(last_lo);
+                if last_hi != 0 {
+                    digits.push(last_hi);
+                }
+            }
+        }
+
+        digits
+    }
+
     /// Returns the integer formatted as a string in the given radix.
     /// `radix` must be in the range `2...36`.
     ///
@@ -2392,7 +2433,7 @@ impl BigUint {
             return 0;
         }
         let zeros = self.data.last().unwrap().leading_zeros();
-        return self.data.len() * big_digit::BITS - zeros as usize;
+        self.data.len() * big_digit::BITS - zeros as usize
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
@@ -2463,7 +2504,7 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
         Some(i) => i,
     };
 
-    let mut base = base.clone();
+    let mut base = base % modulus;
     for _ in 0..i {
         for _ in 0..big_digit::BITS {
             base = &base * &base % modulus;
@@ -2635,7 +2676,7 @@ impl serde::Serialize for BigUint {
         if let Some((&last, data)) = self.data.split_last() {
             let last_lo = last as u32;
             let last_hi = (last >> 32) as u32;
-            let u32_len = self.data.len() * 2 - (last_hi == 0) as usize;
+            let u32_len = data.len() * 2 + 1 + (last_hi != 0) as usize;
             let mut seq = serializer.serialize_seq(Some(u32_len))?;
             for &x in data {
                 seq.serialize_element(&(x as u32))?;

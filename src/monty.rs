@@ -203,7 +203,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     zz.normalize();
     // One last reduction, just in case.
     // See golang.org/issue/13907.
-    if &zz >= m {
+    if zz >= *m {
         // Common case is m has high bit set; in that case,
         // since zz is the same length as m, there can be just
         // one multiple of m to remove. Just subtract.
@@ -212,7 +212,7 @@ pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
         // in case our beliefs are wrong.
         // The div is not expected to be reached.
         zz -= m;
-        if &zz >= m {
+        if zz >= *m {
             zz %= m;
         }
     }

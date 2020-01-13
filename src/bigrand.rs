@@ -13,6 +13,9 @@ use biguint::biguint_from_vec;
 use integer::Integer;
 use traits::Zero;
 
+/// A trait for sampling random big integers.
+///
+/// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 pub trait RandBigInt {
     /// Generate a random `BigUint` of the given bit size.
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint;
@@ -214,6 +217,8 @@ impl SampleUniform for BigInt {
 }
 
 /// A random distribution for `BigUint` and `BigInt` values of a particular bit size.
+///
+/// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 #[derive(Clone, Copy, Debug)]
 pub struct RandomBits {
     bits: usize,

@@ -8,9 +8,10 @@ categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT/Apache-2.0"
 name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
-version = "0.2.3"
+version = "0.3.0-pre"
 readme = "README.md"
 build = "build.rs"
+publish = false
 
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand", "quickcheck"]
@@ -34,11 +35,11 @@ name = "shootout-pidigits"
 [dependencies]
 
 [dependencies.num-integer]
-version = "0.1.41"
+version = "0.1.42"
 default-features = false
 
 [dependencies.num-traits]
-version = "0.2.7"
+version = "0.2.11"
 default-features = false
 
 [dependencies.rand]
@@ -72,4 +73,4 @@ i128 = ["num-integer/i128", "num-traits/i128"]
 std = ["num-integer/std", "num-traits/std"]
 
 [build-dependencies]
-autocfg = "0.1.2"
+autocfg = "1"
