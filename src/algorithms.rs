@@ -6,6 +6,7 @@ use std::mem;
 use traits;
 use traits::{One, Zero};
 
+use biguint::biguint_from_vec;
 use biguint::BigUint;
 
 use bigint::BigInt;
@@ -68,29 +69,65 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
     ((lhs / rhs) as BigDigit, (lhs % rhs) as BigDigit)
 }
 
+/// For small divisors, we can divide without promoting to `DoubleBigDigit` by
+/// using half-size pieces of digit, like long-division.
+#[inline]
+fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
+    use big_digit::{HALF, HALF_BITS};
+    use integer::Integer;
+
+    debug_assert!(rem < divisor && divisor <= HALF);
+    let (hi, rem) = ((rem << HALF_BITS) | (digit >> HALF_BITS)).div_rem(&divisor);
+    let (lo, rem) = ((rem << HALF_BITS) | (digit & HALF)).div_rem(&divisor);
+    ((hi << HALF_BITS) | lo, rem)
+}
+
+#[inline]
 pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
     let mut rem = 0;
 
-    for d in a.data.iter_mut().rev() {
-        let (q, r) = div_wide(rem, *d, b);
-        *d = q;
-        rem = r;
+    if b <= big_digit::HALF {
+        for d in a.data.iter_mut().rev() {
+            let (q, r) = div_half(rem, *d, b);
+            *d = q;
+            rem = r;
+        }
+    } else {
+        for d in a.data.iter_mut().rev() {
+            let (q, r) = div_wide(rem, *d, b);
+            *d = q;
+            rem = r;
+        }
     }
 
     (a.normalized(), rem)
 }
 
+#[inline]
 pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
-    let mut rem: DoubleBigDigit = 0;
-    for &digit in a.data.iter().rev() {
-        rem = (rem << big_digit::BITS) + DoubleBigDigit::from(digit);
-        rem %= DoubleBigDigit::from(b);
+    let mut rem = 0;
+
+    if b <= big_digit::HALF {
+        for &digit in a.data.iter().rev() {
+            let (_, r) = div_half(rem, digit, b);
+            rem = r;
+        }
+    } else {
+        for &digit in a.data.iter().rev() {
+            let (_, r) = div_wide(rem, digit, b);
+            rem = r;
+        }
     }
 
-    rem as BigDigit
+    rem
 }
 
-// Only for the Add impl:
+/// Two argument addition of raw slices, `a += b`, returning the carry.
+///
+/// This is used when the data `Vec` might need to resize to push a non-zero carry, so we perform
+/// the addition first hoping that it will fit.
+///
+/// The caller _must_ ensure that `a` is at least as long as `b`.
 #[inline]
 pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     debug_assert!(a.len() >= b.len());
@@ -193,12 +230,12 @@ pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
         Greater => {
             let mut a = a.to_vec();
             sub2(&mut a, b);
-            (Plus, BigUint::new(a))
+            (Plus, biguint_from_vec(a))
         }
         Less => {
             let mut b = b.to_vec();
             sub2(&mut b, a);
-            (Minus, BigUint::new(b))
+            (Minus, biguint_from_vec(b))
         }
         _ => (NoSign, Zero::zero()),
     }
@@ -223,6 +260,10 @@ pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
         let a = a.next().expect("carry overflow during multiplication!");
         *a = adc(*a, 0, &mut carry);
     }
+}
+
+fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
+    BigInt::from(biguint_from_vec(slice.to_vec()))
 }
 
 /// Three argument multiply accumulate:
@@ -387,14 +428,14 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // in place of multiplications.
         //
         // x(t) = x2*t^2 + x1*t + x0
-        let x0 = BigInt::from_slice(Plus, &x[..x0_len]);
-        let x1 = BigInt::from_slice(Plus, &x[x0_len..x0_len + x1_len]);
-        let x2 = BigInt::from_slice(Plus, &x[x0_len + x1_len..]);
+        let x0 = bigint_from_slice(&x[..x0_len]);
+        let x1 = bigint_from_slice(&x[x0_len..x0_len + x1_len]);
+        let x2 = bigint_from_slice(&x[x0_len + x1_len..]);
 
         // y(t) = y2*t^2 + y1*t + y0
-        let y0 = BigInt::from_slice(Plus, &y[..y0_len]);
-        let y1 = BigInt::from_slice(Plus, &y[y0_len..y0_len + y1_len]);
-        let y2 = BigInt::from_slice(Plus, &y[y0_len + y1_len..]);
+        let y0 = bigint_from_slice(&y[..y0_len]);
+        let y1 = bigint_from_slice(&y[y0_len..y0_len + y1_len]);
+        let y2 = bigint_from_slice(&y[y0_len + y1_len..]);
 
         // Let w(t) = x(t) * y(t)
         //
@@ -538,6 +579,7 @@ pub fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     // want it to be the largest number we can efficiently divide by.
     //
     let shift = d.data.last().unwrap().leading_zeros() as usize;
+
     let (q, r) = if shift == 0 {
         // no need to clone d
         div_rem_core(u, &d)
@@ -655,8 +697,7 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
         let mut prod = b * &q0;
 
         while cmp_slice(&prod.data[..], &a.data[j..]) == Greater {
-            let one: BigUint = One::one();
-            q0 -= one;
+            q0 -= 1u32;
             prod -= b;
         }
 
@@ -709,7 +750,7 @@ pub fn biguint_shl(n: Cow<BigUint>, bits: usize) -> BigUint {
         }
     }
 
-    BigUint::new(data)
+    biguint_from_vec(data)
 }
 
 #[inline]
@@ -736,7 +777,7 @@ pub fn biguint_shr(n: Cow<BigUint>, bits: usize) -> BigUint {
         }
     }
 
-    BigUint::new(data)
+    biguint_from_vec(data)
 }
 
 pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
@@ -766,7 +807,6 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 mod algorithm_tests {
     use big_digit::BigDigit;
     use traits::Num;
-    use Sign::Plus;
     use {BigInt, BigUint};
 
     #[test]
@@ -780,8 +820,8 @@ mod algorithm_tests {
 
         let a = BigUint::from_str_radix("265252859812191058636308480000000", 10).unwrap();
         let b = BigUint::from_str_radix("26525285981219105863630848000000", 10).unwrap();
-        let a_i = BigInt::from_biguint(Plus, a.clone());
-        let b_i = BigInt::from_biguint(Plus, b.clone());
+        let a_i = BigInt::from(a.clone());
+        let b_i = BigInt::from(b.clone());
 
         assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
         assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);

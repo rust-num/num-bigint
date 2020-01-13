@@ -98,15 +98,14 @@ fn test_scalar_div_rem() {
         assert!(q == *ans_q);
         assert!(r == *ans_r);
 
+        let b = BigInt::from(b);
         let (a, b, ans_q, ans_r) = (a.clone(), b.clone(), ans_q.clone(), ans_r.clone());
-        assert_op!(a / b == ans_q);
-        assert_op!(a % b == ans_r);
+        assert_signed_scalar_op!(a / b == ans_q);
+        assert_signed_scalar_op!(a % b == ans_r);
 
-        if b <= i32::max_value() as u32 {
-            let nb = -(b as i32);
-            assert_op!(a / nb == -ans_q.clone());
-            assert_op!(a % nb == ans_r);
-        }
+        let nb = -b;
+        assert_signed_scalar_op!(a / nb == -ans_q.clone());
+        assert_signed_scalar_op!(a % nb == ans_r);
     }
 
     fn check(a: &BigInt, b: u32, q: &BigInt, r: &BigInt) {

@@ -2,14 +2,13 @@
 
 use rand::distributions::uniform::{SampleUniform, UniformSampler};
 use rand::prelude::*;
-use rand::AsByteSliceMut;
 
 use BigInt;
 use BigUint;
 use Sign::*;
 
-use big_digit::BigDigit;
 use bigint::{into_magnitude, magnitude};
+use biguint::biguint_from_vec;
 
 use integer::Integer;
 use traits::Zero;
@@ -39,21 +38,45 @@ pub trait RandBigInt {
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
 }
 
+fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: usize) {
+    // `fill` is faster than many `gen::<u32>` calls
+    rng.fill(data);
+    if rem > 0 {
+        let last = data.len() - 1;
+        data[last] >>= 32 - rem;
+    }
+}
+
 impl<R: Rng + ?Sized> RandBigInt for R {
+    #[cfg(not(u64_digit))]
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
-        use super::big_digit::BITS;
-        let (digits, rem) = bit_size.div_rem(&BITS);
-        let mut data = vec![BigDigit::default(); digits + (rem > 0) as usize];
-        // `fill_bytes` is faster than many `gen::<u32>` calls
-        self.fill_bytes(data[..].as_byte_slice_mut());
-        // Swap bytes per the `Rng::fill` source. This might be
-        // unnecessary if reproducibility across architectures is not
-        // desired.
-        data.to_le();
-        if rem > 0 {
-            data[digits] >>= BITS - rem;
+        let (digits, rem) = bit_size.div_rem(&32);
+        let mut data = vec![0u32; digits + (rem > 0) as usize];
+        gen_bits(self, &mut data, rem);
+        biguint_from_vec(data)
+    }
+
+    #[cfg(u64_digit)]
+    fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
+        use std::slice;
+
+        let (digits, rem) = bit_size.div_rem(&32);
+        let native_digits = bit_size.div_ceil(&64);
+        let mut data = vec![0u64; native_digits];
+        unsafe {
+            // Generate bits in a `&mut [u32]` slice for value stability
+            let ptr = data.as_mut_ptr() as *mut u32;
+            let len = digits + (rem > 0) as usize;
+            debug_assert!(native_digits * 2 >= len);
+            let data = slice::from_raw_parts_mut(ptr, len);
+            gen_bits(self, data, rem);
         }
-        BigUint::new(data)
+        #[cfg(target_endian = "big")]
+        for digit in &mut data {
+            // swap u32 digits into u64 endianness
+            *digit = (*digit << 32) | (*digit >> 32);
+        }
+        biguint_from_vec(data)
     }
 
     fn gen_bigint(&mut self, bit_size: usize) -> BigInt {

@@ -196,19 +196,34 @@ pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.
+    #[cfg(not(u64_digit))]
     pub type BigDigit = u32;
+    #[cfg(u64_digit)]
+    pub type BigDigit = u64;
 
     /// A `DoubleBigDigit` is the internal type used to do the computations.  Its
     /// size is the double of the size of `BigDigit`.
+    #[cfg(not(u64_digit))]
     pub type DoubleBigDigit = u64;
+    #[cfg(u64_digit)]
+    pub type DoubleBigDigit = u128;
 
     /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
+    #[cfg(not(u64_digit))]
     pub type SignedDoubleBigDigit = i64;
+    #[cfg(u64_digit)]
+    pub type SignedDoubleBigDigit = i128;
 
     // `DoubleBigDigit` size dependent
+    #[cfg(not(u64_digit))]
     pub const BITS: usize = 32;
+    #[cfg(u64_digit)]
+    pub const BITS: usize = 64;
 
-    const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
+    pub const HALF_BITS: usize = BITS / 2;
+    pub const HALF: BigDigit = (1 << HALF_BITS) - 1;
+
+    const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
 
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {

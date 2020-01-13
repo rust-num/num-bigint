@@ -76,7 +76,7 @@ mod biguint {
     }
 
     #[test]
-    fn test_modpow() {
+    fn test_modpow_single() {
         check_modpow::<u32>(1, 0, 11, 1);
         check_modpow::<u32>(0, 15, 11, 0);
         check_modpow::<u32>(3, 7, 11, 9);
@@ -119,7 +119,7 @@ mod bigint {
 
     fn check_modpow<T: Into<BigInt>>(b: T, e: T, m: T, r: T) {
         fn check(b: &BigInt, e: &BigInt, m: &BigInt, r: &BigInt) {
-            assert_eq!(&b.modpow(e, m), r);
+            assert_eq!(&b.modpow(e, m), r, "{} ** {} (mod {}) != {}", b, e, m, r);
 
             let even_m = m << 1;
             let even_modpow = b.modpow(e, m);
