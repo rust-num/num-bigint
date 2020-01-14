@@ -2636,10 +2636,7 @@ impl BigInt {
             self.set_zero();
         } else {
             self.data.assign_from_slice(slice);
-            self.sign = match self.data.is_zero() {
-                true => NoSign,
-                false => sign,
-            }
+            self.sign = if self.data.is_zero() { NoSign } else { sign };
         }
     }
 
