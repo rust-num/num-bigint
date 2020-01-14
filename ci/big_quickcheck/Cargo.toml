@@ -2,6 +2,7 @@
 name = "big_quickcheck"
 version = "0.1.0"
 authors = ["Josh Stone <cuviper@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 num-integer = "0.1.42"
