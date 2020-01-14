@@ -29,10 +29,6 @@ The `std` crate feature is enabled by default, and is mandatory before Rust
 `default-features = false`, you must manually enable the `std` feature yourself
 if your compiler is not new enough.
 
-Implementations for `i128` and `u128` are only available with Rust 1.26 and
-later.  The build script automatically detects this, but you can make it
-mandatory by enabling the `i128` crate feature.
-
 ### Random Generation
 
 `num-bigint` supports the generation of random big integers when the `rand`

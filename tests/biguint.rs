@@ -14,7 +14,6 @@ use std::i64;
 use std::iter::repeat;
 use std::str::FromStr;
 use std::{f32, f64};
-#[cfg(has_i128)]
 use std::{i128, u128};
 use std::{u16, u32, u64, u8, usize};
 
@@ -542,7 +541,6 @@ fn test_convert_i64() {
 }
 
 #[test]
-#[cfg(has_i128)]
 fn test_convert_i128() {
     fn check(b1: BigUint, i: i128) {
         let b2: BigUint = FromPrimitive::from_i128(i).unwrap();
@@ -591,7 +589,6 @@ fn test_convert_u64() {
 }
 
 #[test]
-#[cfg(has_i128)]
 fn test_convert_u128() {
     fn check(b1: BigUint, u: u128) {
         let b2: BigUint = FromPrimitive::from_u128(u).unwrap();
@@ -791,7 +788,6 @@ fn test_convert_from_uint() {
     check!(u16, BigUint::from_slice(&[u16::MAX as u32]));
     check!(u32, BigUint::from_slice(&[u32::MAX]));
     check!(u64, BigUint::from_slice(&[u32::MAX, u32::MAX]));
-    #[cfg(has_i128)]
     check!(
         u128,
         BigUint::from_slice(&[u32::MAX, u32::MAX, u32::MAX, u32::MAX])
@@ -1707,7 +1703,6 @@ fn test_pow() {
     check!(u16);
     check!(u32);
     check!(u64);
-    check!(usize);
-    #[cfg(has_i128)]
     check!(u128);
+    check!(usize);
 }

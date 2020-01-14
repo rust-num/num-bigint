@@ -14,7 +14,6 @@ use std::hash::{BuildHasher, Hash, Hasher};
 use std::iter::repeat;
 use std::ops::Neg;
 use std::{f32, f64};
-#[cfg(has_i128)]
 use std::{i128, u128};
 use std::{i16, i32, i64, i8, isize};
 use std::{u16, u32, u64, u8, usize};
@@ -294,7 +293,6 @@ fn test_convert_i64() {
 }
 
 #[test]
-#[cfg(has_i128)]
 fn test_convert_i128() {
     fn check(b1: BigInt, i: i128) {
         let b2: BigInt = FromPrimitive::from_i128(i).unwrap();
@@ -352,7 +350,6 @@ fn test_convert_u64() {
 }
 
 #[test]
-#[cfg(has_i128)]
 fn test_convert_u128() {
     fn check(b1: BigInt, u: u128) {
         let b2: BigInt = FromPrimitive::from_u128(u).unwrap();
@@ -578,7 +575,6 @@ fn test_convert_from_uint() {
     check!(u16, BigInt::from_slice(Plus, &[u16::MAX as u32]));
     check!(u32, BigInt::from_slice(Plus, &[u32::MAX]));
     check!(u64, BigInt::from_slice(Plus, &[u32::MAX, u32::MAX]));
-    #[cfg(has_i128)]
     check!(
         u128,
         BigInt::from_slice(Plus, &[u32::MAX, u32::MAX, u32::MAX, u32::MAX])
@@ -620,7 +616,6 @@ fn test_convert_from_int() {
         BigInt::from_slice(Minus, &[0, 1 << 31]),
         BigInt::from_slice(Plus, &[u32::MAX, i32::MAX as u32])
     );
-    #[cfg(has_i128)]
     check!(
         i128,
         BigInt::from_slice(Minus, &[0, 0, 0, 1 << 31]),
