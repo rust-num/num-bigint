@@ -37,7 +37,7 @@ fn euclid(x: &BigUint, y: &BigUint) -> BigUint {
         m = n % &temp;
         n = temp;
     }
-    return n;
+    n
 }
 
 #[bench]

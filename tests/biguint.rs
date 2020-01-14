@@ -1578,7 +1578,7 @@ fn test_factor() {
             let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
             f = f * bu;
         }
-        return f;
+        f
     }
 
     fn check(n: usize, s: &str) {
