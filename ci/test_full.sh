@@ -5,15 +5,14 @@ set -ex
 echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
 
 case "$TRAVIS_RUST_VERSION" in
-  1.1[5-9].* | 1.2[0-1].*) STD_FEATURES="serde" ;;
-  1.2[2-5].*) STD_FEATURES="serde rand" ;;
-  1.2[6-9].* | 1.30.*) STD_FEATURES="serde rand i128" ;;
-  *) STD_FEATURES="serde rand i128 quickcheck quickcheck_macros" ;;
+  1.31.*) STD_FEATURES="serde" ;;
+  1.3[23].*) STD_FEATURES="serde rand" ;;
+  *) STD_FEATURES="serde rand quickcheck" ;;
 esac
 
 case "$TRAVIS_RUST_VERSION" in
-  1.1[5-9].* | 1.2[0-9].* | 1.3[0-5].*) ;;
-  *) NO_STD_FEATURES="i128 serde" ;;
+  1.3[1-5].*) ;;
+  *) NO_STD_FEATURES="serde rand" ;;
 esac
 
 # num-bigint should build and test everywhere.
@@ -50,11 +49,13 @@ if test -n "${NO_STD_FEATURES:+true}"; then
   cargo test --no-default-features --features="$NO_STD_FEATURES"
 fi
 
-# make sure benchmarks can be built
+# make sure benchmarks can be built and sanity-tested
 if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
-  cargo bench --all-features --no-run
+  cargo test --benches --all-features
 fi
 
 case "$STD_FEATURES" in
-  *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml
+  *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml ;;&
+  *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
+  *quickcheck*) cargo test --manifest-path ci/big_quickcheck/Cargo.toml ;;&
 esac

@@ -46,14 +46,11 @@
 //!
 //! It's easy to generate large random numbers:
 //!
-//! ```rust
-//! # #[cfg(feature = "rand")]
+//! ```rust,ignore
 //! extern crate rand;
-//! extern crate num_bigint as bigint;
+//! extern crate num_bigint;
 //!
-//! # #[cfg(feature = "rand")]
-//! # fn main() {
-//! use bigint::{ToBigInt, RandBigInt};
+//! use num_bigint::{ToBigInt, RandBigInt};
 //!
 //! let mut rng = rand::thread_rng();
 //! let a = rng.gen_bigint(1000);
@@ -64,30 +61,16 @@
 //!
 //! // Probably an even larger number.
 //! println!("{}", a * b);
-//! # }
-//!
-//! # #[cfg(not(feature = "rand"))]
-//! # fn main() {
-//! # }
 //! ```
 //!
 //! See the "Features" section for instructions for enabling random number generation.
 //!
 //! ## Features
 //!
-//! The `std` crate feature is mandatory and enabled by default.  If you depend on
-//! `num-bigint` with `default-features = false`, you must manually enable the
-//! `std` feature yourself.  In the future, we hope to support `#![no_std]` with
-//! the `alloc` crate when `std` is not enabled.
-//!
 //! The `std` crate feature is enabled by default, and is mandatory before Rust
 //! 1.36 and the stabilized `alloc` crate.  If you depend on `num-bigint` with
 //! `default-features = false`, you must manually enable the `std` feature yourself
 //! if your compiler is not new enough.
-//!
-//! Implementations for `i128` and `u128` are only available with Rust 1.26 and
-//! later.  The build script automatically detects this, but you can make it
-//! mandatory by enabling the `i128` crate feature.
 //!
 //! ### Random Generation
 //!
@@ -95,19 +78,19 @@
 //! feature is enabled. To enable it include rand as
 //!
 //! ```toml
-//! rand = "0.5"
-//! num-bigint = { version = "0.2", features = ["rand"] }
+//! rand = "0.7"
+//! num-bigint = { version = "0.3", features = ["rand"] }
 //! ```
 //!
 //! Note that you must use the version of `rand` that `num-bigint` is compatible
-//! with: `0.5`.
+//! with: `0.7`.
 //!
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.15 and greater.
+//! The `num-bigint` crate is tested for rustc 1.31 and greater.
 
-#![doc(html_root_url = "https://docs.rs/num-bigint/0.2")]
+#![doc(html_root_url = "https://docs.rs/num-bigint/0.3")]
 #![no_std]
 
 #[cfg(feature = "std")]

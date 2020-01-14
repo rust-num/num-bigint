@@ -10,7 +10,8 @@ extern crate test;
 use num_bigint::{BigUint, RandBigInt};
 use num_integer::Integer;
 use num_traits::Zero;
-use rand::{SeedableRng, StdRng};
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use test::Bencher;
 
 fn get_rng() -> StdRng {

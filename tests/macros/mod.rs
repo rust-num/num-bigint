@@ -35,15 +35,6 @@ macro_rules! assert_scalar_op {
     };
 }
 
-#[cfg(not(has_i128))]
-macro_rules! assert_unsigned_scalar_op {
-    ($left:ident $op:tt $right:ident == $expected:expr) => {
-        assert_scalar_op!((to_u8, to_u16, to_u32, to_u64, to_usize)
-                          $left $op $right == $expected);
-    };
-}
-
-#[cfg(has_i128)]
 macro_rules! assert_unsigned_scalar_op {
     ($left:ident $op:tt $right:ident == $expected:expr) => {
         assert_scalar_op!((to_u8, to_u16, to_u32, to_u64, to_usize, to_u128)
@@ -51,16 +42,6 @@ macro_rules! assert_unsigned_scalar_op {
     };
 }
 
-#[cfg(not(has_i128))]
-macro_rules! assert_signed_scalar_op {
-    ($left:ident $op:tt $right:ident == $expected:expr) => {
-        assert_scalar_op!((to_u8, to_u16, to_u32, to_u64, to_usize,
-                           to_i8, to_i16, to_i32, to_i64, to_isize)
-                          $left $op $right == $expected);
-    };
-}
-
-#[cfg(has_i128)]
 macro_rules! assert_signed_scalar_op {
     ($left:ident $op:tt $right:ident == $expected:expr) => {
         assert_scalar_op!((to_u8, to_u16, to_u32, to_u64, to_usize, to_u128,

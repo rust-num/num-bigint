@@ -7,17 +7,9 @@ use std::io::Write;
 use std::path::Path;
 
 fn main() {
-    let ac = autocfg::new();
-
-    if ac.probe_type("i128") {
-        autocfg::emit("has_i128");
-
-        let pointer_width = env::var("CARGO_CFG_TARGET_POINTER_WIDTH");
-        if pointer_width.as_ref().map(String::as_str) == Ok("64") {
-            autocfg::emit("u64_digit");
-        }
-    } else if env::var_os("CARGO_FEATURE_I128").is_some() {
-        panic!("i128 support was not detected!");
+    let pointer_width = env::var("CARGO_CFG_TARGET_POINTER_WIDTH");
+    if pointer_width.as_ref().map(String::as_str) == Ok("64") {
+        autocfg::emit("u64_digit");
     }
 
     autocfg::rerun_path("build.rs");

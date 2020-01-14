@@ -37,16 +37,17 @@ name = "shootout-pidigits"
 [dependencies.num-integer]
 version = "0.1.42"
 default-features = false
+features = ["i128"]
 
 [dependencies.num-traits]
 version = "0.2.11"
 default-features = false
+features = ["i128"]
 
 [dependencies.rand]
 optional = true
-version = "0.5"
+version = "0.7"
 default-features = false
-features = ["std"]
 
 [dependencies.serde]
 optional = true
@@ -55,17 +56,11 @@ default-features = false
 
 [dependencies.quickcheck]
 optional = true
-version = "0.8"
-default-features = false
-
-[dependencies.quickcheck_macros]
-optional = true
-version = "0.8"
+version = "0.9"
 default-features = false
 
 [features]
 default = ["std"]
-i128 = ["num-integer/i128", "num-traits/i128"]
 std = ["num-integer/std", "num-traits/std"]
 
 [build-dependencies]

@@ -2,9 +2,6 @@ extern crate num_bigint;
 extern crate num_integer;
 extern crate num_traits;
 
-#[cfg(feature = "rand")]
-extern crate rand;
-
 mod biguint {
     use num_bigint::BigUint;
     use num_traits::{One, Pow, Zero};
@@ -99,25 +96,6 @@ mod biguint {
         assert!(x.nth_root(x.bits() as u32).is_one());
         assert!(x.nth_root(i32::MAX as u32).is_one());
         assert!(x.nth_root(u32::MAX).is_one());
-    }
-
-    #[cfg(feature = "rand")]
-    #[test]
-    fn test_roots_rand() {
-        use num_bigint::RandBigInt;
-        use rand::distributions::Uniform;
-        use rand::{thread_rng, Rng};
-
-        let mut rng = thread_rng();
-        let bit_range = Uniform::new(0, 2048);
-        let sample_bits: Vec<_> = rng.sample_iter(&bit_range).take(100).collect();
-        for bits in sample_bits {
-            let x = rng.gen_biguint(bits);
-            for n in 2..11 {
-                check(x.clone(), n);
-            }
-            check(x.clone(), 100);
-        }
     }
 
     #[test]

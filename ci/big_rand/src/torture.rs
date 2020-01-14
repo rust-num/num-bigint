@@ -1,12 +1,7 @@
-#![cfg(feature = "rand")]
-
-extern crate num_bigint;
-extern crate num_traits;
-extern crate rand;
-
 use num_bigint::RandBigInt;
 use num_traits::Zero;
 use rand::prelude::*;
+use rand::rngs::SmallRng;
 
 fn get_rng() -> SmallRng {
     let seed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];

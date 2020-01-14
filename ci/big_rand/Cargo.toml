@@ -1,0 +1,18 @@
+[package]
+name = "big_rand"
+version = "0.1.0"
+authors = ["Josh Stone <cuviper@gmail.com>"]
+
+[dependencies]
+num-traits = "0.2.11"
+rand_chacha = "0.2"
+rand_isaac = "0.2"
+rand_xorshift = "0.2"
+
+[dependencies.num-bigint]
+features = ["rand"]
+path = "../.."
+
+[dependencies.rand]
+features = ["small_rng"]
+version = "0.7"

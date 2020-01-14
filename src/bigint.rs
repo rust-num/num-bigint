@@ -8,12 +8,8 @@ use core::ops::{
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use core::str::{self, FromStr};
-#[cfg(has_i128)]
 use core::{i128, u128};
 use core::{i64, u64};
-#[cfg(feature = "std")]
-#[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
 #[cfg(feature = "quickcheck")]
 use std_alloc::Box;
 use std_alloc::{String, Vec};
@@ -912,7 +908,6 @@ pow_impl!(u16);
 pow_impl!(u32);
 pow_impl!(u64);
 pow_impl!(usize);
-#[cfg(has_i128)]
 pow_impl!(u128);
 pow_impl!(BigUint);
 
@@ -937,7 +932,6 @@ fn i64_abs_as_u64(a: i64) -> u64 {
 }
 
 // A convenience method for getting the absolute value of an i128 in a u128.
-#[cfg(has_i128)]
 #[inline]
 fn i128_abs_as_u128(a: i128) -> u128 {
     if a == i128::min_value() {
@@ -1023,7 +1017,6 @@ promote_all_scalars!(impl Add for BigInt, add);
 promote_all_scalars_assign!(impl AddAssign for BigInt, add_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u32> for BigInt, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u64> for BigInt, add);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u128> for BigInt, add);
 
 impl Add<u32> for BigInt {
@@ -1076,7 +1069,6 @@ impl AddAssign<u64> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl Add<u128> for BigInt {
     type Output = BigInt;
 
@@ -1093,7 +1085,6 @@ impl Add<u128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
 impl AddAssign<u128> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: u128) {
@@ -1104,7 +1095,6 @@ impl AddAssign<u128> for BigInt {
 
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<i32> for BigInt, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<i64> for BigInt, add);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<i128> for BigInt, add);
 
 impl Add<i32> for BigInt {
@@ -1153,7 +1143,6 @@ impl AddAssign<i64> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl Add<i128> for BigInt {
     type Output = BigInt;
 
@@ -1166,7 +1155,6 @@ impl Add<i128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
 impl AddAssign<i128> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: i128) {
@@ -1254,7 +1242,6 @@ promote_all_scalars!(impl Sub for BigInt, sub);
 promote_all_scalars_assign!(impl SubAssign for BigInt, sub_assign);
 forward_all_scalar_binop_to_val_val!(impl Sub<u32> for BigInt, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<u64> for BigInt, sub);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Sub<u128> for BigInt, sub);
 
 impl Sub<u32> for BigInt {
@@ -1298,7 +1285,7 @@ impl Sub<BigInt> for u64 {
         -(other - self)
     }
 }
-#[cfg(has_i128)]
+
 impl Sub<BigInt> for u128 {
     type Output = BigInt;
 
@@ -1324,6 +1311,7 @@ impl Sub<u64> for BigInt {
         }
     }
 }
+
 impl SubAssign<u64> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: u64) {
@@ -1332,7 +1320,6 @@ impl SubAssign<u64> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl Sub<u128> for BigInt {
     type Output = BigInt;
 
@@ -1349,7 +1336,7 @@ impl Sub<u128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl SubAssign<u128> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: u128) {
@@ -1360,7 +1347,6 @@ impl SubAssign<u128> for BigInt {
 
 forward_all_scalar_binop_to_val_val!(impl Sub<i32> for BigInt, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<i64> for BigInt, sub);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Sub<i128> for BigInt, sub);
 
 impl Sub<i32> for BigInt {
@@ -1435,7 +1421,6 @@ impl Sub<BigInt> for i64 {
     }
 }
 
-#[cfg(has_i128)]
 impl Sub<i128> for BigInt {
     type Output = BigInt;
 
@@ -1448,7 +1433,7 @@ impl Sub<i128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl SubAssign<i128> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: i128) {
@@ -1459,7 +1444,7 @@ impl SubAssign<i128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl Sub<BigInt> for i128 {
     type Output = BigInt;
 
@@ -1496,7 +1481,6 @@ promote_all_scalars!(impl Mul for BigInt, mul);
 promote_all_scalars_assign!(impl MulAssign for BigInt, mul_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u32> for BigInt, mul);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigInt, mul);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigInt, mul);
 
 impl Mul<u32> for BigInt {
@@ -1536,7 +1520,7 @@ impl MulAssign<u64> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl Mul<u128> for BigInt {
     type Output = BigInt;
 
@@ -1545,7 +1529,7 @@ impl Mul<u128> for BigInt {
         BigInt::from_biguint(self.sign, self.data * other)
     }
 }
-#[cfg(has_i128)]
+
 impl MulAssign<u128> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: u128) {
@@ -1558,7 +1542,6 @@ impl MulAssign<u128> for BigInt {
 
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i32> for BigInt, mul);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i64> for BigInt, mul);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i128> for BigInt, mul);
 
 impl Mul<i32> for BigInt {
@@ -1610,7 +1593,7 @@ impl MulAssign<i64> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl Mul<i128> for BigInt {
     type Output = BigInt;
 
@@ -1623,7 +1606,7 @@ impl Mul<i128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl MulAssign<i128> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: i128) {
@@ -1660,7 +1643,6 @@ promote_all_scalars!(impl Div for BigInt, div);
 promote_all_scalars_assign!(impl DivAssign for BigInt, div_assign);
 forward_all_scalar_binop_to_val_val!(impl Div<u32> for BigInt, div);
 forward_all_scalar_binop_to_val_val!(impl Div<u64> for BigInt, div);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Div<u128> for BigInt, div);
 
 impl Div<u32> for BigInt {
@@ -1719,7 +1701,6 @@ impl Div<BigInt> for u64 {
     }
 }
 
-#[cfg(has_i128)]
 impl Div<u128> for BigInt {
     type Output = BigInt;
 
@@ -1729,7 +1710,6 @@ impl Div<u128> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl DivAssign<u128> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: u128) {
@@ -1740,7 +1720,6 @@ impl DivAssign<u128> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl Div<BigInt> for u128 {
     type Output = BigInt;
 
@@ -1752,7 +1731,6 @@ impl Div<BigInt> for u128 {
 
 forward_all_scalar_binop_to_val_val!(impl Div<i32> for BigInt, div);
 forward_all_scalar_binop_to_val_val!(impl Div<i64> for BigInt, div);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Div<i128> for BigInt, div);
 
 impl Div<i32> for BigInt {
@@ -1831,7 +1809,6 @@ impl Div<BigInt> for i64 {
     }
 }
 
-#[cfg(has_i128)]
 impl Div<i128> for BigInt {
     type Output = BigInt;
 
@@ -1845,7 +1822,6 @@ impl Div<i128> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl DivAssign<i128> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: i128) {
@@ -1858,7 +1834,6 @@ impl DivAssign<i128> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl Div<BigInt> for i128 {
     type Output = BigInt;
 
@@ -1902,7 +1877,6 @@ promote_all_scalars!(impl Rem for BigInt, rem);
 promote_all_scalars_assign!(impl RemAssign for BigInt, rem_assign);
 forward_all_scalar_binop_to_val_val!(impl Rem<u32> for BigInt, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<u64> for BigInt, rem);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Rem<u128> for BigInt, rem);
 
 impl Rem<u32> for BigInt {
@@ -1961,7 +1935,6 @@ impl Rem<BigInt> for u64 {
     }
 }
 
-#[cfg(has_i128)]
 impl Rem<u128> for BigInt {
     type Output = BigInt;
 
@@ -1971,7 +1944,6 @@ impl Rem<u128> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl RemAssign<u128> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: u128) {
@@ -1982,7 +1954,6 @@ impl RemAssign<u128> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl Rem<BigInt> for u128 {
     type Output = BigInt;
 
@@ -1994,7 +1965,6 @@ impl Rem<BigInt> for u128 {
 
 forward_all_scalar_binop_to_val_val!(impl Rem<i32> for BigInt, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<i64> for BigInt, rem);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Rem<i128> for BigInt, rem);
 
 impl Rem<i32> for BigInt {
@@ -2071,7 +2041,6 @@ impl Rem<BigInt> for i64 {
     }
 }
 
-#[cfg(has_i128)]
 impl Rem<i128> for BigInt {
     type Output = BigInt;
 
@@ -2084,7 +2053,7 @@ impl Rem<i128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl RemAssign<i128> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i128) {
@@ -2095,7 +2064,7 @@ impl RemAssign<i128> for BigInt {
         }
     }
 }
-#[cfg(has_i128)]
+
 impl Rem<BigInt> for i128 {
     type Output = BigInt;
 
@@ -2293,7 +2262,6 @@ impl ToPrimitive for BigInt {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn to_i128(&self) -> Option<i128> {
         match self.sign {
             Plus => self.data.to_i128(),
@@ -2321,7 +2289,6 @@ impl ToPrimitive for BigInt {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn to_u128(&self) -> Option<u128> {
         match self.sign {
             Plus => self.data.to_u128(),
@@ -2352,7 +2319,6 @@ impl FromPrimitive for BigInt {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn from_i128(n: i128) -> Option<BigInt> {
         Some(BigInt::from(n))
     }
@@ -2363,7 +2329,6 @@ impl FromPrimitive for BigInt {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn from_u128(n: u128) -> Option<BigInt> {
         Some(BigInt::from(n))
     }
@@ -2393,7 +2358,6 @@ impl From<i64> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl From<i128> for BigInt {
     #[inline]
     fn from(n: i128) -> Self {
@@ -2439,7 +2403,6 @@ impl From<u64> for BigInt {
     }
 }
 
-#[cfg(has_i128)]
 impl From<u128> for BigInt {
     #[inline]
     fn from(n: u128) -> Self {
@@ -2589,7 +2552,6 @@ impl_to_bigint!(i8, FromPrimitive::from_i8);
 impl_to_bigint!(i16, FromPrimitive::from_i16);
 impl_to_bigint!(i32, FromPrimitive::from_i32);
 impl_to_bigint!(i64, FromPrimitive::from_i64);
-#[cfg(has_i128)]
 impl_to_bigint!(i128, FromPrimitive::from_i128);
 
 impl_to_bigint!(usize, FromPrimitive::from_usize);
@@ -2597,7 +2559,6 @@ impl_to_bigint!(u8, FromPrimitive::from_u8);
 impl_to_bigint!(u16, FromPrimitive::from_u16);
 impl_to_bigint!(u32, FromPrimitive::from_u32);
 impl_to_bigint!(u64, FromPrimitive::from_u64);
-#[cfg(has_i128)]
 impl_to_bigint!(u128, FromPrimitive::from_u128);
 
 impl_to_bigint!(f32, FromPrimitive::from_f32);
