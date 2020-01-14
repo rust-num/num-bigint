@@ -332,11 +332,13 @@ fn bitand_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = twos_a & bi;
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
-    if a.len() > b.len() {
-        a.truncate(b.len());
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().cloned());
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => a.truncate(b.len()),
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().cloned());
+        }
     }
 }
 
@@ -355,19 +357,23 @@ fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_a = negate_carry(*ai, &mut carry_a);
-            *ai = negate_carry(twos_a, &mut carry_and);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_a = negate_carry(*ai, &mut carry_a);
+                *ai = negate_carry(twos_a, &mut carry_and);
+            }
+            debug_assert!(carry_a == 0);
         }
-        debug_assert!(carry_a == 0);
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_b = negate_carry(bi, &mut carry_b);
-            negate_carry(twos_b, &mut carry_and)
-        }));
-        debug_assert!(carry_b == 0);
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_b = negate_carry(bi, &mut carry_b);
+                negate_carry(twos_b, &mut carry_and)
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
     if carry_and != 0 {
         a.push(1);
@@ -452,15 +458,19 @@ fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = negate_carry(*ai | twos_b, &mut carry_or);
     }
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        a.truncate(b.len());
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_b = negate_carry(bi, &mut carry_b);
-            negate_carry(twos_b, &mut carry_or)
-        }));
-        debug_assert!(carry_b == 0);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            a.truncate(b.len());
+        }
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_b = negate_carry(bi, &mut carry_b);
+                negate_carry(twos_b, &mut carry_or)
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
     // for carry_or to be non-zero, we would need twos_b == 0
     debug_assert!(carry_or == 0);
@@ -583,18 +593,22 @@ fn bitxor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
     }
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_b = !0;
-            *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_b = !0;
+                *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
+            }
         }
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_b = negate_carry(bi, &mut carry_b);
-            negate_carry(twos_b, &mut carry_xor)
-        }));
-        debug_assert!(carry_b == 0);
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_b = negate_carry(bi, &mut carry_b);
+                negate_carry(twos_b, &mut carry_xor)
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
     if carry_xor != 0 {
         a.push(1);
@@ -612,18 +626,22 @@ fn bitxor_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = negate_carry(twos_a ^ bi, &mut carry_xor);
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_a = negate_carry(*ai, &mut carry_a);
-            *ai = negate_carry(twos_a, &mut carry_xor);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_a = negate_carry(*ai, &mut carry_a);
+                *ai = negate_carry(twos_a, &mut carry_xor);
+            }
+            debug_assert!(carry_a == 0);
         }
-        debug_assert!(carry_a == 0);
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_a = !0;
-            negate_carry(twos_a ^ bi, &mut carry_xor)
-        }));
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_a = !0;
+                negate_carry(twos_a ^ bi, &mut carry_xor)
+            }));
+        }
     }
     if carry_xor != 0 {
         a.push(1);
@@ -643,21 +661,25 @@ fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_a = negate_carry(*ai, &mut carry_a);
-            let twos_b = !0;
-            *ai = twos_a ^ twos_b;
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_a = negate_carry(*ai, &mut carry_a);
+                let twos_b = !0;
+                *ai = twos_a ^ twos_b;
+            }
+            debug_assert!(carry_a == 0);
         }
-        debug_assert!(carry_a == 0);
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_a = !0;
-            let twos_b = negate_carry(bi, &mut carry_b);
-            twos_a ^ twos_b
-        }));
-        debug_assert!(carry_b == 0);
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_a = !0;
+                let twos_b = negate_carry(bi, &mut carry_b);
+                twos_a ^ twos_b
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
 }
 
@@ -2260,16 +2282,15 @@ impl ToPrimitive for BigInt {
         match self.sign {
             Plus => self.data.to_i64(),
             NoSign => Some(0),
-            Minus => self.data.to_u64().and_then(|n| {
+            Minus => {
+                let n = self.data.to_u64()?;
                 let m: u64 = 1 << 63;
-                if n < m {
-                    Some(-(n as i64))
-                } else if n == m {
-                    Some(i64::MIN)
-                } else {
-                    None
+                match n.cmp(&m) {
+                    Less => Some(-(n as i64)),
+                    Equal => Some(i64::MIN),
+                    Greater => None,
                 }
-            }),
+            }
         }
     }
 
@@ -2278,16 +2299,15 @@ impl ToPrimitive for BigInt {
         match self.sign {
             Plus => self.data.to_i128(),
             NoSign => Some(0),
-            Minus => self.data.to_u128().and_then(|n| {
+            Minus => {
+                let n = self.data.to_u128()?;
                 let m: u128 = 1 << 127;
-                if n < m {
-                    Some(-(n as i128))
-                } else if n == m {
-                    Some(i128::MIN)
-                } else {
-                    None
+                match n.cmp(&m) {
+                    Less => Some(-(n as i128)),
+                    Equal => Some(i128::MIN),
+                    Greater => None,
                 }
-            }),
+            }
         }
     }
 

@@ -1847,10 +1847,10 @@ impl FromPrimitive for BigUint {
         }
 
         let mut ret = BigUint::from(mantissa);
-        if exponent > 0 {
-            ret <<= exponent as usize;
-        } else if exponent < 0 {
-            ret >>= (-exponent) as usize;
+        match exponent.cmp(&0) {
+            Greater => ret <<= exponent as usize,
+            Equal => {}
+            Less => ret >>= (-exponent) as usize,
         }
         Some(ret)
     }
