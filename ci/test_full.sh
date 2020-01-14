@@ -7,7 +7,7 @@ echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
 case "$TRAVIS_RUST_VERSION" in
   1.31.*) STD_FEATURES="serde" ;;
   1.3[23].*) STD_FEATURES="serde rand" ;;
-  *) STD_FEATURES="serde rand quickcheck quickcheck_macros" ;;
+  *) STD_FEATURES="serde rand quickcheck" ;;
 esac
 
 case "$TRAVIS_RUST_VERSION" in
@@ -57,4 +57,5 @@ fi
 case "$STD_FEATURES" in
   *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml ;;&
   *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
+  *quickcheck*) cargo test --manifest-path ci/big_quickcheck/Cargo.toml ;;&
 esac

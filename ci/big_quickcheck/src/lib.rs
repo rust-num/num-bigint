@@ -1,5 +1,10 @@
-#![cfg(feature = "quickcheck")]
-#![cfg(feature = "quickcheck_macros")]
+//! Quickcheck of `BigUint` and `BigInt`
+//!
+//! This test is in a completely separate crate so we can use `quickcheck_macros` only when
+//! `quickcheck` is active. The main crate can't have optional dev-dependencies, and it's
+//! better not to expose it as a "feature" optional dependency.
+
+#![cfg(test)]
 
 extern crate num_bigint;
 extern crate num_integer;
