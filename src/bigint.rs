@@ -886,9 +886,7 @@ impl Signed for BigInt {
 fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
     if other.is_zero() {
         Plus
-    } else if sign != Minus {
-        sign
-    } else if other.is_odd() {
+    } else if sign != Minus || other.is_odd() {
         sign
     } else {
         -sign
