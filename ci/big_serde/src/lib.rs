@@ -3,8 +3,12 @@
 //! The serialized formats should not change, even if we change our
 //! internal representation, because we want to preserve forward and
 //! backward compatibility of serialized data!
+//!
+//! This test is in a completely separate crate so its `serde_test`
+//! dependency does not "infect" the rest of the build with `serde`'s
+//! default features, especially not `serde/std`.
 
-#![cfg(feature = "serde")]
+#![cfg(test)]
 
 extern crate num_bigint;
 extern crate num_traits;

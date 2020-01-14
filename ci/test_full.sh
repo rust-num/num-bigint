@@ -13,7 +13,7 @@ esac
 
 case "$TRAVIS_RUST_VERSION" in
   1.1[5-9].* | 1.2[0-9].* | 1.3[0-5].*) ;;
-  *) NO_STD_FEATURES="i128" ;;
+  *) NO_STD_FEATURES="i128 serde" ;;
 esac
 
 # num-bigint should build and test everywhere.
@@ -54,3 +54,7 @@ fi
 if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
   cargo bench --all-features --no-run
 fi
+
+case "$STD_FEATURES" in
+  *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml
+esac

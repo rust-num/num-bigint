@@ -2678,8 +2678,8 @@ fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
 }
 
 #[cfg(feature = "serde")]
-#[cfg(not(u64_digit))]
 impl serde::Serialize for BigUint {
+    #[cfg(not(u64_digit))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -2687,14 +2687,11 @@ impl serde::Serialize for BigUint {
         // Note: do not change the serialization format, or it may break forward
         // and backward compatibility of serialized data!  If we ever change the
         // internal representation, we should still serialize in base-`u32`.
-        let data: &Vec<u32> = &self.data;
+        let data: &[u32] = &self.data;
         data.serialize(serializer)
     }
-}
 
-#[cfg(feature = "serde")]
-#[cfg(u64_digit)]
-impl serde::Serialize for BigUint {
+    #[cfg(u64_digit)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -2722,19 +2719,6 @@ impl serde::Serialize for BigUint {
 }
 
 #[cfg(feature = "serde")]
-#[cfg(not(u64_digit))]
-impl<'de> serde::Deserialize<'de> for BigUint {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let data: Vec<u32> = Vec::deserialize(deserializer)?;
-        Ok(biguint_from_vec(data))
-    }
-}
-
-#[cfg(feature = "serde")]
-#[cfg(u64_digit)]
 impl<'de> serde::Deserialize<'de> for BigUint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -2751,6 +2735,22 @@ impl<'de> serde::Deserialize<'de> for BigUint {
                 formatter.write_str("a sequence of unsigned 32-bit numbers")
             }
 
+            #[cfg(not(u64_digit))]
+            fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+            where
+                S: SeqAccess<'de>,
+            {
+                let len = seq.size_hint().unwrap_or(0);
+                let mut data = Vec::with_capacity(len);
+
+                while let Some(value) = seq.next_element::<u32>()? {
+                    data.push(value);
+                }
+
+                Ok(biguint_from_vec(data))
+            }
+
+            #[cfg(u64_digit)]
             fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
             where
                 S: SeqAccess<'de>,
@@ -2763,8 +2763,11 @@ impl<'de> serde::Deserialize<'de> for BigUint {
                     let mut value = BigDigit::from(lo);
                     if let Some(hi) = seq.next_element::<u32>()? {
                         value |= BigDigit::from(hi) << 32;
+                        data.push(value);
+                    } else {
+                        data.push(value);
+                        break;
                     }
-                    data.push(value);
                 }
 
                 Ok(biguint_from_vec(data))
