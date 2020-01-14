@@ -8,7 +8,8 @@ extern crate test;
 
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::Pow;
-use rand::{SeedableRng, StdRng};
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use test::Bencher;
 
 // The `big64` cases demonstrate the speed of cases where the value

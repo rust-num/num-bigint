@@ -49,9 +49,9 @@ if test -n "${NO_STD_FEATURES:+true}"; then
   cargo test --no-default-features --features="$NO_STD_FEATURES"
 fi
 
-# make sure benchmarks can be built
+# make sure benchmarks can be built and sanity-tested
 if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
-  cargo bench --all-features --no-run
+  cargo test --benches --all-features
 fi
 
 case "$STD_FEATURES" in
