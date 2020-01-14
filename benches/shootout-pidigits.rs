@@ -38,10 +38,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 use std::io;
 use std::str::FromStr;
 

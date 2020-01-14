@@ -1,7 +1,3 @@
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 static BIG_B: &'static str = "\
                               efac3c0a_0de55551_fee0bfe4_67fa017a_1a898fa1_6ca57cb1\
                               ca9e3248_cacc09a9_b99d6abc_38418d0f_82ae4238_d9a68832\

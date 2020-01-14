@@ -1,6 +1,3 @@
-extern crate num_bigint;
-extern crate num_traits;
-
 use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 

@@ -1,7 +1,3 @@
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 use num_bigint::Sign::Plus;
 use num_bigint::{BigInt, ToBigInt};
 use num_bigint::{BigUint, ToBigUint};

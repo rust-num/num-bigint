@@ -115,19 +115,19 @@ impl Default for BigUint {
 }
 
 impl fmt::Display for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "", &self.to_str_radix(10))
     }
 }
 
 impl fmt::LowerHex for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0x", &self.to_str_radix(16))
     }
 }
 
 impl fmt::UpperHex for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = self.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(true, "0x", &s)
@@ -135,13 +135,13 @@ impl fmt::UpperHex for BigUint {
 }
 
 impl fmt::Binary for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0b", &self.to_str_radix(2))
     }
 }
 
 impl fmt::Octal for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0o", &self.to_str_radix(8))
     }
 }
@@ -2703,7 +2703,7 @@ impl<'de> serde::Deserialize<'de> for BigUint {
         impl<'de> Visitor<'de> for U32Visitor {
             type Value = BigUint;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a sequence of unsigned 32-bit numbers")
             }
 

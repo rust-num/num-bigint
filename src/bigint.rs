@@ -207,31 +207,31 @@ impl Default for BigInt {
 }
 
 impl fmt::Display for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "", &self.data.to_str_radix(10))
     }
 }
 
 impl fmt::Binary for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "0b", &self.data.to_str_radix(2))
     }
 }
 
 impl fmt::Octal for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "0o", &self.data.to_str_radix(8))
     }
 }
 
 impl fmt::LowerHex for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "0x", &self.data.to_str_radix(16))
     }
 }
 
 impl fmt::UpperHex for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = self.data.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(!self.is_negative(), "0x", &s)

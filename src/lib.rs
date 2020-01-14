@@ -117,15 +117,8 @@ mod std_alloc {
     pub use alloc::vec::Vec;
 }
 
-#[cfg(feature = "rand")]
-extern crate rand;
-#[cfg(feature = "serde")]
-extern crate serde;
-
-extern crate num_integer as integer;
-extern crate num_traits as traits;
-#[cfg(feature = "quickcheck")]
-extern crate quickcheck;
+use num_integer as integer;
+use num_traits as traits;
 
 use core::fmt;
 #[cfg(feature = "std")]
@@ -184,7 +177,7 @@ impl ParseBigIntError {
 }
 
 impl fmt::Display for ParseBigIntError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.__description().fmt(f)
     }
 }

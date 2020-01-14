@@ -1,7 +1,3 @@
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 mod biguint {
     use num_bigint::BigUint;
     use num_traits::{One, Pow, Zero};

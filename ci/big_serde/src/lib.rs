@@ -10,10 +10,6 @@
 
 #![cfg(test)]
 
-extern crate num_bigint;
-extern crate num_traits;
-extern crate serde_test;
-
 use num_bigint::{BigInt, BigUint};
 use num_traits::{One, Zero};
 use serde_test::{assert_tokens, Token};

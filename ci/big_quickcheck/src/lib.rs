@@ -6,18 +6,11 @@
 
 #![cfg(test)]
 
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
-extern crate quickcheck;
-#[macro_use]
-extern crate quickcheck_macros;
-
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
 use num_traits::{Num, One, Pow, Signed, Zero};
 use quickcheck::{QuickCheck, StdThreadGen, TestResult};
+use quickcheck_macros::quickcheck;
 
 #[quickcheck]
 fn quickcheck_unsigned_eq_reflexive(a: BigUint) -> bool {

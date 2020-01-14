@@ -6,13 +6,6 @@
 
 #![cfg(test)]
 
-extern crate num_bigint;
-extern crate num_traits;
-extern crate rand;
-extern crate rand_chacha;
-extern crate rand_isaac;
-extern crate rand_xorshift;
-
 mod torture;
 
 mod biguint {

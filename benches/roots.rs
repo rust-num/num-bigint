@@ -1,9 +1,6 @@
 #![feature(test)]
 #![cfg(feature = "rand")]
 
-extern crate num_bigint;
-extern crate num_traits;
-extern crate rand;
 extern crate test;
 
 use num_bigint::{BigUint, RandBigInt};
