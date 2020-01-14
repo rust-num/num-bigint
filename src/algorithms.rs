@@ -1,8 +1,8 @@
-use std::borrow::Cow;
-use std::cmp;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::iter::repeat;
-use std::mem;
+use core::cmp;
+use core::cmp::Ordering::{self, Equal, Greater, Less};
+use core::iter::repeat;
+use core::mem;
+use std_alloc::{Cow, Vec};
 use traits;
 use traits::{One, Zero};
 

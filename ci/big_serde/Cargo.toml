@@ -1,0 +1,12 @@
+[package]
+name = "big_serde"
+version = "0.1.0"
+authors = ["Josh Stone <cuviper@gmail.com>"]
+
+[dependencies]
+num-traits = "0.2.11"
+serde_test = "1.0"
+
+[dependencies.num-bigint]
+features = ["serde"]
+path = "../.."

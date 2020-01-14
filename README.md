@@ -24,10 +24,10 @@ extern crate num_bigint;
 
 ## Features
 
-The `std` crate feature is mandatory and enabled by default.  If you depend on
-`num-bigint` with `default-features = false`, you must manually enable the
-`std` feature yourself.  In the future, we hope to support `#![no_std]` with
-the `alloc` crate when `std` is not enabled.
+The `std` crate feature is enabled by default, and is mandatory before Rust
+1.36 and the stabilized `alloc` crate.  If you depend on `num-bigint` with
+`default-features = false`, you must manually enable the `std` feature yourself
+if your compiler is not new enough.
 
 Implementations for `i128` and `u128` are only available with Rust 1.26 and
 later.  The build script automatically detects this, but you can make it

@@ -1,18 +1,22 @@
-#[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::default::Default;
-use std::fmt;
-use std::iter::{Product, Sum};
-use std::mem;
-use std::ops::{
+use core::cmp::Ordering::{self, Equal, Greater, Less};
+use core::default::Default;
+use core::fmt;
+use core::iter::{Product, Sum};
+use core::mem;
+use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
-use std::str::{self, FromStr};
+use core::str::{self, FromStr};
 #[cfg(has_i128)]
-use std::{i128, u128};
-use std::{i64, u64};
+use core::{i128, u128};
+use core::{i64, u64};
+#[cfg(feature = "std")]
+#[allow(deprecated, unused_imports)]
+use std::ascii::AsciiExt;
+#[cfg(feature = "quickcheck")]
+use std_alloc::Box;
+use std_alloc::{String, Vec};
 
 #[cfg(feature = "serde")]
 use serde;

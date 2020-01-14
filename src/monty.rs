@@ -1,5 +1,6 @@
-use std::mem;
-use std::ops::Shl;
+use core::mem;
+use core::ops::Shl;
+use std_alloc::Vec;
 use traits::{One, Zero};
 
 use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
