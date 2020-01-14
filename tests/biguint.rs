@@ -608,6 +608,7 @@ fn test_convert_u128() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_convert_f32() {
     fn check(b1: &BigUint, f: f32) {
         let b2 = BigUint::from_f32(f).unwrap();
@@ -685,6 +686,7 @@ fn test_convert_f32() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_convert_f64() {
     fn check(b1: &BigUint, f: f64) {
         let b2 = BigUint::from_f64(f).unwrap();
