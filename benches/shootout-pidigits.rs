@@ -94,7 +94,7 @@ fn pidigits(n: isize, out: &mut dyn io::Write) -> io::Result<()> {
     let mut k = 0;
     let mut context = Context::new();
 
-    for i in 1..(n + 1) {
+    for i in 1..=n {
         let mut d;
         loop {
             k += 1;

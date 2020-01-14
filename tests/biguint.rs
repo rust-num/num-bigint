@@ -1572,7 +1572,7 @@ fn test_display() {
 fn test_factor() {
     fn factor(n: usize) -> BigUint {
         let mut f: BigUint = One::one();
-        for i in 2..n + 1 {
+        for i in 2..=n {
             // FIXME(#5992): assignment operator overloads
             // f *= FromPrimitive::from_usize(i);
             let bu: BigUint = FromPrimitive::from_usize(i).unwrap();

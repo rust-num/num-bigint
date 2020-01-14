@@ -106,7 +106,7 @@ fn bigint_factorial_100() {
 fn big_digits() {
     // Try a few different lengths for u32/u64 digit coverage
     for len in 1..10 {
-        let digits = 1u32..len + 1;
+        let digits = 1u32..=len;
         let n = BigUint::new(digits.clone().collect());
 
         let mut tokens = vec![];

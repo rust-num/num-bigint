@@ -44,7 +44,7 @@ fn remainder_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
 
 fn factorial(n: usize) -> BigUint {
     let mut f: BigUint = One::one();
-    for i in 1..(n + 1) {
+    for i in 1..=n {
         let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
         f = f * bu;
     }
@@ -328,8 +328,8 @@ fn hash(b: &mut Bencher) {
 fn pow_bench(b: &mut Bencher) {
     b.iter(|| {
         let upper = 100_usize;
-        for i in 2..upper + 1 {
-            for j in 2..upper + 1 {
+        for i in 2..=upper {
+            for j in 2..=upper {
                 let i_big = BigUint::from_usize(i).unwrap();
                 i_big.pow(j);
             }
