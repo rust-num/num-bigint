@@ -789,23 +789,10 @@ pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
     debug_assert!(a.last() != Some(&0));
     debug_assert!(b.last() != Some(&0));
 
-    let (a_len, b_len) = (a.len(), b.len());
-    if a_len < b_len {
-        return Less;
+    match Ord::cmp(&a.len(), &b.len()) {
+        Equal => Iterator::cmp(a.iter().rev(), b.iter().rev()),
+        other => other,
     }
-    if a_len > b_len {
-        return Greater;
-    }
-
-    for (&ai, &bi) in a.iter().rev().zip(b.iter().rev()) {
-        if ai < bi {
-            return Less;
-        }
-        if ai > bi {
-            return Greater;
-        }
-    }
-    Equal
 }
 
 #[cfg(test)]

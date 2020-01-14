@@ -84,10 +84,9 @@ impl Arbitrary for BigUint {
 impl PartialEq for BigUint {
     #[inline]
     fn eq(&self, other: &BigUint) -> bool {
-        match self.cmp(other) {
-            Equal => true,
-            _ => false,
-        }
+        debug_assert!(self.data.last() != Some(&0));
+        debug_assert!(other.data.last() != Some(&0));
+        self.data == other.data
     }
 }
 impl Eq for BigUint {}

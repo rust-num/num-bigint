@@ -165,7 +165,9 @@ pub(crate) fn into_magnitude(i: BigInt) -> BigUint {
 impl PartialEq for BigInt {
     #[inline]
     fn eq(&self, other: &BigInt) -> bool {
-        self.cmp(other) == Equal
+        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
+        debug_assert!((other.sign != NoSign) ^ other.data.is_zero());
+        self.sign == other.sign && (self.sign == NoSign || self.data == other.data)
     }
 }
 
@@ -181,6 +183,8 @@ impl PartialOrd for BigInt {
 impl Ord for BigInt {
     #[inline]
     fn cmp(&self, other: &BigInt) -> Ordering {
+        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
+        debug_assert!((other.sign != NoSign) ^ other.data.is_zero());
         let scmp = self.sign.cmp(&other.sign);
         if scmp != Equal {
             return scmp;
