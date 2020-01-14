@@ -629,7 +629,7 @@ fn test_convert_f32() {
     for _ in 0..64 {
         check(&b, f);
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // this number when rounded to f64 then f32 isn't the same as when rounded straight to f32
@@ -643,7 +643,7 @@ fn test_convert_f32() {
     for _ in 0..64 {
         assert_eq!(b.to_f32(), Some(f));
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // rounding
@@ -707,7 +707,7 @@ fn test_convert_f64() {
     for _ in 0..128 {
         check(&b, f);
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // test rounding up with the bits at different offsets to the BigDigits
@@ -716,7 +716,7 @@ fn test_convert_f64() {
     for _ in 0..128 {
         assert_eq!(b.to_f64(), Some(f));
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // rounding
@@ -1576,7 +1576,7 @@ fn test_factor() {
             // FIXME(#5992): assignment operator overloads
             // f *= FromPrimitive::from_usize(i);
             let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
-            f = f * bu;
+            f *= bu;
         }
         f
     }

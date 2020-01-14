@@ -46,7 +46,7 @@ fn factorial(n: usize) -> BigUint {
     let mut f: BigUint = One::one();
     for i in 1..=n {
         let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
-        f = f * bu;
+        f += bu;
     }
     f
 }
@@ -68,7 +68,7 @@ fn fib2(n: usize) -> BigUint {
     let mut f0: BigUint = Zero::zero();
     let mut f1: BigUint = One::one();
     for _ in 0..n {
-        f1 = f1 + &f0;
+        f1 += &f0;
         f0 = &f1 - f0;
     }
     f0
@@ -297,7 +297,7 @@ fn shl(b: &mut Bencher) {
     b.iter(|| {
         let mut m = n.clone();
         for i in 0..50 {
-            m = m << i;
+            m <<= i;
         }
     })
 }
@@ -308,7 +308,7 @@ fn shr(b: &mut Bencher) {
     b.iter(|| {
         let mut m = n.clone();
         for i in 0..50 {
-            m = m >> i;
+            m >>= i;
         }
     })
 }
