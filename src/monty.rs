@@ -1,7 +1,7 @@
 use crate::std_alloc::Vec;
-use crate::traits::{One, Zero};
 use core::mem;
 use core::ops::Shl;
+use num_traits::{One, Zero};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 use crate::biguint::BigUint;

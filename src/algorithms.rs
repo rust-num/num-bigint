@@ -1,10 +1,9 @@
 use crate::std_alloc::{Cow, Vec};
-use crate::traits;
-use crate::traits::{One, Zero};
 use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::iter::repeat;
 use core::mem;
+use num_traits::{One, Zero};
 
 use crate::biguint::biguint_from_vec;
 use crate::biguint::BigUint;
@@ -74,7 +73,7 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
 #[inline]
 fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
     use crate::big_digit::{HALF, HALF_BITS};
-    use crate::integer::Integer;
+    use num_integer::Integer;
 
     debug_assert!(rem < divisor && divisor <= HALF);
     let (hi, rem) = ((rem << HALF_BITS) | (digit >> HALF_BITS)).div_rem(&divisor);
@@ -716,11 +715,11 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
 /// Find last set bit
 /// fls(0) == 0, fls(u32::MAX) == 32
-pub fn fls<T: traits::PrimInt>(v: T) -> usize {
+pub fn fls<T: num_traits::PrimInt>(v: T) -> usize {
     mem::size_of::<T>() * 8 - v.leading_zeros() as usize
 }
 
-pub fn ilog2<T: traits::PrimInt>(v: T) -> usize {
+pub fn ilog2<T: num_traits::PrimInt>(v: T) -> usize {
     fls(v) - 1
 }
 
@@ -807,8 +806,8 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 #[cfg(test)]
 mod algorithm_tests {
     use crate::big_digit::BigDigit;
-    use crate::traits::Num;
     use crate::{BigInt, BigUint};
+    use num_traits::Num;
 
     #[test]
     fn test_sub_sign() {

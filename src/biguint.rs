@@ -18,9 +18,9 @@ use core::{u32, u64, u8};
 #[cfg(feature = "serde")]
 use serde;
 
-use crate::integer::{Integer, Roots};
-use crate::traits::float::FloatCore;
-use crate::traits::{
+use num_integer::{Integer, Roots};
+use num_traits::float::FloatCore;
+use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
     Unsigned, Zero,
 };

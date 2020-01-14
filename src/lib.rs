@@ -117,9 +117,6 @@ mod std_alloc {
     pub use alloc::vec::Vec;
 }
 
-use num_integer as integer;
-use num_traits as traits;
-
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error::Error;

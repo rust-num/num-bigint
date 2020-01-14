@@ -10,8 +10,8 @@ use crate::Sign::*;
 use crate::bigint::{into_magnitude, magnitude};
 use crate::biguint::biguint_from_vec;
 
-use crate::integer::Integer;
-use crate::traits::Zero;
+use num_integer::Integer;
+use num_traits::Zero;
 
 /// A trait for sampling random big integers.
 ///
