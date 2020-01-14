@@ -96,7 +96,7 @@ fn test_scalar_div_rem() {
         assert!(r == *ans_r);
 
         let b = BigInt::from(b);
-        let (a, b, ans_q, ans_r) = (a.clone(), b.clone(), ans_q.clone(), ans_r.clone());
+        let (a, ans_q, ans_r) = (a.clone(), ans_q.clone(), ans_r.clone());
         assert_signed_scalar_op!(a / b == ans_q);
         assert_signed_scalar_op!(a % b == ans_r);
 

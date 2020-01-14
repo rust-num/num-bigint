@@ -108,7 +108,7 @@ mod biguint {
         check(x.clone(), 2);
         check(x.clone(), 3);
         check(x.clone(), 10);
-        check(x.clone(), 100);
+        check(x, 100);
     }
 }
 
