@@ -24,8 +24,7 @@ fn main() {
 ///      BASES_64[3] = (12157665459056928801, 40)
 ///
 /// Powers of two are not included, just zeroed, as they're implemented with shifts.
-#[allow(unknown_lints, bare_trait_objects)]
-fn write_radix_bases() -> Result<(), Box<Error>> {
+fn write_radix_bases() -> Result<(), Box<dyn Error>> {
     let out_dir = env::var("OUT_DIR")?;
     let dest_path = Path::new(&out_dir).join("radix_bases.rs");
     let mut f = File::create(&dest_path)?;

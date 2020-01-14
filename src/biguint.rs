@@ -75,8 +75,7 @@ impl Arbitrary for BigUint {
         biguint_from_vec(Vec::<BigDigit>::arbitrary(g))
     }
 
-    #[allow(bare_trait_objects)] // `dyn` needs Rust 1.27 to parse, even when cfg-disabled
-    fn shrink(&self) -> Box<Iterator<Item = Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         // Use shrinker from Vec
         Box::new(self.data.shrink().map(biguint_from_vec))
     }
