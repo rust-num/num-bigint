@@ -1013,7 +1013,7 @@ fn test_from_str_radix() {
 #[test]
 fn test_lower_hex() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:x}", a), "a");
     assert_eq!(format!("{:x}", hello), "-48656c6c6f20776f726c6421");
@@ -1023,7 +1023,7 @@ fn test_lower_hex() {
 #[test]
 fn test_upper_hex() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:X}", a), "A");
     assert_eq!(format!("{:X}", hello), "-48656C6C6F20776F726C6421");
@@ -1033,7 +1033,7 @@ fn test_upper_hex() {
 #[test]
 fn test_binary() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-224055342307539".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-224055342307539", 10).unwrap();
 
     assert_eq!(format!("{:b}", a), "1010");
     assert_eq!(
@@ -1046,7 +1046,7 @@ fn test_binary() {
 #[test]
 fn test_octal() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:o}", a), "12");
     assert_eq!(format!("{:o}", hello), "-22062554330674403566756233062041");
@@ -1056,7 +1056,7 @@ fn test_octal() {
 #[test]
 fn test_display() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{}", a), "10");
     assert_eq!(format!("{}", hello), "-22405534230753963835153736737");
