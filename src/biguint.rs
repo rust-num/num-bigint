@@ -5,6 +5,7 @@ use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::fmt;
+use core::hash;
 use core::iter::{Product, Sum};
 use core::mem;
 use core::ops::{
@@ -47,7 +48,7 @@ use crate::ParseBigIntError;
 use quickcheck::{Arbitrary, Gen};
 
 /// A big unsigned integer type.
-#[derive(Debug, Hash)]
+#[derive(Debug)]
 pub struct BigUint {
     data: Vec<BigDigit>,
 }
@@ -78,6 +79,14 @@ impl Arbitrary for BigUint {
     fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         // Use shrinker from Vec
         Box::new(self.data.shrink().map(biguint_from_vec))
+    }
+}
+
+impl hash::Hash for BigUint {
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        debug_assert!(self.data.last() != Some(&0));
+        self.data.hash(state);
     }
 }
 

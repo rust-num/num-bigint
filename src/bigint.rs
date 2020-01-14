@@ -4,6 +4,7 @@ use crate::std_alloc::{String, Vec};
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::fmt;
+use core::hash;
 use core::iter::{Product, Sum};
 use core::mem;
 use core::ops::{
@@ -111,7 +112,7 @@ impl<'de> serde::Deserialize<'de> for Sign {
 }
 
 /// A big signed integer type.
-#[derive(Debug, Hash)]
+#[derive(Debug)]
 pub struct BigInt {
     sign: Sign,
     data: BigUint,
@@ -160,6 +161,17 @@ pub(crate) fn magnitude(i: &BigInt) -> &BigUint {
 #[cfg(feature = "rand")]
 pub(crate) fn into_magnitude(i: BigInt) -> BigUint {
     i.data
+}
+
+impl hash::Hash for BigInt {
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
+        self.sign.hash(state);
+        if self.sign != NoSign {
+            self.data.hash(state);
+        }
+    }
 }
 
 impl PartialEq for BigInt {
