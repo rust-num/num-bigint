@@ -48,7 +48,6 @@ features = ["i128"]
 optional = true
 version = "0.7"
 default-features = false
-features = ["std", "small_rng"]
 
 [dependencies.serde]
 optional = true
@@ -64,15 +63,6 @@ default-features = false
 optional = true
 version = "0.9"
 default-features = false
-
-[dev-dependencies.rand_xorshift]
-version = "0.2.0"
-
-[dev-dependencies.rand_chacha]
-version = "0.2.0"
-
-[dev-dependencies.rand_isaac]
-version = "0.2.0"
 
 [features]
 default = ["std"]

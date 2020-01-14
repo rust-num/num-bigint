@@ -46,14 +46,11 @@
 //!
 //! It's easy to generate large random numbers:
 //!
-//! ```rust
-//! # #[cfg(feature = "rand")]
+//! ```rust,ignore
 //! extern crate rand;
-//! extern crate num_bigint as bigint;
+//! extern crate num_bigint;
 //!
-//! # #[cfg(feature = "rand")]
-//! # fn main() {
-//! use bigint::{ToBigInt, RandBigInt};
+//! use num_bigint::{ToBigInt, RandBigInt};
 //!
 //! let mut rng = rand::thread_rng();
 //! let a = rng.gen_bigint(1000);
@@ -64,11 +61,6 @@
 //!
 //! // Probably an even larger number.
 //! println!("{}", a * b);
-//! # }
-//!
-//! # #[cfg(not(feature = "rand"))]
-//! # fn main() {
-//! # }
 //! ```
 //!
 //! See the "Features" section for instructions for enabling random number generation.

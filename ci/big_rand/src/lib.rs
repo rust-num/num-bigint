@@ -1,4 +1,10 @@
-#![cfg(feature = "rand")]
+//! Test randomization of `BigUint` and `BigInt`
+//!
+//! This test is in a completely separate crate so `rand::thread_rng()`
+//! can be available without "infecting" the rest of the build with
+//! `rand`'s default features, especially not `rand/std`.
+
+#![cfg(test)]
 
 extern crate num_bigint;
 extern crate num_traits;
@@ -7,9 +13,11 @@ extern crate rand_chacha;
 extern crate rand_isaac;
 extern crate rand_xorshift;
 
+mod torture;
+
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
-    use num_traits::Zero;
+    use num_traits::{Pow, Zero};
     use rand::distributions::Uniform;
     use rand::thread_rng;
     use rand::{Rng, SeedableRng};
@@ -161,6 +169,44 @@ mod biguint {
         ];
         use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED);
+    }
+
+    #[test]
+    fn test_roots_rand() {
+        fn check<T: Into<BigUint>>(x: T, n: u32) {
+            let x: BigUint = x.into();
+            let root = x.nth_root(n);
+            println!("check {}.nth_root({}) = {}", x, n, root);
+
+            if n == 2 {
+                assert_eq!(root, x.sqrt())
+            } else if n == 3 {
+                assert_eq!(root, x.cbrt())
+            }
+
+            let lo = root.pow(n);
+            assert!(lo <= x);
+            assert_eq!(lo.nth_root(n), root);
+            if !lo.is_zero() {
+                assert_eq!((&lo - 1u32).nth_root(n), &root - 1u32);
+            }
+
+            let hi = (&root + 1u32).pow(n);
+            assert!(hi > x);
+            assert_eq!(hi.nth_root(n), &root + 1u32);
+            assert_eq!((&hi - 1u32).nth_root(n), root);
+        }
+
+        let mut rng = thread_rng();
+        let bit_range = Uniform::new(0, 2048);
+        let sample_bits: Vec<_> = rng.sample_iter(&bit_range).take(100).collect();
+        for bits in sample_bits {
+            let x = rng.gen_biguint(bits);
+            for n in 2..11 {
+                check(x.clone(), n);
+            }
+            check(x.clone(), 100);
+        }
     }
 }
 
@@ -323,5 +369,23 @@ mod bigint {
         ];
         use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED);
+    }
+
+    #[test]
+    fn test_random_shr() {
+        use rand::distributions::Standard;
+        use rand::Rng;
+        let rng = rand::thread_rng();
+
+        for p in rng.sample_iter::<i64, _>(&Standard).take(1000) {
+            let big = BigInt::from(p);
+            let bigger = &big << 1000;
+            assert_eq!(&bigger >> 1000, big);
+            for i in 0..64 {
+                let answer = BigInt::from(p >> i);
+                assert_eq!(&big >> i, answer);
+                assert_eq!(&bigger >> (1000 + i), answer);
+            }
+        }
     }
 }

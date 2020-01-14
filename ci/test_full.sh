@@ -12,7 +12,7 @@ esac
 
 case "$TRAVIS_RUST_VERSION" in
   1.3[1-5].*) ;;
-  *) NO_STD_FEATURES="serde" ;;
+  *) NO_STD_FEATURES="serde rand" ;;
 esac
 
 # num-bigint should build and test everywhere.
@@ -55,5 +55,6 @@ if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
 fi
 
 case "$STD_FEATURES" in
-  *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml
+  *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml ;;&
+  *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
 esac

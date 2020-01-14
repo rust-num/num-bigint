@@ -1,9 +1,3 @@
-#![cfg(feature = "rand")]
-
-extern crate num_bigint;
-extern crate num_traits;
-extern crate rand;
-
 use num_bigint::RandBigInt;
 use num_traits::Zero;
 use rand::prelude::*;
