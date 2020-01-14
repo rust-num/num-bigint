@@ -75,11 +75,6 @@
 //!
 //! ## Features
 //!
-//! The `std` crate feature is mandatory and enabled by default.  If you depend on
-//! `num-bigint` with `default-features = false`, you must manually enable the
-//! `std` feature yourself.  In the future, we hope to support `#![no_std]` with
-//! the `alloc` crate when `std` is not enabled.
-//!
 //! The `std` crate feature is enabled by default, and is mandatory before Rust
 //! 1.36 and the stabilized `alloc` crate.  If you depend on `num-bigint` with
 //! `default-features = false`, you must manually enable the `std` feature yourself
@@ -95,19 +90,19 @@
 //! feature is enabled. To enable it include rand as
 //!
 //! ```toml
-//! rand = "0.5"
-//! num-bigint = { version = "0.2", features = ["rand"] }
+//! rand = "0.7"
+//! num-bigint = { version = "0.3", features = ["rand"] }
 //! ```
 //!
 //! Note that you must use the version of `rand` that `num-bigint` is compatible
-//! with: `0.5`.
+//! with: `0.7`.
 //!
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.15 and greater.
+//! The `num-bigint` crate is tested for rustc 1.31 and greater.
 
-#![doc(html_root_url = "https://docs.rs/num-bigint/0.2")]
+#![doc(html_root_url = "https://docs.rs/num-bigint/0.3")]
 #![no_std]
 
 #[cfg(feature = "std")]

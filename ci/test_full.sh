@@ -5,15 +5,14 @@ set -ex
 echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
 
 case "$TRAVIS_RUST_VERSION" in
-  1.1[5-9].* | 1.2[0-1].*) STD_FEATURES="serde" ;;
-  1.2[2-5].*) STD_FEATURES="serde rand" ;;
-  1.2[6-9].* | 1.30.*) STD_FEATURES="serde rand i128" ;;
-  *) STD_FEATURES="serde rand i128 quickcheck quickcheck_macros" ;;
+  1.31.*) STD_FEATURES="serde" ;;
+  1.3[23].*) STD_FEATURES="serde rand" ;;
+  *) STD_FEATURES="serde rand quickcheck quickcheck_macros" ;;
 esac
 
 case "$TRAVIS_RUST_VERSION" in
-  1.1[5-9].* | 1.2[0-9].* | 1.3[0-5].*) ;;
-  *) NO_STD_FEATURES="i128 serde" ;;
+  1.3[1-5].*) ;;
+  *) NO_STD_FEATURES="serde" ;;
 esac
 
 # num-bigint should build and test everywhere.
