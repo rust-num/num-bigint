@@ -2205,9 +2205,8 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigUint> {
-        str::from_utf8(buf)
-            .ok()
-            .and_then(|s| BigUint::from_str_radix(s, radix).ok())
+        let s = str::from_utf8(buf).ok()?;
+        BigUint::from_str_radix(s, radix).ok()
     }
 
     /// Creates and initializes a `BigUint`. Each u8 of the input slice is
@@ -2493,11 +2492,8 @@ impl BigUint {
     /// Returns the number of least-significant bits that are zero,
     /// or `None` if the entire number is zero.
     pub fn trailing_zeros(&self) -> Option<usize> {
-        self.data
-            .iter()
-            .enumerate()
-            .find(|&(_, &digit)| digit != 0)
-            .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
+        let i = self.data.iter().position(|&digit| digit != 0)?;
+        Some(i * big_digit::BITS + self.data[i].trailing_zeros() as usize)
     }
 }
 

@@ -2331,16 +2331,14 @@ impl ToPrimitive for BigInt {
 
     #[inline]
     fn to_f32(&self) -> Option<f32> {
-        self.data
-            .to_f32()
-            .map(|n| if self.sign == Minus { -n } else { n })
+        let n = self.data.to_f32()?;
+        Some(if self.sign == Minus { -n } else { n })
     }
 
     #[inline]
     fn to_f64(&self) -> Option<f64> {
-        self.data
-            .to_f64()
-            .map(|n| if self.sign == Minus { -n } else { n })
+        let n = self.data.to_f64()?;
+        Some(if self.sign == Minus { -n } else { n })
     }
 }
 
@@ -2370,7 +2368,8 @@ impl FromPrimitive for BigInt {
         if n >= 0.0 {
             BigUint::from_f64(n).map(BigInt::from)
         } else {
-            BigUint::from_f64(-n).map(|x| -BigInt::from(x))
+            let x = BigUint::from_f64(-n)?;
+            Some(-BigInt::from(x))
         }
     }
 }
@@ -2727,9 +2726,8 @@ impl BigInt {
     /// ```
     #[inline]
     pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigInt> {
-        str::from_utf8(buf)
-            .ok()
-            .and_then(|s| BigInt::from_str_radix(s, radix).ok())
+        let s = str::from_utf8(buf).ok()?;
+        BigInt::from_str_radix(s, radix).ok()
     }
 
     /// Creates and initializes a `BigInt`. Each u8 of the input slice is
@@ -2749,7 +2747,8 @@ impl BigInt {
     /// assert_eq!(a.to_radix_be(190), (Sign:: Minus, inbase190));
     /// ```
     pub fn from_radix_be(sign: Sign, buf: &[u8], radix: u32) -> Option<BigInt> {
-        BigUint::from_radix_be(buf, radix).map(|u| BigInt::from_biguint(sign, u))
+        let u = BigUint::from_radix_be(buf, radix)?;
+        Some(BigInt::from_biguint(sign, u))
     }
 
     /// Creates and initializes a `BigInt`. Each u8 of the input slice is
@@ -2769,7 +2768,8 @@ impl BigInt {
     /// assert_eq!(a.to_radix_be(190), (Sign::Minus, inbase190));
     /// ```
     pub fn from_radix_le(sign: Sign, buf: &[u8], radix: u32) -> Option<BigInt> {
-        BigUint::from_radix_le(buf, radix).map(|u| BigInt::from_biguint(sign, u))
+        let u = BigUint::from_radix_le(buf, radix)?;
+        Some(BigInt::from_biguint(sign, u))
     }
 
     /// Returns the sign and the byte representation of the `BigInt` in big-endian byte order.
