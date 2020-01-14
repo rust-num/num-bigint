@@ -2038,7 +2038,7 @@ fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
-pub fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
+pub(crate) fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
     if u.is_zero() {
         vec![0]
     } else if radix.is_power_of_two() {
@@ -2058,7 +2058,7 @@ pub fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
     }
 }
 
-pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
+pub(crate) fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     assert!(2 <= radix && radix <= 36, "The radix must be within 2...36");
 
     if u.is_zero() {
@@ -2082,10 +2082,8 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
 /// Creates and initializes a `BigUint`.
 ///
 /// The digits are in little-endian base matching `BigDigit`.
-///
-/// This is an internal `pub(crate)`-ish API only!
 #[inline]
-pub fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
+pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
     BigUint { data: digits }.normalized()
 }
 
@@ -2599,7 +2597,7 @@ fn test_plain_modpow() {
 impl_sum_iter_type!(BigUint);
 impl_product_iter_type!(BigUint);
 
-pub trait IntDigits {
+pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
     fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
     fn normalize(&mut self);

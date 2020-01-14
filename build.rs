@@ -40,7 +40,7 @@ fn write_radix_bases() -> Result<(), Box<Error>> {
         writeln!(f, "#[deny(overflowing_literals)]")?;
         writeln!(
             f,
-            "pub static BASES_{bits}: [(u{bits}, usize); 257] = [",
+            "pub(crate) static BASES_{bits}: [(u{bits}, usize); 257] = [",
             bits = bits
         )?;
         for radix in 0u64..257 {

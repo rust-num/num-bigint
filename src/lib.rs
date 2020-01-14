@@ -99,10 +99,11 @@ extern crate std;
 
 #[cfg(feature = "std")]
 mod std_alloc {
-    pub use std::borrow::Cow;
-    pub use std::boxed::Box;
-    pub use std::string::String;
-    pub use std::vec::Vec;
+    pub(crate) use std::borrow::Cow;
+    #[cfg(feature = "quickcheck")]
+    pub(crate) use std::boxed::Box;
+    pub(crate) use std::string::String;
+    pub(crate) use std::vec::Vec;
 }
 
 #[cfg(not(feature = "std"))]
@@ -111,10 +112,11 @@ extern crate alloc;
 
 #[cfg(not(feature = "std"))]
 mod std_alloc {
-    pub use alloc::borrow::Cow;
-    pub use alloc::boxed::Box;
-    pub use alloc::string::String;
-    pub use alloc::vec::Vec;
+    pub(crate) use alloc::borrow::Cow;
+    #[cfg(feature = "quickcheck")]
+    pub(crate) use alloc::boxed::Box;
+    pub(crate) use alloc::string::String;
+    pub(crate) use alloc::vec::Vec;
 }
 
 use core::fmt;
@@ -199,31 +201,31 @@ pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.
     #[cfg(not(u64_digit))]
-    pub type BigDigit = u32;
+    pub(crate) type BigDigit = u32;
     #[cfg(u64_digit)]
-    pub type BigDigit = u64;
+    pub(crate) type BigDigit = u64;
 
     /// A `DoubleBigDigit` is the internal type used to do the computations.  Its
     /// size is the double of the size of `BigDigit`.
     #[cfg(not(u64_digit))]
-    pub type DoubleBigDigit = u64;
+    pub(crate) type DoubleBigDigit = u64;
     #[cfg(u64_digit)]
-    pub type DoubleBigDigit = u128;
+    pub(crate) type DoubleBigDigit = u128;
 
     /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
     #[cfg(not(u64_digit))]
-    pub type SignedDoubleBigDigit = i64;
+    pub(crate) type SignedDoubleBigDigit = i64;
     #[cfg(u64_digit)]
-    pub type SignedDoubleBigDigit = i128;
+    pub(crate) type SignedDoubleBigDigit = i128;
 
     // `DoubleBigDigit` size dependent
     #[cfg(not(u64_digit))]
-    pub const BITS: usize = 32;
+    pub(crate) const BITS: usize = 32;
     #[cfg(u64_digit)]
-    pub const BITS: usize = 64;
+    pub(crate) const BITS: usize = 64;
 
-    pub const HALF_BITS: usize = BITS / 2;
-    pub const HALF: BigDigit = (1 << HALF_BITS) - 1;
+    pub(crate) const HALF_BITS: usize = BITS / 2;
+    pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
 
     const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
 
@@ -238,13 +240,13 @@ mod big_digit {
 
     /// Split one `DoubleBigDigit` into two `BigDigit`s.
     #[inline]
-    pub fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
+    pub(crate) fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
         (get_hi(n), get_lo(n))
     }
 
     /// Join two `BigDigit`s into one `DoubleBigDigit`
     #[inline]
-    pub fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
+    pub(crate) fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
         DoubleBigDigit::from(lo) | (DoubleBigDigit::from(hi) << BITS)
     }
 }

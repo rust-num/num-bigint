@@ -152,18 +152,14 @@ impl Arbitrary for BigInt {
 }
 
 /// Return the magnitude of a `BigInt`.
-///
-/// This is in a private module, pseudo pub(crate)
 #[cfg(feature = "rand")]
-pub fn magnitude(i: &BigInt) -> &BigUint {
+pub(crate) fn magnitude(i: &BigInt) -> &BigUint {
     &i.data
 }
 
 /// Return the owned magnitude of a `BigInt`.
-///
-/// This is in a private module, pseudo pub(crate)
 #[cfg(feature = "rand")]
-pub fn into_magnitude(i: BigInt) -> BigUint {
+pub(crate) fn into_magnitude(i: BigInt) -> BigUint {
     i.data
 }
 

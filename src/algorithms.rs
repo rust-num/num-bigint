@@ -37,7 +37,12 @@ fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
 }
 
 #[inline]
-pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+pub(crate) fn mac_with_carry(
+    a: BigDigit,
+    b: BigDigit,
+    c: BigDigit,
+    acc: &mut DoubleBigDigit,
+) -> BigDigit {
     *acc += DoubleBigDigit::from(a);
     *acc += DoubleBigDigit::from(b) * DoubleBigDigit::from(c);
     let lo = *acc as BigDigit;
@@ -46,7 +51,7 @@ pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBig
 }
 
 #[inline]
-pub fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+pub(crate) fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
     *acc += DoubleBigDigit::from(a) * DoubleBigDigit::from(b);
     let lo = *acc as BigDigit;
     *acc >>= big_digit::BITS;
@@ -82,7 +87,7 @@ fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, Big
 }
 
 #[inline]
-pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
+pub(crate) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
     let mut rem = 0;
 
     if b <= big_digit::HALF {
@@ -103,7 +108,7 @@ pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
 }
 
 #[inline]
-pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
+pub(crate) fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
     let mut rem = 0;
 
     if b <= big_digit::HALF {
@@ -128,7 +133,7 @@ pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
 ///
 /// The caller _must_ ensure that `a` is at least as long as `b`.
 #[inline]
-pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
+pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     debug_assert!(a.len() >= b.len());
 
     let mut carry = 0;
@@ -155,13 +160,13 @@ pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
 ///
 /// The caller _must_ ensure that a is big enough to store the result - typically this means
 /// resizing a to max(a.len(), b.len()) + 1, to fit a possible carry.
-pub fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
+pub(crate) fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
     let carry = __add2(a, b);
 
     debug_assert!(carry == 0);
 }
 
-pub fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
+pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
     let mut borrow = 0;
 
     let len = cmp::min(a.len(), b.len());
@@ -190,7 +195,7 @@ pub fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
 
 // Only for the Sub impl. `a` and `b` must have same length.
 #[inline]
-pub fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
+pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
     debug_assert!(b.len() == a.len());
 
     let mut borrow = 0;
@@ -202,7 +207,7 @@ pub fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
     borrow as BigDigit
 }
 
-pub fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
+pub(crate) fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
     debug_assert!(b.len() >= a.len());
 
     let len = cmp::min(a.len(), b.len());
@@ -220,7 +225,7 @@ pub fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
     );
 }
 
-pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
+pub(crate) fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
     // Normalize:
     let a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
     let b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
@@ -242,7 +247,7 @@ pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
 
 /// Three argument multiply accumulate:
 /// acc += b * c
-pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
+pub(crate) fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
     if c == 0 {
         return;
     }
@@ -527,7 +532,7 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     }
 }
 
-pub fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
+pub(crate) fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
     let len = x.len() + y.len() + 1;
     let mut prod = BigUint { data: vec![0; len] };
 
@@ -535,7 +540,7 @@ pub fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
     prod.normalized()
 }
 
-pub fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
+pub(crate) fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     let mut carry = 0;
     for a in a.iter_mut() {
         *a = mul_with_carry(*a, b, &mut carry);
@@ -543,7 +548,7 @@ pub fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     carry as BigDigit
 }
 
-pub fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
+pub(crate) fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     if d.is_zero() {
         panic!()
     }
@@ -590,7 +595,7 @@ pub fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     (q, r >> shift)
 }
 
-pub fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+pub(crate) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     if d.is_zero() {
         panic!()
     }
@@ -715,16 +720,16 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
 /// Find last set bit
 /// fls(0) == 0, fls(u32::MAX) == 32
-pub fn fls<T: num_traits::PrimInt>(v: T) -> usize {
+pub(crate) fn fls<T: num_traits::PrimInt>(v: T) -> usize {
     mem::size_of::<T>() * 8 - v.leading_zeros() as usize
 }
 
-pub fn ilog2<T: num_traits::PrimInt>(v: T) -> usize {
+pub(crate) fn ilog2<T: num_traits::PrimInt>(v: T) -> usize {
     fls(v) - 1
 }
 
 #[inline]
-pub fn biguint_shl(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
+pub(crate) fn biguint_shl(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
     let n_unit = bits / big_digit::BITS;
     let mut data = match n_unit {
         0 => n.into_owned().data,
@@ -754,7 +759,7 @@ pub fn biguint_shl(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
 }
 
 #[inline]
-pub fn biguint_shr(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
+pub(crate) fn biguint_shr(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
     let n_unit = bits / big_digit::BITS;
     if n_unit >= n.data.len() {
         return Zero::zero();
@@ -780,7 +785,7 @@ pub fn biguint_shr(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
     biguint_from_vec(data)
 }
 
-pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
+pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
     debug_assert!(a.last() != Some(&0));
     debug_assert!(b.last() != Some(&0));
 

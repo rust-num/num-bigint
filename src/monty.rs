@@ -131,7 +131,7 @@ fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
 }
 
 /// Calculates x ** y mod m using a fixed, 4-bit window.
-pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
+pub(crate) fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     assert!(m.data[0] & 1 == 1);
     let mr = MontyReducer::new(m);
     let num_words = m.data.len();
