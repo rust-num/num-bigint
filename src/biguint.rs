@@ -1,3 +1,6 @@
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::Box;
+use crate::std_alloc::{Cow, String, Vec};
 use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
@@ -11,21 +14,18 @@ use core::ops::{
 use core::str::{self, FromStr};
 use core::{f32, f64};
 use core::{u32, u64, u8};
-#[cfg(feature = "quickcheck")]
-use std_alloc::Box;
-use std_alloc::{Cow, String, Vec};
 
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::{Integer, Roots};
-use traits::float::FloatCore;
-use traits::{
+use crate::integer::{Integer, Roots};
+use crate::traits::float::FloatCore;
+use crate::traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
     Unsigned, Zero,
 };
 
-use big_digit::{self, BigDigit};
+use crate::big_digit::{self, BigDigit};
 
 #[path = "algorithms.rs"]
 mod algorithms;
@@ -39,9 +39,9 @@ use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
 use self::algorithms::{mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
 
-use UsizePromotion;
+use crate::UsizePromotion;
 
-use ParseBigIntError;
+use crate::ParseBigIntError;
 
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};

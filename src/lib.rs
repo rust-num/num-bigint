@@ -163,7 +163,7 @@ enum BigIntErrorKind {
 
 impl ParseBigIntError {
     fn __description(&self) -> &str {
-        use BigIntErrorKind::*;
+        use crate::BigIntErrorKind::*;
         match self.kind {
             Empty => "cannot parse integer from empty string",
             InvalidDigit => "invalid digit found in string",
@@ -196,15 +196,15 @@ impl Error for ParseBigIntError {
     }
 }
 
-pub use biguint::BigUint;
-pub use biguint::ToBigUint;
+pub use crate::biguint::BigUint;
+pub use crate::biguint::ToBigUint;
 
-pub use bigint::BigInt;
-pub use bigint::Sign;
-pub use bigint::ToBigInt;
+pub use crate::bigint::BigInt;
+pub use crate::bigint::Sign;
+pub use crate::bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
     /// A `BigDigit` is a `BigUint`'s composing element.

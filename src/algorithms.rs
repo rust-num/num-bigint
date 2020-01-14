@@ -1,19 +1,19 @@
+use crate::std_alloc::{Cow, Vec};
+use crate::traits;
+use crate::traits::{One, Zero};
 use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::iter::repeat;
 use core::mem;
-use std_alloc::{Cow, Vec};
-use traits;
-use traits::{One, Zero};
 
-use biguint::biguint_from_vec;
-use biguint::BigUint;
+use crate::biguint::biguint_from_vec;
+use crate::biguint::BigUint;
 
-use bigint::BigInt;
-use bigint::Sign;
-use bigint::Sign::{Minus, NoSign, Plus};
+use crate::bigint::BigInt;
+use crate::bigint::Sign;
+use crate::bigint::Sign::{Minus, NoSign, Plus};
 
-use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 
 // Generic functions for add/subtract/multiply with carry/borrow:
 
@@ -73,8 +73,8 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
 /// using half-size pieces of digit, like long-division.
 #[inline]
 fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
-    use big_digit::{HALF, HALF_BITS};
-    use integer::Integer;
+    use crate::big_digit::{HALF, HALF_BITS};
+    use crate::integer::Integer;
 
     debug_assert!(rem < divisor && divisor <= HALF);
     let (hi, rem) = ((rem << HALF_BITS) | (digit >> HALF_BITS)).div_rem(&divisor);
@@ -806,9 +806,9 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 
 #[cfg(test)]
 mod algorithm_tests {
-    use big_digit::BigDigit;
-    use traits::Num;
-    use {BigInt, BigUint};
+    use crate::big_digit::BigDigit;
+    use crate::traits::Num;
+    use crate::{BigInt, BigUint};
 
     #[test]
     fn test_sub_sign() {

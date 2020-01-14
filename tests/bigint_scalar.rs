@@ -8,7 +8,7 @@ use num_traits::{Signed, ToPrimitive, Zero};
 use std::ops::Neg;
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;

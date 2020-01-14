@@ -20,7 +20,7 @@ use num_integer::Integer;
 use num_traits::{pow, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;

@@ -11,7 +11,7 @@ enum ValueVec {
     M(&'static [u32]),
 }
 
-use ValueVec::*;
+use crate::ValueVec::*;
 
 impl ToBigInt for ValueVec {
     fn to_bigint(&self) -> Option<BigInt> {

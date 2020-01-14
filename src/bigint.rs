@@ -1,3 +1,6 @@
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::Box;
+use crate::std_alloc::{String, Vec};
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::fmt;
@@ -10,15 +13,12 @@ use core::ops::{
 use core::str::{self, FromStr};
 use core::{i128, u128};
 use core::{i64, u64};
-#[cfg(feature = "quickcheck")]
-use std_alloc::Box;
-use std_alloc::{String, Vec};
 
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::{Integer, Roots};
-use traits::{
+use crate::integer::{Integer, Roots};
+use crate::traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
     ToPrimitive, Zero,
 };
@@ -26,13 +26,13 @@ use traits::{
 use self::Sign::{Minus, NoSign, Plus};
 
 use super::ParseBigIntError;
-use big_digit::{self, BigDigit, DoubleBigDigit};
-use biguint;
-use biguint::to_str_radix_reversed;
-use biguint::{BigUint, IntDigits};
+use crate::big_digit::{self, BigDigit, DoubleBigDigit};
+use crate::biguint;
+use crate::biguint::to_str_radix_reversed;
+use crate::biguint::{BigUint, IntDigits};
 
-use IsizePromotion;
-use UsizePromotion;
+use crate::IsizePromotion;
+use crate::UsizePromotion;
 
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};

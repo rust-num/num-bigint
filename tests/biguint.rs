@@ -23,7 +23,7 @@ use num_traits::{
 };
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;
@@ -139,7 +139,7 @@ fn hash<T: Hash>(x: &T) -> u64 {
 
 #[test]
 fn test_hash() {
-    use hash;
+    use crate::hash;
 
     let a = BigUint::new(vec![]);
     let b = BigUint::new(vec![0]);

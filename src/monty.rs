@@ -1,10 +1,10 @@
+use crate::std_alloc::Vec;
+use crate::traits::{One, Zero};
 use core::mem;
 use core::ops::Shl;
-use std_alloc::Vec;
-use traits::{One, Zero};
 
-use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
-use biguint::BigUint;
+use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use crate::biguint::BigUint;
 
 struct MontyReducer {
     n0inv: BigDigit,
