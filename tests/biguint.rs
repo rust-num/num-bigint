@@ -149,13 +149,7 @@ fn test_hash() {
 }
 
 // LEFT, RIGHT, AND, OR, XOR
-const BIT_TESTS: &'static [(
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-)] = &[
+const BIT_TESTS: &[(&[u32], &[u32], &[u32], &[u32], &[u32])] = &[
     (&[], &[], &[], &[], &[]),
     (&[1, 0, 1], &[1, 1], &[1], &[1, 1, 1], &[0, 1, 1]),
     (&[1, 0, 1], &[0, 1, 1], &[0, 0, 1], &[1, 1, 1], &[1, 1]),
@@ -1159,7 +1153,7 @@ fn test_to_str_radix() {
 
 #[test]
 fn test_from_and_to_radix() {
-    const GROUND_TRUTH: &'static [(&'static [u8], u32, &'static [u8])] = &[
+    const GROUND_TRUTH: &[(&[u8], u32, &[u8])] = &[
         (b"0", 42, &[0]),
         (
             b"ffffeeffbb",

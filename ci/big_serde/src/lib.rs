@@ -65,7 +65,7 @@ fn bigint_negone() {
 }
 
 // Generated independently from python `hex(factorial(100))`
-const FACTORIAL_100: &'static [u32] = &[
+const FACTORIAL_100: &[u32] = &[
     0x00000000, 0x00000000, 0x00000000, 0x2735c61a, 0xee8b02ea, 0xb3b72ed2, 0x9420c6ec, 0x45570cca,
     0xdf103917, 0x943a321c, 0xeb21b5b2, 0x66ef9a70, 0xa40d16e9, 0x28d54bbd, 0xdc240695, 0x964ec395,
     0x1b30,
