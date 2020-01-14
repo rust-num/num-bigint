@@ -1583,10 +1583,7 @@ fn test_factor() {
 
     fn check(n: usize, s: &str) {
         let n = factor(n);
-        let ans = match BigUint::from_str_radix(s, 10) {
-            Ok(x) => x,
-            Err(_) => panic!(),
-        };
+        let ans = BigUint::from_str_radix(s, 10).unwrap();
         assert_eq!(n, ans);
     }
 
