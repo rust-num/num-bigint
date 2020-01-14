@@ -11,9 +11,6 @@ use core::ops::{
 use core::str::{self, FromStr};
 use core::{f32, f64};
 use core::{u32, u64, u8};
-#[cfg(feature = "std")]
-#[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
 #[cfg(feature = "quickcheck")]
 use std_alloc::Box;
 use std_alloc::{Cow, String, Vec};

@@ -1511,9 +1511,6 @@ fn test_from_str_radix() {
 
 #[test]
 fn test_all_str_radix() {
-    #[allow(deprecated, unused_imports)]
-    use std::ascii::AsciiExt;
-
     let n = BigUint::new((0..10).collect());
     for radix in 2..37 {
         let s = n.to_str_radix(radix);
