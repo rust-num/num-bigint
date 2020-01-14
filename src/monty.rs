@@ -30,7 +30,7 @@ fn inv_mod_alt(b: BigDigit) -> BigDigit {
 impl MontyReducer {
     fn new(n: &BigUint) -> Self {
         let n0inv = inv_mod_alt(n.data[0]);
-        MontyReducer { n0inv: n0inv }
+        MontyReducer { n0inv }
     }
 }
 

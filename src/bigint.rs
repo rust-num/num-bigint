@@ -2579,10 +2579,7 @@ impl BigInt {
             sign = NoSign;
         }
 
-        BigInt {
-            sign: sign,
-            data: data,
-        }
+        BigInt { sign, data }
     }
 
     /// Creates and initializes a `BigInt`.
