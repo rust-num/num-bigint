@@ -1,3 +1,6 @@
+// `Add`/`Sub` ops may flip from `BigInt` to its `BigUint` magnitude
+#![allow(clippy::suspicious_arithmetic_impl)]
+
 #[cfg(feature = "quickcheck")]
 use crate::std_alloc::Box;
 use crate::std_alloc::{String, Vec};
