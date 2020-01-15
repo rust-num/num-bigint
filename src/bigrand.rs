@@ -3,15 +3,15 @@
 use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
 
-use BigInt;
-use BigUint;
-use Sign::*;
+use crate::BigInt;
+use crate::BigUint;
+use crate::Sign::*;
 
-use bigint::{into_magnitude, magnitude};
-use biguint::biguint_from_vec;
+use crate::bigint::{into_magnitude, magnitude};
+use crate::biguint::biguint_from_vec;
 
-use integer::Integer;
-use traits::Zero;
+use num_integer::Integer;
+use num_traits::Zero;
 
 /// A trait for sampling random big integers.
 ///

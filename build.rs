@@ -1,5 +1,3 @@
-extern crate autocfg;
-
 use std::env;
 use std::error::Error;
 use std::fs::File;
@@ -26,8 +24,7 @@ fn main() {
 ///      BASES_64[3] = (12157665459056928801, 40)
 ///
 /// Powers of two are not included, just zeroed, as they're implemented with shifts.
-#[allow(unknown_lints, bare_trait_objects)]
-fn write_radix_bases() -> Result<(), Box<Error>> {
+fn write_radix_bases() -> Result<(), Box<dyn Error>> {
     let out_dir = env::var("OUT_DIR")?;
     let dest_path = Path::new(&out_dir).join("radix_bases.rs");
     let mut f = File::create(&dest_path)?;
@@ -42,7 +39,7 @@ fn write_radix_bases() -> Result<(), Box<Error>> {
         writeln!(f, "#[deny(overflowing_literals)]")?;
         writeln!(
             f,
-            "pub static BASES_{bits}: [(u{bits}, usize); 257] = [",
+            "pub(crate) static BASES_{bits}: [(u{bits}, usize); 257] = [",
             bits = bits
         )?;
         for radix in 0u64..257 {

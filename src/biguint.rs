@@ -1,7 +1,11 @@
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::Box;
+use crate::std_alloc::{Cow, String, Vec};
 use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::fmt;
+use core::hash;
 use core::iter::{Product, Sum};
 use core::mem;
 use core::ops::{
@@ -11,21 +15,18 @@ use core::ops::{
 use core::str::{self, FromStr};
 use core::{f32, f64};
 use core::{u32, u64, u8};
-#[cfg(feature = "quickcheck")]
-use std_alloc::Box;
-use std_alloc::{Cow, String, Vec};
 
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::{Integer, Roots};
-use traits::float::FloatCore;
-use traits::{
+use num_integer::{Integer, Roots};
+use num_traits::float::FloatCore;
+use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
     Unsigned, Zero,
 };
 
-use big_digit::{self, BigDigit};
+use crate::big_digit::{self, BigDigit};
 
 #[path = "algorithms.rs"]
 mod algorithms;
@@ -39,15 +40,15 @@ use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
 use self::algorithms::{mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
 
-use UsizePromotion;
+use crate::UsizePromotion;
 
-use ParseBigIntError;
+use crate::ParseBigIntError;
 
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};
 
 /// A big unsigned integer type.
-#[derive(Debug, Hash)]
+#[derive(Debug)]
 pub struct BigUint {
     data: Vec<BigDigit>,
 }
@@ -75,20 +76,26 @@ impl Arbitrary for BigUint {
         biguint_from_vec(Vec::<BigDigit>::arbitrary(g))
     }
 
-    #[allow(bare_trait_objects)] // `dyn` needs Rust 1.27 to parse, even when cfg-disabled
-    fn shrink(&self) -> Box<Iterator<Item = Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         // Use shrinker from Vec
         Box::new(self.data.shrink().map(biguint_from_vec))
+    }
+}
+
+impl hash::Hash for BigUint {
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        debug_assert!(self.data.last() != Some(&0));
+        self.data.hash(state);
     }
 }
 
 impl PartialEq for BigUint {
     #[inline]
     fn eq(&self, other: &BigUint) -> bool {
-        match self.cmp(other) {
-            Equal => true,
-            _ => false,
-        }
+        debug_assert!(self.data.last() != Some(&0));
+        debug_assert!(other.data.last() != Some(&0));
+        self.data == other.data
     }
 }
 impl Eq for BigUint {}
@@ -115,19 +122,19 @@ impl Default for BigUint {
 }
 
 impl fmt::Display for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "", &self.to_str_radix(10))
     }
 }
 
 impl fmt::LowerHex for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0x", &self.to_str_radix(16))
     }
 }
 
 impl fmt::UpperHex for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = self.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(true, "0x", &s)
@@ -135,13 +142,13 @@ impl fmt::UpperHex for BigUint {
 }
 
 impl fmt::Binary for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0b", &self.to_str_radix(2))
     }
 }
 
 impl fmt::Octal for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0o", &self.to_str_radix(8))
     }
 }
@@ -285,11 +292,10 @@ impl Num for BigUint {
         // First normalize all characters to plain digit values
         let mut v = Vec::with_capacity(s.len());
         for b in s.bytes() {
-            #[allow(unknown_lints, ellipsis_inclusive_range_patterns)]
             let d = match b {
-                b'0'...b'9' => b - b'0',
-                b'a'...b'z' => b - b'a' + 10,
-                b'A'...b'Z' => b - b'A' + 10,
+                b'0'..=b'9' => b - b'0',
+                b'a'..=b'z' => b - b'a' + 10,
+                b'A'..=b'Z' => b - b'A' + 10,
                 b'_' => continue,
                 _ => u8::MAX,
             };
@@ -1841,10 +1847,10 @@ impl FromPrimitive for BigUint {
         }
 
         let mut ret = BigUint::from(mantissa);
-        if exponent > 0 {
-            ret <<= exponent as usize;
-        } else if exponent < 0 {
-            ret >>= (-exponent) as usize;
+        match exponent.cmp(&0) {
+            Greater => ret <<= exponent as usize,
+            Equal => {}
+            Less => ret >>= (-exponent) as usize,
         }
         Some(ret)
     }
@@ -2038,7 +2044,7 @@ fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
-pub fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
+pub(crate) fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
     if u.is_zero() {
         vec![0]
     } else if radix.is_power_of_two() {
@@ -2058,7 +2064,7 @@ pub fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
     }
 }
 
-pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
+pub(crate) fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     assert!(2 <= radix && radix <= 36, "The radix must be within 2...36");
 
     if u.is_zero() {
@@ -2082,10 +2088,8 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
 /// Creates and initializes a `BigUint`.
 ///
 /// The digits are in little-endian base matching `BigDigit`.
-///
-/// This is an internal `pub(crate)`-ish API only!
 #[inline]
-pub fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
+pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
     BigUint { data: digits }.normalized()
 }
 
@@ -2201,9 +2205,8 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigUint> {
-        str::from_utf8(buf)
-            .ok()
-            .and_then(|s| BigUint::from_str_radix(s, radix).ok())
+        let s = str::from_utf8(buf).ok()?;
+        BigUint::from_str_radix(s, radix).ok()
     }
 
     /// Creates and initializes a `BigUint`. Each u8 of the input slice is
@@ -2489,11 +2492,8 @@ impl BigUint {
     /// Returns the number of least-significant bits that are zero,
     /// or `None` if the entire number is zero.
     pub fn trailing_zeros(&self) -> Option<usize> {
-        self.data
-            .iter()
-            .enumerate()
-            .find(|&(_, &digit)| digit != 0)
-            .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
+        let i = self.data.iter().position(|&digit| digit != 0)?;
+        Some(i * big_digit::BITS + self.data[i].trailing_zeros() as usize)
     }
 }
 
@@ -2599,7 +2599,7 @@ fn test_plain_modpow() {
 impl_sum_iter_type!(BigUint);
 impl_product_iter_type!(BigUint);
 
-pub trait IntDigits {
+pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
     fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
     fn normalize(&mut self);
@@ -2703,7 +2703,7 @@ impl<'de> serde::Deserialize<'de> for BigUint {
         impl<'de> Visitor<'de> for U32Visitor {
             type Value = BigUint;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a sequence of unsigned 32-bit numbers")
             }
 

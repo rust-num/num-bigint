@@ -2,6 +2,7 @@
 name = "big_rand"
 version = "0.1.0"
 authors = ["Josh Stone <cuviper@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 num-traits = "0.2.11"

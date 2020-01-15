@@ -1,10 +1,6 @@
 #![feature(test)]
 #![cfg(feature = "rand")]
 
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-extern crate rand;
 extern crate test;
 
 use num_bigint::{BigUint, RandBigInt};
@@ -41,7 +37,7 @@ fn euclid(x: &BigUint, y: &BigUint) -> BigUint {
         m = n % &temp;
         n = temp;
     }
-    return n;
+    n
 }
 
 #[bench]

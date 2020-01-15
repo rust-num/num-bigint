@@ -1,6 +1,13 @@
+// `Add`/`Sub` ops may flip from `BigInt` to its `BigUint` magnitude
+#![allow(clippy::suspicious_arithmetic_impl)]
+
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::Box;
+use crate::std_alloc::{String, Vec};
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::default::Default;
 use core::fmt;
+use core::hash;
 use core::iter::{Product, Sum};
 use core::mem;
 use core::ops::{
@@ -10,15 +17,12 @@ use core::ops::{
 use core::str::{self, FromStr};
 use core::{i128, u128};
 use core::{i64, u64};
-#[cfg(feature = "quickcheck")]
-use std_alloc::Box;
-use std_alloc::{String, Vec};
 
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::{Integer, Roots};
-use traits::{
+use num_integer::{Integer, Roots};
+use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
     ToPrimitive, Zero,
 };
@@ -26,13 +30,13 @@ use traits::{
 use self::Sign::{Minus, NoSign, Plus};
 
 use super::ParseBigIntError;
-use big_digit::{self, BigDigit, DoubleBigDigit};
-use biguint;
-use biguint::to_str_radix_reversed;
-use biguint::{BigUint, IntDigits};
+use crate::big_digit::{self, BigDigit, DoubleBigDigit};
+use crate::biguint;
+use crate::biguint::to_str_radix_reversed;
+use crate::biguint::{BigUint, IntDigits};
 
-use IsizePromotion;
-use UsizePromotion;
+use crate::IsizePromotion;
+use crate::UsizePromotion;
 
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};
@@ -111,7 +115,7 @@ impl<'de> serde::Deserialize<'de> for Sign {
 }
 
 /// A big signed integer type.
-#[derive(Debug, Hash)]
+#[derive(Debug)]
 pub struct BigInt {
     sign: Sign,
     data: BigUint,
@@ -143,8 +147,7 @@ impl Arbitrary for BigInt {
         Self::from_biguint(sign, BigUint::arbitrary(g))
     }
 
-    #[allow(bare_trait_objects)] // `dyn` needs Rust 1.27 to parse, even when cfg-disabled
-    fn shrink(&self) -> Box<Iterator<Item = Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         let sign = self.sign();
         let unsigned_shrink = self.data.shrink();
         Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
@@ -152,25 +155,34 @@ impl Arbitrary for BigInt {
 }
 
 /// Return the magnitude of a `BigInt`.
-///
-/// This is in a private module, pseudo pub(crate)
 #[cfg(feature = "rand")]
-pub fn magnitude(i: &BigInt) -> &BigUint {
+pub(crate) fn magnitude(i: &BigInt) -> &BigUint {
     &i.data
 }
 
 /// Return the owned magnitude of a `BigInt`.
-///
-/// This is in a private module, pseudo pub(crate)
 #[cfg(feature = "rand")]
-pub fn into_magnitude(i: BigInt) -> BigUint {
+pub(crate) fn into_magnitude(i: BigInt) -> BigUint {
     i.data
+}
+
+impl hash::Hash for BigInt {
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
+        self.sign.hash(state);
+        if self.sign != NoSign {
+            self.data.hash(state);
+        }
+    }
 }
 
 impl PartialEq for BigInt {
     #[inline]
     fn eq(&self, other: &BigInt) -> bool {
-        self.cmp(other) == Equal
+        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
+        debug_assert!((other.sign != NoSign) ^ other.data.is_zero());
+        self.sign == other.sign && (self.sign == NoSign || self.data == other.data)
     }
 }
 
@@ -186,6 +198,8 @@ impl PartialOrd for BigInt {
 impl Ord for BigInt {
     #[inline]
     fn cmp(&self, other: &BigInt) -> Ordering {
+        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
+        debug_assert!((other.sign != NoSign) ^ other.data.is_zero());
         let scmp = self.sign.cmp(&other.sign);
         if scmp != Equal {
             return scmp;
@@ -207,31 +221,31 @@ impl Default for BigInt {
 }
 
 impl fmt::Display for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "", &self.data.to_str_radix(10))
     }
 }
 
 impl fmt::Binary for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "0b", &self.data.to_str_radix(2))
     }
 }
 
 impl fmt::Octal for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "0o", &self.data.to_str_radix(8))
     }
 }
 
 impl fmt::LowerHex for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(!self.is_negative(), "0x", &self.data.to_str_radix(16))
     }
 }
 
 impl fmt::UpperHex for BigInt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = self.data.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(!self.is_negative(), "0x", &s)
@@ -318,11 +332,13 @@ fn bitand_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = twos_a & bi;
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
-    if a.len() > b.len() {
-        a.truncate(b.len());
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().cloned());
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => a.truncate(b.len()),
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().cloned());
+        }
     }
 }
 
@@ -341,19 +357,23 @@ fn bitand_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_a = negate_carry(*ai, &mut carry_a);
-            *ai = negate_carry(twos_a, &mut carry_and);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_a = negate_carry(*ai, &mut carry_a);
+                *ai = negate_carry(twos_a, &mut carry_and);
+            }
+            debug_assert!(carry_a == 0);
         }
-        debug_assert!(carry_a == 0);
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_b = negate_carry(bi, &mut carry_b);
-            negate_carry(twos_b, &mut carry_and)
-        }));
-        debug_assert!(carry_b == 0);
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_b = negate_carry(bi, &mut carry_b);
+                negate_carry(twos_b, &mut carry_and)
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
     if carry_and != 0 {
         a.push(1);
@@ -438,15 +458,19 @@ fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = negate_carry(*ai | twos_b, &mut carry_or);
     }
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        a.truncate(b.len());
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_b = negate_carry(bi, &mut carry_b);
-            negate_carry(twos_b, &mut carry_or)
-        }));
-        debug_assert!(carry_b == 0);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            a.truncate(b.len());
+        }
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_b = negate_carry(bi, &mut carry_b);
+                negate_carry(twos_b, &mut carry_or)
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
     // for carry_or to be non-zero, we would need twos_b == 0
     debug_assert!(carry_or == 0);
@@ -569,18 +593,22 @@ fn bitxor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
     }
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_b = !0;
-            *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_b = !0;
+                *ai = negate_carry(*ai ^ twos_b, &mut carry_xor);
+            }
         }
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_b = negate_carry(bi, &mut carry_b);
-            negate_carry(twos_b, &mut carry_xor)
-        }));
-        debug_assert!(carry_b == 0);
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_b = negate_carry(bi, &mut carry_b);
+                negate_carry(twos_b, &mut carry_xor)
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
     if carry_xor != 0 {
         a.push(1);
@@ -598,18 +626,22 @@ fn bitxor_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
         *ai = negate_carry(twos_a ^ bi, &mut carry_xor);
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_a = negate_carry(*ai, &mut carry_a);
-            *ai = negate_carry(twos_a, &mut carry_xor);
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_a = negate_carry(*ai, &mut carry_a);
+                *ai = negate_carry(twos_a, &mut carry_xor);
+            }
+            debug_assert!(carry_a == 0);
         }
-        debug_assert!(carry_a == 0);
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_a = !0;
-            negate_carry(twos_a ^ bi, &mut carry_xor)
-        }));
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_a = !0;
+                negate_carry(twos_a ^ bi, &mut carry_xor)
+            }));
+        }
     }
     if carry_xor != 0 {
         a.push(1);
@@ -629,21 +661,25 @@ fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
     }
     debug_assert!(a.len() > b.len() || carry_a == 0);
     debug_assert!(b.len() > a.len() || carry_b == 0);
-    if a.len() > b.len() {
-        for ai in a[b.len()..].iter_mut() {
-            let twos_a = negate_carry(*ai, &mut carry_a);
-            let twos_b = !0;
-            *ai = twos_a ^ twos_b;
+    match Ord::cmp(&a.len(), &b.len()) {
+        Greater => {
+            for ai in a[b.len()..].iter_mut() {
+                let twos_a = negate_carry(*ai, &mut carry_a);
+                let twos_b = !0;
+                *ai = twos_a ^ twos_b;
+            }
+            debug_assert!(carry_a == 0);
         }
-        debug_assert!(carry_a == 0);
-    } else if b.len() > a.len() {
-        let extra = &b[a.len()..];
-        a.extend(extra.iter().map(|&bi| {
-            let twos_a = !0;
-            let twos_b = negate_carry(bi, &mut carry_b);
-            twos_a ^ twos_b
-        }));
-        debug_assert!(carry_b == 0);
+        Equal => {}
+        Less => {
+            let extra = &b[a.len()..];
+            a.extend(extra.iter().map(|&bi| {
+                let twos_a = !0;
+                let twos_b = negate_carry(bi, &mut carry_b);
+                twos_a ^ twos_b
+            }));
+            debug_assert!(carry_b == 0);
+        }
     }
 }
 
@@ -872,9 +908,7 @@ impl Signed for BigInt {
 fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
     if other.is_zero() {
         Plus
-    } else if sign != Minus {
-        sign
-    } else if other.is_odd() {
+    } else if sign != Minus || other.is_odd() {
         sign
     } else {
         -sign
@@ -2248,16 +2282,15 @@ impl ToPrimitive for BigInt {
         match self.sign {
             Plus => self.data.to_i64(),
             NoSign => Some(0),
-            Minus => self.data.to_u64().and_then(|n| {
+            Minus => {
+                let n = self.data.to_u64()?;
                 let m: u64 = 1 << 63;
-                if n < m {
-                    Some(-(n as i64))
-                } else if n == m {
-                    Some(i64::MIN)
-                } else {
-                    None
+                match n.cmp(&m) {
+                    Less => Some(-(n as i64)),
+                    Equal => Some(i64::MIN),
+                    Greater => None,
                 }
-            }),
+            }
         }
     }
 
@@ -2266,16 +2299,15 @@ impl ToPrimitive for BigInt {
         match self.sign {
             Plus => self.data.to_i128(),
             NoSign => Some(0),
-            Minus => self.data.to_u128().and_then(|n| {
+            Minus => {
+                let n = self.data.to_u128()?;
                 let m: u128 = 1 << 127;
-                if n < m {
-                    Some(-(n as i128))
-                } else if n == m {
-                    Some(i128::MIN)
-                } else {
-                    None
+                match n.cmp(&m) {
+                    Less => Some(-(n as i128)),
+                    Equal => Some(i128::MIN),
+                    Greater => None,
                 }
-            }),
+            }
         }
     }
 
@@ -2299,16 +2331,14 @@ impl ToPrimitive for BigInt {
 
     #[inline]
     fn to_f32(&self) -> Option<f32> {
-        self.data
-            .to_f32()
-            .map(|n| if self.sign == Minus { -n } else { n })
+        let n = self.data.to_f32()?;
+        Some(if self.sign == Minus { -n } else { n })
     }
 
     #[inline]
     fn to_f64(&self) -> Option<f64> {
-        self.data
-            .to_f64()
-            .map(|n| if self.sign == Minus { -n } else { n })
+        let n = self.data.to_f64()?;
+        Some(if self.sign == Minus { -n } else { n })
     }
 }
 
@@ -2338,7 +2368,8 @@ impl FromPrimitive for BigInt {
         if n >= 0.0 {
             BigUint::from_f64(n).map(BigInt::from)
         } else {
-            BigUint::from_f64(-n).map(|x| -BigInt::from(x))
+            let x = BigUint::from_f64(-n)?;
+            Some(-BigInt::from(x))
         }
     }
 }
@@ -2584,10 +2615,7 @@ impl BigInt {
             sign = NoSign;
         }
 
-        BigInt {
-            sign: sign,
-            data: data,
-        }
+        BigInt { sign, data }
     }
 
     /// Creates and initializes a `BigInt`.
@@ -2607,10 +2635,7 @@ impl BigInt {
             self.set_zero();
         } else {
             self.data.assign_from_slice(slice);
-            self.sign = match self.data.is_zero() {
-                true => NoSign,
-                false => sign,
-            }
+            self.sign = if self.data.is_zero() { NoSign } else { sign };
         }
     }
 
@@ -2701,9 +2726,8 @@ impl BigInt {
     /// ```
     #[inline]
     pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigInt> {
-        str::from_utf8(buf)
-            .ok()
-            .and_then(|s| BigInt::from_str_radix(s, radix).ok())
+        let s = str::from_utf8(buf).ok()?;
+        BigInt::from_str_radix(s, radix).ok()
     }
 
     /// Creates and initializes a `BigInt`. Each u8 of the input slice is
@@ -2723,7 +2747,8 @@ impl BigInt {
     /// assert_eq!(a.to_radix_be(190), (Sign:: Minus, inbase190));
     /// ```
     pub fn from_radix_be(sign: Sign, buf: &[u8], radix: u32) -> Option<BigInt> {
-        BigUint::from_radix_be(buf, radix).map(|u| BigInt::from_biguint(sign, u))
+        let u = BigUint::from_radix_be(buf, radix)?;
+        Some(BigInt::from_biguint(sign, u))
     }
 
     /// Creates and initializes a `BigInt`. Each u8 of the input slice is
@@ -2743,7 +2768,8 @@ impl BigInt {
     /// assert_eq!(a.to_radix_be(190), (Sign::Minus, inbase190));
     /// ```
     pub fn from_radix_le(sign: Sign, buf: &[u8], radix: u32) -> Option<BigInt> {
-        BigUint::from_radix_le(buf, radix).map(|u| BigInt::from_biguint(sign, u))
+        let u = BigUint::from_radix_le(buf, radix)?;
+        Some(BigInt::from_biguint(sign, u))
     }
 
     /// Returns the sign and the byte representation of the `BigInt` in big-endian byte order.

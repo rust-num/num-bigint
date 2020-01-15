@@ -1,7 +1,3 @@
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 mod biguint {
     use num_bigint::BigUint;
     use num_traits::{One, Pow, Zero};
@@ -85,7 +81,7 @@ mod biguint {
         let x = BigUint::one() << LOG2;
 
         // the perfect divisors are just powers of two
-        for exp in 1..EXP + 1 {
+        for exp in 1..=EXP {
             let n = 2u32.pow(exp);
             let expected = BigUint::one() << (LOG2 / n as usize);
             assert_eq!(x.nth_root(n), expected);
@@ -112,7 +108,7 @@ mod biguint {
         check(x.clone(), 2);
         check(x.clone(), 3);
         check(x.clone(), 10);
-        check(x.clone(), 100);
+        check(x, 100);
     }
 }
 

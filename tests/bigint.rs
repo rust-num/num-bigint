@@ -1,7 +1,3 @@
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 use num_bigint::BigUint;
 use num_bigint::Sign::{Minus, NoSign, Plus};
 use num_bigint::{BigInt, ToBigInt};
@@ -20,7 +16,7 @@ use num_integer::Integer;
 use num_traits::{pow, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;
@@ -374,6 +370,7 @@ fn test_convert_u128() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_convert_f32() {
     fn check(b1: &BigInt, f: f32) {
         let b2 = BigInt::from_f32(f).unwrap();
@@ -404,7 +401,7 @@ fn test_convert_f32() {
     for _ in 0..64 {
         check(&b, f);
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // this number when rounded to f64 then f32 isn't the same as when rounded straight to f32
@@ -421,7 +418,7 @@ fn test_convert_f32() {
     for _ in 0..64 {
         assert_eq!(b.to_f32(), Some(f));
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // rounding
@@ -462,6 +459,7 @@ fn test_convert_f32() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_convert_f64() {
     fn check(b1: &BigInt, f: f64) {
         let b2 = BigInt::from_f64(f).unwrap();
@@ -492,7 +490,7 @@ fn test_convert_f64() {
     for _ in 0..128 {
         check(&b, f);
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // test rounding up with the bits at different offsets to the BigDigits
@@ -501,7 +499,7 @@ fn test_convert_f64() {
     for _ in 0..128 {
         assert_eq!(b.to_f64(), Some(f));
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // rounding
@@ -1015,7 +1013,7 @@ fn test_from_str_radix() {
 #[test]
 fn test_lower_hex() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:x}", a), "a");
     assert_eq!(format!("{:x}", hello), "-48656c6c6f20776f726c6421");
@@ -1025,7 +1023,7 @@ fn test_lower_hex() {
 #[test]
 fn test_upper_hex() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:X}", a), "A");
     assert_eq!(format!("{:X}", hello), "-48656C6C6F20776F726C6421");
@@ -1035,7 +1033,7 @@ fn test_upper_hex() {
 #[test]
 fn test_binary() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-224055342307539".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-224055342307539", 10).unwrap();
 
     assert_eq!(format!("{:b}", a), "1010");
     assert_eq!(
@@ -1048,7 +1046,7 @@ fn test_binary() {
 #[test]
 fn test_octal() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:o}", a), "12");
     assert_eq!(format!("{:o}", hello), "-22062554330674403566756233062041");
@@ -1058,7 +1056,7 @@ fn test_octal() {
 #[test]
 fn test_display() {
     let a = BigInt::parse_bytes(b"A", 16).unwrap();
-    let hello = BigInt::parse_bytes("-22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigInt::parse_bytes(b"-22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{}", a), "10");
     assert_eq!(format!("{}", hello), "-22405534230753963835153736737");

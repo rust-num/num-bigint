@@ -1,10 +1,10 @@
+use crate::std_alloc::Vec;
 use core::mem;
 use core::ops::Shl;
-use std_alloc::Vec;
-use traits::{One, Zero};
+use num_traits::{One, Zero};
 
-use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
-use biguint::BigUint;
+use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use crate::biguint::BigUint;
 
 struct MontyReducer {
     n0inv: BigDigit,
@@ -30,7 +30,7 @@ fn inv_mod_alt(b: BigDigit) -> BigDigit {
 impl MontyReducer {
     fn new(n: &BigUint) -> Self {
         let n0inv = inv_mod_alt(n.data[0]);
-        MontyReducer { n0inv: n0inv }
+        MontyReducer { n0inv }
     }
 }
 
@@ -131,7 +131,7 @@ fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
 }
 
 /// Calculates x ** y mod m using a fixed, 4-bit window.
-pub fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
+pub(crate) fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     assert!(m.data[0] & 1 == 1);
     let mr = MontyReducer::new(m);
     let num_words = m.data.len();

@@ -1,7 +1,3 @@
-extern crate num_bigint;
-extern crate num_integer;
-extern crate num_traits;
-
 use num_bigint::Sign::Plus;
 use num_bigint::{BigInt, ToBigInt};
 use num_bigint::{BigUint, ToBigUint};
@@ -23,7 +19,7 @@ use num_traits::{
 };
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;
@@ -139,7 +135,7 @@ fn hash<T: Hash>(x: &T) -> u64 {
 
 #[test]
 fn test_hash() {
-    use hash;
+    use crate::hash;
 
     let a = BigUint::new(vec![]);
     let b = BigUint::new(vec![0]);
@@ -153,13 +149,7 @@ fn test_hash() {
 }
 
 // LEFT, RIGHT, AND, OR, XOR
-const BIT_TESTS: &'static [(
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-    &'static [u32],
-)] = &[
+const BIT_TESTS: &[(&[u32], &[u32], &[u32], &[u32], &[u32])] = &[
     (&[], &[], &[], &[], &[]),
     (&[1, 0, 1], &[1, 1], &[1], &[1, 1, 1], &[0, 1, 1]),
     (&[1, 0, 1], &[0, 1, 1], &[0, 0, 1], &[1, 1, 1], &[1, 1]),
@@ -612,6 +602,7 @@ fn test_convert_u128() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_convert_f32() {
     fn check(b1: &BigUint, f: f32) {
         let b2 = BigUint::from_f32(f).unwrap();
@@ -638,7 +629,7 @@ fn test_convert_f32() {
     for _ in 0..64 {
         check(&b, f);
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // this number when rounded to f64 then f32 isn't the same as when rounded straight to f32
@@ -652,7 +643,7 @@ fn test_convert_f32() {
     for _ in 0..64 {
         assert_eq!(b.to_f32(), Some(f));
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // rounding
@@ -689,6 +680,7 @@ fn test_convert_f32() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_convert_f64() {
     fn check(b1: &BigUint, f: f64) {
         let b2 = BigUint::from_f64(f).unwrap();
@@ -715,7 +707,7 @@ fn test_convert_f64() {
     for _ in 0..128 {
         check(&b, f);
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // test rounding up with the bits at different offsets to the BigDigits
@@ -724,7 +716,7 @@ fn test_convert_f64() {
     for _ in 0..128 {
         assert_eq!(b.to_f64(), Some(f));
         f *= 2.0;
-        b = b << 1;
+        b <<= 1;
     }
 
     // rounding
@@ -1161,7 +1153,7 @@ fn test_to_str_radix() {
 
 #[test]
 fn test_from_and_to_radix() {
-    const GROUND_TRUTH: &'static [(&'static [u8], u32, &'static [u8])] = &[
+    const GROUND_TRUTH: &[(&[u8], u32, &[u8])] = &[
         (b"0", 42, &[0]),
         (
             b"ffffeeffbb",
@@ -1526,7 +1518,7 @@ fn test_all_str_radix() {
 #[test]
 fn test_lower_hex() {
     let a = BigUint::parse_bytes(b"A", 16).unwrap();
-    let hello = BigUint::parse_bytes("22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigUint::parse_bytes(b"22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:x}", a), "a");
     assert_eq!(format!("{:x}", hello), "48656c6c6f20776f726c6421");
@@ -1536,7 +1528,7 @@ fn test_lower_hex() {
 #[test]
 fn test_upper_hex() {
     let a = BigUint::parse_bytes(b"A", 16).unwrap();
-    let hello = BigUint::parse_bytes("22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigUint::parse_bytes(b"22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:X}", a), "A");
     assert_eq!(format!("{:X}", hello), "48656C6C6F20776F726C6421");
@@ -1546,7 +1538,7 @@ fn test_upper_hex() {
 #[test]
 fn test_binary() {
     let a = BigUint::parse_bytes(b"A", 16).unwrap();
-    let hello = BigUint::parse_bytes("224055342307539".as_bytes(), 10).unwrap();
+    let hello = BigUint::parse_bytes(b"224055342307539", 10).unwrap();
 
     assert_eq!(format!("{:b}", a), "1010");
     assert_eq!(
@@ -1559,7 +1551,7 @@ fn test_binary() {
 #[test]
 fn test_octal() {
     let a = BigUint::parse_bytes(b"A", 16).unwrap();
-    let hello = BigUint::parse_bytes("22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigUint::parse_bytes(b"22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{:o}", a), "12");
     assert_eq!(format!("{:o}", hello), "22062554330674403566756233062041");
@@ -1569,7 +1561,7 @@ fn test_octal() {
 #[test]
 fn test_display() {
     let a = BigUint::parse_bytes(b"A", 16).unwrap();
-    let hello = BigUint::parse_bytes("22405534230753963835153736737".as_bytes(), 10).unwrap();
+    let hello = BigUint::parse_bytes(b"22405534230753963835153736737", 10).unwrap();
 
     assert_eq!(format!("{}", a), "10");
     assert_eq!(format!("{}", hello), "22405534230753963835153736737");
@@ -1580,21 +1572,18 @@ fn test_display() {
 fn test_factor() {
     fn factor(n: usize) -> BigUint {
         let mut f: BigUint = One::one();
-        for i in 2..n + 1 {
+        for i in 2..=n {
             // FIXME(#5992): assignment operator overloads
             // f *= FromPrimitive::from_usize(i);
             let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
-            f = f * bu;
+            f *= bu;
         }
-        return f;
+        f
     }
 
     fn check(n: usize, s: &str) {
         let n = factor(n);
-        let ans = match BigUint::from_str_radix(s, 10) {
-            Ok(x) => x,
-            Err(_) => panic!(),
-        };
+        let ans = BigUint::from_str_radix(s, 10).unwrap();
         assert_eq!(n, ans);
     }
 

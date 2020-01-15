@@ -6,13 +6,6 @@
 
 #![cfg(test)]
 
-extern crate num_bigint;
-extern crate num_traits;
-extern crate rand;
-extern crate rand_chacha;
-extern crate rand_isaac;
-extern crate rand_xorshift;
-
 mod torture;
 
 mod biguint {
@@ -257,7 +250,7 @@ mod bigint {
         let u: BigInt = BigInt::from(403469000 + 3513);
         check(l.clone(), u.clone());
         check(-l.clone(), u.clone());
-        check(-u.clone(), -l.clone());
+        check(-u, -l);
     }
 
     #[test]
@@ -298,7 +291,7 @@ mod bigint {
         let u: BigInt = BigInt::from(403469000 + 3513);
         check(l.clone(), u.clone());
         check(-l.clone(), u.clone());
-        check(-u.clone(), -l.clone());
+        check(-u, -l);
     }
 
     fn seeded_value_stability<R: SeedableRng + RandBigInt>(expected: &[&str]) {
