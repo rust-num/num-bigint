@@ -16,12 +16,6 @@ Add this to your `Cargo.toml`:
 num-bigint = "0.3"
 ```
 
-and this to your crate root:
-
-```rust
-extern crate num_bigint;
-```
-
 ## Features
 
 The `std` crate feature is enabled by default, and is mandatory before Rust
