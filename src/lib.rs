@@ -19,9 +19,6 @@
 //! ## Example
 //!
 //! ```rust
-//! extern crate num_bigint;
-//! extern crate num_traits;
-//!
 //! # fn main() {
 //! use num_bigint::BigUint;
 //! use num_traits::{Zero, One};
@@ -47,9 +44,6 @@
 //! It's easy to generate large random numbers:
 //!
 //! ```rust,ignore
-//! extern crate rand;
-//! extern crate num_bigint;
-//!
 //! use num_bigint::{ToBigInt, RandBigInt};
 //!
 //! let mut rng = rand::thread_rng();
