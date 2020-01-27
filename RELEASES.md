@@ -1,3 +1,11 @@
+# Release 0.2.6 (2020-01-27)
+
+- [Fix the promotion of negative `isize` in `BigInt` assign-ops][133].
+
+**Contributors**: @cuviper, @HactarCE
+
+[133]: https://github.com/rust-num/num-bigint/pull/133
+
 # Release 0.2.5 (2020-01-09)
 
 - [Updated the `autocfg` build dependency to 1.0][126].
