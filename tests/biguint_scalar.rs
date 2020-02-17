@@ -145,6 +145,11 @@ fn test_biguint_scalar_cmp() {
         assert!((scalar as u128).partial_cmp(num) == Some(Equal));
         assert!((scalar as u128 + 1).partial_cmp(num) == Some(Greater));
         assert!(num.partial_cmp(&(scalar as u128 + 1)) == Some(Less));
+
+        assert!(num.partial_cmp(&(scalar as usize)) == Some(Equal));
+        assert!((scalar as usize).partial_cmp(num) == Some(Equal));
+        assert!((scalar as usize + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as usize + 1)) == Some(Less));
     }
 
     scalar_cmp_asserts(&zero, 0);

@@ -153,6 +153,15 @@ impl PartialOrd<u128> for BigUint {
     }
 }
 
+impl_scalar_partialeq!(impl PartialEq<usize> for BigUint);
+impl_partialord_rev!(impl PartialOrd<usize> for BigUint);
+impl PartialOrd<usize> for BigUint {
+    #[inline]
+    fn partial_cmp(&self, other: &usize) -> Option<Ordering> {
+        self.partial_cmp(&(*other as UsizePromotion))
+    }
+}
+
 impl Default for BigUint {
     #[inline]
     fn default() -> BigUint {

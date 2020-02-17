@@ -185,6 +185,20 @@ fn test_bigint_scalar_cmp() {
         assert!(big.partial_cmp(&(scalar as i64 + 1)) == Some(Ordering::Less));
         assert!((scalar as i64 - 1).partial_cmp(big) == Some(Ordering::Less));
 
+        assert!(big.partial_cmp(&(scalar as i128)) == Some(Ordering::Equal));
+        assert!((scalar as i128).partial_cmp(big) == Some(Ordering::Equal));
+        assert!(big.partial_cmp(&(scalar as i128 - 1)) == Some(Ordering::Greater));
+        assert!((scalar as i128 + 1).partial_cmp(big) == Some(Ordering::Greater));
+        assert!(big.partial_cmp(&(scalar as i128 + 1)) == Some(Ordering::Less));
+        assert!((scalar as i128 - 1).partial_cmp(big) == Some(Ordering::Less));
+
+        assert!(big.partial_cmp(&(scalar as isize)) == Some(Ordering::Equal));
+        assert!((scalar as isize).partial_cmp(big) == Some(Ordering::Equal));
+        assert!(big.partial_cmp(&(scalar as isize - 1)) == Some(Ordering::Greater));
+        assert!((scalar as isize + 1).partial_cmp(big) == Some(Ordering::Greater));
+        assert!(big.partial_cmp(&(scalar as isize + 1)) == Some(Ordering::Less));
+        assert!((scalar as isize - 1).partial_cmp(big) == Some(Ordering::Less));
+
         assert!((scalar as i8) == *big);
         assert!(*big == (scalar as i16));
         assert!((scalar as i16) == *big);
@@ -192,6 +206,10 @@ fn test_bigint_scalar_cmp() {
         assert!((scalar as i32) == *big);
         assert!(*big == (scalar as i64));
         assert!((scalar as i64) == *big);
+        assert!(*big == (scalar as i128));
+        assert!((scalar as i128) == *big);
+        assert!(*big == (scalar as isize));
+        assert!((scalar as isize) == *big);
 
         if scalar > 0 {
             assert!(*big == (scalar as u8));
@@ -202,6 +220,10 @@ fn test_bigint_scalar_cmp() {
             assert!((scalar as u32) == *big);
             assert!(*big == (scalar as u64));
             assert!((scalar as u64) == *big);
+            assert!(*big == (scalar as u128));
+            assert!((scalar as u128) == *big);
+            assert!(*big == (scalar as usize));
+            assert!((scalar as usize) == *big);
         }
     }
 
