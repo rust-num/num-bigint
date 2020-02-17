@@ -446,8 +446,8 @@ macro_rules! impl_scalar_partialeq {
         impl PartialEq<$scalar> for $res {
             #[inline]
             fn eq(&self, other: &$scalar) -> bool {
-                match self.partial_cmp(other).unwrap() {
-                    Equal => true,
+                match self.partial_cmp(other) {
+                    Some(Equal) => true,
                     _ => false,
                 }
             }
@@ -455,8 +455,8 @@ macro_rules! impl_scalar_partialeq {
         impl PartialEq<$res> for $scalar {
             #[inline]
             fn eq(&self, other: &$res) -> bool {
-                match self.partial_cmp(other).unwrap() {
-                    Equal => true,
+                match self.partial_cmp(other) {
+                    Some(Equal) => true,
                     _ => false,
                 }
             }
