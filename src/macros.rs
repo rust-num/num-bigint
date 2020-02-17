@@ -493,7 +493,7 @@ macro_rules! impl_partialord_partialeq_for_biguint_below_digit {
         impl PartialOrd<$typ_unsigned> for BigUint {
             #[inline]
             fn partial_cmp(&self, other: &$typ_unsigned) -> Option<Ordering> {
-                Some(cmp_zero_padded_slice(&self.data[..], &[*other as u32]))
+                Some(cmp_zero_padded_slice(&self.data[..], &[BigDigit::from(*other)]))
             }
         }
     };

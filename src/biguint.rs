@@ -121,6 +121,13 @@ impl_partialord_partialeq_for_biguint_below_digit!(u32);
 impl_scalar_partialeq!(impl PartialEq<u64> for BigUint);
 impl_partialord_rev!(impl PartialOrd<u64> for BigUint);
 impl PartialOrd<u64> for BigUint {
+    #[cfg(u64_digit)]
+    #[inline]
+    fn partial_cmp(&self, other: &u64) -> Option<Ordering> {
+        Some(cmp_zero_padded_slice(&self.data[..], &[*other]))
+    }
+
+    #[cfg(not(u64_digit))]
     #[inline]
     fn partial_cmp(&self, other: &u64) -> Option<Ordering> {
         let (hi, lo) = big_digit::from_doublebigdigit(*other);
@@ -128,12 +135,17 @@ impl PartialOrd<u64> for BigUint {
     }
 }
 
-#[cfg(has_i128)]
 impl_scalar_partialeq!(impl PartialEq<u128> for BigUint);
-#[cfg(has_i128)]
 impl_partialord_rev!(impl PartialOrd<u128> for BigUint);
-#[cfg(has_i128)]
 impl PartialOrd<u128> for BigUint {
+    #[cfg(u64_digit)]
+    #[inline]
+    fn partial_cmp(&self, other: &u128) -> Option<Ordering> {
+        let (hi, lo) = big_digit::from_doublebigdigit(*other);
+        Some(cmp_zero_padded_slice(&self.data[..], &[lo, hi]))
+    }
+
+    #[cfg(not(u64_digit))]
     #[inline]
     fn partial_cmp(&self, other: &u128) -> Option<Ordering> {
         let (a, b, c, d) = u32_from_u128(*other);

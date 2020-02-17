@@ -141,13 +141,10 @@ fn test_biguint_scalar_cmp() {
         assert!((scalar as u64 + 1).partial_cmp(num) == Some(Greater));
         assert!(num.partial_cmp(&(scalar as u64 + 1)) == Some(Less));
 
-        #[cfg(has_i128)]
-        {
-            assert!(num.partial_cmp(&(scalar as u128)) == Some(Equal));
-            assert!((scalar as u128).partial_cmp(num) == Some(Equal));
-            assert!((scalar as u128 + 1).partial_cmp(num) == Some(Greater));
-            assert!(num.partial_cmp(&(scalar as u128 + 1)) == Some(Less));
-        }
+        assert!(num.partial_cmp(&(scalar as u128)) == Some(Equal));
+        assert!((scalar as u128).partial_cmp(num) == Some(Equal));
+        assert!((scalar as u128 + 1).partial_cmp(num) == Some(Greater));
+        assert!(num.partial_cmp(&(scalar as u128 + 1)) == Some(Less));
     }
 
     scalar_cmp_asserts(&zero, 0);
