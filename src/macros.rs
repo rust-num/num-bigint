@@ -464,17 +464,6 @@ macro_rules! impl_scalar_partialeq {
     };
 }
 
-macro_rules! impl_trait_rev {
-    (impl $trait_name:ident < $scalar:ty > for $res:ty, $method:ident, $ret:ty) => {
-        impl $trait_name<$res> for $scalar {
-            #[inline]
-            fn $method(&self, other: &$res) -> $ret {
-                other.$method(self)
-            }
-        }
-    };
-}
-
 macro_rules! impl_partialord_rev {
     (impl PartialOrd < $scalar:ty > for $typ:ty) => {
         impl PartialOrd<$typ> for $scalar {
