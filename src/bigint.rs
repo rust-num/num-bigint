@@ -2193,7 +2193,6 @@ impl Integer for BigInt {
         let (d_ui, m_ui) = self.data.div_rem(&other.data);
         let d = BigInt::from(d_ui);
         let m = BigInt::from(m_ui);
-        let one: BigInt = One::one();
         match (self.sign, other.sign) {
             (_, NoSign) => panic!(),
             (Plus, Plus) | (NoSign, Plus) => (d, m),
@@ -2201,14 +2200,14 @@ impl Integer for BigInt {
                 if m.is_zero() {
                     (-d, Zero::zero())
                 } else {
-                    (-d - one, m + other)
+                    (-d - 1u32, m + other)
                 }
             }
             (Minus, Plus) => {
                 if m.is_zero() {
                     (-d, Zero::zero())
                 } else {
-                    (-d - one, other - m)
+                    (-d - 1u32, other - m)
                 }
             }
             (Minus, Minus) => (d, -m),
