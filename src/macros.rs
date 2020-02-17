@@ -480,7 +480,7 @@ macro_rules! impl_partialord_rev {
         impl PartialOrd<$typ> for $scalar {
             #[inline]
             fn partial_cmp(&self, other: &$typ) -> Option<Ordering> {
-                other.partial_cmp(self).map(|o| o.reverse())
+                other.partial_cmp(self).map(Ordering::reverse)
             }
         }
     };
