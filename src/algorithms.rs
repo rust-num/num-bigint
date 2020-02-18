@@ -785,32 +785,14 @@ pub(crate) fn biguint_shr(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
     biguint_from_vec(data)
 }
 
-pub(crate) fn cmp_zero_padded_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
-    let (a_len, b_len) = (a.len(), b.len());
-    if a_len < b_len {
-        if b.iter().rev().take(b_len - a_len).any(|v| *v > 0) {
-            return Less;
-        }
+pub(crate) fn cmp_zero_padded_slice(mut a: &[BigDigit], mut b: &[BigDigit]) -> Ordering {
+    while let Some((&0, head)) = a.split_last() {
+        a = head;
     }
-    if a_len > b_len {
-        if a.iter().rev().take(a_len - b_len).any(|v| *v > 0) {
-            return Greater;
-        }
+    while let Some((&0, head)) = b.split_last() {
+        b = head;
     }
-
-    let shortest = ::std::cmp::min(a_len, b_len);
-    let ashort = &a[0..shortest];
-    let bshort = &b[0..shortest];
-
-    for (&ai, &bi) in ashort.iter().rev().zip(bshort.iter().rev()) {
-        if ai < bi {
-            return Less;
-        }
-        if ai > bi {
-            return Greater;
-        }
-    }
-    return Equal;
+    cmp_slice(a, b)
 }
 
 pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
