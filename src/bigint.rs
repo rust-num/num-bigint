@@ -965,35 +965,30 @@ pow_impl!(usize);
 pow_impl!(u128);
 pow_impl!(BigUint);
 
-// A convenience method for getting the absolute value of an i32 in a u32.
-#[inline]
-fn i32_abs_as_u32(a: i32) -> u32 {
-    if a == i32::min_value() {
-        a as u32
-    } else {
-        a.abs() as u32
-    }
+trait UnsignedAbs {
+    type Unsigned;
+    /// A convenience method for getting the absolute value of a signed primitive as unsigned
+    fn unsigned_abs(self) -> Self::Unsigned;
 }
 
-// A convenience method for getting the absolute value of an i64 in a u64.
-#[inline]
-fn i64_abs_as_u64(a: i64) -> u64 {
-    if a == i64::min_value() {
-        a as u64
-    } else {
-        a.abs() as u64
-    }
-}
+macro_rules! impl_unsigned_abs {
+    ($Signed:ty, $Unsigned:ty) => {
+        impl UnsignedAbs for $Signed {
+            type Unsigned = $Unsigned;
 
-// A convenience method for getting the absolute value of an i128 in a u128.
-#[inline]
-fn i128_abs_as_u128(a: i128) -> u128 {
-    if a == i128::min_value() {
-        a as u128
-    } else {
-        a.abs() as u128
-    }
+            #[inline]
+            fn unsigned_abs(self) -> $Unsigned {
+                self.wrapping_abs() as $Unsigned
+            }
+        }
+    };
 }
+impl_unsigned_abs!(i8, u8);
+impl_unsigned_abs!(i16, u16);
+impl_unsigned_abs!(i32, u32);
+impl_unsigned_abs!(i64, u64);
+impl_unsigned_abs!(i128, u128);
+impl_unsigned_abs!(isize, usize);
 
 // We want to forward to BigUint::add, but it's not clear how that will go until
 // we compare both sign and magnitude.  So we duplicate this body for every
@@ -1159,7 +1154,7 @@ impl Add<i32> for BigInt {
         if other >= 0 {
             self + other as u32
         } else {
-            self - i32_abs_as_u32(other)
+            self - other.unsigned_abs()
         }
     }
 }
@@ -1169,7 +1164,7 @@ impl AddAssign<i32> for BigInt {
         if other >= 0 {
             *self += other as u32;
         } else {
-            *self -= i32_abs_as_u32(other);
+            *self -= other.unsigned_abs();
         }
     }
 }
@@ -1182,7 +1177,7 @@ impl Add<i64> for BigInt {
         if other >= 0 {
             self + other as u64
         } else {
-            self - i64_abs_as_u64(other)
+            self - other.unsigned_abs()
         }
     }
 }
@@ -1192,7 +1187,7 @@ impl AddAssign<i64> for BigInt {
         if other >= 0 {
             *self += other as u64;
         } else {
-            *self -= i64_abs_as_u64(other);
+            *self -= other.unsigned_abs();
         }
     }
 }
@@ -1205,7 +1200,7 @@ impl Add<i128> for BigInt {
         if other >= 0 {
             self + other as u128
         } else {
-            self - i128_abs_as_u128(other)
+            self - other.unsigned_abs()
         }
     }
 }
@@ -1215,7 +1210,7 @@ impl AddAssign<i128> for BigInt {
         if other >= 0 {
             *self += other as u128;
         } else {
-            *self -= i128_abs_as_u128(other);
+            *self -= other.unsigned_abs();
         }
     }
 }
@@ -1411,7 +1406,7 @@ impl Sub<i32> for BigInt {
         if other >= 0 {
             self - other as u32
         } else {
-            self + i32_abs_as_u32(other)
+            self + other.unsigned_abs()
         }
     }
 }
@@ -1421,7 +1416,7 @@ impl SubAssign<i32> for BigInt {
         if other >= 0 {
             *self -= other as u32;
         } else {
-            *self += i32_abs_as_u32(other);
+            *self += other.unsigned_abs();
         }
     }
 }
@@ -1434,7 +1429,7 @@ impl Sub<BigInt> for i32 {
         if self >= 0 {
             self as u32 - other
         } else {
-            -other - i32_abs_as_u32(self)
+            -other - self.unsigned_abs()
         }
     }
 }
@@ -1447,7 +1442,7 @@ impl Sub<i64> for BigInt {
         if other >= 0 {
             self - other as u64
         } else {
-            self + i64_abs_as_u64(other)
+            self + other.unsigned_abs()
         }
     }
 }
@@ -1457,7 +1452,7 @@ impl SubAssign<i64> for BigInt {
         if other >= 0 {
             *self -= other as u64;
         } else {
-            *self += i64_abs_as_u64(other);
+            *self += other.unsigned_abs();
         }
     }
 }
@@ -1470,7 +1465,7 @@ impl Sub<BigInt> for i64 {
         if self >= 0 {
             self as u64 - other
         } else {
-            -other - i64_abs_as_u64(self)
+            -other - self.unsigned_abs()
         }
     }
 }
@@ -1483,7 +1478,7 @@ impl Sub<i128> for BigInt {
         if other >= 0 {
             self - other as u128
         } else {
-            self + i128_abs_as_u128(other)
+            self + other.unsigned_abs()
         }
     }
 }
@@ -1494,7 +1489,7 @@ impl SubAssign<i128> for BigInt {
         if other >= 0 {
             *self -= other as u128;
         } else {
-            *self += i128_abs_as_u128(other);
+            *self += other.unsigned_abs();
         }
     }
 }
@@ -1507,7 +1502,7 @@ impl Sub<BigInt> for i128 {
         if self >= 0 {
             self as u128 - other
         } else {
-            -other - i128_abs_as_u128(self)
+            -other - self.unsigned_abs()
         }
     }
 }
@@ -1606,7 +1601,7 @@ impl Mul<i32> for BigInt {
         if other >= 0 {
             self * other as u32
         } else {
-            -(self * i32_abs_as_u32(other))
+            -(self * other.unsigned_abs())
         }
     }
 }
@@ -1618,7 +1613,7 @@ impl MulAssign<i32> for BigInt {
             *self *= other as u32;
         } else {
             self.sign = -self.sign;
-            *self *= i32_abs_as_u32(other);
+            *self *= other.unsigned_abs();
         }
     }
 }
@@ -1631,7 +1626,7 @@ impl Mul<i64> for BigInt {
         if other >= 0 {
             self * other as u64
         } else {
-            -(self * i64_abs_as_u64(other))
+            -(self * other.unsigned_abs())
         }
     }
 }
@@ -1643,7 +1638,7 @@ impl MulAssign<i64> for BigInt {
             *self *= other as u64;
         } else {
             self.sign = -self.sign;
-            *self *= i64_abs_as_u64(other);
+            *self *= other.unsigned_abs();
         }
     }
 }
@@ -1656,7 +1651,7 @@ impl Mul<i128> for BigInt {
         if other >= 0 {
             self * other as u128
         } else {
-            -(self * i128_abs_as_u128(other))
+            -(self * other.unsigned_abs())
         }
     }
 }
@@ -1668,7 +1663,7 @@ impl MulAssign<i128> for BigInt {
             *self *= other as u128;
         } else {
             self.sign = -self.sign;
-            *self *= i128_abs_as_u128(other);
+            *self *= other.unsigned_abs();
         }
     }
 }
@@ -1795,7 +1790,7 @@ impl Div<i32> for BigInt {
         if other >= 0 {
             self / other as u32
         } else {
-            -(self / i32_abs_as_u32(other))
+            -(self / other.unsigned_abs())
         }
     }
 }
@@ -1807,7 +1802,7 @@ impl DivAssign<i32> for BigInt {
             *self /= other as u32;
         } else {
             self.sign = -self.sign;
-            *self /= i32_abs_as_u32(other);
+            *self /= other.unsigned_abs();
         }
     }
 }
@@ -1820,7 +1815,7 @@ impl Div<BigInt> for i32 {
         if self >= 0 {
             self as u32 / other
         } else {
-            -(i32_abs_as_u32(self) / other)
+            -(self.unsigned_abs() / other)
         }
     }
 }
@@ -1833,7 +1828,7 @@ impl Div<i64> for BigInt {
         if other >= 0 {
             self / other as u64
         } else {
-            -(self / i64_abs_as_u64(other))
+            -(self / other.unsigned_abs())
         }
     }
 }
@@ -1845,7 +1840,7 @@ impl DivAssign<i64> for BigInt {
             *self /= other as u64;
         } else {
             self.sign = -self.sign;
-            *self /= i64_abs_as_u64(other);
+            *self /= other.unsigned_abs();
         }
     }
 }
@@ -1858,7 +1853,7 @@ impl Div<BigInt> for i64 {
         if self >= 0 {
             self as u64 / other
         } else {
-            -(i64_abs_as_u64(self) / other)
+            -(self.unsigned_abs() / other)
         }
     }
 }
@@ -1871,7 +1866,7 @@ impl Div<i128> for BigInt {
         if other >= 0 {
             self / other as u128
         } else {
-            -(self / i128_abs_as_u128(other))
+            -(self / other.unsigned_abs())
         }
     }
 }
@@ -1883,7 +1878,7 @@ impl DivAssign<i128> for BigInt {
             *self /= other as u128;
         } else {
             self.sign = -self.sign;
-            *self /= i128_abs_as_u128(other);
+            *self /= other.unsigned_abs();
         }
     }
 }
@@ -1896,7 +1891,7 @@ impl Div<BigInt> for i128 {
         if self >= 0 {
             self as u128 / other
         } else {
-            -(i128_abs_as_u128(self) / other)
+            -(self.unsigned_abs() / other)
         }
     }
 }
@@ -2029,7 +2024,7 @@ impl Rem<i32> for BigInt {
         if other >= 0 {
             self % other as u32
         } else {
-            self % i32_abs_as_u32(other)
+            self % other.unsigned_abs()
         }
     }
 }
@@ -2040,7 +2035,7 @@ impl RemAssign<i32> for BigInt {
         if other >= 0 {
             *self %= other as u32;
         } else {
-            *self %= i32_abs_as_u32(other);
+            *self %= other.unsigned_abs();
         }
     }
 }
@@ -2053,7 +2048,7 @@ impl Rem<BigInt> for i32 {
         if self >= 0 {
             self as u32 % other
         } else {
-            -(i32_abs_as_u32(self) % other)
+            -(self.unsigned_abs() % other)
         }
     }
 }
@@ -2066,7 +2061,7 @@ impl Rem<i64> for BigInt {
         if other >= 0 {
             self % other as u64
         } else {
-            self % i64_abs_as_u64(other)
+            self % other.unsigned_abs()
         }
     }
 }
@@ -2077,7 +2072,7 @@ impl RemAssign<i64> for BigInt {
         if other >= 0 {
             *self %= other as u64;
         } else {
-            *self %= i64_abs_as_u64(other);
+            *self %= other.unsigned_abs();
         }
     }
 }
@@ -2090,7 +2085,7 @@ impl Rem<BigInt> for i64 {
         if self >= 0 {
             self as u64 % other
         } else {
-            -(i64_abs_as_u64(self) % other)
+            -(self.unsigned_abs() % other)
         }
     }
 }
@@ -2103,7 +2098,7 @@ impl Rem<i128> for BigInt {
         if other >= 0 {
             self % other as u128
         } else {
-            self % i128_abs_as_u128(other)
+            self % other.unsigned_abs()
         }
     }
 }
@@ -2114,7 +2109,7 @@ impl RemAssign<i128> for BigInt {
         if other >= 0 {
             *self %= other as u128;
         } else {
-            *self %= i128_abs_as_u128(other);
+            *self %= other.unsigned_abs();
         }
     }
 }
@@ -2127,7 +2122,7 @@ impl Rem<BigInt> for i128 {
         if self >= 0 {
             self as u128 % other
         } else {
-            -(i128_abs_as_u128(self) % other)
+            -(self.unsigned_abs() % other)
         }
     }
 }

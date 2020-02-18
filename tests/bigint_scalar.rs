@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 use num_bigint::Sign::Plus;
-use num_traits::{Signed, ToPrimitive, Zero};
+use num_traits::{Bounded, Signed, ToPrimitive, Zero};
 
 use std::cmp::Ordering;
 use std::ops::Neg;
@@ -232,4 +232,39 @@ fn test_bigint_scalar_cmp() {
     cmp_asserts(&five, 5i32);
     cmp_asserts(&m_five, -5i32);
     cmp_asserts(&m_one, -1i32);
+}
+
+#[test]
+fn test_bigint_scalar_cmp_limits() {
+    fn check<T>()
+    where
+        T: Copy + Bounded,
+        BigInt: From<T> + PartialOrd<T>,
+    {
+        let min = T::min_value();
+        let big_min = BigInt::from(min);
+        assert_eq!(big_min.partial_cmp(&min), Some(Ordering::Equal));
+        assert_eq!((&big_min - 1u32).partial_cmp(&min), Some(Ordering::Less));
+        assert_eq!((&big_min + 1u32).partial_cmp(&min), Some(Ordering::Greater));
+
+        let max = T::max_value();
+        let big_max = BigInt::from(max);
+        assert_eq!(big_max.partial_cmp(&max), Some(Ordering::Equal));
+        assert_eq!((&big_max - 1u32).partial_cmp(&max), Some(Ordering::Less));
+        assert_eq!((&big_max + 1u32).partial_cmp(&max), Some(Ordering::Greater));
+    }
+
+    check::<i8>();
+    check::<i16>();
+    check::<i32>();
+    check::<i64>();
+    check::<i128>();
+    check::<isize>();
+
+    check::<u8>();
+    check::<u16>();
+    check::<u32>();
+    check::<u64>();
+    check::<u128>();
+    check::<usize>();
 }

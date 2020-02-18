@@ -500,7 +500,7 @@ macro_rules! impl_partialord_partialeq_for_bigint {
                     return Some(scmp);
                 }
 
-                let abs = (*other).abs() as $typ_unsigned;
+                let abs: $typ_unsigned = other.unsigned_abs();
                 match self.sign {
                     NoSign => Some(Equal),
                     Plus => self.data.partial_cmp(&abs),
