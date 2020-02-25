@@ -834,23 +834,23 @@ mod algorithm_tests {
         use super::cmp_zero_padded_slice;
         use std::cmp::Ordering::*;
 
-        assert!(cmp_zero_padded_slice(&[1, 0], &[1]) == Equal);
-        assert!(cmp_zero_padded_slice(&[1], &[1, 0]) == Equal);
+        assert_eq!(cmp_zero_padded_slice(&[1, 0], &[1]), Equal);
+        assert_eq!(cmp_zero_padded_slice(&[1], &[1, 0]), Equal);
 
-        assert!(cmp_zero_padded_slice(&[0], &[0]) == Equal);
-        assert!(cmp_zero_padded_slice(&[], &[0]) == Equal);
-        assert!(cmp_zero_padded_slice(&[0], &[]) == Equal);
+        assert_eq!(cmp_zero_padded_slice(&[0], &[0]), Equal);
+        assert_eq!(cmp_zero_padded_slice(&[], &[0]), Equal);
+        assert_eq!(cmp_zero_padded_slice(&[0], &[]), Equal);
 
-        assert!(cmp_zero_padded_slice(&[1], &[0]) == Greater);
-        assert!(cmp_zero_padded_slice(&[1000], &[0]) == Greater);
-        assert!(cmp_zero_padded_slice(&[1000], &[0, 0, 0]) == Greater);
-        assert!(cmp_zero_padded_slice(&[1000, 0], &[0, 0, 0]) == Greater);
-        assert!(cmp_zero_padded_slice(&[0, 1000, 0], &[0, 1000]) == Equal);
+        assert_eq!(cmp_zero_padded_slice(&[1], &[0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[1000], &[0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[1000], &[0, 0, 0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[1000, 0], &[0, 0, 0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[0, 1000, 0], &[0, 1000]), Equal);
 
-        assert!(cmp_zero_padded_slice(&[0], &[1]) == Less);
-        assert!(cmp_zero_padded_slice(&[0], &[1000]) == Less);
-        assert!(cmp_zero_padded_slice(&[0, 0, 0], &[1000]) == Less);
-        assert!(cmp_zero_padded_slice(&[0, 0, 0], &[1000, 0]) == Less);
-        assert!(cmp_zero_padded_slice(&[0, 1000], &[0, 1000, 0]) == Equal);
+        assert_eq!(cmp_zero_padded_slice(&[0], &[1]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0], &[1000]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0, 0, 0], &[1000]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0, 0, 0], &[1000, 0]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0, 1000], &[0, 1000, 0]), Equal);
     }
 }

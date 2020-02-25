@@ -121,35 +121,35 @@ fn test_biguint_scalar_cmp() {
     let five = BigUint::from(5u32);
 
     fn scalar_cmp_asserts(num: &BigUint, scalar: i32) {
-        assert!(num.partial_cmp(&(scalar as u8)) == Some(Equal));
-        assert!((scalar as u8).partial_cmp(num) == Some(Equal));
-        assert!((scalar as u8 + 1).partial_cmp(num) == Some(Greater));
-        assert!(num.partial_cmp(&(scalar as u8 + 1)) == Some(Less));
+        assert_eq!(num.partial_cmp(&(scalar as u8)), Some(Equal));
+        assert_eq!((scalar as u8).partial_cmp(num), Some(Equal));
+        assert_eq!((scalar as u8 + 1).partial_cmp(num), Some(Greater));
+        assert_eq!(num.partial_cmp(&(scalar as u8 + 1)), Some(Less));
 
-        assert!(num.partial_cmp(&(scalar as u16)) == Some(Equal));
-        assert!((scalar as u16).partial_cmp(num) == Some(Equal));
-        assert!((scalar as u16 + 1).partial_cmp(num) == Some(Greater));
-        assert!(num.partial_cmp(&(scalar as u16 + 1)) == Some(Less));
+        assert_eq!(num.partial_cmp(&(scalar as u16)), Some(Equal));
+        assert_eq!((scalar as u16).partial_cmp(num), Some(Equal));
+        assert_eq!((scalar as u16 + 1).partial_cmp(num), Some(Greater));
+        assert_eq!(num.partial_cmp(&(scalar as u16 + 1)), Some(Less));
 
-        assert!(num.partial_cmp(&(scalar as u32)) == Some(Equal));
-        assert!((scalar as u32).partial_cmp(num) == Some(Equal));
-        assert!((scalar as u32 + 1).partial_cmp(num) == Some(Greater));
-        assert!(num.partial_cmp(&(scalar as u32 + 1)) == Some(Less));
+        assert_eq!(num.partial_cmp(&(scalar as u32)), Some(Equal));
+        assert_eq!((scalar as u32).partial_cmp(num), Some(Equal));
+        assert_eq!((scalar as u32 + 1).partial_cmp(num), Some(Greater));
+        assert_eq!(num.partial_cmp(&(scalar as u32 + 1)), Some(Less));
 
-        assert!(num.partial_cmp(&(scalar as u64)) == Some(Equal));
-        assert!((scalar as u64).partial_cmp(num) == Some(Equal));
-        assert!((scalar as u64 + 1).partial_cmp(num) == Some(Greater));
-        assert!(num.partial_cmp(&(scalar as u64 + 1)) == Some(Less));
+        assert_eq!(num.partial_cmp(&(scalar as u64)), Some(Equal));
+        assert_eq!((scalar as u64).partial_cmp(num), Some(Equal));
+        assert_eq!((scalar as u64 + 1).partial_cmp(num), Some(Greater));
+        assert_eq!(num.partial_cmp(&(scalar as u64 + 1)), Some(Less));
 
-        assert!(num.partial_cmp(&(scalar as u128)) == Some(Equal));
-        assert!((scalar as u128).partial_cmp(num) == Some(Equal));
-        assert!((scalar as u128 + 1).partial_cmp(num) == Some(Greater));
-        assert!(num.partial_cmp(&(scalar as u128 + 1)) == Some(Less));
+        assert_eq!(num.partial_cmp(&(scalar as u128)), Some(Equal));
+        assert_eq!((scalar as u128).partial_cmp(num), Some(Equal));
+        assert_eq!((scalar as u128 + 1).partial_cmp(num), Some(Greater));
+        assert_eq!(num.partial_cmp(&(scalar as u128 + 1)), Some(Less));
 
-        assert!(num.partial_cmp(&(scalar as usize)) == Some(Equal));
-        assert!((scalar as usize).partial_cmp(num) == Some(Equal));
-        assert!((scalar as usize + 1).partial_cmp(num) == Some(Greater));
-        assert!(num.partial_cmp(&(scalar as usize + 1)) == Some(Less));
+        assert_eq!(num.partial_cmp(&(scalar as usize)), Some(Equal));
+        assert_eq!((scalar as usize).partial_cmp(num), Some(Equal));
+        assert_eq!((scalar as usize + 1).partial_cmp(num), Some(Greater));
+        assert_eq!(num.partial_cmp(&(scalar as usize + 1)), Some(Less));
     }
 
     scalar_cmp_asserts(&zero, 0);
@@ -157,7 +157,7 @@ fn test_biguint_scalar_cmp() {
     scalar_cmp_asserts(&five, 5);
 
     let a = BigUint::from(10000000000u64);
-    assert!(a.partial_cmp(&10000000000u64) == Some(Equal));
-    assert!(a.partial_cmp(&1000000000u64) == Some(Greater));
-    assert!(a.partial_cmp(&100000000000u64) == Some(Less));
+    assert_eq!(a.partial_cmp(&10000000000u64), Some(Equal));
+    assert_eq!(a.partial_cmp(&1000000000u64), Some(Greater));
+    assert_eq!(a.partial_cmp(&100000000000u64), Some(Less));
 }
