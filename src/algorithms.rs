@@ -785,6 +785,16 @@ pub(crate) fn biguint_shr(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
     biguint_from_vec(data)
 }
 
+pub(crate) fn cmp_zero_padded_slice(mut a: &[BigDigit], mut b: &[BigDigit]) -> Ordering {
+    while let Some((&0, head)) = a.split_last() {
+        a = head;
+    }
+    while let Some((&0, head)) = b.split_last() {
+        b = head;
+    }
+    cmp_slice(a, b)
+}
+
 pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
     debug_assert!(a.last() != Some(&0));
     debug_assert!(b.last() != Some(&0));
@@ -817,5 +827,30 @@ mod algorithm_tests {
 
         assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
         assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
+    }
+
+    #[test]
+    fn test_cmp_zero_padded_slice() {
+        use super::cmp_zero_padded_slice;
+        use core::cmp::Ordering::*;
+
+        assert_eq!(cmp_zero_padded_slice(&[1, 0], &[1]), Equal);
+        assert_eq!(cmp_zero_padded_slice(&[1], &[1, 0]), Equal);
+
+        assert_eq!(cmp_zero_padded_slice(&[0], &[0]), Equal);
+        assert_eq!(cmp_zero_padded_slice(&[], &[0]), Equal);
+        assert_eq!(cmp_zero_padded_slice(&[0], &[]), Equal);
+
+        assert_eq!(cmp_zero_padded_slice(&[1], &[0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[1000], &[0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[1000], &[0, 0, 0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[1000, 0], &[0, 0, 0]), Greater);
+        assert_eq!(cmp_zero_padded_slice(&[0, 1000, 0], &[0, 1000]), Equal);
+
+        assert_eq!(cmp_zero_padded_slice(&[0], &[1]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0], &[1000]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0, 0, 0], &[1000]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0, 0, 0], &[1000, 0]), Less);
+        assert_eq!(cmp_zero_padded_slice(&[0, 1000], &[0, 1000, 0]), Equal);
     }
 }

@@ -35,7 +35,7 @@ mod monty;
 
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
-use self::algorithms::{cmp_slice, fls, ilog2};
+use self::algorithms::{cmp_slice, cmp_zero_padded_slice, fls, ilog2};
 use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
 use self::algorithms::{mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
@@ -111,6 +111,54 @@ impl Ord for BigUint {
     #[inline]
     fn cmp(&self, other: &BigUint) -> Ordering {
         cmp_slice(&self.data[..], &other.data[..])
+    }
+}
+
+impl_partialord_partialeq_for_biguint_below_digit!(u8);
+impl_partialord_partialeq_for_biguint_below_digit!(u16);
+impl_partialord_partialeq_for_biguint_below_digit!(u32);
+
+impl_scalar_partialeq!(impl PartialEq<u64> for BigUint);
+impl_partialord_rev!(impl PartialOrd<u64> for BigUint);
+impl PartialOrd<u64> for BigUint {
+    #[cfg(u64_digit)]
+    #[inline]
+    fn partial_cmp(&self, other: &u64) -> Option<Ordering> {
+        Some(cmp_zero_padded_slice(&self.data[..], &[*other]))
+    }
+
+    #[cfg(not(u64_digit))]
+    #[inline]
+    fn partial_cmp(&self, other: &u64) -> Option<Ordering> {
+        let (hi, lo) = big_digit::from_doublebigdigit(*other);
+        Some(cmp_zero_padded_slice(&self.data[..], &[lo, hi]))
+    }
+}
+
+impl_scalar_partialeq!(impl PartialEq<u128> for BigUint);
+impl_partialord_rev!(impl PartialOrd<u128> for BigUint);
+impl PartialOrd<u128> for BigUint {
+    #[cfg(u64_digit)]
+    #[inline]
+    fn partial_cmp(&self, other: &u128) -> Option<Ordering> {
+        let (hi, lo) = big_digit::from_doublebigdigit(*other);
+        Some(cmp_zero_padded_slice(&self.data[..], &[lo, hi]))
+    }
+
+    #[cfg(not(u64_digit))]
+    #[inline]
+    fn partial_cmp(&self, other: &u128) -> Option<Ordering> {
+        let (a, b, c, d) = u32_from_u128(*other);
+        Some(cmp_zero_padded_slice(&self.data[..], &[d, c, b, a]))
+    }
+}
+
+impl_scalar_partialeq!(impl PartialEq<usize> for BigUint);
+impl_partialord_rev!(impl PartialOrd<usize> for BigUint);
+impl PartialOrd<usize> for BigUint {
+    #[inline]
+    fn partial_cmp(&self, other: &usize) -> Option<Ordering> {
+        self.partial_cmp(&(*other as UsizePromotion))
     }
 }
 

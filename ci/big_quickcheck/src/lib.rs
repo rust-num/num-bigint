@@ -357,3 +357,18 @@ fn quickcheck_modpow() {
 
     qc.quickcheck(test_modpow as fn(i128, u128, i128) -> TestResult);
 }
+
+#[test]
+fn quickcheck_scalar_cmp() {
+    let gen = StdThreadGen::new(usize::max_value());
+    let mut qc = QuickCheck::with_gen(gen);
+
+    fn test_cmp(lhs: i64, rhs: i64) -> TestResult {
+        let correct = lhs.partial_cmp(&rhs);
+        let big_lhs = BigInt::from(lhs);
+        let res = big_lhs.partial_cmp(&rhs);
+        TestResult::from_bool(correct == res)
+    }
+
+    qc.quickcheck(test_cmp as fn(i64, i64) -> TestResult);
+}

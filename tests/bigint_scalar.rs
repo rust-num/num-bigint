@@ -1,7 +1,8 @@
 use num_bigint::BigInt;
 use num_bigint::Sign::Plus;
-use num_traits::{Signed, ToPrimitive, Zero};
+use num_traits::{Bounded, Signed, ToPrimitive, Zero};
 
+use std::cmp::Ordering;
 use std::ops::Neg;
 
 mod consts;
@@ -93,7 +94,7 @@ fn test_scalar_div_rem() {
         if !r.is_zero() {
             assert_eq!(r.sign(), a.sign());
         }
-        assert!(r.abs() <= From::from(b));
+        assert!(r.abs() <= b);
         assert!(*a == b * &q + &r);
         assert!(q == *ans_q);
         assert!(r == *ans_r);
@@ -145,4 +146,161 @@ fn test_scalar_div_rem() {
             check(&a, b, &c, &d);
         }
     }
+}
+
+#[test]
+fn test_bigint_scalar_cmp() {
+    let m_five = BigInt::from(-5);
+    let m_one = BigInt::from(-1);
+    let zero = BigInt::from(0);
+    let one = BigInt::from(1);
+    let five = BigInt::from(5);
+
+    fn cmp_asserts(big: &BigInt, scalar: i32) {
+        assert_eq!(big.partial_cmp(&(scalar as i8)), Some(Ordering::Equal));
+        assert_eq!((scalar as i8).partial_cmp(big), Some(Ordering::Equal));
+        assert_eq!(
+            big.partial_cmp(&(scalar as i8 - 1)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!((scalar as i8 + 1).partial_cmp(big), Some(Ordering::Greater));
+        assert_eq!(big.partial_cmp(&(scalar as i8 + 1)), Some(Ordering::Less));
+        assert_eq!((scalar as i8 - 1).partial_cmp(big), Some(Ordering::Less));
+
+        assert_eq!(big.partial_cmp(&(scalar as i16)), Some(Ordering::Equal));
+        assert_eq!((scalar as i16).partial_cmp(big), Some(Ordering::Equal));
+        assert_eq!(
+            big.partial_cmp(&(scalar as i16 - 1)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            (scalar as i16 + 1).partial_cmp(big),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(big.partial_cmp(&(scalar as i16 + 1)), Some(Ordering::Less));
+        assert_eq!((scalar as i16 - 1).partial_cmp(big), Some(Ordering::Less));
+
+        assert_eq!(big.partial_cmp(&(scalar as i32)), Some(Ordering::Equal));
+        assert_eq!((scalar as i32).partial_cmp(big), Some(Ordering::Equal));
+        assert_eq!(
+            big.partial_cmp(&(scalar as i32 - 1)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            (scalar as i32 + 1).partial_cmp(big),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(big.partial_cmp(&(scalar as i32 + 1)), Some(Ordering::Less));
+        assert_eq!((scalar as i32 - 1).partial_cmp(big), Some(Ordering::Less));
+
+        assert_eq!(big.partial_cmp(&(scalar as i64)), Some(Ordering::Equal));
+        assert_eq!((scalar as i64).partial_cmp(big), Some(Ordering::Equal));
+        assert_eq!(
+            big.partial_cmp(&(scalar as i64 - 1)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            (scalar as i64 + 1).partial_cmp(big),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(big.partial_cmp(&(scalar as i64 + 1)), Some(Ordering::Less));
+        assert_eq!((scalar as i64 - 1).partial_cmp(big), Some(Ordering::Less));
+
+        assert_eq!(big.partial_cmp(&(scalar as i128)), Some(Ordering::Equal));
+        assert_eq!((scalar as i128).partial_cmp(big), Some(Ordering::Equal));
+        assert_eq!(
+            big.partial_cmp(&(scalar as i128 - 1)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            (scalar as i128 + 1).partial_cmp(big),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(big.partial_cmp(&(scalar as i128 + 1)), Some(Ordering::Less));
+        assert_eq!((scalar as i128 - 1).partial_cmp(big), Some(Ordering::Less));
+
+        assert_eq!(big.partial_cmp(&(scalar as isize)), Some(Ordering::Equal));
+        assert_eq!((scalar as isize).partial_cmp(big), Some(Ordering::Equal));
+        assert_eq!(
+            big.partial_cmp(&(scalar as isize - 1)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            (scalar as isize + 1).partial_cmp(big),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            big.partial_cmp(&(scalar as isize + 1)),
+            Some(Ordering::Less)
+        );
+        assert_eq!((scalar as isize - 1).partial_cmp(big), Some(Ordering::Less));
+
+        assert_eq!((scalar as i8), *big);
+        assert_eq!(*big, (scalar as i16));
+        assert_eq!((scalar as i16), *big);
+        assert_eq!(*big, (scalar as i32));
+        assert_eq!((scalar as i32), *big);
+        assert_eq!(*big, (scalar as i64));
+        assert_eq!((scalar as i64), *big);
+        assert_eq!(*big, (scalar as i128));
+        assert_eq!((scalar as i128), *big);
+        assert_eq!(*big, (scalar as isize));
+        assert_eq!((scalar as isize), *big);
+
+        if scalar > 0 {
+            assert_eq!(*big, (scalar as u8));
+            assert_eq!((scalar as u8), *big);
+            assert_eq!(*big, (scalar as u16));
+            assert_eq!((scalar as u16), *big);
+            assert_eq!(*big, (scalar as u32));
+            assert_eq!((scalar as u32), *big);
+            assert_eq!(*big, (scalar as u64));
+            assert_eq!((scalar as u64), *big);
+            assert_eq!(*big, (scalar as u128));
+            assert_eq!((scalar as u128), *big);
+            assert_eq!(*big, (scalar as usize));
+            assert_eq!((scalar as usize), *big);
+        }
+    }
+
+    cmp_asserts(&zero, 0i32);
+    cmp_asserts(&one, 1i32);
+    cmp_asserts(&five, 5i32);
+    cmp_asserts(&m_five, -5i32);
+    cmp_asserts(&m_one, -1i32);
+}
+
+#[test]
+fn test_bigint_scalar_cmp_limits() {
+    fn check<T>()
+    where
+        T: Copy + Bounded,
+        BigInt: From<T> + PartialOrd<T>,
+    {
+        let min = T::min_value();
+        let big_min = BigInt::from(min);
+        assert_eq!(big_min.partial_cmp(&min), Some(Ordering::Equal));
+        assert_eq!((&big_min - 1u32).partial_cmp(&min), Some(Ordering::Less));
+        assert_eq!((&big_min + 1u32).partial_cmp(&min), Some(Ordering::Greater));
+
+        let max = T::max_value();
+        let big_max = BigInt::from(max);
+        assert_eq!(big_max.partial_cmp(&max), Some(Ordering::Equal));
+        assert_eq!((&big_max - 1u32).partial_cmp(&max), Some(Ordering::Less));
+        assert_eq!((&big_max + 1u32).partial_cmp(&max), Some(Ordering::Greater));
+    }
+
+    check::<i8>();
+    check::<i16>();
+    check::<i32>();
+    check::<i64>();
+    check::<i128>();
+    check::<isize>();
+
+    check::<u8>();
+    check::<u16>();
+    check::<u32>();
+    check::<u64>();
+    check::<u128>();
+    check::<usize>();
 }
