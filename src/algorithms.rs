@@ -832,7 +832,7 @@ mod algorithm_tests {
     #[test]
     fn test_cmp_zero_padded_slice() {
         use super::cmp_zero_padded_slice;
-        use std::cmp::Ordering::*;
+        use core::cmp::Ordering::*;
 
         assert_eq!(cmp_zero_padded_slice(&[1, 0], &[1]), Equal);
         assert_eq!(cmp_zero_padded_slice(&[1], &[1, 0]), Equal);
