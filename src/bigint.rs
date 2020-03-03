@@ -937,12 +937,30 @@ fn powsign<T: Integer>(sign: Sign, other: &T) -> Sign {
 
 macro_rules! pow_impl {
     ($T:ty) => {
+        impl Pow<$T> for BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn pow(self, rhs: $T) -> BigInt {
+                BigInt::from_biguint(powsign(self.sign, &rhs), self.data.pow(rhs))
+            }
+        }
+
+        impl<'b> Pow<&'b $T> for BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn pow(self, rhs: &$T) -> BigInt {
+                BigInt::from_biguint(powsign(self.sign, rhs), self.data.pow(rhs))
+            }
+        }
+
         impl<'a> Pow<$T> for &'a BigInt {
             type Output = BigInt;
 
             #[inline]
             fn pow(self, rhs: $T) -> BigInt {
-                BigInt::from_biguint(powsign(self.sign, &rhs), (&self.data).pow(rhs))
+                BigInt::from_biguint(powsign(self.sign, &rhs), Pow::pow(&self.data, rhs))
             }
         }
 
@@ -951,7 +969,7 @@ macro_rules! pow_impl {
 
             #[inline]
             fn pow(self, rhs: &$T) -> BigInt {
-                BigInt::from_biguint(powsign(self.sign, rhs), (&self.data).pow(rhs))
+                BigInt::from_biguint(powsign(self.sign, rhs), Pow::pow(&self.data, rhs))
             }
         }
     };
@@ -3006,6 +3024,11 @@ impl BigInt {
             return None;
         }
         Some(self.div(v))
+    }
+
+    /// Returns `self ^ exponent`.
+    pub fn pow(&self, exponent: u32) -> Self {
+        Pow::pow(self, exponent)
     }
 
     /// Returns `(self ^ exponent) mod modulus`

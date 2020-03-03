@@ -1148,15 +1148,15 @@ fn test_pow() {
     let minus_two = BigInt::from(-2i32);
     macro_rules! check {
         ($t:ty) => {
-            assert_eq!(two.pow(0 as $t), one);
-            assert_eq!(two.pow(1 as $t), two);
-            assert_eq!(two.pow(2 as $t), four);
-            assert_eq!(two.pow(3 as $t), eight);
-            assert_eq!(two.pow(&(3 as $t)), eight);
-            assert_eq!(minus_two.pow(0 as $t), one, "-2^0");
-            assert_eq!(minus_two.pow(1 as $t), minus_two, "-2^1");
-            assert_eq!(minus_two.pow(2 as $t), four, "-2^2");
-            assert_eq!(minus_two.pow(3 as $t), -&eight, "-2^3");
+            assert_eq!(Pow::pow(&two, 0 as $t), one);
+            assert_eq!(Pow::pow(&two, 1 as $t), two);
+            assert_eq!(Pow::pow(&two, 2 as $t), four);
+            assert_eq!(Pow::pow(&two, 3 as $t), eight);
+            assert_eq!(Pow::pow(&two, &(3 as $t)), eight);
+            assert_eq!(Pow::pow(&minus_two, 0 as $t), one, "-2^0");
+            assert_eq!(Pow::pow(&minus_two, 1 as $t), minus_two, "-2^1");
+            assert_eq!(Pow::pow(&minus_two, 2 as $t), four, "-2^2");
+            assert_eq!(Pow::pow(&minus_two, 3 as $t), -&eight, "-2^3");
         };
     }
     check!(u8);

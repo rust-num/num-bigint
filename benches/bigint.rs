@@ -4,7 +4,7 @@
 extern crate test;
 
 use num_bigint::{BigInt, BigUint, RandBigInt};
-use num_traits::{FromPrimitive, Num, One, Pow, Zero};
+use num_traits::{FromPrimitive, Num, One, Zero};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::mem::replace;
@@ -327,11 +327,30 @@ fn hash(b: &mut Bencher) {
 #[bench]
 fn pow_bench(b: &mut Bencher) {
     b.iter(|| {
-        let upper = 100_usize;
-        for i in 2..=upper {
+        let upper = 100_u32;
+        let mut i_big = BigUint::from(1u32);
+        for _i in 2..=upper {
+            i_big += 1u32;
             for j in 2..=upper {
-                let i_big = BigUint::from_usize(i).unwrap();
                 i_big.pow(j);
+            }
+        }
+    });
+}
+
+#[bench]
+fn pow_bench_bigexp(b: &mut Bencher) {
+    use num_traits::Pow;
+
+    b.iter(|| {
+        let upper = 100_u32;
+        let mut i_big = BigUint::from(1u32);
+        for _i in 2..=upper {
+            i_big += 1u32;
+            let mut j_big = BigUint::from(1u32);
+            for _j in 2..=upper {
+                j_big += 1u32;
+                Pow::pow(&i_big, &j_big);
             }
         }
     });

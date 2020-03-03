@@ -547,12 +547,33 @@ impl One for BigUint {
 
 impl Unsigned for BigUint {}
 
-impl<'a> Pow<BigUint> for &'a BigUint {
+impl<'b> Pow<&'b BigUint> for BigUint {
     type Output = BigUint;
 
     #[inline]
-    fn pow(self, exp: BigUint) -> Self::Output {
-        self.pow(&exp)
+    fn pow(self, exp: &BigUint) -> BigUint {
+        if self.is_one() || exp.is_zero() {
+            BigUint::one()
+        } else if self.is_zero() {
+            BigUint::zero()
+        } else if let Some(exp) = exp.to_u64() {
+            self.pow(exp)
+        } else if let Some(exp) = exp.to_u128() {
+            self.pow(exp)
+        } else {
+            // At this point, `self >= 2` and `exp >= 2¹²⁸`. The smallest possible result given
+            // `2.pow(2¹²⁸)` would require far more memory than 64-bit targets can address!
+            panic!("memory overflow")
+        }
+    }
+}
+
+impl Pow<BigUint> for BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: BigUint) -> BigUint {
+        Pow::pow(self, &exp)
     }
 }
 
@@ -560,32 +581,36 @@ impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
     type Output = BigUint;
 
     #[inline]
-    fn pow(self, exp: &BigUint) -> Self::Output {
+    fn pow(self, exp: &BigUint) -> BigUint {
         if self.is_one() || exp.is_zero() {
             BigUint::one()
         } else if self.is_zero() {
             BigUint::zero()
-        } else if let Some(exp) = exp.to_u64() {
-            self.pow(exp)
         } else {
-            // At this point, `self >= 2` and `exp >= 2⁶⁴`.  The smallest possible result
-            // given `2.pow(2⁶⁴)` would take 2.3 exabytes of memory!
-            panic!("memory overflow")
+            self.clone().pow(exp)
         }
+    }
+}
+
+impl<'a> Pow<BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: BigUint) -> BigUint {
+        Pow::pow(self, &exp)
     }
 }
 
 macro_rules! pow_impl {
     ($T:ty) => {
-        impl<'a> Pow<$T> for &'a BigUint {
+        impl Pow<$T> for BigUint {
             type Output = BigUint;
 
-            #[inline]
-            fn pow(self, mut exp: $T) -> Self::Output {
+            fn pow(self, mut exp: $T) -> BigUint {
                 if exp == 0 {
                     return BigUint::one();
                 }
-                let mut base = self.clone();
+                let mut base = self;
 
                 while exp & 1 == 0 {
                     base = &base * &base;
@@ -608,12 +633,33 @@ macro_rules! pow_impl {
             }
         }
 
+        impl<'b> Pow<&'b $T> for BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: &$T) -> BigUint {
+                Pow::pow(self, *exp)
+            }
+        }
+
+        impl<'a> Pow<$T> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: $T) -> BigUint {
+                if exp == 0 {
+                    return BigUint::one();
+                }
+                Pow::pow(self.clone(), exp)
+            }
+        }
+
         impl<'a, 'b> Pow<&'b $T> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
-            fn pow(self, exp: &$T) -> Self::Output {
-                self.pow(*exp)
+            fn pow(self, exp: &$T) -> BigUint {
+                Pow::pow(self, *exp)
             }
         }
     };
@@ -2504,6 +2550,11 @@ impl BigUint {
         self
     }
 
+    /// Returns `self ^ exponent`.
+    pub fn pow(&self, exponent: u32) -> Self {
+        Pow::pow(self, exponent)
+    }
+
     /// Returns `(self ^ exponent) % modulus`.
     ///
     /// Panics if the modulus is zero.
@@ -2614,7 +2665,7 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
 
 #[test]
 fn test_plain_modpow() {
-    let two = BigUint::from(2u32);
+    let two = &BigUint::from(2u32);
     let modulus = BigUint::from(0x1100u32);
 
     let exp = vec![0, 0b1];
