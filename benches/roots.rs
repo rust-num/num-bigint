@@ -4,7 +4,6 @@
 extern crate test;
 
 use num_bigint::{BigUint, RandBigInt};
-use num_traits::Pow;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use test::Bencher;

@@ -8,7 +8,7 @@
 
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
-use num_traits::{Num, One, Pow, Signed, Zero};
+use num_traits::{Num, One, Signed, Zero};
 use quickcheck::{QuickCheck, StdThreadGen, TestResult};
 use quickcheck_macros::quickcheck;
 

@@ -1676,13 +1676,13 @@ fn test_pow() {
     let twentyfourtyeight = BigUint::from(2048u32);
     macro_rules! check {
         ($t:ty) => {
-            assert_eq!(two.pow(0 as $t), one);
-            assert_eq!(two.pow(1 as $t), two);
-            assert_eq!(two.pow(2 as $t), four);
-            assert_eq!(two.pow(3 as $t), eight);
-            assert_eq!(two.pow(10 as $t), tentwentyfour);
-            assert_eq!(two.pow(11 as $t), twentyfourtyeight);
-            assert_eq!(two.pow(&(11 as $t)), twentyfourtyeight);
+            assert_eq!(Pow::pow(&two, 0 as $t), one);
+            assert_eq!(Pow::pow(&two, 1 as $t), two);
+            assert_eq!(Pow::pow(&two, 2 as $t), four);
+            assert_eq!(Pow::pow(&two, 3 as $t), eight);
+            assert_eq!(Pow::pow(&two, 10 as $t), tentwentyfour);
+            assert_eq!(Pow::pow(&two, 11 as $t), twentyfourtyeight);
+            assert_eq!(Pow::pow(&two, &(11 as $t)), twentyfourtyeight);
         };
     }
     check!(u8);

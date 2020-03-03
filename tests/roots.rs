@@ -1,6 +1,6 @@
 mod biguint {
     use num_bigint::BigUint;
-    use num_traits::{One, Pow, Zero};
+    use num_traits::{One, Zero};
     use std::{i32, u32};
 
     fn check<T: Into<BigUint>>(x: T, n: u32) {
@@ -114,7 +114,7 @@ mod biguint {
 
 mod bigint {
     use num_bigint::BigInt;
-    use num_traits::{Pow, Signed};
+    use num_traits::Signed;
 
     fn check(x: i64, n: u32) {
         let big_x = BigInt::from(x);

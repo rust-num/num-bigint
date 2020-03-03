@@ -10,7 +10,7 @@ mod torture;
 
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
-    use num_traits::{Pow, Zero};
+    use num_traits::Zero;
     use rand::distributions::Uniform;
     use rand::thread_rng;
     use rand::{Rng, SeedableRng};
