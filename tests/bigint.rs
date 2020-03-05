@@ -734,6 +734,8 @@ fn test_mul() {
 fn test_div_mod_floor() {
     fn check_sub(a: &BigInt, b: &BigInt, ans_d: &BigInt, ans_m: &BigInt) {
         let (d, m) = a.div_mod_floor(b);
+        assert_eq!(d, a.div_floor(b));
+        assert_eq!(m, a.mod_floor(b));
         if !m.is_zero() {
             assert_eq!(m.sign(), b.sign());
         }
@@ -810,6 +812,53 @@ fn test_div_rem() {
         check_sub(&a.neg(), b, &q.neg(), &r.neg());
         check_sub(&a.neg(), &b.neg(), q, &r.neg());
     }
+    for elm in MUL_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+
+        if !a.is_zero() {
+            check(&c, &a, &b, &Zero::zero());
+        }
+        if !b.is_zero() {
+            check(&c, &b, &a, &Zero::zero());
+        }
+    }
+
+    for elm in DIV_REM_QUADRUPLES.iter() {
+        let (a_vec, b_vec, c_vec, d_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+        let d = BigInt::from_slice(Plus, d_vec);
+
+        if !b.is_zero() {
+            check(&a, &b, &c, &d);
+        }
+    }
+}
+
+#[test]
+fn test_div_ceil() {
+    fn check_sub(a: &BigInt, b: &BigInt, ans_d: &BigInt) {
+        assert_eq!(a.div_ceil(b), *ans_d);
+    }
+
+    fn check(a: &BigInt, b: &BigInt, d: &BigInt, m: &BigInt) {
+        if m.is_zero() {
+            check_sub(a, b, d);
+            check_sub(a, &b.neg(), &d.neg());
+            check_sub(&a.neg(), b, &d.neg());
+            check_sub(&a.neg(), &b.neg(), d);
+        } else {
+            check_sub(a, b, &(d + 1));
+            check_sub(a, &b.neg(), &d.neg());
+            check_sub(&a.neg(), b, &d.neg());
+            check_sub(&a.neg(), &b.neg(), &(d + 1));
+        }
+    }
+
     for elm in MUL_TRIPLES.iter() {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigInt::from_slice(Plus, a_vec);
@@ -933,6 +982,9 @@ fn test_gcd() {
         let big_c: BigInt = FromPrimitive::from_isize(c).unwrap();
 
         assert_eq!(big_a.gcd(&big_b), big_c);
+        assert_eq!(big_a.extended_gcd(&big_b).gcd, big_c);
+        assert_eq!(big_a.gcd_lcm(&big_b).0, big_c);
+        assert_eq!(big_a.extended_gcd_lcm(&big_b).0.gcd, big_c);
     }
 
     check(10, 2, 2);
@@ -953,6 +1005,8 @@ fn test_lcm() {
         let big_c: BigInt = FromPrimitive::from_isize(c).unwrap();
 
         assert_eq!(big_a.lcm(&big_b), big_c);
+        assert_eq!(big_a.gcd_lcm(&big_b).1, big_c);
+        assert_eq!(big_a.extended_gcd_lcm(&big_b).1, big_c);
     }
 
     check(0, 0, 0);
@@ -964,6 +1018,30 @@ fn test_lcm() {
     check(-1, -1, 1);
     check(8, 9, 72);
     check(11, 5, 55);
+}
+
+#[test]
+fn test_next_multiple_of() {
+    assert_eq!(BigInt::from(16).next_multiple_of(&BigInt::from(8)), 16);
+    assert_eq!(BigInt::from(23).next_multiple_of(&BigInt::from(8)), 24);
+    assert_eq!(BigInt::from(16).next_multiple_of(&BigInt::from(-8)), 16);
+    assert_eq!(BigInt::from(23).next_multiple_of(&BigInt::from(-8)), 16);
+    assert_eq!(BigInt::from(-16).next_multiple_of(&BigInt::from(8)), -16);
+    assert_eq!(BigInt::from(-23).next_multiple_of(&BigInt::from(8)), -16);
+    assert_eq!(BigInt::from(-16).next_multiple_of(&BigInt::from(-8)), -16);
+    assert_eq!(BigInt::from(-23).next_multiple_of(&BigInt::from(-8)), -24);
+}
+
+#[test]
+fn test_prev_multiple_of() {
+    assert_eq!(BigInt::from(16).prev_multiple_of(&BigInt::from(8)), 16);
+    assert_eq!(BigInt::from(23).prev_multiple_of(&BigInt::from(8)), 16);
+    assert_eq!(BigInt::from(16).prev_multiple_of(&BigInt::from(-8)), 16);
+    assert_eq!(BigInt::from(23).prev_multiple_of(&BigInt::from(-8)), 24);
+    assert_eq!(BigInt::from(-16).prev_multiple_of(&BigInt::from(8)), -16);
+    assert_eq!(BigInt::from(-23).prev_multiple_of(&BigInt::from(8)), -24);
+    assert_eq!(BigInt::from(-16).prev_multiple_of(&BigInt::from(-8)), -16);
+    assert_eq!(BigInt::from(-23).prev_multiple_of(&BigInt::from(-8)), -16);
 }
 
 #[test]

@@ -892,6 +892,43 @@ fn test_div_rem() {
 }
 
 #[test]
+fn test_div_ceil() {
+    fn check(a: &BigUint, b: &BigUint, d: &BigUint, m: &BigUint) {
+        if m.is_zero() {
+            assert_eq!(a.div_ceil(b), *d);
+        } else {
+            assert_eq!(a.div_ceil(b), d + 1u32);
+        }
+    }
+
+    for elm in MUL_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigUint::from_slice(a_vec);
+        let b = BigUint::from_slice(b_vec);
+        let c = BigUint::from_slice(c_vec);
+
+        if !a.is_zero() {
+            check(&c, &a, &b, &Zero::zero());
+        }
+        if !b.is_zero() {
+            check(&c, &b, &a, &Zero::zero());
+        }
+    }
+
+    for elm in DIV_REM_QUADRUPLES.iter() {
+        let (a_vec, b_vec, c_vec, d_vec) = *elm;
+        let a = BigUint::from_slice(a_vec);
+        let b = BigUint::from_slice(b_vec);
+        let c = BigUint::from_slice(c_vec);
+        let d = BigUint::from_slice(d_vec);
+
+        if !b.is_zero() {
+            check(&a, &b, &c, &d);
+        }
+    }
+}
+
+#[test]
 fn test_checked_add() {
     for elm in SUM_TRIPLES.iter() {
         let (a_vec, b_vec, c_vec) = *elm;
@@ -984,6 +1021,7 @@ fn test_gcd() {
         let big_c: BigUint = FromPrimitive::from_usize(c).unwrap();
 
         assert_eq!(big_a.gcd(&big_b), big_c);
+        assert_eq!(big_a.gcd_lcm(&big_b).0, big_c);
     }
 
     check(10, 2, 2);
@@ -1001,6 +1039,7 @@ fn test_lcm() {
         let big_c: BigUint = FromPrimitive::from_usize(c).unwrap();
 
         assert_eq!(big_a.lcm(&big_b), big_c);
+        assert_eq!(big_a.gcd_lcm(&big_b).1, big_c);
     }
 
     check(0, 0, 0);
@@ -1010,6 +1049,30 @@ fn test_lcm() {
     check(8, 9, 72);
     check(11, 5, 55);
     check(99, 17, 1683);
+}
+
+#[test]
+fn test_next_multiple_of() {
+    assert_eq!(
+        BigUint::from(16u32).next_multiple_of(&BigUint::from(8u32)),
+        16u32
+    );
+    assert_eq!(
+        BigUint::from(23u32).next_multiple_of(&BigUint::from(8u32)),
+        24u32
+    );
+}
+
+#[test]
+fn test_prev_multiple_of() {
+    assert_eq!(
+        BigUint::from(16u32).prev_multiple_of(&BigUint::from(8u32)),
+        16u32
+    );
+    assert_eq!(
+        BigUint::from(23u32).prev_multiple_of(&BigUint::from(8u32)),
+        16u32
+    );
 }
 
 #[test]
