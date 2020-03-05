@@ -2975,15 +2975,51 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{ToBigInt, Sign};
+    /// use num_bigint::{BigInt, Sign};
+    /// use num_traits::Zero;
     ///
-    /// assert_eq!(ToBigInt::to_bigint(&1234).unwrap().sign(), Sign::Plus);
-    /// assert_eq!(ToBigInt::to_bigint(&-4321).unwrap().sign(), Sign::Minus);
-    /// assert_eq!(ToBigInt::to_bigint(&0).unwrap().sign(), Sign::NoSign);
+    /// assert_eq!(BigInt::from(1234).sign(), Sign::Plus);
+    /// assert_eq!(BigInt::from(-4321).sign(), Sign::Minus);
+    /// assert_eq!(BigInt::zero().sign(), Sign::NoSign);
     /// ```
     #[inline]
     pub fn sign(&self) -> Sign {
         self.sign
+    }
+
+    /// Returns the magnitude of the `BigInt` as a `BigUint`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::{BigInt, BigUint};
+    /// use num_traits::Zero;
+    ///
+    /// assert_eq!(BigInt::from(1234).magnitude(), &BigUint::from(1234u32));
+    /// assert_eq!(BigInt::from(-4321).magnitude(), &BigUint::from(4321u32));
+    /// assert!(BigInt::zero().magnitude().is_zero());
+    /// ```
+    #[inline]
+    pub fn magnitude(&self) -> &BigUint {
+        &self.data
+    }
+
+    /// Convert this `BigInt` into its `Sign` and `BigUint` magnitude,
+    /// the reverse of `BigInt::from_biguint`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::{BigInt, BigUint, Sign};
+    /// use num_traits::Zero;
+    ///
+    /// assert_eq!(BigInt::from(1234).into_parts(), (Sign::Plus, BigUint::from(1234u32)));
+    /// assert_eq!(BigInt::from(-4321).into_parts(), (Sign::Minus, BigUint::from(4321u32)));
+    /// assert_eq!(BigInt::zero().into_parts(), (Sign::NoSign, BigUint::zero()));
+    /// ```
+    #[inline]
+    pub fn into_parts(self) -> (Sign, BigUint) {
+        (self.sign, self.data)
     }
 
     /// Determines the fewest bits necessary to express the `BigInt`,
