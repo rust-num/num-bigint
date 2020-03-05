@@ -2199,7 +2199,7 @@ impl Integer for BigInt {
     #[inline]
     fn div_rem(&self, other: &BigInt) -> (BigInt, BigInt) {
         // r.sign == self.sign
-        let (d_ui, r_ui) = self.data.div_mod_floor(&other.data);
+        let (d_ui, r_ui) = self.data.div_rem(&other.data);
         let d = BigInt::from_biguint(self.sign, d_ui);
         let r = BigInt::from_biguint(self.sign, r_ui);
         if other.is_negative() {
@@ -2211,39 +2211,71 @@ impl Integer for BigInt {
 
     #[inline]
     fn div_floor(&self, other: &BigInt) -> BigInt {
-        let (d, _) = self.div_mod_floor(other);
-        d
+        let (d_ui, m) = self.data.div_mod_floor(&other.data);
+        let d = BigInt::from(d_ui);
+        match (self.sign, other.sign) {
+            (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => d,
+            (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => {
+                if m.is_zero() {
+                    -d
+                } else {
+                    -d - 1u32
+                }
+            }
+            (_, NoSign) => unreachable!(),
+        }
     }
 
     #[inline]
     fn mod_floor(&self, other: &BigInt) -> BigInt {
-        let (_, m) = self.div_mod_floor(other);
-        m
+        // m.sign == other.sign
+        let m_ui = self.data.mod_floor(&other.data);
+        let m = BigInt::from_biguint(other.sign, m_ui);
+        match (self.sign, other.sign) {
+            (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => m,
+            (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => {
+                if m.is_zero() {
+                    m
+                } else {
+                    other - m
+                }
+            }
+            (_, NoSign) => unreachable!(),
+        }
     }
 
     fn div_mod_floor(&self, other: &BigInt) -> (BigInt, BigInt) {
         // m.sign == other.sign
-        let (d_ui, m_ui) = self.data.div_rem(&other.data);
+        let (d_ui, m_ui) = self.data.div_mod_floor(&other.data);
         let d = BigInt::from(d_ui);
-        let m = BigInt::from(m_ui);
+        let m = BigInt::from_biguint(other.sign, m_ui);
         match (self.sign, other.sign) {
-            (_, NoSign) => panic!(),
-            (Plus, Plus) | (NoSign, Plus) => (d, m),
-            (Plus, Minus) | (NoSign, Minus) => {
+            (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => (d, m),
+            (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => {
                 if m.is_zero() {
-                    (-d, Zero::zero())
-                } else {
-                    (-d - 1u32, m + other)
-                }
-            }
-            (Minus, Plus) => {
-                if m.is_zero() {
-                    (-d, Zero::zero())
+                    (-d, m)
                 } else {
                     (-d - 1u32, other - m)
                 }
             }
-            (Minus, Minus) => (d, -m),
+            (_, NoSign) => unreachable!(),
+        }
+    }
+
+    #[inline]
+    fn div_ceil(&self, other: &Self) -> Self {
+        let (d_ui, m) = self.data.div_mod_floor(&other.data);
+        let d = BigInt::from(d_ui);
+        match (self.sign, other.sign) {
+            (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => -d,
+            (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => {
+                if m.is_zero() {
+                    d
+                } else {
+                    d + 1u32
+                }
+            }
+            (_, NoSign) => unreachable!(),
         }
     }
 
@@ -2259,6 +2291,26 @@ impl Integer for BigInt {
     #[inline]
     fn lcm(&self, other: &BigInt) -> BigInt {
         BigInt::from(self.data.lcm(&other.data))
+    }
+
+    /// Calculates the Greatest Common Divisor (GCD) and
+    /// Lowest Common Multiple (LCM) together.
+    #[inline]
+    fn gcd_lcm(&self, other: &BigInt) -> (BigInt, BigInt) {
+        let (gcd, lcm) = self.data.gcd_lcm(&other.data);
+        (BigInt::from(gcd), BigInt::from(lcm))
+    }
+
+    /// Greatest common divisor, least common multiple, and Bézout coefficients.
+    #[inline]
+    fn extended_gcd_lcm(&self, other: &BigInt) -> (num_integer::ExtendedGcd<BigInt>, BigInt) {
+        let egcd = self.extended_gcd(other);
+        let lcm = if egcd.gcd.is_zero() {
+            BigInt::zero()
+        } else {
+            BigInt::from(&self.data / &egcd.gcd.data * &other.data)
+        };
+        (egcd, lcm)
     }
 
     /// Deprecated, use `is_multiple_of` instead.
@@ -2283,6 +2335,22 @@ impl Integer for BigInt {
     #[inline]
     fn is_odd(&self) -> bool {
         self.data.is_odd()
+    }
+
+    /// Rounds up to nearest multiple of argument.
+    #[inline]
+    fn next_multiple_of(&self, other: &Self) -> Self {
+        let m = self.mod_floor(other);
+        if m.is_zero() {
+            self.clone()
+        } else {
+            self + (other - m)
+        }
+    }
+    /// Rounds down to nearest multiple of argument.
+    #[inline]
+    fn prev_multiple_of(&self, other: &Self) -> Self {
+        self - self.mod_floor(other)
     }
 }
 
@@ -2975,15 +3043,51 @@ impl BigInt {
     /// # Examples
     ///
     /// ```
-    /// use num_bigint::{ToBigInt, Sign};
+    /// use num_bigint::{BigInt, Sign};
+    /// use num_traits::Zero;
     ///
-    /// assert_eq!(ToBigInt::to_bigint(&1234).unwrap().sign(), Sign::Plus);
-    /// assert_eq!(ToBigInt::to_bigint(&-4321).unwrap().sign(), Sign::Minus);
-    /// assert_eq!(ToBigInt::to_bigint(&0).unwrap().sign(), Sign::NoSign);
+    /// assert_eq!(BigInt::from(1234).sign(), Sign::Plus);
+    /// assert_eq!(BigInt::from(-4321).sign(), Sign::Minus);
+    /// assert_eq!(BigInt::zero().sign(), Sign::NoSign);
     /// ```
     #[inline]
     pub fn sign(&self) -> Sign {
         self.sign
+    }
+
+    /// Returns the magnitude of the `BigInt` as a `BigUint`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::{BigInt, BigUint};
+    /// use num_traits::Zero;
+    ///
+    /// assert_eq!(BigInt::from(1234).magnitude(), &BigUint::from(1234u32));
+    /// assert_eq!(BigInt::from(-4321).magnitude(), &BigUint::from(4321u32));
+    /// assert!(BigInt::zero().magnitude().is_zero());
+    /// ```
+    #[inline]
+    pub fn magnitude(&self) -> &BigUint {
+        &self.data
+    }
+
+    /// Convert this `BigInt` into its `Sign` and `BigUint` magnitude,
+    /// the reverse of `BigInt::from_biguint`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::{BigInt, BigUint, Sign};
+    /// use num_traits::Zero;
+    ///
+    /// assert_eq!(BigInt::from(1234).into_parts(), (Sign::Plus, BigUint::from(1234u32)));
+    /// assert_eq!(BigInt::from(-4321).into_parts(), (Sign::Minus, BigUint::from(4321u32)));
+    /// assert_eq!(BigInt::zero().into_parts(), (Sign::NoSign, BigUint::zero()));
+    /// ```
+    #[inline]
+    pub fn into_parts(self) -> (Sign, BigUint) {
+        (self.sign, self.data)
     }
 
     /// Determines the fewest bits necessary to express the `BigInt`,

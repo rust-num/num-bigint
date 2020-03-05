@@ -1536,6 +1536,16 @@ impl Integer for BigUint {
         div_rem_ref(self, other)
     }
 
+    #[inline]
+    fn div_ceil(&self, other: &BigUint) -> BigUint {
+        let (d, m) = div_rem_ref(self, other);
+        if m.is_zero() {
+            d
+        } else {
+            d + 1u32
+        }
+    }
+
     /// Calculates the Greatest Common Divisor (GCD) of the number and `other`.
     ///
     /// The result is always positive.
@@ -1584,6 +1594,19 @@ impl Integer for BigUint {
         }
     }
 
+    /// Calculates the Greatest Common Divisor (GCD) and
+    /// Lowest Common Multiple (LCM) together.
+    #[inline]
+    fn gcd_lcm(&self, other: &Self) -> (Self, Self) {
+        let gcd = self.gcd(other);
+        let lcm = if gcd.is_zero() {
+            Self::zero()
+        } else {
+            self / &gcd * other
+        };
+        (gcd, lcm)
+    }
+
     /// Deprecated, use `is_multiple_of` instead.
     #[inline]
     fn divides(&self, other: &BigUint) -> bool {
@@ -1610,6 +1633,22 @@ impl Integer for BigUint {
     #[inline]
     fn is_odd(&self) -> bool {
         !self.is_even()
+    }
+
+    /// Rounds up to nearest multiple of argument.
+    #[inline]
+    fn next_multiple_of(&self, other: &Self) -> Self {
+        let m = self.mod_floor(other);
+        if m.is_zero() {
+            self.clone()
+        } else {
+            self + (other - m)
+        }
+    }
+    /// Rounds down to nearest multiple of argument.
+    #[inline]
+    fn prev_multiple_of(&self, other: &Self) -> Self {
+        self - self.mod_floor(other)
     }
 }
 
