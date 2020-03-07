@@ -1952,7 +1952,6 @@ impl_try_from_biguint!(u16, ToPrimitive::to_u16);
 impl_try_from_biguint!(u32, ToPrimitive::to_u32);
 impl_try_from_biguint!(u64, ToPrimitive::to_u64);
 impl_try_from_biguint!(usize, ToPrimitive::to_usize);
-#[cfg(has_i128)]
 impl_try_from_biguint!(u128, ToPrimitive::to_u128);
 
 impl_try_from_biguint!(i8, ToPrimitive::to_i8);
@@ -1960,7 +1959,6 @@ impl_try_from_biguint!(i16, ToPrimitive::to_i16);
 impl_try_from_biguint!(i32, ToPrimitive::to_i32);
 impl_try_from_biguint!(i64, ToPrimitive::to_i64);
 impl_try_from_biguint!(isize, ToPrimitive::to_isize);
-#[cfg(has_i128)]
 impl_try_from_biguint!(i128, ToPrimitive::to_i128);
 
 impl FromPrimitive for BigUint {
@@ -2087,7 +2085,6 @@ impl_biguint_try_from_int!(i16, FromPrimitive::from_i16);
 impl_biguint_try_from_int!(i32, FromPrimitive::from_i32);
 impl_biguint_try_from_int!(i64, FromPrimitive::from_i64);
 impl_biguint_try_from_int!(isize, FromPrimitive::from_isize);
-#[cfg(has_i128)]
 impl_biguint_try_from_int!(i128, FromPrimitive::from_i128);
 
 /// A generic trait for converting a value to a `BigUint`.

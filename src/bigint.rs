@@ -2465,7 +2465,6 @@ impl_try_from_bigint!(u16, ToPrimitive::to_u16);
 impl_try_from_bigint!(u32, ToPrimitive::to_u32);
 impl_try_from_bigint!(u64, ToPrimitive::to_u64);
 impl_try_from_bigint!(usize, ToPrimitive::to_usize);
-#[cfg(has_i128)]
 impl_try_from_bigint!(u128, ToPrimitive::to_u128);
 
 impl_try_from_bigint!(i8, ToPrimitive::to_i8);
@@ -2473,7 +2472,6 @@ impl_try_from_bigint!(i16, ToPrimitive::to_i16);
 impl_try_from_bigint!(i32, ToPrimitive::to_i32);
 impl_try_from_bigint!(i64, ToPrimitive::to_i64);
 impl_try_from_bigint!(isize, ToPrimitive::to_isize);
-#[cfg(has_i128)]
 impl_try_from_bigint!(i128, ToPrimitive::to_i128);
 
 impl FromPrimitive for BigInt {
