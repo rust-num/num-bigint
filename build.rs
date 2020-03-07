@@ -10,7 +10,9 @@ fn main() {
         autocfg::emit("u64_digit");
     }
     let ac = autocfg::new();
-    ac.emit_path_cfg("std::convert::TryFrom", "has_try_from");
+    if ac.probe_path("std::convert::TryFrom") || ac.probe_path("core::convert::TryFrom") {
+        autocfg::emit("has_try_from");
+    }
 
     autocfg::rerun_path("build.rs");
 

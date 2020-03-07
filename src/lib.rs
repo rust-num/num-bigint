@@ -187,16 +187,23 @@ impl Error for ParseBigIntError {
 pub struct TryFromBigIntError(());
 
 #[cfg(has_try_from)]
+impl TryFromBigIntError {
+    fn __description(&self) -> &str {
+        "out of range conversion regarding big integer attempted"
+    }
+}
+
+#[cfg(all(feature = "std", has_try_from))]
 impl std::error::Error for TryFromBigIntError {
     fn description(&self) -> &str {
-        "out of range conversion regarding big integer attempted"
+        self.__description()
     }
 }
 
 #[cfg(has_try_from)]
 impl fmt::Display for TryFromBigIntError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        std::error::Error::description(self).fmt(f)
+        self.__description().fmt(f)
     }
 }
 
