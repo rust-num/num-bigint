@@ -1944,6 +1944,16 @@ macro_rules! impl_try_from_biguint {
                 $to_ty(value).ok_or(TryFromBigIntError(()))
             }
         }
+
+        #[cfg(has_try_from)]
+        impl TryFrom<BigUint> for $T {
+            type Error = TryFromBigIntError;
+
+            #[inline]
+            fn try_from(value: BigUint) -> Result<$T, TryFromBigIntError> {
+                <$T>::try_from(&value)
+            }
+        }
     };
 }
 

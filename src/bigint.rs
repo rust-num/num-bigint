@@ -2457,6 +2457,16 @@ macro_rules! impl_try_from_bigint {
                 $to_ty(value).ok_or(TryFromBigIntError(()))
             }
         }
+
+        #[cfg(has_try_from)]
+        impl TryFrom<BigInt> for $T {
+            type Error = TryFromBigIntError;
+
+            #[inline]
+            fn try_from(value: BigInt) -> Result<$T, TryFromBigIntError> {
+                <$T>::try_from(&value)
+            }
+        }
     };
 }
 
@@ -2706,6 +2716,19 @@ impl TryFrom<&BigInt> for BigUint {
     #[inline]
     fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError> {
         value.to_biguint().ok_or(TryFromBigIntError(()))
+    }
+}
+
+#[cfg(has_try_from)]
+impl TryFrom<BigInt> for BigUint {
+    type Error = TryFromBigIntError;
+
+    #[inline]
+    fn try_from(value: BigInt) -> Result<BigUint, TryFromBigIntError> {
+        match value.into_parts() {
+            (Sign::Minus, _) => Err(TryFromBigIntError(())),
+            (_, biguint) => Ok(biguint),
+        }
     }
 }
 
