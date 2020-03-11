@@ -192,9 +192,7 @@ pub struct TryFromBigIntError<T> {
 #[cfg(has_try_from)]
 impl<T> TryFromBigIntError<T> {
     fn new(original: T) -> Self {
-        TryFromBigIntError {
-            original
-        }
+        TryFromBigIntError { original }
     }
 
     fn __description(&self) -> &str {
@@ -203,7 +201,7 @@ impl<T> TryFromBigIntError<T> {
 
     /// Extract the original value, if available. The value will be available
     /// if the type before conversion was either [`BigInt`] or [`BigUint`].
-    /// 
+    ///
     /// [`BigInt`]: struct.BigInt.html
     /// [`BigUint`]: struct.BigUint.html
     pub fn into_original(self) -> T {
@@ -212,7 +210,10 @@ impl<T> TryFromBigIntError<T> {
 }
 
 #[cfg(all(feature = "std", has_try_from))]
-impl<T> std::error::Error for TryFromBigIntError<T> where T: fmt::Debug {
+impl<T> std::error::Error for TryFromBigIntError<T>
+where
+    T: fmt::Debug,
+{
     fn description(&self) -> &str {
         self.__description()
     }
