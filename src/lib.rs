@@ -182,26 +182,44 @@ impl Error for ParseBigIntError {
     }
 }
 
+/// The error type returned when a checked conversion regarding big integer fails.
 #[cfg(has_try_from)]
-#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash)]
-pub struct TryFromBigIntError(());
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct TryFromBigIntError<T> {
+    original: T,
+}
 
 #[cfg(has_try_from)]
-impl TryFromBigIntError {
+impl<T> TryFromBigIntError<T> {
+    fn new(original: T) -> Self {
+        TryFromBigIntError {
+            original
+        }
+    }
+
     fn __description(&self) -> &str {
         "out of range conversion regarding big integer attempted"
+    }
+
+    /// Extract the original value, if available. The value will be available
+    /// if the type before conversion was either [`BigInt`] or [`BigUint`].
+    /// 
+    /// [`BigInt`]: struct.BigInt.html
+    /// [`BigUint`]: struct.BigUint.html
+    pub fn into_original(self) -> T {
+        self.original
     }
 }
 
 #[cfg(all(feature = "std", has_try_from))]
-impl std::error::Error for TryFromBigIntError {
+impl<T> std::error::Error for TryFromBigIntError<T> where T: fmt::Debug {
     fn description(&self) -> &str {
         self.__description()
     }
 }
 
 #[cfg(has_try_from)]
-impl fmt::Display for TryFromBigIntError {
+impl<T> fmt::Display for TryFromBigIntError<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.__description().fmt(f)
     }

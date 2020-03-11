@@ -1937,21 +1937,21 @@ macro_rules! impl_try_from_biguint {
     ($T:ty, $to_ty:path) => {
         #[cfg(has_try_from)]
         impl TryFrom<&BigUint> for $T {
-            type Error = TryFromBigIntError;
+            type Error = TryFromBigIntError<()>;
 
             #[inline]
-            fn try_from(value: &BigUint) -> Result<$T, TryFromBigIntError> {
-                $to_ty(value).ok_or(TryFromBigIntError(()))
+            fn try_from(value: &BigUint) -> Result<$T, TryFromBigIntError<()>> {
+                $to_ty(value).ok_or(TryFromBigIntError::new(()))
             }
         }
 
         #[cfg(has_try_from)]
         impl TryFrom<BigUint> for $T {
-            type Error = TryFromBigIntError;
+            type Error = TryFromBigIntError<BigUint>;
 
             #[inline]
-            fn try_from(value: BigUint) -> Result<$T, TryFromBigIntError> {
-                <$T>::try_from(&value)
+            fn try_from(value: BigUint) -> Result<$T, TryFromBigIntError<BigUint>> {
+                <$T>::try_from(&value).map_err(|_| TryFromBigIntError::new(value))
             }
         }
     };
@@ -2080,11 +2080,11 @@ macro_rules! impl_biguint_try_from_int {
     ($T:ty, $from_ty:path) => {
         #[cfg(has_try_from)]
         impl TryFrom<$T> for BigUint {
-            type Error = TryFromBigIntError;
+            type Error = TryFromBigIntError<()>;
 
             #[inline]
-            fn try_from(value: $T) -> Result<BigUint, TryFromBigIntError> {
-                $from_ty(value).ok_or(TryFromBigIntError(()))
+            fn try_from(value: $T) -> Result<BigUint, TryFromBigIntError<()>> {
+                $from_ty(value).ok_or(TryFromBigIntError::new(()))
             }
         }
     };

@@ -2450,21 +2450,21 @@ macro_rules! impl_try_from_bigint {
     ($T:ty, $to_ty:path) => {
         #[cfg(has_try_from)]
         impl TryFrom<&BigInt> for $T {
-            type Error = TryFromBigIntError;
+            type Error = TryFromBigIntError<()>;
 
             #[inline]
-            fn try_from(value: &BigInt) -> Result<$T, TryFromBigIntError> {
-                $to_ty(value).ok_or(TryFromBigIntError(()))
+            fn try_from(value: &BigInt) -> Result<$T, TryFromBigIntError<()>> {
+                $to_ty(value).ok_or(TryFromBigIntError::new(()))
             }
         }
 
         #[cfg(has_try_from)]
         impl TryFrom<BigInt> for $T {
-            type Error = TryFromBigIntError;
+            type Error = TryFromBigIntError<BigInt>;
 
             #[inline]
-            fn try_from(value: BigInt) -> Result<$T, TryFromBigIntError> {
-                <$T>::try_from(&value)
+            fn try_from(value: BigInt) -> Result<$T, TryFromBigIntError<BigInt>> {
+                <$T>::try_from(&value).map_err(|_| TryFromBigIntError::new(value))
             }
         }
     };
@@ -2711,23 +2711,25 @@ impl biguint::ToBigUint for BigInt {
 
 #[cfg(has_try_from)]
 impl TryFrom<&BigInt> for BigUint {
-    type Error = TryFromBigIntError;
+    type Error = TryFromBigIntError<()>;
 
     #[inline]
-    fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError> {
-        value.to_biguint().ok_or(TryFromBigIntError(()))
+    fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError<()>> {
+        value.to_biguint().ok_or_else(|| TryFromBigIntError::new(()))
     }
 }
 
 #[cfg(has_try_from)]
 impl TryFrom<BigInt> for BigUint {
-    type Error = TryFromBigIntError;
+    type Error = TryFromBigIntError<BigInt>;
 
     #[inline]
-    fn try_from(value: BigInt) -> Result<BigUint, TryFromBigIntError> {
-        match value.into_parts() {
-            (Sign::Minus, _) => Err(TryFromBigIntError(())),
-            (_, biguint) => Ok(biguint),
+    fn try_from(value: BigInt) -> Result<BigUint, TryFromBigIntError<BigInt>> {
+        if value.sign() == Sign::Minus {
+            Err(TryFromBigIntError::new(value))
+        } else {
+            let (_, biguint) = value.into_parts();
+            Ok(biguint)
         }
     }
 }
