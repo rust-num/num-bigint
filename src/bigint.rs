@@ -2715,9 +2715,7 @@ impl TryFrom<&BigInt> for BigUint {
 
     #[inline]
     fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError<()>> {
-        value
-            .to_biguint()
-            .ok_or_else(|| TryFromBigIntError::new(()))
+        value.to_biguint().ok_or(TryFromBigIntError::new(()))
     }
 }
 
@@ -2730,8 +2728,7 @@ impl TryFrom<BigInt> for BigUint {
         if value.sign() == Sign::Minus {
             Err(TryFromBigIntError::new(value))
         } else {
-            let (_, biguint) = value.into_parts();
-            Ok(biguint)
+            Ok(value.data)
         }
     }
 }
