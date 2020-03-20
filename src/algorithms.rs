@@ -3,7 +3,7 @@ use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 use core::iter::repeat;
 use core::mem;
-use num_traits::{One, Zero};
+use num_traits::{One, PrimInt, Zero};
 
 use crate::biguint::biguint_from_vec;
 use crate::biguint::BigUint;
@@ -720,34 +720,46 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
 /// Find last set bit
 /// fls(0) == 0, fls(u32::MAX) == 32
-pub(crate) fn fls<T: num_traits::PrimInt>(v: T) -> usize {
+pub(crate) fn fls<T: PrimInt>(v: T) -> usize {
     mem::size_of::<T>() * 8 - v.leading_zeros() as usize
 }
 
-pub(crate) fn ilog2<T: num_traits::PrimInt>(v: T) -> usize {
+pub(crate) fn ilog2<T: PrimInt>(v: T) -> usize {
     fls(v) - 1
 }
 
 #[inline]
-pub(crate) fn biguint_shl(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
-    let n_unit = bits / big_digit::BITS;
-    let mut data = match n_unit {
+pub(crate) fn biguint_shl<T: PrimInt>(n: Cow<'_, BigUint>, shift: T) -> BigUint {
+    if shift < T::zero() {
+        panic!("attempt to shift left with negative");
+    }
+    if n.is_zero() {
+        return n.into_owned();
+    }
+    let bits = T::from(big_digit::BITS).unwrap();
+    let digits = (shift / bits).to_usize().expect("capacity overflow");
+    let shift = (shift % bits).to_u8().unwrap();
+    biguint_shl2(n, digits, shift)
+}
+
+fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
+    let mut data = match digits {
         0 => n.into_owned().data,
         _ => {
-            let len = n_unit + n.data.len() + 1;
+            let len = digits.saturating_add(n.data.len() + 1);
             let mut data = Vec::with_capacity(len);
-            data.extend(repeat(0).take(n_unit));
-            data.extend(n.data.iter().cloned());
+            data.extend(repeat(0).take(digits));
+            data.extend(n.data.iter());
             data
         }
     };
 
-    let n_bits = bits % big_digit::BITS;
-    if n_bits > 0 {
+    if shift > 0 {
         let mut carry = 0;
-        for elem in data[n_unit..].iter_mut() {
-            let new_carry = *elem >> (big_digit::BITS - n_bits);
-            *elem = (*elem << n_bits) | carry;
+        let carry_shift = big_digit::BITS as u8 - shift;
+        for elem in data[digits..].iter_mut() {
+            let new_carry = *elem >> carry_shift;
+            *elem = (*elem << shift) | carry;
             carry = new_carry;
         }
         if carry != 0 {
@@ -759,25 +771,39 @@ pub(crate) fn biguint_shl(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
 }
 
 #[inline]
-pub(crate) fn biguint_shr(n: Cow<'_, BigUint>, bits: usize) -> BigUint {
-    let n_unit = bits / big_digit::BITS;
-    if n_unit >= n.data.len() {
-        return Zero::zero();
+pub(crate) fn biguint_shr<T: PrimInt>(n: Cow<'_, BigUint>, shift: T) -> BigUint {
+    if shift < T::zero() {
+        panic!("attempt to shift right with negative");
+    }
+    if n.is_zero() {
+        return n.into_owned();
+    }
+    let bits = T::from(big_digit::BITS).unwrap();
+    let digits = (shift / bits).to_usize().unwrap_or(core::usize::MAX);
+    let shift = (shift % bits).to_u8().unwrap();
+    biguint_shr2(n, digits, shift)
+}
+
+fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
+    if digits >= n.data.len() {
+        let mut n = n.into_owned();
+        n.set_zero();
+        return n;
     }
     let mut data = match n {
-        Cow::Borrowed(n) => n.data[n_unit..].to_vec(),
+        Cow::Borrowed(n) => n.data[digits..].to_vec(),
         Cow::Owned(mut n) => {
-            n.data.drain(..n_unit);
+            n.data.drain(..digits);
             n.data
         }
     };
 
-    let n_bits = bits % big_digit::BITS;
-    if n_bits > 0 {
+    if shift > 0 {
         let mut borrow = 0;
+        let borrow_shift = big_digit::BITS as u8 - shift;
         for elem in data.iter_mut().rev() {
-            let new_borrow = *elem << (big_digit::BITS - n_bits);
-            *elem = (*elem >> n_bits) | borrow;
+            let new_borrow = *elem << borrow_shift;
+            *elem = (*elem >> shift) | borrow;
             borrow = new_borrow;
         }
     }
