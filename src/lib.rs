@@ -258,11 +258,11 @@ mod big_digit {
 
     // `DoubleBigDigit` size dependent
     #[cfg(not(u64_digit))]
-    pub(crate) const BITS: usize = 32;
+    pub(crate) const BITS: u8 = 32;
     #[cfg(u64_digit)]
-    pub(crate) const BITS: usize = 64;
+    pub(crate) const BITS: u8 = 64;
 
-    pub(crate) const HALF_BITS: usize = BITS / 2;
+    pub(crate) const HALF_BITS: u8 = BITS / 2;
     pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
 
     const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;

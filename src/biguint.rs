@@ -216,14 +216,14 @@ impl FromStr for BigUint {
 
 // Convert from a power of two radix (bits == ilog2(radix)) where bits evenly divides
 // BigDigit::BITS
-fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
+fn from_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits == 0);
     debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
     let digits_per_big_digit = big_digit::BITS / bits;
 
     let data = v
-        .chunks(digits_per_big_digit)
+        .chunks(digits_per_big_digit.into())
         .map(|chunk| {
             chunk
                 .iter()
@@ -237,11 +237,15 @@ fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
 
 // Convert from a power of two radix (bits == ilog2(radix)) where bits doesn't evenly divide
 // BigDigit::BITS
-fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
+fn from_inexact_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits != 0);
     debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
-    let big_digits = (v.len() * bits + big_digit::BITS - 1) / big_digit::BITS;
+    let big_digits = (v.len() as u64)
+        .saturating_mul(bits.into())
+        .div_ceil(&big_digit::BITS.into())
+        .to_usize()
+        .unwrap_or(core::usize::MAX);
     let mut data = Vec::with_capacity(big_digits);
 
     let mut d = 0;
@@ -1587,7 +1591,7 @@ impl Integer for BigUint {
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
         #[inline]
-        fn twos(x: &BigUint) -> usize {
+        fn twos(x: &BigUint) -> u64 {
             x.trailing_zeros().unwrap_or(0)
         }
 
@@ -1688,7 +1692,7 @@ impl Integer for BigUint {
 }
 
 #[inline]
-fn fixpoint<F>(mut x: BigUint, max_bits: usize, f: F) -> BigUint
+fn fixpoint<F>(mut x: BigUint, max_bits: u64, f: F) -> BigUint
 where
     F: Fn(&BigUint) -> BigUint,
 {
@@ -1739,7 +1743,8 @@ impl Roots for BigUint {
 
         // The root of non-zero values less than 2ⁿ can only be 1.
         let bits = self.bits();
-        if bits <= n as usize {
+        let n64 = u64::from(n);
+        if bits <= n64 {
             return BigUint::one();
         }
 
@@ -1748,7 +1753,7 @@ impl Roots for BigUint {
             return x.nth_root(n).into();
         }
 
-        let max_bits = bits / n as usize + 1;
+        let max_bits = bits / n64 + 1;
 
         #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
@@ -1757,11 +1762,10 @@ impl Roots for BigUint {
         } else {
             // Try to guess by scaling down such that it does fit in `f64`.
             // With some (x * 2ⁿᵏ), its nth root ≈ (ⁿ√x * 2ᵏ)
-            let nsz = n as usize;
-            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
-            let root_scale = (extra_bits + (nsz - 1)) / nsz;
-            let scale = root_scale * nsz;
-            if scale < bits && bits - scale > nsz {
+            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
+            let root_scale = extra_bits.div_ceil(&n64);
+            let scale = root_scale * n64;
+            if scale < bits && bits - scale > n64 {
                 (self >> scale).nth_root(n) << root_scale
             } else {
                 BigUint::one() << max_bits
@@ -1792,7 +1796,7 @@ impl Roots for BigUint {
         }
 
         let bits = self.bits();
-        let max_bits = bits / 2 as usize + 1;
+        let max_bits = bits / 2 + 1;
 
         #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
@@ -1801,7 +1805,7 @@ impl Roots for BigUint {
         } else {
             // Try to guess by scaling down such that it does fit in `f64`.
             // With some (x * 2²ᵏ), its sqrt ≈ (√x * 2ᵏ)
-            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
             let root_scale = (extra_bits + 1) / 2;
             let scale = root_scale * 2;
             (self >> scale).sqrt() << root_scale
@@ -1828,7 +1832,7 @@ impl Roots for BigUint {
         }
 
         let bits = self.bits();
-        let max_bits = bits / 3 as usize + 1;
+        let max_bits = bits / 3 + 1;
 
         #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
@@ -1837,7 +1841,7 @@ impl Roots for BigUint {
         } else {
             // Try to guess by scaling down such that it does fit in `f64`.
             // With some (x * 2³ᵏ), its cbrt ≈ (∛x * 2ᵏ)
-            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
             let root_scale = (extra_bits + 2) / 3;
             let scale = root_scale * 3;
             (self >> scale).cbrt() << root_scale
@@ -1864,7 +1868,7 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
             let mut ret_bits = 0;
 
             for d in v.data.iter().rev() {
-                let digit_bits = (bits - 1) % big_digit::BITS + 1;
+                let digit_bits = (bits - 1) % u64::from(big_digit::BITS) + 1;
                 let bits_want = cmp::min(64 - ret_bits, digit_bits);
 
                 if bits_want != 64 {
@@ -1932,9 +1936,9 @@ impl ToPrimitive for BigUint {
     #[inline]
     fn to_f32(&self) -> Option<f32> {
         let mantissa = high_bits_to_u64(self);
-        let exponent = self.bits() - fls(mantissa);
+        let exponent = self.bits() - u64::from(fls(mantissa));
 
-        if exponent > f32::MAX_EXP as usize {
+        if exponent > f32::MAX_EXP as u64 {
             None
         } else {
             let ret = (mantissa as f32) * 2.0f32.powi(exponent as i32);
@@ -1949,9 +1953,9 @@ impl ToPrimitive for BigUint {
     #[inline]
     fn to_f64(&self) -> Option<f64> {
         let mantissa = high_bits_to_u64(self);
-        let exponent = self.bits() - fls(mantissa);
+        let exponent = self.bits() - u64::from(fls(mantissa));
 
-        if exponent > f64::MAX_EXP as usize {
+        if exponent > f64::MAX_EXP as u64 {
             None
         } else {
             let ret = (mantissa as f64) * 2.0f64.powi(exponent as i32);
@@ -2170,13 +2174,17 @@ impl_to_biguint!(f32, FromPrimitive::from_f32);
 impl_to_biguint!(f64, FromPrimitive::from_f64);
 
 // Extract bitwise digits that evenly divide BigDigit
-fn to_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
+fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     debug_assert!(!u.is_zero() && bits <= 8 && big_digit::BITS % bits == 0);
 
     let last_i = u.data.len() - 1;
     let mask: BigDigit = (1 << bits) - 1;
     let digits_per_big_digit = big_digit::BITS / bits;
-    let digits = (u.bits() + bits - 1) / bits;
+    let digits = u
+        .bits()
+        .div_ceil(&u64::from(bits))
+        .to_usize()
+        .unwrap_or(core::usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
     for mut r in u.data[..last_i].iter().cloned() {
@@ -2196,11 +2204,15 @@ fn to_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
 }
 
 // Extract bitwise digits that don't evenly divide BigDigit
-fn to_inexact_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
+fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     debug_assert!(!u.is_zero() && bits <= 8 && big_digit::BITS % bits != 0);
 
     let mask: BigDigit = (1 << bits) - 1;
-    let digits = (u.bits() + bits - 1) / bits;
+    let digits = u
+        .bits()
+        .div_ceil(&u64::from(bits))
+        .to_usize()
+        .unwrap_or(core::usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
     let mut r = 0;
@@ -2659,12 +2671,12 @@ impl BigUint {
 
     /// Determines the fewest bits necessary to express the `BigUint`.
     #[inline]
-    pub fn bits(&self) -> usize {
+    pub fn bits(&self) -> u64 {
         if self.is_zero() {
             return 0;
         }
-        let zeros = self.data.last().unwrap().leading_zeros();
-        self.data.len() * big_digit::BITS - zeros as usize
+        let zeros: u64 = self.data.last().unwrap().leading_zeros().into();
+        self.data.len() as u64 * u64::from(big_digit::BITS) - zeros
     }
 
     /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
@@ -2723,9 +2735,10 @@ impl BigUint {
 
     /// Returns the number of least-significant bits that are zero,
     /// or `None` if the entire number is zero.
-    pub fn trailing_zeros(&self) -> Option<usize> {
+    pub fn trailing_zeros(&self) -> Option<u64> {
         let i = self.data.iter().position(|&digit| digit != 0)?;
-        Some(i * big_digit::BITS + self.data[i].trailing_zeros() as usize)
+        let zeros: u64 = self.data[i].trailing_zeros().into();
+        Some(i as u64 * u64::from(big_digit::BITS) + zeros)
     }
 }
 
@@ -2745,7 +2758,7 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
     }
 
     let mut r = exp_data[i];
-    let mut b = 0usize;
+    let mut b = 0u8;
     while r.is_even() {
         base = &base * &base % modulus;
         r >>= 1;
@@ -2984,7 +2997,7 @@ impl<'de> serde::Deserialize<'de> for BigUint {
 
 /// Returns the greatest power of the radix for the given bit size
 #[inline]
-fn get_radix_base(radix: u32, bits: usize) -> (BigDigit, usize) {
+fn get_radix_base(radix: u32, bits: u8) -> (BigDigit, usize) {
     mod gen {
         include! { concat!(env!("OUT_DIR"), "/radix_bases.rs") }
     }

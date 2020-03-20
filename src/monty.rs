@@ -150,7 +150,7 @@ pub(crate) fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
 
     // rr = 2**(2*_W*len(m)) mod m
     let mut rr = BigUint::one();
-    rr = (rr.shl(2 * num_words * big_digit::BITS)) % m;
+    rr = (rr.shl(2 * num_words as u64 * u64::from(big_digit::BITS))) % m;
     if rr.data.len() < num_words {
         rr.data.resize(num_words, 0);
     }

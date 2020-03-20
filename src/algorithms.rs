@@ -521,7 +521,7 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         // Recomposition. The coefficients of the polynomial are now known.
         //
         // Evaluate at w(t) where t is our given base to get the result.
-        let bits = big_digit::BITS * i;
+        let bits = u64::from(big_digit::BITS) * i as u64;
         let result = r0
             + (comp1 << bits)
             + (comp2 << (2 * bits))
@@ -720,11 +720,11 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
 /// Find last set bit
 /// fls(0) == 0, fls(u32::MAX) == 32
-pub(crate) fn fls<T: PrimInt>(v: T) -> usize {
-    mem::size_of::<T>() * 8 - v.leading_zeros() as usize
+pub(crate) fn fls<T: PrimInt>(v: T) -> u8 {
+    mem::size_of::<T>() as u8 * 8 - v.leading_zeros() as u8
 }
 
-pub(crate) fn ilog2<T: PrimInt>(v: T) -> usize {
+pub(crate) fn ilog2<T: PrimInt>(v: T) -> u8 {
     fls(v) - 1
 }
 
