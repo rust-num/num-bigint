@@ -293,7 +293,7 @@ fn rand_131072(b: &mut Bencher) {
 
 #[bench]
 fn shl(b: &mut Bencher) {
-    let n = BigUint::one() << 1000;
+    let n = BigUint::one() << 1000u32;
     b.iter(|| {
         let mut m = n.clone();
         for i in 0..50 {
@@ -304,7 +304,7 @@ fn shl(b: &mut Bencher) {
 
 #[bench]
 fn shr(b: &mut Bencher) {
-    let n = BigUint::one() << 2000;
+    let n = BigUint::one() << 2000u32;
     b.iter(|| {
         let mut m = n.clone();
         for i in 0..50 {

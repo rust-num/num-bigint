@@ -671,12 +671,12 @@ fn test_convert_f32() {
     assert_eq!(BigUint::from_f32(f32::MIN), None);
 
     // largest BigUint that will round to a finite f32 value
-    let big_num = (BigUint::one() << 128) - BigUint::one() - (BigUint::one() << (128 - 25));
+    let big_num = (BigUint::one() << 128u8) - 1u8 - (BigUint::one() << (128u8 - 25));
     assert_eq!(big_num.to_f32(), Some(f32::MAX));
-    assert_eq!((big_num + BigUint::one()).to_f32(), None);
+    assert_eq!((big_num + 1u8).to_f32(), None);
 
-    assert_eq!(((BigUint::one() << 128) - BigUint::one()).to_f32(), None);
-    assert_eq!((BigUint::one() << 128).to_f32(), None);
+    assert_eq!(((BigUint::one() << 128u8) - 1u8).to_f32(), None);
+    assert_eq!((BigUint::one() << 128u8).to_f32(), None);
 }
 
 #[test]
@@ -744,12 +744,12 @@ fn test_convert_f64() {
     assert_eq!(BigUint::from_f64(f64::MIN), None);
 
     // largest BigUint that will round to a finite f64 value
-    let big_num = (BigUint::one() << 1024) - BigUint::one() - (BigUint::one() << (1024 - 54));
+    let big_num = (BigUint::one() << 1024u16) - 1u8 - (BigUint::one() << (1024u16 - 54));
     assert_eq!(big_num.to_f64(), Some(f64::MAX));
-    assert_eq!((big_num + BigUint::one()).to_f64(), None);
+    assert_eq!((big_num + 1u8).to_f64(), None);
 
-    assert_eq!(((BigInt::one() << 1024) - BigInt::one()).to_f64(), None);
-    assert_eq!((BigUint::one() << 1024).to_f64(), None);
+    assert_eq!(((BigUint::one() << 1024u16) - 1u8).to_f64(), None);
+    assert_eq!((BigUint::one() << 1024u16).to_f64(), None);
 }
 
 #[test]
@@ -1087,8 +1087,8 @@ fn test_is_even() {
     assert!(thousand.is_even());
     assert!(big.is_even());
     assert!(bigger.is_odd());
-    assert!((&one << 64).is_even());
-    assert!(((&one << 64) + one).is_odd());
+    assert!((&one << 64u8).is_even());
+    assert!(((&one << 64u8) + one).is_odd());
 }
 
 fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
@@ -1668,7 +1668,7 @@ fn test_bits() {
     let n: BigUint = BigUint::from_str_radix("4000000000", 16).unwrap();
     assert_eq!(n.bits(), 39);
     let one: BigUint = One::one();
-    assert_eq!((one << 426).bits(), 427);
+    assert_eq!((one << 426u16).bits(), 427);
 }
 
 #[test]
