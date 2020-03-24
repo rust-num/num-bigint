@@ -17,6 +17,7 @@ use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 // Generic functions for add/subtract/multiply with carry/borrow:
 
 // Add with carry:
+#[allow(unused)]
 #[inline]
 fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
     *acc += DoubleBigDigit::from(a);
@@ -27,6 +28,7 @@ fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
 }
 
 // Subtract with borrow:
+#[allow(unused)]
 #[inline]
 fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
     *acc += SignedDoubleBigDigit::from(a);
@@ -132,6 +134,41 @@ pub(crate) fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
 /// the addition first hoping that it will fit.
 ///
 /// The caller _must_ ensure that `a` is at least as long as `b`.
+#[cfg(all(u64_digit, target_arch = "x86_64"))] // only run on x86_64, when we have u64 digits
+#[inline]
+pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
+    debug_assert!(a.len() >= b.len());
+
+    use std::arch::x86_64::_addcarry_u64;
+
+    let mut carry = 0;
+    let (a_lo, a_hi) = a.split_at_mut(b.len());
+
+    for (a, b) in a_lo.iter_mut().zip(b) {
+        // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+        carry = unsafe { _addcarry_u64(carry, *a, *b, a) };
+    }
+
+    if carry != 0 {
+        for a in a_hi {
+            // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+            carry = unsafe { _addcarry_u64(carry, *a, 0, a) };
+            if carry == 0 {
+                break;
+            }
+        }
+    }
+
+    carry as BigDigit
+}
+
+/// Two argument addition of raw slices, `a += b`, returning the carry.
+///
+/// This is used when the data `Vec` might need to resize to push a non-zero carry, so we perform
+/// the addition first hoping that it will fit.
+///
+/// The caller _must_ ensure that `a` is at least as long as `b`.
+#[cfg(not(all(u64_digit, target_arch = "x86_64")))] // run if we aren't using 64-bit digits, or if we're not running on x86_64
 #[inline]
 pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     debug_assert!(a.len() >= b.len());
@@ -166,6 +203,39 @@ pub(crate) fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
     debug_assert!(carry == 0);
 }
 
+#[cfg(all(u64_digit, target_arch = "x86_64"))] // only run on x86_64, when we have u64 digits
+pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
+    use std::arch::x86_64::_subborrow_u64;
+
+    let mut borrow = 0;
+
+    let len = cmp::min(a.len(), b.len());
+    let (a_lo, a_hi) = a.split_at_mut(len);
+    let (b_lo, b_hi) = b.split_at(len);
+
+    for (a, b) in a_lo.iter_mut().zip(b_lo) {
+        // Safety: There are absolutely no safety concerns with calling _subborrow_u64, it's just unsafe for API consistency with other intrinsics
+        borrow = unsafe { _subborrow_u64(borrow, *a, *b, a) };
+    }
+
+    if borrow != 0 {
+        for a in a_hi {
+            // Safety: There are absolutely no safety concerns with calling _subborrow_u64, it's just unsafe for API consistency with other intrinsics
+            borrow = unsafe { _subborrow_u64(borrow, *a, 0, a) };
+            if borrow == 0 {
+                break;
+            }
+        }
+    }
+
+    // note: we're _required_ to fail on underflow
+    assert!(
+        borrow == 0 && b_hi.iter().all(|x| *x == 0),
+        "Cannot subtract b from a because b is larger than a."
+    );
+}
+
+#[cfg(not(all(u64_digit, target_arch = "x86_64")))] // run if we aren't using 64-bit digits, or if we're not running on x86_64
 pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
     let mut borrow = 0;
 
@@ -194,6 +264,24 @@ pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
 }
 
 // Only for the Sub impl. `a` and `b` must have same length.
+#[cfg(all(u64_digit, target_arch = "x86_64"))] // only run on x86_64, when we have u64 digits
+#[inline]
+pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
+    use std::arch::x86_64::_subborrow_u64;
+    debug_assert!(b.len() == a.len());
+
+    let mut borrow = 0;
+
+    for (ai, bi) in a.iter().zip(b) {
+        // Safety: There are absolutely no safety concerns with calling _subborrow_u64, it's just unsafe for API consistency with other intrinsics
+        borrow = unsafe { _subborrow_u64(borrow, *ai, *bi, bi) };
+    }
+
+    borrow as BigDigit
+}
+
+// Only for the Sub impl. `a` and `b` must have same length.
+#[cfg(not(all(u64_digit, target_arch = "x86_64")))] // run if we aren't using 64-bit digits, or if we're not running on x86_64
 #[inline]
 pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
     debug_assert!(b.len() == a.len());
@@ -259,11 +347,14 @@ pub(crate) fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
         *a = mac_with_carry(*a, b, c, &mut carry);
     }
 
-    let mut a = a_hi.iter_mut();
-    while carry != 0 {
-        let a = a.next().expect("carry overflow during multiplication!");
-        *a = adc(*a, 0, &mut carry);
-    }
+    let (carry_hi, carry_lo) = big_digit::from_doublebigdigit(carry);
+
+    let final_carry = if carry_hi == 0 {
+        __add2(a_hi, &[carry_lo])
+    } else {
+        __add2(a_hi, &[carry_hi, carry_lo])
+    };
+    assert_eq!(final_carry, 0, "carry overflow during multiplication!");
 }
 
 fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
