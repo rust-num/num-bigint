@@ -139,7 +139,7 @@ pub(crate) fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
 pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     debug_assert!(a.len() >= b.len());
 
-    use std::arch::x86_64::_addcarry_u64;
+    use core::arch::x86_64::_addcarry_u64;
 
     let mut carry = 0;
     let (a_lo, a_hi) = a.split_at_mut(b.len());
@@ -205,7 +205,7 @@ pub(crate) fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
 
 #[cfg(all(u64_digit, target_arch = "x86_64"))] // only run on x86_64, when we have u64 digits
 pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
-    use std::arch::x86_64::_subborrow_u64;
+    use core::arch::x86_64::_subborrow_u64;
 
     let mut borrow = 0;
 
@@ -267,7 +267,7 @@ pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
 #[cfg(all(u64_digit, target_arch = "x86_64"))] // only run on x86_64, when we have u64 digits
 #[inline]
 pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
-    use std::arch::x86_64::_subborrow_u64;
+    use core::arch::x86_64::_subborrow_u64;
     debug_assert!(b.len() == a.len());
 
     let mut borrow = 0;
