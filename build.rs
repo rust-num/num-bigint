@@ -6,12 +6,17 @@ use std::path::Path;
 
 fn main() {
     let pointer_width = env::var("CARGO_CFG_TARGET_POINTER_WIDTH");
-    if pointer_width.as_ref().map(String::as_str) == Ok("64") {
+    let u64_digit = pointer_width.as_ref().map(String::as_str) == Ok("64");
+    if u64_digit {
         autocfg::emit("u64_digit");
     }
     let ac = autocfg::new();
     if ac.probe_path("std::convert::TryFrom") || ac.probe_path("core::convert::TryFrom") {
         autocfg::emit("has_try_from");
+    }
+
+    if u64_digit && (ac.probe_path("core::arch::x86_64::_addcarry_u64") || ac.probe_path("std::arch::x86_64::_addcarry_u64")) {
+        autocfg::emit("use_addcarry_u64");
     }
 
     autocfg::rerun_path("build.rs");
