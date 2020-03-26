@@ -34,7 +34,7 @@ fn adc(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
 #[inline]
 fn adc(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
     let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    // Safety: There are absolutely no safety concerns with calling _addcarry_u32, it's just unsafe for API consistency with other intrinsics
     *acc = unsafe { core::arch::x86_64::_addcarry_u32(*acc, a, b, &mut out) };
     out
 }
@@ -54,7 +54,7 @@ fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
 #[inline]
 fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
     let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    // Safety: There are absolutely no safety concerns with calling _subborrow_u64, it's just unsafe for API consistency with other intrinsics
     *acc = unsafe { core::arch::x86_64::_subborrow_u64(*acc, a, b, &mut out) };
     out
 }
@@ -62,7 +62,7 @@ fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
 #[inline]
 fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
     let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    // Safety: There are absolutely no safety concerns with calling _subborrow_u32, it's just unsafe for API consistency with other intrinsics
     *acc = unsafe { core::arch::x86_64::_subborrow_u32(*acc, a, b, &mut out) };
     out
 }
