@@ -14,40 +14,67 @@ use crate::bigint::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 
-#[cfg(not(use_addcarry_u64))] // only needed for the fallback implementation of `sbb`
+// only needed for the fallback implementation of `sbb`
+#[cfg(not(any(use_addcarry_u64, use_addcarry_u32)))]
 use crate::big_digit::SignedDoubleBigDigit;
 
-// Generic functions for add/subtract/multiply with carry/borrow:
+// Generic functions for add/subtract/multiply with carry/borrow. These are specialized for some platforms to take advantage of intrinsics etc
 
 // Add with carry:
 #[cfg(use_addcarry_u64)]
 #[inline]
-fn adc(carry: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
-    unsafe { core::arch::x86_64::_addcarry_u64(carry, a, b, out) }
+fn adc(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
+    let mut out = 0;
+    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    *acc = unsafe { core::arch::x86_64::_addcarry_u64(*acc, a, b, &mut out) };
+    out
 }
 
-#[cfg(not(use_addcarry_u64))] // fallback for environments where we don't have an addcarry intrinsic
+#[cfg(use_addcarry_u32)]
 #[inline]
-fn adc(mut carry: DoubleBigDigit, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> DoubleBigDigit {
-    carry += DoubleBigDigit::from(a);
-    carry += DoubleBigDigit::from(b);
-    *out = carry as BigDigit;
-    carry >> big_digit::BITS
+fn adc(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
+    let mut out = 0;
+    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    *acc = unsafe { core::arch::x86_64::_addcarry_u32(*acc, a, b, &mut out) };
+    out
+}
+
+#[cfg(not(any(use_addcarry_u64, use_addcarry_u32)))] // fallback for environments where we don't have an addcarry intrinsic
+#[inline]
+fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += DoubleBigDigit::from(a);
+    *acc += DoubleBigDigit::from(b);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
+    lo
 }
 
 // Subtract with borrow:
 #[cfg(use_addcarry_u64)]
 #[inline]
-fn sbb(carry: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
-    unsafe { core::arch::x86_64::_subborrow_u64(carry, a, b, out) }
+fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
+    let mut out = 0;
+    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    *acc = unsafe { core::arch::x86_64::_subborrow_u64(*acc, a, b, &mut out) };
+    out
 }
-#[cfg(not(use_addcarry_u64))] // fallback for environments where we don't have an addcarry intrinsic
+#[cfg(use_addcarry_u32)]
 #[inline]
-fn sbb(mut carry: SignedDoubleBigDigit, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> SignedDoubleBigDigit {
-    carry += SignedDoubleBigDigit::from(a);
-    carry -= SignedDoubleBigDigit::from(b);
-    *out = carry as BigDigit;
-    carry >> big_digit::BITS
+fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
+    let mut out = 0;
+    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
+    *acc = unsafe { core::arch::x86_64::_subborrow_u32(*acc, a, b, &mut out) };
+    out
+}
+
+#[cfg(not(any(use_addcarry_u64, use_addcarry_u32)))] // fallback for environments where we don't have an addcarry intrinsic
+#[inline]
+fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
+    *acc += SignedDoubleBigDigit::from(a);
+    *acc -= SignedDoubleBigDigit::from(b);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
+    lo
 }
 
 #[inline]
@@ -154,12 +181,12 @@ pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     let (a_lo, a_hi) = a.split_at_mut(b.len());
 
     for (a, b) in a_lo.iter_mut().zip(b) {
-        carry = adc(carry, *a, *b, a);
+        *a = adc(*a, *b, &mut carry);
     }
 
     if carry != 0 {
         for a in a_hi {
-            carry = adc(carry, *a, 0, a);
+            *a = adc(*a, 0, &mut carry);
             if carry == 0 {
                 break;
             }
@@ -188,12 +215,12 @@ pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
     let (b_lo, b_hi) = b.split_at(len);
 
     for (a, b) in a_lo.iter_mut().zip(b_lo) {
-        borrow = sbb(borrow, *a, *b, a);
+        *a = sbb(*a, *b, &mut borrow);
     }
 
     if borrow != 0 {
         for a in a_hi {
-            borrow = sbb(borrow, *a, 0, a);
+            *a = sbb(*a, 0, &mut borrow);
             if borrow == 0 {
                 break;
             }
@@ -215,7 +242,7 @@ pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
     let mut borrow = 0;
 
     for (ai, bi) in a.iter().zip(b) {
-        borrow = sbb(borrow, *ai, *bi, bi);
+        *bi = sbb(*ai, *bi, &mut borrow);
     }
 
     borrow as BigDigit

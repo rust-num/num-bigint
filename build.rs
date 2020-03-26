@@ -15,8 +15,16 @@ fn main() {
         autocfg::emit("has_try_from");
     }
 
-    if u64_digit && (ac.probe_path("core::arch::x86_64::_addcarry_u64") || ac.probe_path("std::arch::x86_64::_addcarry_u64")) {
+    if u64_digit
+        && (ac.probe_path("core::arch::x86_64::_addcarry_u64")
+            || ac.probe_path("std::arch::x86_64::_addcarry_u64"))
+    {
         autocfg::emit("use_addcarry_u64");
+    } else if !u64_digit
+        && (ac.probe_path("core::arch::x86_64::_addcarry_u32")
+            || ac.probe_path("core::arch::x86::_addcarry_u32"))
+    {
+        autocfg::emit("use_addcarry_u32");
     }
 
     autocfg::rerun_path("build.rs");
