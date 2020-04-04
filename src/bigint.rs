@@ -25,7 +25,7 @@ use serde;
 
 use num_integer::{Integer, Roots};
 use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, PrimInt, Signed,
     ToPrimitive, Zero,
 };
 
@@ -779,69 +779,105 @@ impl Num for BigInt {
     }
 }
 
-impl Shl<usize> for BigInt {
-    type Output = BigInt;
+macro_rules! impl_shift {
+    (@ref $Shx:ident :: $shx:ident, $ShxAssign:ident :: $shx_assign:ident, $rhs:ty) => {
+        impl<'b> $Shx<&'b $rhs> for BigInt {
+            type Output = BigInt;
 
-    #[inline]
-    fn shl(mut self, rhs: usize) -> BigInt {
-        self <<= rhs;
-        self
-    }
+            #[inline]
+            fn $shx(self, rhs: &'b $rhs) -> BigInt {
+                $Shx::$shx(self, *rhs)
+            }
+        }
+        impl<'a, 'b> $Shx<&'b $rhs> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn $shx(self, rhs: &'b $rhs) -> BigInt {
+                $Shx::$shx(self, *rhs)
+            }
+        }
+        impl<'b> $ShxAssign<&'b $rhs> for BigInt {
+            #[inline]
+            fn $shx_assign(&mut self, rhs: &'b $rhs) {
+                $ShxAssign::$shx_assign(self, *rhs);
+            }
+        }
+    };
+    ($($rhs:ty),+) => {$(
+        impl Shl<$rhs> for BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn shl(self, rhs: $rhs) -> BigInt {
+                BigInt::from_biguint(self.sign, self.data << rhs)
+            }
+        }
+        impl<'a> Shl<$rhs> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn shl(self, rhs: $rhs) -> BigInt {
+                BigInt::from_biguint(self.sign, &self.data << rhs)
+            }
+        }
+        impl ShlAssign<$rhs> for BigInt {
+            #[inline]
+            fn shl_assign(&mut self, rhs: $rhs) {
+                self.data <<= rhs
+            }
+        }
+        impl_shift! { @ref Shl::shl, ShlAssign::shl_assign, $rhs }
+
+        impl Shr<$rhs> for BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn shr(self, rhs: $rhs) -> BigInt {
+                let round_down = shr_round_down(&self, rhs);
+                let data = self.data >> rhs;
+                let data = if round_down { data + 1u8 } else { data };
+                BigInt::from_biguint(self.sign, data)
+            }
+        }
+        impl<'a> Shr<$rhs> for &'a BigInt {
+            type Output = BigInt;
+
+            #[inline]
+            fn shr(self, rhs: $rhs) -> BigInt {
+                let round_down = shr_round_down(self, rhs);
+                let data = &self.data >> rhs;
+                let data = if round_down { data + 1u8 } else { data };
+                BigInt::from_biguint(self.sign, data)
+            }
+        }
+        impl ShrAssign<$rhs> for BigInt {
+            #[inline]
+            fn shr_assign(&mut self, rhs: $rhs) {
+                let round_down = shr_round_down(self, rhs);
+                self.data >>= rhs;
+                if round_down {
+                    self.data += 1u8;
+                } else if self.data.is_zero() {
+                    self.sign = NoSign;
+                }
+            }
+        }
+        impl_shift! { @ref Shr::shr, ShrAssign::shr_assign, $rhs }
+    )*};
 }
 
-impl<'a> Shl<usize> for &'a BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn shl(self, rhs: usize) -> BigInt {
-        BigInt::from_biguint(self.sign, &self.data << rhs)
-    }
-}
-
-impl ShlAssign<usize> for BigInt {
-    #[inline]
-    fn shl_assign(&mut self, rhs: usize) {
-        self.data <<= rhs;
-    }
-}
+impl_shift! { u8, u16, u32, u64, u128, usize }
+impl_shift! { i8, i16, i32, i64, i128, isize }
 
 // Negative values need a rounding adjustment if there are any ones in the
 // bits that are getting shifted out.
-fn shr_round_down(i: &BigInt, rhs: usize) -> bool {
-    i.is_negative() && i.trailing_zeros().map(|n| n < rhs).unwrap_or(false)
-}
-
-impl Shr<usize> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn shr(mut self, rhs: usize) -> BigInt {
-        self >>= rhs;
-        self
-    }
-}
-
-impl<'a> Shr<usize> for &'a BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn shr(self, rhs: usize) -> BigInt {
-        let round_down = shr_round_down(self, rhs);
-        let data = &self.data >> rhs;
-        BigInt::from_biguint(self.sign, if round_down { data + 1u8 } else { data })
-    }
-}
-
-impl ShrAssign<usize> for BigInt {
-    #[inline]
-    fn shr_assign(&mut self, rhs: usize) {
-        let round_down = shr_round_down(self, rhs);
-        self.data >>= rhs;
-        if round_down {
-            self.data += 1u8;
-        } else if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+fn shr_round_down<T: PrimInt>(i: &BigInt, shift: T) -> bool {
+    if i.is_negative() {
+        let zeros = i.trailing_zeros().expect("negative values are non-zero");
+        shift > T::zero() && shift.to_usize().map(|shift| zeros < shift).unwrap_or(true)
+    } else {
+        false
     }
 }
 

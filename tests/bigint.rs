@@ -448,16 +448,16 @@ fn test_convert_f32() {
     assert_eq!(BigInt::from_f32(f32::NEG_INFINITY), None);
 
     // largest BigInt that will round to a finite f32 value
-    let big_num = (BigInt::one() << 128) - BigInt::one() - (BigInt::one() << (128 - 25));
+    let big_num = (BigInt::one() << 128u8) - 1u8 - (BigInt::one() << (128u8 - 25));
     assert_eq!(big_num.to_f32(), Some(f32::MAX));
-    assert_eq!((&big_num + BigInt::one()).to_f32(), None);
+    assert_eq!((&big_num + 1u8).to_f32(), None);
     assert_eq!((-&big_num).to_f32(), Some(f32::MIN));
-    assert_eq!(((-&big_num) - BigInt::one()).to_f32(), None);
+    assert_eq!(((-&big_num) - 1u8).to_f32(), None);
 
-    assert_eq!(((BigInt::one() << 128) - BigInt::one()).to_f32(), None);
-    assert_eq!((BigInt::one() << 128).to_f32(), None);
-    assert_eq!((-((BigInt::one() << 128) - BigInt::one())).to_f32(), None);
-    assert_eq!((-(BigInt::one() << 128)).to_f32(), None);
+    assert_eq!(((BigInt::one() << 128u8) - 1u8).to_f32(), None);
+    assert_eq!((BigInt::one() << 128u8).to_f32(), None);
+    assert_eq!((-((BigInt::one() << 128u8) - 1u8)).to_f32(), None);
+    assert_eq!((-(BigInt::one() << 128u8)).to_f32(), None);
 }
 
 #[test]
@@ -529,16 +529,16 @@ fn test_convert_f64() {
     assert_eq!(BigInt::from_f64(f64::NEG_INFINITY), None);
 
     // largest BigInt that will round to a finite f64 value
-    let big_num = (BigInt::one() << 1024) - BigInt::one() - (BigInt::one() << (1024 - 54));
+    let big_num = (BigInt::one() << 1024u16) - 1u8 - (BigInt::one() << (1024u16 - 54));
     assert_eq!(big_num.to_f64(), Some(f64::MAX));
-    assert_eq!((&big_num + BigInt::one()).to_f64(), None);
+    assert_eq!((&big_num + 1u8).to_f64(), None);
     assert_eq!((-&big_num).to_f64(), Some(f64::MIN));
-    assert_eq!(((-&big_num) - BigInt::one()).to_f64(), None);
+    assert_eq!(((-&big_num) - 1u8).to_f64(), None);
 
-    assert_eq!(((BigInt::one() << 1024) - BigInt::one()).to_f64(), None);
-    assert_eq!((BigInt::one() << 1024).to_f64(), None);
-    assert_eq!((-((BigInt::one() << 1024) - BigInt::one())).to_f64(), None);
-    assert_eq!((-(BigInt::one() << 1024)).to_f64(), None);
+    assert_eq!(((BigInt::one() << 1024u16) - 1u8).to_f64(), None);
+    assert_eq!((BigInt::one() << 1024u16).to_f64(), None);
+    assert_eq!((-((BigInt::one() << 1024u16) - 1u8)).to_f64(), None);
+    assert_eq!((-(BigInt::one() << 1024u16)).to_f64(), None);
 }
 
 #[test]
