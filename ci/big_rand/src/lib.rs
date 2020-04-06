@@ -102,7 +102,7 @@ mod biguint {
         let mut rng = R::from_seed(seed);
         for (i, &s) in expected.iter().enumerate() {
             let n: BigUint = s.parse().unwrap();
-            let r = rng.gen_biguint((1 << i) + i);
+            let r = rng.gen_biguint((1 << i) + i as u64);
             assert_eq!(n, r);
         }
     }
@@ -302,7 +302,7 @@ mod bigint {
         let mut rng = R::from_seed(seed);
         for (i, &s) in expected.iter().enumerate() {
             let n: BigInt = s.parse().unwrap();
-            let r = rng.gen_bigint((1 << i) + i);
+            let r = rng.gen_bigint((1 << i) + i as u64);
             assert_eq!(n, r);
         }
     }
