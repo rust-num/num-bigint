@@ -550,7 +550,7 @@ pub(crate) fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
 
 pub(crate) fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     if d.is_zero() {
-        panic!()
+        panic!("attempt to divide by zero")
     }
     if u.is_zero() {
         return (Zero::zero(), Zero::zero());
@@ -597,7 +597,7 @@ pub(crate) fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
 
 pub(crate) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     if d.is_zero() {
-        panic!()
+        panic!("attempt to divide by zero")
     }
     if u.is_zero() {
         return (Zero::zero(), Zero::zero());
