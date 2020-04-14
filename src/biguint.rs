@@ -12,7 +12,7 @@ use core::iter::{Product, Sum};
 use core::mem;
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Mul, MulAssign, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use core::str::{self, FromStr};
 use core::{f32, f64};
@@ -1492,24 +1492,6 @@ impl Rem<BigUint> for u128 {
     fn rem(mut self, other: BigUint) -> BigUint {
         self %= other;
         From::from(self)
-    }
-}
-
-impl Neg for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn neg(self) -> BigUint {
-        panic!()
-    }
-}
-
-impl<'a> Neg for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn neg(self) -> BigUint {
-        panic!()
     }
 }
 
