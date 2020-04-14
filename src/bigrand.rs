@@ -11,17 +11,17 @@ use crate::bigint::{into_magnitude, magnitude};
 use crate::biguint::biguint_from_vec;
 
 use num_integer::Integer;
-use num_traits::Zero;
+use num_traits::{ToPrimitive, Zero};
 
 /// A trait for sampling random big integers.
 ///
 /// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 pub trait RandBigInt {
     /// Generate a random `BigUint` of the given bit size.
-    fn gen_biguint(&mut self, bit_size: usize) -> BigUint;
+    fn gen_biguint(&mut self, bit_size: u64) -> BigUint;
 
     /// Generate a random BigInt of the given bit size.
-    fn gen_bigint(&mut self, bit_size: usize) -> BigInt;
+    fn gen_bigint(&mut self, bit_size: u64) -> BigInt;
 
     /// Generate a random `BigUint` less than the given bound. Fails
     /// when the bound is zero.
@@ -38,7 +38,7 @@ pub trait RandBigInt {
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
 }
 
-fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: usize) {
+fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
     // `fill` is faster than many `gen::<u32>` calls
     rng.fill(data);
     if rem > 0 {
@@ -49,25 +49,31 @@ fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: usize) {
 
 impl<R: Rng + ?Sized> RandBigInt for R {
     #[cfg(not(u64_digit))]
-    fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
+    fn gen_biguint(&mut self, bit_size: u64) -> BigUint {
         let (digits, rem) = bit_size.div_rem(&32);
-        let mut data = vec![0u32; digits + (rem > 0) as usize];
+        let len = (digits + (rem > 0) as u64)
+            .to_usize()
+            .expect("capacity overflow");
+        let mut data = vec![0u32; len];
         gen_bits(self, &mut data, rem);
         biguint_from_vec(data)
     }
 
     #[cfg(u64_digit)]
-    fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
+    fn gen_biguint(&mut self, bit_size: u64) -> BigUint {
         use core::slice;
 
         let (digits, rem) = bit_size.div_rem(&32);
+        let len = (digits + (rem > 0) as u64)
+            .to_usize()
+            .expect("capacity overflow");
         let native_digits = bit_size.div_ceil(&64);
-        let mut data = vec![0u64; native_digits];
+        let native_len = native_digits.to_usize().expect("capacity overflow");
+        let mut data = vec![0u64; native_len];
         unsafe {
             // Generate bits in a `&mut [u32]` slice for value stability
             let ptr = data.as_mut_ptr() as *mut u32;
-            let len = digits + (rem > 0) as usize;
-            debug_assert!(native_digits * 2 >= len);
+            debug_assert!(native_len * 2 >= len);
             let data = slice::from_raw_parts_mut(ptr, len);
             gen_bits(self, data, rem);
         }
@@ -79,7 +85,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         biguint_from_vec(data)
     }
 
-    fn gen_bigint(&mut self, bit_size: usize) -> BigInt {
+    fn gen_bigint(&mut self, bit_size: u64) -> BigInt {
         loop {
             // Generate a random BigUint...
             let biguint = self.gen_biguint(bit_size);
@@ -253,12 +259,12 @@ impl SampleUniform for BigInt {
 /// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 #[derive(Clone, Copy, Debug)]
 pub struct RandomBits {
-    bits: usize,
+    bits: u64,
 }
 
 impl RandomBits {
     #[inline]
-    pub fn new(bits: usize) -> RandomBits {
+    pub fn new(bits: u64) -> RandomBits {
         RandomBits { bits }
     }
 }

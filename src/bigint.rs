@@ -875,7 +875,7 @@ impl_shift! { i8, i16, i32, i64, i128, isize }
 fn shr_round_down<T: PrimInt>(i: &BigInt, shift: T) -> bool {
     if i.is_negative() {
         let zeros = i.trailing_zeros().expect("negative values are non-zero");
-        shift > T::zero() && shift.to_usize().map(|shift| zeros < shift).unwrap_or(true)
+        shift > T::zero() && shift.to_u64().map(|shift| zeros < shift).unwrap_or(true)
     } else {
         false
     }
@@ -3195,7 +3195,7 @@ impl BigInt {
     /// Determines the fewest bits necessary to express the `BigInt`,
     /// not including the sign.
     #[inline]
-    pub fn bits(&self) -> usize {
+    pub fn bits(&self) -> u64 {
         self.data.bits()
     }
 
@@ -3290,7 +3290,7 @@ impl BigInt {
 
     /// Returns the number of least-significant bits that are zero,
     /// or `None` if the entire number is zero.
-    pub fn trailing_zeros(&self) -> Option<usize> {
+    pub fn trailing_zeros(&self) -> Option<u64> {
         self.data.trailing_zeros()
     }
 }

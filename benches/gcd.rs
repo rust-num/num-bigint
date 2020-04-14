@@ -18,7 +18,7 @@ fn get_rng() -> StdRng {
     SeedableRng::from_seed(seed)
 }
 
-fn bench(b: &mut Bencher, bits: usize, gcd: fn(&BigUint, &BigUint) -> BigUint) {
+fn bench(b: &mut Bencher, bits: u64, gcd: fn(&BigUint, &BigUint) -> BigUint) {
     let mut rng = get_rng();
     let x = rng.gen_biguint(bits);
     let y = rng.gen_biguint(bits);

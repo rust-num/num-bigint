@@ -18,7 +18,7 @@ fn get_rng() -> StdRng {
     SeedableRng::from_seed(seed)
 }
 
-fn multiply_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
+fn multiply_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
     let x = rng.gen_bigint(xbits);
     let y = rng.gen_bigint(ybits);
@@ -26,7 +26,7 @@ fn multiply_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
     b.iter(|| &x * &y);
 }
 
-fn divide_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
+fn divide_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
     let x = rng.gen_bigint(xbits);
     let y = rng.gen_bigint(ybits);
@@ -34,7 +34,7 @@ fn divide_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
     b.iter(|| &x / &y);
 }
 
-fn remainder_bench(b: &mut Bencher, xbits: usize, ybits: usize) {
+fn remainder_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
     let x = rng.gen_bigint(xbits);
     let y = rng.gen_bigint(ybits);
@@ -245,7 +245,7 @@ fn from_str_radix_36(b: &mut Bencher) {
     from_str_radix_bench(b, 36);
 }
 
-fn rand_bench(b: &mut Bencher, bits: usize) {
+fn rand_bench(b: &mut Bencher, bits: u64) {
     let mut rng = get_rng();
 
     b.iter(|| rng.gen_bigint(bits));
