@@ -3250,7 +3250,10 @@ impl BigInt {
             !exponent.is_negative(),
             "negative exponentiation is not supported!"
         );
-        assert!(!modulus.is_zero(), "divide by zero!");
+        assert!(
+            !modulus.is_zero(),
+            "attempt to calculate with zero modulus!"
+        );
 
         let result = self.data.modpow(&exponent.data, &modulus.data);
         if result.is_zero() {

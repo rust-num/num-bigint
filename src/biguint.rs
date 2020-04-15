@@ -1248,7 +1248,7 @@ impl Div<BigUint> for u32 {
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self as BigDigit / other.data[0]),
             _ => Zero::zero(),
         }
@@ -1280,7 +1280,7 @@ impl Div<BigUint> for u64 {
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self / u64::from(other.data[0])),
             2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             _ => Zero::zero(),
@@ -1291,7 +1291,7 @@ impl Div<BigUint> for u64 {
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self / other.data[0]),
             _ => Zero::zero(),
         }
@@ -1322,7 +1322,7 @@ impl Div<BigUint> for u128 {
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self / u128::from(other.data[0])),
             2 => From::from(
                 self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
@@ -1339,7 +1339,7 @@ impl Div<BigUint> for u128 {
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self / other.data[0] as u128),
             2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             _ => Zero::zero(),
@@ -1424,7 +1424,7 @@ macro_rules! impl_rem_assign_scalar {
             fn rem_assign(&mut self, other: &BigUint) {
                 *self = match other.$to_scalar() {
                     None => *self,
-                    Some(0) => panic!(),
+                    Some(0) => panic!("attempt to divide by zero"),
                     Some(v) => *self % v
                 };
             }
@@ -2686,7 +2686,10 @@ impl BigUint {
     ///
     /// Panics if the modulus is zero.
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
-        assert!(!modulus.is_zero(), "divide by zero!");
+        assert!(
+            !modulus.is_zero(),
+            "attempt to calculate with zero modulus!"
+        );
 
         if modulus.is_odd() {
             // For an odd modulus, we can use Montgomery multiplication in base 2^32.
@@ -2725,7 +2728,10 @@ impl BigUint {
 }
 
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
-    assert!(!modulus.is_zero(), "divide by zero!");
+    assert!(
+        !modulus.is_zero(),
+        "attempt to calculate with zero modulus!"
+    );
 
     let i = match exp_data.iter().position(|&r| r != 0) {
         None => return BigUint::one(),
