@@ -1,60 +1,81 @@
 #!/bin/bash
 
-set -ex
+set -e
 
-echo Testing num-bigint on rustc ${TRAVIS_RUST_VERSION}
+CRATE=num-bigint
+MSRV=1.31
 
-case "$TRAVIS_RUST_VERSION" in
-  1.31.*) STD_FEATURES="serde" ;;
-  1.3[23].*) STD_FEATURES="serde rand" ;;
-  *) STD_FEATURES="serde rand quickcheck" ;;
-esac
+get_rust_version() {
+  local array=($(rustc --version));
+  echo "${array[1]}";
+  return 0;
+}
+RUST_VERSION=$(get_rust_version)
 
-case "$TRAVIS_RUST_VERSION" in
-  1.3[1-5].*) ;;
-  *) NO_STD_FEATURES="serde rand" ;;
-esac
+check_version() {
+  IFS=. read -ra rust <<< "$RUST_VERSION"
+  IFS=. read -ra want <<< "$1"
+  [[ "${rust[0]}" -gt "${want[0]}" ||
+   ( "${rust[0]}" -eq "${want[0]}" &&
+     "${rust[1]}" -ge "${want[1]}" )
+  ]]
+}
 
-# num-bigint should build and test everywhere.
-cargo build --verbose
-cargo test --verbose
+echo "Testing $CRATE on rustc $RUST_VERSION"
+if ! check_version $MSRV ; then
+  echo "The minimum for $CRATE is rustc $MSRV"
+  exit 1
+fi
 
-# It should build with minimal features too.
-cargo build --no-default-features --features="std"
-cargo test --no-default-features --features="std"
+STD_FEATURES=(serde)
+check_version 1.32 && STD_FEATURES+=(rand)
+check_version 1.34 && STD_FEATURES+=(quickcheck)
+check_version 1.36 && NO_STD_FEATURES=(serde rand)
+echo "Testing supported features: ${STD_FEATURES[*]}"
+if [ -n "${NO_STD_FEATURES[*]}" ]; then
+  echo " no_std supported features: ${NO_STD_FEATURES[*]}"
+fi
 
-# Each isolated feature should also work everywhere.
-for feature in $STD_FEATURES; do
-  cargo build --verbose --no-default-features --features="std $feature"
-  cargo test --verbose --no-default-features --features="std $feature"
+set -x
+
+# test the default with std
+cargo build
+cargo test
+
+# test each isolated feature with std
+for feature in ${STD_FEATURES[*]}; do
+  cargo build --no-default-features --features="std $feature"
+  cargo test --no-default-features --features="std $feature"
 done
 
-# test all supported features together
-cargo build --features="std $STD_FEATURES"
-cargo test --features="std $STD_FEATURES"
+# test all supported features with std
+cargo build --no-default-features --features="std ${STD_FEATURES[*]}"
+cargo test --no-default-features --features="std ${STD_FEATURES[*]}"
 
-if test -n "${NO_STD_FEATURES:+true}"; then
-  # It should build with minimal features too.
+
+if [ -n "${NO_STD_FEATURES[*]}" ]; then
+  # test minimal `no_std`
   cargo build --no-default-features
   cargo test --no-default-features
 
-  # Each isolated feature should also work everywhere.
-  for feature in $NO_STD_FEATURES; do
-    cargo build --verbose --no-default-features --features="$feature"
-    cargo test --verbose --no-default-features --features="$feature"
+  # test each isolated feature without std
+  for feature in ${NO_STD_FEATURES[*]}; do
+    cargo build --no-default-features --features="$feature"
+    cargo test --no-default-features --features="$feature"
   done
 
-  # test all supported features together
-  cargo build --no-default-features --features="$NO_STD_FEATURES"
-  cargo test --no-default-features --features="$NO_STD_FEATURES"
+  # test all supported features without std
+  cargo build --no-default-features --features="${NO_STD_FEATURES[*]}"
+  cargo test --no-default-features --features="${NO_STD_FEATURES[*]}"
 fi
+
 
 # make sure benchmarks can be built and sanity-tested
-if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
-  cargo test --benches --all-features
+if rustc --version | grep -q nightly; then
+    cargo test --all-features --benches
 fi
 
-case "$STD_FEATURES" in
+case "${STD_FEATURES[*]}" in
   *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml ;;&
   *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
   *quickcheck*) cargo test --manifest-path ci/big_quickcheck/Cargo.toml ;;&
