@@ -2,8 +2,8 @@
 
 [![crate](https://img.shields.io/crates/v/num-bigint.svg)](https://crates.io/crates/num-bigint)
 [![documentation](https://docs.rs/num-bigint/badge.svg)](https://docs.rs/num-bigint)
-![minimum rustc 1.31](https://img.shields.io/badge/rustc-1.31+-red.svg)
-[![Travis status](https://travis-ci.org/rust-num/num-bigint.svg?branch=master)](https://travis-ci.org/rust-num/num-bigint)
+[![minimum rustc 1.31](https://img.shields.io/badge/rustc-1.31+-red.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![build status](https://github.com/rust-num/num-bigint/workflows/master/badge.svg)](https://github.com/rust-num/num-bigint/actions)
 
 Big integer types for Rust, `BigInt` and `BigUint`.
 
