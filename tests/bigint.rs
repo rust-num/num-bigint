@@ -34,9 +34,7 @@ fn test_from_bytes_be() {
     check("AB", "16706");
     check("Hello world!", "22405534230753963835153736737");
     assert_eq!(BigInt::from_bytes_be(Plus, &[]), BigInt::zero());
-    assert_eq!(BigInt::from_bytes_be(Plus, &[]), 0);
     assert_eq!(BigInt::from_bytes_be(Minus, &[]), BigInt::zero());
-    assert_eq!(BigInt::from_bytes_be(Minus, &[]), 0);
 }
 
 #[test]
@@ -1022,26 +1020,74 @@ fn test_lcm() {
 
 #[test]
 fn test_next_multiple_of() {
-    assert_eq!(BigInt::from(16).next_multiple_of(&BigInt::from(8)), 16);
-    assert_eq!(BigInt::from(23).next_multiple_of(&BigInt::from(8)), 24);
-    assert_eq!(BigInt::from(16).next_multiple_of(&BigInt::from(-8)), 16);
-    assert_eq!(BigInt::from(23).next_multiple_of(&BigInt::from(-8)), 16);
-    assert_eq!(BigInt::from(-16).next_multiple_of(&BigInt::from(8)), -16);
-    assert_eq!(BigInt::from(-23).next_multiple_of(&BigInt::from(8)), -16);
-    assert_eq!(BigInt::from(-16).next_multiple_of(&BigInt::from(-8)), -16);
-    assert_eq!(BigInt::from(-23).next_multiple_of(&BigInt::from(-8)), -24);
+    assert_eq!(
+        BigInt::from(16).next_multiple_of(&BigInt::from(8)),
+        BigInt::from(16)
+    );
+    assert_eq!(
+        BigInt::from(23).next_multiple_of(&BigInt::from(8)),
+        BigInt::from(24)
+    );
+    assert_eq!(
+        BigInt::from(16).next_multiple_of(&BigInt::from(-8)),
+        BigInt::from(16)
+    );
+    assert_eq!(
+        BigInt::from(23).next_multiple_of(&BigInt::from(-8)),
+        BigInt::from(16)
+    );
+    assert_eq!(
+        BigInt::from(-16).next_multiple_of(&BigInt::from(8)),
+        BigInt::from(-16)
+    );
+    assert_eq!(
+        BigInt::from(-23).next_multiple_of(&BigInt::from(8)),
+        BigInt::from(-16)
+    );
+    assert_eq!(
+        BigInt::from(-16).next_multiple_of(&BigInt::from(-8)),
+        BigInt::from(-16)
+    );
+    assert_eq!(
+        BigInt::from(-23).next_multiple_of(&BigInt::from(-8)),
+        BigInt::from(-24)
+    );
 }
 
 #[test]
 fn test_prev_multiple_of() {
-    assert_eq!(BigInt::from(16).prev_multiple_of(&BigInt::from(8)), 16);
-    assert_eq!(BigInt::from(23).prev_multiple_of(&BigInt::from(8)), 16);
-    assert_eq!(BigInt::from(16).prev_multiple_of(&BigInt::from(-8)), 16);
-    assert_eq!(BigInt::from(23).prev_multiple_of(&BigInt::from(-8)), 24);
-    assert_eq!(BigInt::from(-16).prev_multiple_of(&BigInt::from(8)), -16);
-    assert_eq!(BigInt::from(-23).prev_multiple_of(&BigInt::from(8)), -24);
-    assert_eq!(BigInt::from(-16).prev_multiple_of(&BigInt::from(-8)), -16);
-    assert_eq!(BigInt::from(-23).prev_multiple_of(&BigInt::from(-8)), -16);
+    assert_eq!(
+        BigInt::from(16).prev_multiple_of(&BigInt::from(8)),
+        BigInt::from(16)
+    );
+    assert_eq!(
+        BigInt::from(23).prev_multiple_of(&BigInt::from(8)),
+        BigInt::from(16)
+    );
+    assert_eq!(
+        BigInt::from(16).prev_multiple_of(&BigInt::from(-8)),
+        BigInt::from(16)
+    );
+    assert_eq!(
+        BigInt::from(23).prev_multiple_of(&BigInt::from(-8)),
+        BigInt::from(24)
+    );
+    assert_eq!(
+        BigInt::from(-16).prev_multiple_of(&BigInt::from(8)),
+        BigInt::from(-16)
+    );
+    assert_eq!(
+        BigInt::from(-23).prev_multiple_of(&BigInt::from(8)),
+        BigInt::from(-24)
+    );
+    assert_eq!(
+        BigInt::from(-16).prev_multiple_of(&BigInt::from(-8)),
+        BigInt::from(-16)
+    );
+    assert_eq!(
+        BigInt::from(-23).prev_multiple_of(&BigInt::from(-8)),
+        BigInt::from(-16)
+    );
 }
 
 #[test]
