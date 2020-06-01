@@ -1055,11 +1055,11 @@ fn test_lcm() {
 fn test_next_multiple_of() {
     assert_eq!(
         BigUint::from(16u32).next_multiple_of(&BigUint::from(8u32)),
-        16u32
+        BigUint::from(16u32)
     );
     assert_eq!(
         BigUint::from(23u32).next_multiple_of(&BigUint::from(8u32)),
-        24u32
+        BigUint::from(24u32)
     );
 }
 
@@ -1067,11 +1067,11 @@ fn test_next_multiple_of() {
 fn test_prev_multiple_of() {
     assert_eq!(
         BigUint::from(16u32).prev_multiple_of(&BigUint::from(8u32)),
-        16u32
+        BigUint::from(16u32)
     );
     assert_eq!(
         BigUint::from(23u32).prev_multiple_of(&BigUint::from(8u32)),
-        16u32
+        BigUint::from(16u32)
     );
 }
 
