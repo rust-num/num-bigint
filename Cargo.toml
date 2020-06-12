@@ -8,10 +8,9 @@ categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT/Apache-2.0"
 name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
-version = "0.3.0-pre"
+version = "0.3.0"
 readme = "README.md"
 build = "build.rs"
-publish = false
 exclude = ["/bors.toml", "/ci/*", "/.github/*"]
 edition = "2018"
 

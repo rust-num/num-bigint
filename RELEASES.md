@@ -1,3 +1,42 @@
+# Release 0.3.0 (2020-06-12)
+
+### Enhancements
+
+- [The internal `BigDigit` may now be either `u32` or `u64`][62], although that
+  implementation detail is not exposed in the API. For now, this is chosen to
+  match the target pointer size, but may change in the future.
+- [No-`std` is now supported with the `alloc` crate on Rust 1.36][101].
+- [`Pow` is now implemented for bigint values][137], not just references.
+- [`TryFrom` is now implemented on Rust 1.34 and later][123], converting signed
+  integers to unsigned, and narrowing big integers to primitives.
+- [`Shl` and `Shr` are now implemented for a variety of shift types][142].
+- A new `trailing_zeros()` returns the number of consecutive zeros from the
+  least significant bit.
+- The new `BigInt::magnitude` and `into_parts` methods give access to its
+  `BigUint` part as the magnitude.
+
+### Breaking Changes
+
+- `num-bigint` now requires Rust 1.31 or greater.
+  - The "i128" opt-in feature was removed, now always available.
+- [Updated public dependences][110]:
+  - `rand` support has been updated to 0.7, requiring Rust 1.32.
+  - `quickcheck` support has been updated to 0.9, requiring Rust 1.34.
+- [Removed `impl Neg for BigUint`][145], which only ever panicked.
+- [Bit counts are now `u64` instead of `usize`][143].
+
+**Contributors**: @cuviper, @dignifiedquire, @hansihe,
+@kpcyrd, @milesand, @tech6hutch
+
+[62]: https://github.com/rust-num/num-bigint/pull/62
+[101]: https://github.com/rust-num/num-bigint/pull/101
+[110]: https://github.com/rust-num/num-bigint/pull/110
+[123]: https://github.com/rust-num/num-bigint/pull/123
+[137]: https://github.com/rust-num/num-bigint/pull/137
+[142]: https://github.com/rust-num/num-bigint/pull/142
+[143]: https://github.com/rust-num/num-bigint/pull/143
+[145]: https://github.com/rust-num/num-bigint/pull/145
+
 # Release 0.2.6 (2020-01-27)
 
 - [Fix the promotion of negative `isize` in `BigInt` assign-ops][133].
