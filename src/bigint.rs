@@ -155,18 +155,6 @@ impl Arbitrary for BigInt {
     }
 }
 
-/// Return the magnitude of a `BigInt`.
-#[cfg(feature = "rand")]
-pub(crate) fn magnitude(i: &BigInt) -> &BigUint {
-    &i.data
-}
-
-/// Return the owned magnitude of a `BigInt`.
-#[cfg(feature = "rand")]
-pub(crate) fn into_magnitude(i: BigInt) -> BigUint {
-    i.data
-}
-
 impl hash::Hash for BigInt {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
