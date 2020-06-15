@@ -18,9 +18,6 @@ use core::str::{self, FromStr};
 use core::{f32, f64};
 use core::{u32, u64, u8};
 
-#[cfg(feature = "serde")]
-use serde;
-
 use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
 use num_traits::{

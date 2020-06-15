@@ -20,9 +20,6 @@ use core::str::{self, FromStr};
 use core::{i128, u128};
 use core::{i64, u64};
 
-#[cfg(feature = "serde")]
-use serde;
-
 use num_integer::{Integer, Roots};
 use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, PrimInt, Signed,
