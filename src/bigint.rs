@@ -20,9 +20,6 @@ use core::str::{self, FromStr};
 use core::{i128, u128};
 use core::{i64, u64};
 
-#[cfg(feature = "serde")]
-use serde;
-
 use num_integer::{Integer, Roots};
 use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, PrimInt, Signed,
@@ -156,18 +153,6 @@ impl Arbitrary for BigInt {
         let unsigned_shrink = self.data.shrink();
         Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
     }
-}
-
-/// Return the magnitude of a `BigInt`.
-#[cfg(feature = "rand")]
-pub(crate) fn magnitude(i: &BigInt) -> &BigUint {
-    &i.data
-}
-
-/// Return the owned magnitude of a `BigInt`.
-#[cfg(feature = "rand")]
-pub(crate) fn into_magnitude(i: BigInt) -> BigUint {
-    i.data
 }
 
 impl hash::Hash for BigInt {

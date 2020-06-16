@@ -7,7 +7,6 @@ use crate::BigInt;
 use crate::BigUint;
 use crate::Sign::*;
 
-use crate::bigint::{into_magnitude, magnitude};
 use crate::biguint::biguint_from_vec;
 
 use num_integer::Integer;
@@ -132,12 +131,12 @@ impl<R: Rng + ?Sized> RandBigInt for R {
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt {
         assert!(*lbound < *ubound);
         if lbound.is_zero() {
-            BigInt::from(self.gen_biguint_below(magnitude(&ubound)))
+            BigInt::from(self.gen_biguint_below(ubound.magnitude()))
         } else if ubound.is_zero() {
-            lbound + BigInt::from(self.gen_biguint_below(magnitude(&lbound)))
+            lbound + BigInt::from(self.gen_biguint_below(lbound.magnitude()))
         } else {
             let delta = ubound - lbound;
-            lbound + BigInt::from(self.gen_biguint_below(magnitude(&delta)))
+            lbound + BigInt::from(self.gen_biguint_below(delta.magnitude()))
         }
     }
 }
@@ -218,7 +217,7 @@ impl UniformSampler for UniformBigInt {
         let high = high_b.borrow();
         assert!(low < high);
         UniformBigInt {
-            len: into_magnitude(high - low),
+            len: (high - low).into_parts().1,
             base: low.clone(),
         }
     }
