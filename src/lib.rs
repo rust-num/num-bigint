@@ -250,6 +250,12 @@ mod big_digit {
     #[cfg(u64_digit)]
     pub(crate) type DoubleBigDigit = u128;
 
+    /// A `SignedBigDigit` is the signed version of `BigDigit`.
+    #[cfg(not(u64_digit))]
+    pub(crate) type SignedBigDigit = i32;
+    #[cfg(u64_digit)]
+    pub(crate) type SignedBigDigit = i64;
+
     /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
     #[cfg(not(u64_digit))]
     pub(crate) type SignedDoubleBigDigit = i64;
@@ -265,15 +271,13 @@ mod big_digit {
     pub(crate) const HALF_BITS: u8 = BITS / 2;
     pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
 
-    const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
-
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {
         (n >> BITS) as BigDigit
     }
     #[inline]
     fn get_lo(n: DoubleBigDigit) -> BigDigit {
-        (n & LO_MASK) as BigDigit
+        n as BigDigit
     }
 
     /// Split one `DoubleBigDigit` into two `BigDigit`s.

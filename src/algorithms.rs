@@ -12,27 +12,28 @@ use crate::bigint::BigInt;
 use crate::bigint::Sign;
 use crate::bigint::Sign::{Minus, NoSign, Plus};
 
-use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedBigDigit, SignedDoubleBigDigit};
 
 // Generic functions for add/subtract/multiply with carry/borrow:
 
 // Add with carry:
 #[inline]
-fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += DoubleBigDigit::from(a);
-    *acc += DoubleBigDigit::from(b);
-    let lo = *acc as BigDigit;
-    *acc >>= big_digit::BITS;
+fn adc(a: BigDigit, b: BigDigit, carry: &mut BigDigit) -> BigDigit {
+    let (hi, lo) = big_digit::from_doublebigdigit(
+        DoubleBigDigit::from(a) + DoubleBigDigit::from(b) + DoubleBigDigit::from(*carry),
+    );
+    *carry = hi;
     lo
 }
 
 // Subtract with borrow:
 #[inline]
-fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
-    *acc += SignedDoubleBigDigit::from(a);
-    *acc -= SignedDoubleBigDigit::from(b);
-    let lo = *acc as BigDigit;
-    *acc >>= big_digit::BITS;
+fn sbb(a: BigDigit, b: BigDigit, borrow: &mut SignedBigDigit) -> BigDigit {
+    let (hi, lo) = big_digit::from_doublebigdigit(
+        (SignedDoubleBigDigit::from(a) - SignedDoubleBigDigit::from(b)
+            + SignedDoubleBigDigit::from(*borrow)) as DoubleBigDigit,
+    );
+    *borrow = hi as SignedBigDigit;
     lo
 }
 
@@ -41,20 +42,23 @@ pub(crate) fn mac_with_carry(
     a: BigDigit,
     b: BigDigit,
     c: BigDigit,
-    acc: &mut DoubleBigDigit,
+    carry: &mut BigDigit,
 ) -> BigDigit {
-    *acc += DoubleBigDigit::from(a);
-    *acc += DoubleBigDigit::from(b) * DoubleBigDigit::from(c);
-    let lo = *acc as BigDigit;
-    *acc >>= big_digit::BITS;
+    let (hi, lo) = big_digit::from_doublebigdigit(
+        DoubleBigDigit::from(a)
+            + DoubleBigDigit::from(b) * DoubleBigDigit::from(c)
+            + DoubleBigDigit::from(*carry),
+    );
+    *carry = hi;
     lo
 }
 
 #[inline]
-pub(crate) fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += DoubleBigDigit::from(a) * DoubleBigDigit::from(b);
-    let lo = *acc as BigDigit;
-    *acc >>= big_digit::BITS;
+pub(crate) fn mul_with_carry(a: BigDigit, b: BigDigit, carry: &mut BigDigit) -> BigDigit {
+    let (hi, lo) = big_digit::from_doublebigdigit(
+        DoubleBigDigit::from(a) * DoubleBigDigit::from(b) + DoubleBigDigit::from(*carry),
+    );
+    *carry = hi;
     lo
 }
 
@@ -152,7 +156,7 @@ pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
         }
     }
 
-    carry as BigDigit
+    carry
 }
 
 /// Two argument addition of raw slices:
@@ -195,7 +199,7 @@ pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
 
 // Only for the Sub impl. `a` and `b` must have same length.
 #[inline]
-pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
+pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> SignedBigDigit {
     debug_assert!(b.len() == a.len());
 
     let mut borrow = 0;
@@ -204,7 +208,7 @@ pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
         *bi = sbb(*ai, *bi, &mut borrow);
     }
 
-    borrow as BigDigit
+    borrow
 }
 
 pub(crate) fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
@@ -545,7 +549,7 @@ pub(crate) fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     for a in a.iter_mut() {
         *a = mul_with_carry(*a, b, &mut carry);
     }
-    carry as BigDigit
+    carry
 }
 
 pub(crate) fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
