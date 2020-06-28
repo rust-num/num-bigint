@@ -176,6 +176,17 @@ impl FromStr for BigUint {
     }
 }
 
+/// Convert a u32 chunk (len is either 1 or 2) to a single u64 digit
+#[inline]
+fn u32_chunk_to_u64(chunk: &[u32]) -> u64 {
+    // raw could have odd length
+    let mut digit = chunk[0] as u64;
+    if let Some(&hi) = chunk.get(1) {
+        digit |= (hi as u64) << 32;
+    }
+    digit
+}
+
 // Convert from a power of two radix (bits == ilog2(radix)) where bits evenly divides
 // BigDigit::BITS
 fn from_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
@@ -2399,20 +2410,15 @@ pub struct IterU64Digits<'a> {
 #[cfg(not(u64_digit))]
 impl<'a> IterU64Digits<'a> {
     fn new(data: &'a [u32]) -> Self {
-        IterU32Digits { it: data.chunks(2) }
+        IterU64Digits { it: data.chunks(2) }
     }
 }
+
 #[cfg(not(u64_digit))]
 impl<'a> Iterator for IterU64Digits<'a> {
     type Item = u64;
     fn next(&mut self) -> Option<u64> {
-        self.it.next(|chunk| {
-            let mut digit = chunk[0] as u64;
-            if let Some(&hi) = chunk.get(1) {
-                digit |= (hi as u64) << 32;
-            }
-            digit
-        })
+        self.it.next().map(u32_chunk_to_u64)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -2420,14 +2426,8 @@ impl<'a> Iterator for IterU64Digits<'a> {
         (len, Some(len))
     }
 
-    fn last(self) -> Option<u32> {
-        self.data.last().map(|&last| {
-            if self.last_hi_is_zero {
-                last as u32
-            } else {
-                (last >> 32) as u32
-            }
-        })
+    fn last(self) -> Option<u64> {
+        self.it.last().map(u32_chunk_to_u64)
     }
 
     fn count(self) -> usize {
@@ -2437,7 +2437,7 @@ impl<'a> Iterator for IterU64Digits<'a> {
 #[cfg(not(u64_digit))]
 impl<'a> ExactSizeIterator for IterU64Digits<'a> {
     fn len(&self) -> usize {
-        self.data.len() * 2 - usize::from(self.last_hi_is_zero)
+        self.it.len()
     }
 }
 
@@ -2531,14 +2531,7 @@ impl BigUint {
         self.data.extend_from_slice(slice);
 
         #[cfg(u64_digit)]
-        self.data.extend(slice.chunks(2).map(|chunk| {
-            // raw could have odd length
-            let mut digit = BigDigit::from(chunk[0]);
-            if let Some(&hi) = chunk.get(1) {
-                digit |= BigDigit::from(hi) << 32;
-            }
-            digit
-        }));
+        self.data.extend(slice.chunks(2).map(u32_chunk_to_u64));
 
         self.normalize();
     }
