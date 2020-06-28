@@ -393,3 +393,35 @@ fn modpow_even(b: &mut Bencher) {
 
     b.iter(|| base.modpow(&e, &m));
 }
+
+#[bench]
+fn to_u32_digits(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let n = rng.gen_biguint(2048);
+
+    b.iter(|| n.to_u32_digits());
+}
+
+#[bench]
+fn iter_u32_digits(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let n = rng.gen_biguint(2048);
+
+    b.iter(|| n.iter_u32_digits().max());
+}
+
+#[bench]
+fn to_u64_digits(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let n = rng.gen_biguint(2048);
+
+    b.iter(|| n.to_u64_digits());
+}
+
+#[bench]
+fn iter_u64_digits(b: &mut Bencher) {
+    let mut rng = get_rng();
+    let n = rng.gen_biguint(2048);
+
+    b.iter(|| n.iter_u64_digits().max());
+}
