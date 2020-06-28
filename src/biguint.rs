@@ -2352,21 +2352,19 @@ impl<'a> ExactSizeIterator for IterU32Digits<'a> {
 
 #[cfg(not(u64_digit))]
 pub struct IterU32Digits<'a> {
-    it: std::iter::Copied<std::slice::Iter<'a, u32>>,
+    it: std::slice::Iter<'a, u32>,
 }
 #[cfg(not(u64_digit))]
 impl<'a> IterU32Digits<'a> {
     fn new(data: &'a [u32]) -> Self {
-        Self {
-            it: data.iter().copied(),
-        }
+        Self { it: data.iter() }
     }
 }
 #[cfg(not(u64_digit))]
 impl<'a> Iterator for IterU32Digits<'a> {
     type Item = u32;
     fn next(&mut self) -> Option<u32> {
-        self.it.next()
+        self.it.next().map(|&t| t)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -2374,11 +2372,11 @@ impl<'a> Iterator for IterU32Digits<'a> {
     }
 
     fn nth(&mut self, n: usize) -> Option<u32> {
-        self.it.nth(n)
+        self.it.nth(n).map(|&t| t)
     }
 
     fn last(self) -> Option<u32> {
-        self.it.last()
+        self.it.last().map(|&t| t)
     }
 
     fn count(self) -> usize {
@@ -2445,21 +2443,19 @@ impl<'a> ExactSizeIterator for IterU64Digits<'a> {
 
 #[cfg(u64_digit)]
 pub struct IterU64Digits<'a> {
-    it: std::iter::Copied<std::slice::Iter<'a, u64>>,
+    it: std::slice::Iter<'a, u64>,
 }
 #[cfg(u64_digit)]
 impl<'a> IterU64Digits<'a> {
     fn new(data: &'a [u64]) -> Self {
-        Self {
-            it: data.iter().copied(),
-        }
+        Self { it: data.iter() }
     }
 }
 #[cfg(u64_digit)]
 impl<'a> Iterator for IterU64Digits<'a> {
     type Item = u64;
     fn next(&mut self) -> Option<u64> {
-        self.it.next()
+        self.it.next().map(|&t| t)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -2467,11 +2463,11 @@ impl<'a> Iterator for IterU64Digits<'a> {
     }
 
     fn nth(&mut self, n: usize) -> Option<u64> {
-        self.it.nth(n)
+        self.it.nth(n).map(|&t| t)
     }
 
     fn last(self) -> Option<u64> {
-        self.it.last()
+        self.it.last().map(|&t| t)
     }
 
     fn count(self) -> usize {
@@ -2748,14 +2744,14 @@ impl BigUint {
     /// ```
     /// use num_bigint::BigUint;
     ///
-    /// assert_eq!(BigUint::from(1125u32).to_u64_digits(), vec![1125]);
-    /// assert_eq!(BigUint::from(4294967295u32).to_u64_digits(), vec![4294967295]);
-    /// assert_eq!(BigUint::from(4294967296u64).to_u64_digits(), vec![4294967296]);
-    /// assert_eq!(BigUint::from(112500000000u64).to_u64_digits(), vec![112500000000]);
+    /// assert_eq!(BigUint::from(1125u32).to_u32_digits(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).to_u32_digits(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).to_u32_digits(), vec![0, 1]);
+    /// assert_eq!(BigUint::from(112500000000u64).to_u32_digits(), vec![830850304, 26]);
     /// ```
     #[inline]
-    pub fn to_u64_digits(&self) -> Vec<u64> {
-        self.iter_u64_digits().collect()
+    pub fn to_u32_digits(&self) -> Vec<u32> {
+        self.iter_u32_digits().collect()
     }
 
     /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
@@ -2766,14 +2762,14 @@ impl BigUint {
     /// ```
     /// use num_bigint::BigUint;
     ///
-    /// assert_eq!(BigUint::from(1125u32).to_u32_digits(), vec![1125]);
-    /// assert_eq!(BigUint::from(4294967295u32).to_u32_digits(), vec![4294967295]);
-    /// assert_eq!(BigUint::from(4294967296u64).to_u32_digits(), vec![0, 1]);
-    /// assert_eq!(BigUint::from(112500000000u64).to_u32_digits(), vec![830850304, 26]);
+    /// assert_eq!(BigUint::from(1125u32).to_u64_digits(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).to_u64_digits(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).to_u64_digits(), vec![4294967296]);
+    /// assert_eq!(BigUint::from(112500000000u64).to_u64_digits(), vec![112500000000]);
     /// ```
     #[inline]
-    pub fn to_u32_digits(&self) -> Vec<u32> {
-        self.iter_u32_digits().collect()
+    pub fn to_u64_digits(&self) -> Vec<u64> {
+        self.iter_u64_digits().collect()
     }
 
     /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
