@@ -2330,7 +2330,7 @@ impl<'a> ExactSizeIterator for IterU32Digits<'a> {
 
 #[cfg(not(u64_digit))]
 pub struct IterU32Digits<'a> {
-    it: std::slice::Iter<'a, u32>,
+    it: core::slice::Iter<'a, u32>,
 }
 #[cfg(not(u64_digit))]
 impl<'a> IterU32Digits<'a> {
@@ -2372,7 +2372,7 @@ impl<'a> FusedIterator for IterU32Digits<'a> {}
 
 #[cfg(not(u64_digit))]
 pub struct IterU64Digits<'a> {
-    it: std::slice::Chunks<'a, u32>,
+    it: core::slice::Chunks<'a, u32>,
 }
 #[cfg(not(u64_digit))]
 impl<'a> IterU64Digits<'a> {
@@ -2421,7 +2421,7 @@ impl<'a> ExactSizeIterator for IterU64Digits<'a> {
 
 #[cfg(u64_digit)]
 pub struct IterU64Digits<'a> {
-    it: std::slice::Iter<'a, u64>,
+    it: core::slice::Iter<'a, u64>,
 }
 #[cfg(u64_digit)]
 impl<'a> IterU64Digits<'a> {
