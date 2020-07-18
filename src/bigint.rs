@@ -3207,7 +3207,7 @@ impl BigInt {
     /// Note that this rounds like `mod_floor`, not like the `%` operator,
     /// which makes a difference when given a negative `self` or `modulus`.
     /// The result will be in the interval `[0, modulus)` for `modulus > 0`,
-    /// or in the interval `(modulus, 0]` for `modulus < 0`
+    /// or in the interval `(-modulus, 0]` for `modulus < 0`
     ///
     /// Panics if the exponent is negative or the modulus is zero.
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
