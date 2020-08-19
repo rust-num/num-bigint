@@ -2375,7 +2375,7 @@ impl<'a> IterU32Digits<'a> {
 impl<'a> Iterator for IterU32Digits<'a> {
     type Item = u32;
     fn next(&mut self) -> Option<u32> {
-        self.it.next().map(|&t| t)
+        self.it.next().cloned()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
