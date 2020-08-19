@@ -2981,7 +2981,7 @@ impl BigInt {
         (self.sign, self.data.to_u32_digits())
     }
 
-    /// Returns the sign and the `u32` digits representation of the `BigInt` ordered least
+    /// Returns the sign and the `u64` digits representation of the `BigInt` ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -3015,11 +3015,11 @@ impl BigInt {
     /// assert_eq!(BigInt::from(112500000000i64).iter_u32_digits().collect::<Vec<u32>>(), vec![830850304, 26]);
     /// ```
     #[inline]
-    pub fn iter_u32_digits<'a>(&'a self) -> IterU32Digits<'a> {
+    pub fn iter_u32_digits(&self) -> IterU32Digits<'_> {
         self.data.iter_u32_digits()
     }
 
-    /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
+    /// Returns the `u64` digits representation of the `BigUint` ordered least significant digit
     /// first.
     ///
     /// # Examples
