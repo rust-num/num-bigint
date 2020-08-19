@@ -2335,7 +2335,7 @@ impl Iterator for IterU32Digits<'_> {
 #[cfg(u64_digit)]
 impl<'a> ExactSizeIterator for IterU32Digits<'a> {
     fn len(&self) -> usize {
-        self.data.len() * 2 - usize::from(self.last_hi_is_zero)
+        self.data.len() * 2 - usize::from(self.last_hi_is_zero) - usize::from(!self.next_is_lo)
     }
 }
 
@@ -3283,4 +3283,46 @@ fn test_pow_biguint() {
     let exponent = BigUint::from(3u8);
 
     assert_eq!(BigUint::from(125u8), base.pow(exponent));
+}
+
+#[test]
+fn test_iter_u32_digits() {
+    let n = BigUint::from(5u8);
+    let mut it = n.iter_u32_digits();
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(5));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+
+    let n = BigUint::from(112500000000u64);
+    let mut it = n.iter_u32_digits();
+    assert_eq!(it.len(), 2);
+    assert_eq!(it.next(), Some(830850304));
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(26));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+}
+
+#[test]
+fn test_iter_u64_digits() {
+    let n = BigUint::from(5u8);
+    let mut it = n.iter_u64_digits();
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(5));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+
+    let n = BigUint::from(18_446_744_073_709_551_616u128);
+    let mut it = n.iter_u64_digits();
+    assert_eq!(it.len(), 2);
+    assert_eq!(it.next(), Some(0));
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(1));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
 }
