@@ -2290,7 +2290,7 @@ impl<'a> IterU32Digits<'a> {
     }
 }
 #[cfg(u64_digit)]
-impl<'a> Iterator for IterU32Digits<'a> {
+impl Iterator for IterU32Digits<'_> {
     type Item = u32;
     fn next(&mut self) -> Option<u32> {
         match self.data.split_first() {
@@ -2717,7 +2717,7 @@ impl BigUint {
         self.iter_u32_digits().collect()
     }
 
-    /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
+    /// Returns the `u64` digits representation of the `BigUint` ordered least significant digit
     /// first.
     ///
     /// # Examples
