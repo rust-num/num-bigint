@@ -2735,8 +2735,8 @@ impl BigUint {
         self.iter_u64_digits().collect()
     }
 
-    /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
-    /// first.
+    /// Returns an iterator of `u32` digits representation of the `BigUint` ordered least
+    /// significant digit first.
     ///
     /// # Examples
     ///
@@ -2753,8 +2753,8 @@ impl BigUint {
         IterU32Digits::new(self.data.as_slice())
     }
 
-    /// Returns the `u32` digits representation of the `BigUint` ordered least significant digit
-    /// first.
+    /// Returns an iterator of `u64` digits representation of the `BigUint` ordered least
+    /// significant digit first.
     ///
     /// # Examples
     ///
