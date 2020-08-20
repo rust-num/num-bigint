@@ -3000,7 +3000,7 @@ impl BigInt {
         (self.sign, self.data.to_u64_digits())
     }
 
-    /// Returns an iterator of `u64` digits representation of the `BigUint` ordered least
+    /// Returns an iterator of `u32` digits representation of the `BigUint` ordered least
     /// significant digit first.
     ///
     /// # Examples
