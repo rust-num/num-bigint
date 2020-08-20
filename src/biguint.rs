@@ -2288,11 +2288,18 @@ pub(crate) fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
-#[cfg(u64_digit)]
+/// An iterator of `u32` digits representation of the `BigUint` ordered least
+/// significant digit first.
 pub struct IterU32Digits<'a> {
+    #[cfg(u64_digit)]
     data: &'a [u64],
+    #[cfg(u64_digit)]
     next_is_lo: bool,
+    #[cfg(u64_digit)]
     last_hi_is_zero: bool,
+
+    #[cfg(not(u64_digit))]
+    it: core::slice::Iter<'a, u32>,
 }
 #[cfg(u64_digit)]
 impl<'a> IterU32Digits<'a> {
@@ -2362,10 +2369,6 @@ impl<'a> ExactSizeIterator for IterU32Digits<'a> {
 }
 
 #[cfg(not(u64_digit))]
-pub struct IterU32Digits<'a> {
-    it: core::slice::Iter<'a, u32>,
-}
-#[cfg(not(u64_digit))]
 impl<'a> IterU32Digits<'a> {
     fn new(data: &'a [u32]) -> Self {
         Self { it: data.iter() }
@@ -2403,9 +2406,14 @@ impl<'a> ExactSizeIterator for IterU32Digits<'a> {
 
 impl<'a> FusedIterator for IterU32Digits<'a> {}
 
-#[cfg(not(u64_digit))]
+/// An iterator of `u64` digits representation of the `BigUint` ordered least
+/// significant digit first.
 pub struct IterU64Digits<'a> {
+    #[cfg(not(u64_digit))]
     it: core::slice::Chunks<'a, u32>,
+
+    #[cfg(u64_digit)]
+    it: core::slice::Iter<'a, u64>,
 }
 #[cfg(not(u64_digit))]
 impl<'a> IterU64Digits<'a> {
@@ -2441,10 +2449,6 @@ impl<'a> ExactSizeIterator for IterU64Digits<'a> {
     }
 }
 
-#[cfg(u64_digit)]
-pub struct IterU64Digits<'a> {
-    it: core::slice::Iter<'a, u64>,
-}
 #[cfg(u64_digit)]
 impl<'a> IterU64Digits<'a> {
     fn new(data: &'a [u64]) -> Self {
