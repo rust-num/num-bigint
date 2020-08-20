@@ -2383,11 +2383,11 @@ impl<'a> Iterator for IterU32Digits<'a> {
     }
 
     fn nth(&mut self, n: usize) -> Option<u32> {
-        self.it.nth(n).map(|&t| t)
+        self.it.nth(n).cloned()
     }
 
     fn last(self) -> Option<u32> {
-        self.it.last().map(|&t| t)
+        self.it.last().cloned()
     }
 
     fn count(self) -> usize {
@@ -2455,7 +2455,7 @@ impl<'a> IterU64Digits<'a> {
 impl<'a> Iterator for IterU64Digits<'a> {
     type Item = u64;
     fn next(&mut self) -> Option<u64> {
-        self.it.next().map(|&t| t)
+        self.it.next().cloned()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -2463,11 +2463,11 @@ impl<'a> Iterator for IterU64Digits<'a> {
     }
 
     fn nth(&mut self, n: usize) -> Option<u64> {
-        self.it.nth(n).map(|&t| t)
+        self.it.nth(n).cloned()
     }
 
     fn last(self) -> Option<u64> {
-        self.it.last().map(|&t| t)
+        self.it.last().cloned()
     }
 
     fn count(self) -> usize {
@@ -2779,7 +2779,7 @@ impl BigUint {
     /// assert_eq!(BigUint::from(112500000000u64).iter_u32_digits().collect::<Vec<u32>>(), vec![830850304, 26]);
     /// ```
     #[inline]
-    pub fn iter_u32_digits<'a>(&'a self) -> IterU32Digits<'a> {
+    pub fn iter_u32_digits(&self) -> IterU32Digits<'_> {
         IterU32Digits::new(self.data.as_slice())
     }
 
@@ -2797,7 +2797,7 @@ impl BigUint {
     /// assert_eq!(BigUint::from(112500000000u64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000]);
     /// ```
     #[inline]
-    pub fn iter_u64_digits<'a>(&'a self) -> IterU64Digits<'a> {
+    pub fn iter_u64_digits(&self) -> IterU64Digits<'_> {
         IterU64Digits::new(self.data.as_slice())
     }
 
