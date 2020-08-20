@@ -3041,7 +3041,7 @@ impl BigInt {
     /// assert_eq!(BigInt::from(112500000000i64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000u64]);
     /// ```
     #[inline]
-    pub fn iter_u64_digits<'a>(&'a self) -> IterU64Digits<'a> {
+    pub fn iter_u64_digits(&self) -> IterU64Digits<'_> {
         self.data.iter_u64_digits()
     }
 
