@@ -2340,7 +2340,7 @@ impl Iterator for IterU32Digits<'_> {
     }
 }
 #[cfg(u64_digit)]
-impl<'a> ExactSizeIterator for IterU32Digits<'a> {
+impl ExactSizeIterator for IterU32Digits<'_> {
     fn len(&self) -> usize {
         self.data.len() * 2 - usize::from(self.last_hi_is_zero) - usize::from(!self.next_is_lo)
     }
@@ -2353,7 +2353,7 @@ impl<'a> IterU32Digits<'a> {
     }
 }
 #[cfg(not(u64_digit))]
-impl<'a> Iterator for IterU32Digits<'a> {
+impl Iterator for IterU32Digits<'_> {
     type Item = u32;
     fn next(&mut self) -> Option<u32> {
         self.it.next().cloned()
@@ -2376,13 +2376,13 @@ impl<'a> Iterator for IterU32Digits<'a> {
     }
 }
 #[cfg(not(u64_digit))]
-impl<'a> ExactSizeIterator for IterU32Digits<'a> {
+impl ExactSizeIterator for IterU32Digits<'_> {
     fn len(&self) -> usize {
         self.it.len()
     }
 }
 
-impl<'a> FusedIterator for IterU32Digits<'a> {}
+impl FusedIterator for IterU32Digits<'_> {}
 
 /// An iterator of `u64` digits representation of the `BigUint` ordered least
 /// significant digit first.
@@ -2401,7 +2401,7 @@ impl<'a> IterU64Digits<'a> {
 }
 
 #[cfg(not(u64_digit))]
-impl<'a> Iterator for IterU64Digits<'a> {
+impl Iterator for IterU64Digits<'_> {
     type Item = u64;
     fn next(&mut self) -> Option<u64> {
         self.it.next().map(u32_chunk_to_u64)
@@ -2421,7 +2421,7 @@ impl<'a> Iterator for IterU64Digits<'a> {
     }
 }
 #[cfg(not(u64_digit))]
-impl<'a> ExactSizeIterator for IterU64Digits<'a> {
+impl ExactSizeIterator for IterU64Digits<'_> {
     fn len(&self) -> usize {
         self.it.len()
     }
@@ -2434,7 +2434,7 @@ impl<'a> IterU64Digits<'a> {
     }
 }
 #[cfg(u64_digit)]
-impl<'a> Iterator for IterU64Digits<'a> {
+impl Iterator for IterU64Digits<'_> {
     type Item = u64;
     fn next(&mut self) -> Option<u64> {
         self.it.next().cloned()
@@ -2457,12 +2457,12 @@ impl<'a> Iterator for IterU64Digits<'a> {
     }
 }
 #[cfg(u64_digit)]
-impl<'a> ExactSizeIterator for IterU64Digits<'a> {
+impl ExactSizeIterator for IterU64Digits<'_> {
     fn len(&self) -> usize {
         self.it.len()
     }
 }
-impl<'a> FusedIterator for IterU64Digits<'a> {}
+impl FusedIterator for IterU64Digits<'_> {}
 
 /// Creates and initializes a `BigUint`.
 ///
