@@ -1687,19 +1687,22 @@ impl Roots for BigUint {
         let max_bits = bits / n64 + 1;
 
         #[cfg(feature = "std")]
-        let guess = if let Some(f) = self.to_f64() {
-            // We fit in `f64` (lossy), so get a better initial guess from that.
-            BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
-        } else {
-            // Try to guess by scaling down such that it does fit in `f64`.
-            // With some (x * 2ⁿᵏ), its nth root ≈ (ⁿ√x * 2ᵏ)
-            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
-            let root_scale = extra_bits.div_ceil(&n64);
-            let scale = root_scale * n64;
-            if scale < bits && bits - scale > n64 {
-                (self >> scale).nth_root(n) << root_scale
-            } else {
-                BigUint::one() << max_bits
+        let guess = match self.to_f64() {
+            Some(f) if f != f64::INFINITY => {
+                // We fit in `f64` (lossy), so get a better initial guess from that.
+                BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
+            }
+            _ => {
+                // Try to guess by scaling down such that it does fit in `f64`.
+                // With some (x * 2ⁿᵏ), its nth root ≈ (ⁿ√x * 2ᵏ)
+                let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
+                let root_scale = extra_bits.div_ceil(&n64);
+                let scale = root_scale * n64;
+                if scale < bits && bits - scale > n64 {
+                    (self >> scale).nth_root(n) << root_scale
+                } else {
+                    BigUint::one() << max_bits
+                }
             }
         };
 
@@ -1730,16 +1733,19 @@ impl Roots for BigUint {
         let max_bits = bits / 2 + 1;
 
         #[cfg(feature = "std")]
-        let guess = if let Some(f) = self.to_f64() {
-            // We fit in `f64` (lossy), so get a better initial guess from that.
-            BigUint::from_f64(f.sqrt()).unwrap()
-        } else {
-            // Try to guess by scaling down such that it does fit in `f64`.
-            // With some (x * 2²ᵏ), its sqrt ≈ (√x * 2ᵏ)
-            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
-            let root_scale = (extra_bits + 1) / 2;
-            let scale = root_scale * 2;
-            (self >> scale).sqrt() << root_scale
+        let guess = match self.to_f64() {
+            Some(f) if f != f64::INFINITY => {
+                // We fit in `f64` (lossy), so get a better initial guess from that.
+                BigUint::from_f64(f.sqrt()).unwrap()
+            }
+            _ => {
+                // Try to guess by scaling down such that it does fit in `f64`.
+                // With some (x * 2²ᵏ), its sqrt ≈ (√x * 2ᵏ)
+                let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
+                let root_scale = (extra_bits + 1) / 2;
+                let scale = root_scale * 2;
+                (self >> scale).sqrt() << root_scale
+            }
         };
 
         #[cfg(not(feature = "std"))]
@@ -1766,16 +1772,19 @@ impl Roots for BigUint {
         let max_bits = bits / 3 + 1;
 
         #[cfg(feature = "std")]
-        let guess = if let Some(f) = self.to_f64() {
-            // We fit in `f64` (lossy), so get a better initial guess from that.
-            BigUint::from_f64(f.cbrt()).unwrap()
-        } else {
-            // Try to guess by scaling down such that it does fit in `f64`.
-            // With some (x * 2³ᵏ), its cbrt ≈ (∛x * 2ᵏ)
-            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
-            let root_scale = (extra_bits + 2) / 3;
-            let scale = root_scale * 3;
-            (self >> scale).cbrt() << root_scale
+        let guess = match self.to_f64() {
+            Some(f) if f != f64::INFINITY => {
+                // We fit in `f64` (lossy), so get a better initial guess from that.
+                BigUint::from_f64(f.cbrt()).unwrap()
+            }
+            _ => {
+                // Try to guess by scaling down such that it does fit in `f64`.
+                // With some (x * 2³ᵏ), its cbrt ≈ (∛x * 2ᵏ)
+                let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
+                let root_scale = (extra_bits + 2) / 3;
+                let scale = root_scale * 3;
+                (self >> scale).cbrt() << root_scale
+            }
         };
 
         #[cfg(not(feature = "std"))]
@@ -1870,14 +1879,9 @@ impl ToPrimitive for BigUint {
         let exponent = self.bits() - u64::from(fls(mantissa));
 
         if exponent > f32::MAX_EXP as u64 {
-            None
+            Some(f32::INFINITY)
         } else {
-            let ret = (mantissa as f32) * 2.0f32.powi(exponent as i32);
-            if ret.is_infinite() {
-                None
-            } else {
-                Some(ret)
-            }
+            Some((mantissa as f32) * 2.0f32.powi(exponent as i32))
         }
     }
 
@@ -1887,14 +1891,9 @@ impl ToPrimitive for BigUint {
         let exponent = self.bits() - u64::from(fls(mantissa));
 
         if exponent > f64::MAX_EXP as u64 {
-            None
+            Some(f64::INFINITY)
         } else {
-            let ret = (mantissa as f64) * 2.0f64.powi(exponent as i32);
-            if ret.is_infinite() {
-                None
-            } else {
-                Some(ret)
-            }
+            Some((mantissa as f64) * 2.0f64.powi(exponent as i32))
         }
     }
 }
