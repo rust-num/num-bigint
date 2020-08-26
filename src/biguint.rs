@@ -1688,7 +1688,7 @@ impl Roots for BigUint {
 
         #[cfg(feature = "std")]
         let guess = match self.to_f64() {
-            Some(f) if f != f64::INFINITY => {
+            Some(f) if f.is_finite() => {
                 // We fit in `f64` (lossy), so get a better initial guess from that.
                 BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
             }
@@ -1734,7 +1734,7 @@ impl Roots for BigUint {
 
         #[cfg(feature = "std")]
         let guess = match self.to_f64() {
-            Some(f) if f != f64::INFINITY => {
+            Some(f) if f.is_finite() => {
                 // We fit in `f64` (lossy), so get a better initial guess from that.
                 BigUint::from_f64(f.sqrt()).unwrap()
             }
@@ -1773,7 +1773,7 @@ impl Roots for BigUint {
 
         #[cfg(feature = "std")]
         let guess = match self.to_f64() {
-            Some(f) if f != f64::INFINITY => {
+            Some(f) if f.is_finite() => {
                 // We fit in `f64` (lossy), so get a better initial guess from that.
                 BigUint::from_f64(f.cbrt()).unwrap()
             }

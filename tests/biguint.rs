@@ -675,7 +675,10 @@ fn test_convert_f32() {
     assert_eq!(big_num.to_f32(), Some(f32::MAX));
     assert_eq!((big_num + 1u8).to_f32(), Some(f32::INFINITY));
 
-    assert_eq!(((BigUint::one() << 128u8) - 1u8).to_f32(), Some(f32::INFINITY));
+    assert_eq!(
+        ((BigUint::one() << 128u8) - 1u8).to_f32(),
+        Some(f32::INFINITY)
+    );
     assert_eq!((BigUint::one() << 128u8).to_f32(), Some(f32::INFINITY));
 }
 
@@ -748,7 +751,10 @@ fn test_convert_f64() {
     assert_eq!(big_num.to_f64(), Some(f64::MAX));
     assert_eq!((big_num + 1u8).to_f64(), Some(f64::INFINITY));
 
-    assert_eq!(((BigUint::one() << 1024u16) - 1u8).to_f64(), Some(f64::INFINITY));
+    assert_eq!(
+        ((BigUint::one() << 1024u16) - 1u8).to_f64(),
+        Some(f64::INFINITY)
+    );
     assert_eq!((BigUint::one() << 1024u16).to_f64(), Some(f64::INFINITY));
 }
 
