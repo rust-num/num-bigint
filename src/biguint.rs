@@ -501,7 +501,7 @@ impl_shift! { i8, i16, i32, i64, i128, isize }
 impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
-        BigUint { data: Vec::new() }
+        BigUint::ZERO.clone()
     }
 
     #[inline]
@@ -2264,6 +2264,11 @@ pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
 }
 
 impl BigUint {
+    /// The value 0 as a `BigUint`
+    pub const ZERO: BigUint = BigUint {
+        data: Vec::new(),
+    };
+
     /// Creates and initializes a `BigUint`.
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.

@@ -849,10 +849,7 @@ fn shr_round_down<T: PrimInt>(i: &BigInt, shift: T) -> bool {
 impl Zero for BigInt {
     #[inline]
     fn zero() -> BigInt {
-        BigInt {
-            sign: NoSign,
-            data: BigUint::zero(),
-        }
+        BigInt::ZERO.clone()
     }
 
     #[inline]
@@ -2763,6 +2760,12 @@ impl_to_bigint!(f32, FromPrimitive::from_f32);
 impl_to_bigint!(f64, FromPrimitive::from_f64);
 
 impl BigInt {
+    /// The value 0 as a `BigInt`
+    pub const ZERO: BigInt = BigInt {
+        sign: Sign::NoSign,
+        data: BigUint::ZERO,
+    };
+    
     /// Creates and initializes a BigInt.
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
