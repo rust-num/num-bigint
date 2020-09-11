@@ -1,7 +1,7 @@
 // `Add`/`Sub` ops may flip from `BigInt` to its `BigUint` magnitude
 #![allow(clippy::suspicious_arithmetic_impl)]
 
-#[cfg(feature = "quickcheck")]
+#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 use crate::std_alloc::Box;
 use crate::std_alloc::{String, Vec};
 use core::cmp::Ordering::{self, Equal, Greater, Less};
@@ -38,9 +38,6 @@ use crate::TryFromBigIntError;
 
 use crate::IsizePromotion;
 use crate::UsizePromotion;
-
-#[cfg(feature = "quickcheck")]
-use quickcheck::{Arbitrary, Gen};
 
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
@@ -141,8 +138,8 @@ impl Clone for BigInt {
 }
 
 #[cfg(feature = "quickcheck")]
-impl Arbitrary for BigInt {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+impl quickcheck::Arbitrary for BigInt {
+    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
         let positive = bool::arbitrary(g);
         let sign = if positive { Sign::Plus } else { Sign::Minus };
         Self::from_biguint(sign, BigUint::arbitrary(g))
@@ -152,6 +149,26 @@ impl Arbitrary for BigInt {
         let sign = self.sign();
         let unsigned_shrink = self.data.shrink();
         Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+mod abitrary_impl {
+    use super::*;
+    use arbitrary::{Arbitrary, Result, Unstructured};
+
+    impl Arbitrary for BigInt {
+        fn arbitrary(u: &mut Unstructured<'_>) -> Result<Self> {
+            let positive = bool::arbitrary(u)?;
+            let sign = if positive { Sign::Plus } else { Sign::Minus };
+            Ok(Self::from_biguint(sign, BigUint::arbitrary(u)?))
+        }
+
+        fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+            let sign = self.sign();
+            let unsigned_shrink = self.data.shrink();
+            Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
+        }
     }
 }
 
