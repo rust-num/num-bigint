@@ -2045,22 +2045,14 @@ impl Rem<i32> for BigInt {
 
     #[inline]
     fn rem(self, other: i32) -> BigInt {
-        if other >= 0 {
-            self % other as u32
-        } else {
-            self % other.uabs()
-        }
+        self % other.uabs()
     }
 }
 
 impl RemAssign<i32> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i32) {
-        if other >= 0 {
-            *self %= other as u32;
-        } else {
-            *self %= other.uabs();
-        }
+        *self %= other.uabs();
     }
 }
 
@@ -2082,22 +2074,14 @@ impl Rem<i64> for BigInt {
 
     #[inline]
     fn rem(self, other: i64) -> BigInt {
-        if other >= 0 {
-            self % other as u64
-        } else {
-            self % other.uabs()
-        }
+        self % other.uabs()
     }
 }
 
 impl RemAssign<i64> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i64) {
-        if other >= 0 {
-            *self %= other as u64;
-        } else {
-            *self %= other.uabs();
-        }
+        *self %= other.uabs();
     }
 }
 
@@ -2119,22 +2103,14 @@ impl Rem<i128> for BigInt {
 
     #[inline]
     fn rem(self, other: i128) -> BigInt {
-        if other >= 0 {
-            self % other as u128
-        } else {
-            self % other.uabs()
-        }
+        self % other.uabs()
     }
 }
 
 impl RemAssign<i128> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i128) {
-        if other >= 0 {
-            *self %= other as u128;
-        } else {
-            *self %= other.uabs();
-        }
+        *self %= other.uabs();
     }
 }
 
