@@ -990,10 +990,19 @@ pow_impl!(BigUint);
 
 trait UnsignedAbs {
     type Unsigned;
+
     /// A convenience method for getting the absolute value of a signed primitive as unsigned
     /// See also `unsigned_abs`: https://github.com/rust-lang/rust/issues/74913
     fn uabs(self) -> Self::Unsigned;
+
+    fn checked_uabs(self) -> CheckedUnsignedAbs<Self::Unsigned>;
 }
+
+enum CheckedUnsignedAbs<T> {
+    Positive(T),
+    Negative(T),
+}
+use self::CheckedUnsignedAbs::{Negative, Positive};
 
 macro_rules! impl_unsigned_abs {
     ($Signed:ty, $Unsigned:ty) => {
@@ -1003,6 +1012,15 @@ macro_rules! impl_unsigned_abs {
             #[inline]
             fn uabs(self) -> $Unsigned {
                 self.wrapping_abs() as $Unsigned
+            }
+
+            #[inline]
+            fn checked_uabs(self) -> CheckedUnsignedAbs<Self::Unsigned> {
+                if self >= 0 {
+                    Positive(self as $Unsigned)
+                } else {
+                    Negative(self.wrapping_neg() as $Unsigned)
+                }
             }
         }
     };
@@ -1175,20 +1193,18 @@ impl Add<i32> for BigInt {
 
     #[inline]
     fn add(self, other: i32) -> BigInt {
-        if other >= 0 {
-            self + other as u32
-        } else {
-            self - other.uabs()
+        match other.checked_uabs() {
+            Positive(u) => self + u,
+            Negative(u) => self - u,
         }
     }
 }
 impl AddAssign<i32> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: i32) {
-        if other >= 0 {
-            *self += other as u32;
-        } else {
-            *self -= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self += u,
+            Negative(u) => *self -= u,
         }
     }
 }
@@ -1198,20 +1214,18 @@ impl Add<i64> for BigInt {
 
     #[inline]
     fn add(self, other: i64) -> BigInt {
-        if other >= 0 {
-            self + other as u64
-        } else {
-            self - other.uabs()
+        match other.checked_uabs() {
+            Positive(u) => self + u,
+            Negative(u) => self - u,
         }
     }
 }
 impl AddAssign<i64> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: i64) {
-        if other >= 0 {
-            *self += other as u64;
-        } else {
-            *self -= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self += u,
+            Negative(u) => *self -= u,
         }
     }
 }
@@ -1221,20 +1235,18 @@ impl Add<i128> for BigInt {
 
     #[inline]
     fn add(self, other: i128) -> BigInt {
-        if other >= 0 {
-            self + other as u128
-        } else {
-            self - other.uabs()
+        match other.checked_uabs() {
+            Positive(u) => self + u,
+            Negative(u) => self - u,
         }
     }
 }
 impl AddAssign<i128> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: i128) {
-        if other >= 0 {
-            *self += other as u128;
-        } else {
-            *self -= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self += u,
+            Negative(u) => *self -= u,
         }
     }
 }
@@ -1427,20 +1439,18 @@ impl Sub<i32> for BigInt {
 
     #[inline]
     fn sub(self, other: i32) -> BigInt {
-        if other >= 0 {
-            self - other as u32
-        } else {
-            self + other.uabs()
+        match other.checked_uabs() {
+            Positive(u) => self - u,
+            Negative(u) => self + u,
         }
     }
 }
 impl SubAssign<i32> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: i32) {
-        if other >= 0 {
-            *self -= other as u32;
-        } else {
-            *self += other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self -= u,
+            Negative(u) => *self += u,
         }
     }
 }
@@ -1450,10 +1460,9 @@ impl Sub<BigInt> for i32 {
 
     #[inline]
     fn sub(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u32 - other
-        } else {
-            -other - self.uabs()
+        match self.checked_uabs() {
+            Positive(u) => u - other,
+            Negative(u) => -other - u,
         }
     }
 }
@@ -1463,20 +1472,18 @@ impl Sub<i64> for BigInt {
 
     #[inline]
     fn sub(self, other: i64) -> BigInt {
-        if other >= 0 {
-            self - other as u64
-        } else {
-            self + other.uabs()
+        match other.checked_uabs() {
+            Positive(u) => self - u,
+            Negative(u) => self + u,
         }
     }
 }
 impl SubAssign<i64> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: i64) {
-        if other >= 0 {
-            *self -= other as u64;
-        } else {
-            *self += other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self -= u,
+            Negative(u) => *self += u,
         }
     }
 }
@@ -1486,10 +1493,9 @@ impl Sub<BigInt> for i64 {
 
     #[inline]
     fn sub(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u64 - other
-        } else {
-            -other - self.uabs()
+        match self.checked_uabs() {
+            Positive(u) => u - other,
+            Negative(u) => -other - u,
         }
     }
 }
@@ -1499,10 +1505,9 @@ impl Sub<i128> for BigInt {
 
     #[inline]
     fn sub(self, other: i128) -> BigInt {
-        if other >= 0 {
-            self - other as u128
-        } else {
-            self + other.uabs()
+        match other.checked_uabs() {
+            Positive(u) => self - u,
+            Negative(u) => self + u,
         }
     }
 }
@@ -1510,10 +1515,9 @@ impl Sub<i128> for BigInt {
 impl SubAssign<i128> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: i128) {
-        if other >= 0 {
-            *self -= other as u128;
-        } else {
-            *self += other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self -= u,
+            Negative(u) => *self += u,
         }
     }
 }
@@ -1523,10 +1527,9 @@ impl Sub<BigInt> for i128 {
 
     #[inline]
     fn sub(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u128 - other
-        } else {
-            -other - self.uabs()
+        match self.checked_uabs() {
+            Positive(u) => u - other,
+            Negative(u) => -other - u,
         }
     }
 }
@@ -1622,10 +1625,9 @@ impl Mul<i32> for BigInt {
 
     #[inline]
     fn mul(self, other: i32) -> BigInt {
-        if other >= 0 {
-            self * other as u32
-        } else {
-            -(self * other.uabs())
+        match other.checked_uabs() {
+            Positive(u) => self * u,
+            Negative(u) => -self * u,
         }
     }
 }
@@ -1633,11 +1635,12 @@ impl Mul<i32> for BigInt {
 impl MulAssign<i32> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: i32) {
-        if other >= 0 {
-            *self *= other as u32;
-        } else {
-            self.sign = -self.sign;
-            *self *= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self *= u,
+            Negative(u) => {
+                self.sign = -self.sign;
+                self.data *= u;
+            }
         }
     }
 }
@@ -1647,10 +1650,9 @@ impl Mul<i64> for BigInt {
 
     #[inline]
     fn mul(self, other: i64) -> BigInt {
-        if other >= 0 {
-            self * other as u64
-        } else {
-            -(self * other.uabs())
+        match other.checked_uabs() {
+            Positive(u) => self * u,
+            Negative(u) => -self * u,
         }
     }
 }
@@ -1658,11 +1660,12 @@ impl Mul<i64> for BigInt {
 impl MulAssign<i64> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: i64) {
-        if other >= 0 {
-            *self *= other as u64;
-        } else {
-            self.sign = -self.sign;
-            *self *= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self *= u,
+            Negative(u) => {
+                self.sign = -self.sign;
+                self.data *= u;
+            }
         }
     }
 }
@@ -1672,10 +1675,9 @@ impl Mul<i128> for BigInt {
 
     #[inline]
     fn mul(self, other: i128) -> BigInt {
-        if other >= 0 {
-            self * other as u128
-        } else {
-            -(self * other.uabs())
+        match other.checked_uabs() {
+            Positive(u) => self * u,
+            Negative(u) => -self * u,
         }
     }
 }
@@ -1683,11 +1685,12 @@ impl Mul<i128> for BigInt {
 impl MulAssign<i128> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: i128) {
-        if other >= 0 {
-            *self *= other as u128;
-        } else {
-            self.sign = -self.sign;
-            *self *= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self *= u,
+            Negative(u) => {
+                self.sign = -self.sign;
+                self.data *= u;
+            }
         }
     }
 }
@@ -1811,10 +1814,9 @@ impl Div<i32> for BigInt {
 
     #[inline]
     fn div(self, other: i32) -> BigInt {
-        if other >= 0 {
-            self / other as u32
-        } else {
-            -(self / other.uabs())
+        match other.checked_uabs() {
+            Positive(u) => self / u,
+            Negative(u) => -self / u,
         }
     }
 }
@@ -1822,11 +1824,12 @@ impl Div<i32> for BigInt {
 impl DivAssign<i32> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: i32) {
-        if other >= 0 {
-            *self /= other as u32;
-        } else {
-            self.sign = -self.sign;
-            *self /= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self /= u,
+            Negative(u) => {
+                self.sign = -self.sign;
+                *self /= u;
+            }
         }
     }
 }
@@ -1836,10 +1839,9 @@ impl Div<BigInt> for i32 {
 
     #[inline]
     fn div(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u32 / other
-        } else {
-            -(self.uabs() / other)
+        match self.checked_uabs() {
+            Positive(u) => u / other,
+            Negative(u) => u / -other,
         }
     }
 }
@@ -1849,10 +1851,9 @@ impl Div<i64> for BigInt {
 
     #[inline]
     fn div(self, other: i64) -> BigInt {
-        if other >= 0 {
-            self / other as u64
-        } else {
-            -(self / other.uabs())
+        match other.checked_uabs() {
+            Positive(u) => self / u,
+            Negative(u) => -self / u,
         }
     }
 }
@@ -1860,11 +1861,12 @@ impl Div<i64> for BigInt {
 impl DivAssign<i64> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: i64) {
-        if other >= 0 {
-            *self /= other as u64;
-        } else {
-            self.sign = -self.sign;
-            *self /= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self /= u,
+            Negative(u) => {
+                self.sign = -self.sign;
+                *self /= u;
+            }
         }
     }
 }
@@ -1874,10 +1876,9 @@ impl Div<BigInt> for i64 {
 
     #[inline]
     fn div(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u64 / other
-        } else {
-            -(self.uabs() / other)
+        match self.checked_uabs() {
+            Positive(u) => u / other,
+            Negative(u) => u / -other,
         }
     }
 }
@@ -1887,10 +1888,9 @@ impl Div<i128> for BigInt {
 
     #[inline]
     fn div(self, other: i128) -> BigInt {
-        if other >= 0 {
-            self / other as u128
-        } else {
-            -(self / other.uabs())
+        match other.checked_uabs() {
+            Positive(u) => self / u,
+            Negative(u) => -self / u,
         }
     }
 }
@@ -1898,11 +1898,12 @@ impl Div<i128> for BigInt {
 impl DivAssign<i128> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: i128) {
-        if other >= 0 {
-            *self /= other as u128;
-        } else {
-            self.sign = -self.sign;
-            *self /= other.uabs();
+        match other.checked_uabs() {
+            Positive(u) => *self /= u,
+            Negative(u) => {
+                self.sign = -self.sign;
+                *self /= u;
+            }
         }
     }
 }
@@ -1912,10 +1913,9 @@ impl Div<BigInt> for i128 {
 
     #[inline]
     fn div(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u128 / other
-        } else {
-            -(self.uabs() / other)
+        match self.checked_uabs() {
+            Positive(u) => u / other,
+            Negative(u) => u / -other,
         }
     }
 }
@@ -2061,10 +2061,9 @@ impl Rem<BigInt> for i32 {
 
     #[inline]
     fn rem(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u32 % other
-        } else {
-            -(self.uabs() % other)
+        match self.checked_uabs() {
+            Positive(u) => u % other,
+            Negative(u) => -(u % other),
         }
     }
 }
@@ -2090,10 +2089,9 @@ impl Rem<BigInt> for i64 {
 
     #[inline]
     fn rem(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u64 % other
-        } else {
-            -(self.uabs() % other)
+        match self.checked_uabs() {
+            Positive(u) => u % other,
+            Negative(u) => -(u % other),
         }
     }
 }
@@ -2119,10 +2117,9 @@ impl Rem<BigInt> for i128 {
 
     #[inline]
     fn rem(self, other: BigInt) -> BigInt {
-        if self >= 0 {
-            self as u128 % other
-        } else {
-            -(self.uabs() % other)
+        match self.checked_uabs() {
+            Positive(u) => u % other,
+            Negative(u) => -(u % other),
         }
     }
 }
