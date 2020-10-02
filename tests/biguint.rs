@@ -987,7 +987,7 @@ fn test_checked_mul() {
 
 #[test]
 fn test_mul_overflow() {
-    /* Test for issue #187 - overflow due to mac3 incorrectly sizing temporary */
+    // Test for issue #187 - overflow due to mac3 incorrectly sizing temporary
     let s = "531137992816767098689588206552468627329593117727031923199444138200403559860852242739162502232636710047537552105951370000796528760829212940754539968588340162273730474622005920097370111";
     let a: BigUint = s.parse().unwrap();
     let b = a.clone();
