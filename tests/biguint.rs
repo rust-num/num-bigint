@@ -898,6 +898,20 @@ fn test_div_rem() {
 }
 
 #[test]
+fn test_div_rem_big_multiple() {
+    let a = BigUint::from(3u32).pow(100u32);
+    let a2 = &a * &a;
+
+    let (div, rem) = a2.div_rem(&a);
+    assert_eq!(div, a);
+    assert!(rem.is_zero());
+
+    let (div, rem) = (&a2 - 1u32).div_rem(&a);
+    assert_eq!(div, &a - 1u32);
+    assert_eq!(rem, &a - 1u32);
+}
+
+#[test]
 fn test_div_ceil() {
     fn check(a: &BigUint, b: &BigUint, d: &BigUint, m: &BigUint) {
         if m.is_zero() {

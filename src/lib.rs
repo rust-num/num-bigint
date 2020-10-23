@@ -266,6 +266,7 @@ mod big_digit {
     pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
 
     const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
+    pub(crate) const MAX: BigDigit = LO_MASK as BigDigit;
 
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {
