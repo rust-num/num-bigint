@@ -2617,6 +2617,9 @@ impl BigUint {
         while let Some(&0) = self.data.last() {
             self.data.pop();
         }
+        if self.data.len() < self.data.capacity() / 4 {
+            self.data.shrink_to_fit();
+        }
     }
 
     /// Returns a normalized `BigUint`.
