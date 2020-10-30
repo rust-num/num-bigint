@@ -292,81 +292,75 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
             mac_digit(&mut acc[i..], y, *xi);
         }
     } else if x.len() <= 256 {
-        /*
-         * Karatsuba multiplication:
-         *
-         * The idea is that we break x and y up into two smaller numbers that each have about half
-         * as many digits, like so (note that multiplying by b is just a shift):
-         *
-         * x = x0 + x1 * b
-         * y = y0 + y1 * b
-         *
-         * With some algebra, we can compute x * y with three smaller products, where the inputs to
-         * each of the smaller products have only about half as many digits as x and y:
-         *
-         * x * y = (x0 + x1 * b) * (y0 + y1 * b)
-         *
-         * x * y = x0 * y0
-         *       + x0 * y1 * b
-         *       + x1 * y0 * b
-         *       + x1 * y1 * b^2
-         *
-         * Let p0 = x0 * y0 and p2 = x1 * y1:
-         *
-         * x * y = p0
-         *       + (x0 * y1 + x1 * y0) * b
-         *       + p2 * b^2
-         *
-         * The real trick is that middle term:
-         *
-         *         x0 * y1 + x1 * y0
-         *
-         *       = x0 * y1 + x1 * y0 - p0 + p0 - p2 + p2
-         *
-         *       = x0 * y1 + x1 * y0 - x0 * y0 - x1 * y1 + p0 + p2
-         *
-         * Now we complete the square:
-         *
-         *       = -(x0 * y0 - x0 * y1 - x1 * y0 + x1 * y1) + p0 + p2
-         *
-         *       = -((x1 - x0) * (y1 - y0)) + p0 + p2
-         *
-         * Let p1 = (x1 - x0) * (y1 - y0), and substitute back into our original formula:
-         *
-         * x * y = p0
-         *       + (p0 + p2 - p1) * b
-         *       + p2 * b^2
-         *
-         * Where the three intermediate products are:
-         *
-         * p0 = x0 * y0
-         * p1 = (x1 - x0) * (y1 - y0)
-         * p2 = x1 * y1
-         *
-         * In doing the computation, we take great care to avoid unnecessary temporary variables
-         * (since creating a BigUint requires a heap allocation): thus, we rearrange the formula a
-         * bit so we can use the same temporary variable for all the intermediate products:
-         *
-         * x * y = p2 * b^2 + p2 * b
-         *       + p0 * b + p0
-         *       - p1 * b
-         *
-         * The other trick we use is instead of doing explicit shifts, we slice acc at the
-         * appropriate offset when doing the add.
-         */
+        // Karatsuba multiplication:
+        //
+        // The idea is that we break x and y up into two smaller numbers that each have about half
+        // as many digits, like so (note that multiplying by b is just a shift):
+        //
+        // x = x0 + x1 * b
+        // y = y0 + y1 * b
+        //
+        // With some algebra, we can compute x * y with three smaller products, where the inputs to
+        // each of the smaller products have only about half as many digits as x and y:
+        //
+        // x * y = (x0 + x1 * b) * (y0 + y1 * b)
+        //
+        // x * y = x0 * y0
+        //       + x0 * y1 * b
+        //       + x1 * y0 * b
+        //       + x1 * y1 * b^2
+        //
+        // Let p0 = x0 * y0 and p2 = x1 * y1:
+        //
+        // x * y = p0
+        //       + (x0 * y1 + x1 * y0) * b
+        //       + p2 * b^2
+        //
+        // The real trick is that middle term:
+        //
+        //         x0 * y1 + x1 * y0
+        //
+        //       = x0 * y1 + x1 * y0 - p0 + p0 - p2 + p2
+        //
+        //       = x0 * y1 + x1 * y0 - x0 * y0 - x1 * y1 + p0 + p2
+        //
+        // Now we complete the square:
+        //
+        //       = -(x0 * y0 - x0 * y1 - x1 * y0 + x1 * y1) + p0 + p2
+        //
+        //       = -((x1 - x0) * (y1 - y0)) + p0 + p2
+        //
+        // Let p1 = (x1 - x0) * (y1 - y0), and substitute back into our original formula:
+        //
+        // x * y = p0
+        //       + (p0 + p2 - p1) * b
+        //       + p2 * b^2
+        //
+        // Where the three intermediate products are:
+        //
+        // p0 = x0 * y0
+        // p1 = (x1 - x0) * (y1 - y0)
+        // p2 = x1 * y1
+        //
+        // In doing the computation, we take great care to avoid unnecessary temporary variables
+        // (since creating a BigUint requires a heap allocation): thus, we rearrange the formula a
+        // bit so we can use the same temporary variable for all the intermediate products:
+        //
+        // x * y = p2 * b^2 + p2 * b
+        //       + p0 * b + p0
+        //       - p1 * b
+        //
+        // The other trick we use is instead of doing explicit shifts, we slice acc at the
+        // appropriate offset when doing the add.
 
-        /*
-         * When x is smaller than y, it's significantly faster to pick b such that x is split in
-         * half, not y:
-         */
+        // When x is smaller than y, it's significantly faster to pick b such that x is split in
+        // half, not y:
         let b = x.len() / 2;
         let (x0, x1) = x.split_at(b);
         let (y0, y1) = y.split_at(b);
 
-        /*
-         * We reuse the same BigUint for all the intermediate multiplies and have to size p
-         * appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
-         */
+        // We reuse the same BigUint for all the intermediate multiplies and have to size p
+        // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
         let len = x1.len() + y1.len() + 1;
         let mut p = BigUint { data: vec![0; len] };
 
@@ -676,28 +670,24 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
     };
 
     for j in (0..q_len).rev() {
-        /*
-         * When calculating our next guess q0, we don't need to consider the digits below j
-         * + b.data.len() - 1: we're guessing digit j of the quotient (i.e. q0 << j) from
-         * digit bn of the divisor (i.e. bn << (b.data.len() - 1) - so the product of those
-         * two numbers will be zero in all digits up to (j + b.data.len() - 1).
-         */
+        // When calculating our next guess q0, we don't need to consider the digits below j
+        // + b.data.len() - 1: we're guessing digit j of the quotient (i.e. q0 << j) from
+        // digit bn of the divisor (i.e. bn << (b.data.len() - 1) - so the product of those
+        // two numbers will be zero in all digits up to (j + b.data.len() - 1).
         let offset = j + b.data.len() - 1;
         if offset >= a.data.len() {
             continue;
         }
 
-        /* just avoiding a heap allocation: */
+        // just avoiding a heap allocation:
         let mut a0 = tmp;
         a0.data.truncate(0);
         a0.data.extend(a.data[offset..].iter().cloned());
 
-        /*
-         * q0 << j * big_digit::BITS is our actual quotient estimate - we do the shifts
-         * implicitly at the end, when adding and subtracting to a and q. Not only do we
-         * save the cost of the shifts, the rest of the arithmetic gets to work with
-         * smaller numbers.
-         */
+        // q0 << j * big_digit::BITS is our actual quotient estimate - we do the shifts
+        // implicitly at the end, when adding and subtracting to a and q. Not only do we
+        // save the cost of the shifts, the rest of the arithmetic gets to work with
+        // smaller numbers.
         let (mut q0, _) = div_rem_digit(a0, bn);
         let mut prod = b * &q0;
 
