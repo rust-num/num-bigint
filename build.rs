@@ -11,20 +11,24 @@ fn main() {
         autocfg::emit("u64_digit");
     }
     let ac = autocfg::new();
-    if ac.probe_path("std::convert::TryFrom") || ac.probe_path("core::convert::TryFrom") {
+    let std = if ac.probe_sysroot_crate("std") {
+        "std"
+    } else {
+        "core"
+    };
+    if ac.probe_path(&format!("{}::convert::TryFrom", std)) {
         autocfg::emit("has_try_from");
     }
 
-    if u64_digit
-        && (ac.probe_path("core::arch::x86_64::_addcarry_u64")
-            || ac.probe_path("std::arch::x86_64::_addcarry_u64"))
-    {
-        autocfg::emit("use_addcarry_u64");
-    } else if !u64_digit
-        && (ac.probe_path("core::arch::x86_64::_addcarry_u32")
-            || ac.probe_path("core::arch::x86::_addcarry_u32"))
-    {
-        autocfg::emit("use_addcarry_u32");
+    if let Ok(target_arch) = env::var("CARGO_CFG_TARGET_ARCH") {
+        if target_arch == "x86_64" || target_arch == "x86" {
+            let digit = if u64_digit { "u64" } else { "u32" };
+
+            let addcarry = format!("{}::arch::{}::_addcarry_{}", std, target_arch, digit);
+            if ac.probe_path(&addcarry) {
+                autocfg::emit("use_addcarry");
+            }
+        }
     }
 
     autocfg::rerun_path("build.rs");

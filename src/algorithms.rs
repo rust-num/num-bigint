@@ -5,6 +5,12 @@ use core::iter::repeat;
 use core::mem;
 use num_traits::{One, PrimInt, Zero};
 
+#[cfg(all(use_addcarry, target_arch = "x86_64"))]
+use core::arch::x86_64 as arch;
+
+#[cfg(all(use_addcarry, target_arch = "x86"))]
+use core::arch::x86 as arch;
+
 use crate::biguint::biguint_from_vec;
 use crate::biguint::BigUint;
 
@@ -15,31 +21,35 @@ use crate::bigint::Sign::{Minus, NoSign, Plus};
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 
 // only needed for the fallback implementation of `sbb`
-#[cfg(not(any(use_addcarry_u64, use_addcarry_u32)))]
+#[cfg(not(use_addcarry))]
 use crate::big_digit::SignedDoubleBigDigit;
 
-// Generic functions for add/subtract/multiply with carry/borrow. These are specialized for some platforms to take advantage of intrinsics etc
+// Generic functions for add/subtract/multiply with carry/borrow. These are specialized
+// for some platforms to take advantage of intrinsics, etc.
 
 // Add with carry:
-#[cfg(use_addcarry_u64)]
+#[cfg(all(use_addcarry, u64_digit))]
 #[inline]
 fn adc(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
     let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _addcarry_u64, it's just unsafe for API consistency with other intrinsics
-    *acc = unsafe { core::arch::x86_64::_addcarry_u64(*acc, a, b, &mut out) };
+    // Safety: There are absolutely no safety concerns with calling `_addcarry_u64`.
+    // It's just unsafe for API consistency with other intrinsics.
+    *acc = unsafe { arch::_addcarry_u64(*acc, a, b, &mut out) };
     out
 }
 
-#[cfg(use_addcarry_u32)]
+#[cfg(all(use_addcarry, not(u64_digit)))]
 #[inline]
 fn adc(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
     let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _addcarry_u32, it's just unsafe for API consistency with other intrinsics
-    *acc = unsafe { core::arch::x86_64::_addcarry_u32(*acc, a, b, &mut out) };
+    // Safety: There are absolutely no safety concerns with calling `_addcarry_u32`.
+    // It's just unsafe for API consistency with other intrinsics.
+    *acc = unsafe { arch::_addcarry_u32(*acc, a, b, &mut out) };
     out
 }
 
-#[cfg(not(any(use_addcarry_u64, use_addcarry_u32)))] // fallback for environments where we don't have an addcarry intrinsic
+// fallback for environments where we don't have an addcarry intrinsic
+#[cfg(not(use_addcarry))]
 #[inline]
 fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
     *acc += DoubleBigDigit::from(a);
@@ -50,24 +60,28 @@ fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
 }
 
 // Subtract with borrow:
-#[cfg(use_addcarry_u64)]
+#[cfg(all(use_addcarry, u64_digit))]
 #[inline]
 fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
     let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _subborrow_u64, it's just unsafe for API consistency with other intrinsics
-    *acc = unsafe { core::arch::x86_64::_subborrow_u64(*acc, a, b, &mut out) };
-    out
-}
-#[cfg(use_addcarry_u32)]
-#[inline]
-fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
-    let mut out = 0;
-    // Safety: There are absolutely no safety concerns with calling _subborrow_u32, it's just unsafe for API consistency with other intrinsics
-    *acc = unsafe { core::arch::x86_64::_subborrow_u32(*acc, a, b, &mut out) };
+    // Safety: There are absolutely no safety concerns with calling `_subborrow_u64`.
+    // It's just unsafe for API consistency with other intrinsics.
+    *acc = unsafe { arch::_subborrow_u64(*acc, a, b, &mut out) };
     out
 }
 
-#[cfg(not(any(use_addcarry_u64, use_addcarry_u32)))] // fallback for environments where we don't have an addcarry intrinsic
+#[cfg(all(use_addcarry, not(u64_digit)))]
+#[inline]
+fn sbb(a: BigDigit, b: BigDigit, acc: &mut u8) -> BigDigit {
+    let mut out = 0;
+    // Safety: There are absolutely no safety concerns with calling `_subborrow_u32`.
+    // It's just unsafe for API consistency with other intrinsics.
+    *acc = unsafe { arch::_subborrow_u32(*acc, a, b, &mut out) };
+    out
+}
+
+// fallback for environments where we don't have an addcarry intrinsic
+#[cfg(not(use_addcarry))]
 #[inline]
 fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
     *acc += SignedDoubleBigDigit::from(a);
