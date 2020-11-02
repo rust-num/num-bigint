@@ -1,4 +1,4 @@
-#[cfg(feature = "quickcheck")]
+#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 use crate::std_alloc::Box;
 use crate::std_alloc::{Cow, String, Vec};
 use core::cmp;
@@ -45,9 +45,6 @@ use crate::ParseBigIntError;
 #[cfg(has_try_from)]
 use crate::TryFromBigIntError;
 
-#[cfg(feature = "quickcheck")]
-use quickcheck::{Arbitrary, Gen};
-
 /// A big unsigned integer type.
 #[derive(Debug)]
 pub struct BigUint {
@@ -71,8 +68,8 @@ impl Clone for BigUint {
 }
 
 #[cfg(feature = "quickcheck")]
-impl Arbitrary for BigUint {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+impl quickcheck::Arbitrary for BigUint {
+    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
         // Use arbitrary from Vec
         biguint_from_vec(Vec::<BigDigit>::arbitrary(g))
     }
@@ -80,6 +77,22 @@ impl Arbitrary for BigUint {
     fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         // Use shrinker from Vec
         Box::new(self.data.shrink().map(biguint_from_vec))
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+mod abitrary_impl {
+    use super::*;
+    use arbitrary::{Arbitrary, Result, Unstructured};
+
+    impl Arbitrary for BigUint {
+        fn arbitrary(u: &mut Unstructured<'_>) -> Result<Self> {
+            Ok(biguint_from_vec(Vec::<BigDigit>::arbitrary(u)?))
+        }
+
+        fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+            Box::new(self.data.shrink().map(biguint_from_vec))
+        }
     }
 }
 

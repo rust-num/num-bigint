@@ -94,7 +94,7 @@ extern crate std;
 #[cfg(feature = "std")]
 mod std_alloc {
     pub(crate) use std::borrow::Cow;
-    #[cfg(feature = "quickcheck")]
+    #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
     pub(crate) use std::boxed::Box;
     pub(crate) use std::string::String;
     pub(crate) use std::vec::Vec;
@@ -107,7 +107,7 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 mod std_alloc {
     pub(crate) use alloc::borrow::Cow;
-    #[cfg(feature = "quickcheck")]
+    #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
     pub(crate) use alloc::boxed::Box;
     pub(crate) use alloc::string::String;
     pub(crate) use alloc::vec::Vec;
