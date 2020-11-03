@@ -1,3 +1,25 @@
+# Release 0.3.1 (2020-11-03)
+
+- [Addition and subtraction now uses intrinsics][141] for performance on `x86`
+  and `x86_64` when built with Rust 1.33 or later.
+- [Conversions `to_f32` and `to_f64` now return infinity][163] for very large
+  numbers, rather than `None`. This does preserve the sign too, so a large
+  negative `BigInt` will convert to negative infinity.
+- [The optional `arbitrary` feature implements `arbitrary::Arbitrary`][166],
+  distinct from `quickcheck::Arbitrary`.
+- [The division algorithm has been optimized][170] to reduce the number of
+  temporary allocations and improve the internal guesses at each step.
+- [`BigInt` and `BigUint` will opportunistically shrink capacity][171] if the
+  internal vector is much larger than needed.
+
+**Contributors**: @cuviper, @e00E, @ejmahler, @notoria, @tczajka
+
+[141]: https://github.com/rust-num/num-bigint/pull/141
+[163]: https://github.com/rust-num/num-bigint/pull/163
+[166]: https://github.com/rust-num/num-bigint/pull/166
+[170]: https://github.com/rust-num/num-bigint/pull/170
+[171]: https://github.com/rust-num/num-bigint/pull/171
+
 # Release 0.3.0 (2020-06-12)
 
 ### Enhancements
