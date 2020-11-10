@@ -1775,3 +1775,34 @@ fn test_pow() {
     check!(u128);
     check!(usize);
 }
+
+#[test]
+fn test_trailing_zeros() {
+    assert!(BigUint::from(0u8).trailing_zeros().is_none());
+    assert_eq!(BigUint::from(1u8).trailing_zeros().unwrap(), 0);
+    assert_eq!(BigUint::from(2u8).trailing_zeros().unwrap(), 1);
+    let x: BigUint = BigUint::one() << 128;
+    assert_eq!(x.trailing_zeros().unwrap(), 128);
+}
+
+#[test]
+fn test_trailing_ones() {
+    assert_eq!(BigUint::from(0u8).trailing_ones(), 0);
+    assert_eq!(BigUint::from(1u8).trailing_ones(), 1);
+    assert_eq!(BigUint::from(2u8).trailing_ones(), 0);
+    assert_eq!(BigUint::from(3u8).trailing_ones(), 2);
+    let x: BigUint = (BigUint::from(3u8) << 128) | BigUint::from(3u8);
+    assert_eq!(x.trailing_ones(), 2);
+    let x: BigUint = (BigUint::one() << 128) - BigUint::one();
+    assert_eq!(x.trailing_ones(), 128);
+}
+
+#[test]
+fn test_count_ones() {
+    assert_eq!(BigUint::from(0u8).count_ones(), 0);
+    assert_eq!(BigUint::from(1u8).count_ones(), 1);
+    assert_eq!(BigUint::from(2u8).count_ones(), 1);
+    assert_eq!(BigUint::from(3u8).count_ones(), 2);
+    let x: BigUint = (BigUint::from(3u8) << 128) | BigUint::from(3u8);
+    assert_eq!(x.count_ones(), 4);
+}
