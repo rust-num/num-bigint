@@ -349,6 +349,7 @@ fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
 
 /// Three argument multiply accumulate:
 /// acc += b * c
+#[allow(clippy::many_single_char_names)]
 fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     let (x, y) = if b.len() < c.len() { (b, c) } else { (c, b) };
 

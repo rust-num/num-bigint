@@ -1814,7 +1814,12 @@ impl Roots for BigUint {
 fn high_bits_to_u64(v: &BigUint) -> u64 {
     match v.data.len() {
         0 => 0,
-        1 => u64::from(v.data[0]),
+        1 => {
+            // XXX Conversion is useless if already 64-bit.
+            #[allow(clippy::useless_conversion)]
+            let v0 = u64::from(v.data[0]);
+            v0
+        }
         _ => {
             let mut bits = v.bits();
             let mut ret = 0u64;
@@ -1827,7 +1832,10 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
                 if bits_want != 64 {
                     ret <<= bits_want;
                 }
-                ret |= u64::from(*d) >> (digit_bits - bits_want);
+                // XXX Conversion is useless if already 64-bit.
+                #[allow(clippy::useless_conversion)]
+                let d0 = u64::from(*d) >> (digit_bits - bits_want);
+                ret |= d0;
                 ret_bits += bits_want;
                 bits -= bits_want;
 
@@ -1852,6 +1860,7 @@ impl ToPrimitive for BigUint {
         self.to_u128().as_ref().and_then(u128::to_i128)
     }
 
+    #[allow(clippy::useless_conversion)]
     #[inline]
     fn to_u64(&self) -> Option<u64> {
         let mut ret: u64 = 0;
@@ -1862,6 +1871,7 @@ impl ToPrimitive for BigUint {
                 return None;
             }
 
+            // XXX Conversion is useless if already 64-bit.
             ret += u64::from(*i) << bits;
             bits += big_digit::BITS;
         }

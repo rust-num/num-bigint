@@ -41,6 +41,7 @@ impl MontyReducer {
 /// In the terminology of that paper, this is an "Almost Montgomery Multiplication":
 /// x and y are required to satisfy 0 <= z < 2**(n*_W) and then the result
 /// z is guaranteed to satisfy 0 <= z < 2**(n*_W), but it may not be < m.
+#[allow(clippy::many_single_char_names)]
 fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> BigUint {
     // This code assumes x, y, m are all the same length, n.
     // (required by addMulVVW and the for loop).
@@ -131,6 +132,7 @@ fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
 }
 
 /// Calculates x ** y mod m using a fixed, 4-bit window.
+#[allow(clippy::many_single_char_names)]
 pub(crate) fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     assert!(m.data[0] & 1 == 1);
     let mr = MontyReducer::new(m);
