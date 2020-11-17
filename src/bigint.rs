@@ -2707,7 +2707,9 @@ impl TryFrom<&BigInt> for BigUint {
 
     #[inline]
     fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError<()>> {
-        value.to_biguint().ok_or(TryFromBigIntError::new(()))
+        value
+            .to_biguint()
+            .ok_or_else(|| TryFromBigIntError::new(()))
     }
 }
 
