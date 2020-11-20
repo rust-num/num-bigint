@@ -520,6 +520,7 @@ impl Zero for BigUint {
     #[inline]
     fn set_zero(&mut self) {
         self.data.clear();
+        self.normalize();
     }
 
     #[inline]
@@ -538,6 +539,7 @@ impl One for BigUint {
     fn set_one(&mut self) {
         self.data.clear();
         self.data.push(1);
+        self.normalize();
     }
 
     #[inline]
@@ -1067,7 +1069,7 @@ impl MulAssign<u32> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u32) {
         if other == 0 {
-            self.data.clear();
+            self.set_zero();
         } else {
             let carry = scalar_mul(&mut self.data[..], other as BigDigit);
             if carry != 0 {
@@ -1091,7 +1093,7 @@ impl MulAssign<u64> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u64) {
         if other == 0 {
-            self.data.clear();
+            self.set_zero();
         } else if other <= u64::from(BigDigit::max_value()) {
             *self *= other as BigDigit
         } else {
@@ -1104,7 +1106,7 @@ impl MulAssign<u64> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u64) {
         if other == 0 {
-            self.data.clear();
+            self.set_zero();
         } else {
             let carry = scalar_mul(&mut self.data[..], other as BigDigit);
             if carry != 0 {
@@ -1129,7 +1131,7 @@ impl MulAssign<u128> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u128) {
         if other == 0 {
-            self.data.clear();
+            self.set_zero();
         } else if other <= u128::from(BigDigit::max_value()) {
             *self *= other as BigDigit
         } else {
@@ -1142,7 +1144,7 @@ impl MulAssign<u128> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u128) {
         if other == 0 {
-            self.data.clear();
+            self.set_zero();
         } else if other <= BigDigit::max_value() as u128 {
             *self *= other as BigDigit
         } else {
