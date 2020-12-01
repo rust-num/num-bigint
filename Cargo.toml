@@ -68,6 +68,7 @@ default-features = false
 [features]
 default = ["std"]
 std = ["num-integer/std", "num-traits/std"]
+override-u64 = []
 
 [build-dependencies]
 autocfg = "1"
