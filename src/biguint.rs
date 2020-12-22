@@ -32,6 +32,7 @@ mod algorithms;
 #[path = "monty.rs"]
 mod monty;
 
+use self::algorithms::invmod;
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
@@ -2672,6 +2673,15 @@ impl BigUint {
             // Otherwise do basically the same as `num::pow`, but with a modulus.
             plain_modpow(self, &exponent.data, modulus)
         }
+    }
+
+    /// Return `(1 / self) % modulus` using Extended Euclidean Algorithm.
+    ///
+    /// Panics if self and the modulus are both even, either is zero, |self| == modulus, or no inverse is found
+    pub fn invmod(&self, modulus: &Self) -> Self {
+        invmod(&self.clone().into(), &modulus.clone().into())
+            .into_parts()
+            .1
     }
 
     /// Returns the truncated principal square root of `self` --

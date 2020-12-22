@@ -3231,6 +3231,223 @@ impl BigInt {
         BigInt::from_biguint(sign, mag)
     }
 
+    /// Returns `(1 / self) % modulus` using Extended Euclidean Algorithm
+    ///
+    /// Panics if self and modulus are both even, either is zero, |self| == modulus, or no inverse is found
+    ///
+    /// From wolfSSL implementation: fp_invmod, fp_invmod_slow
+    /// https://github.com/wolfSSL/wolfssl/blob/master/wolfcrypt/src/tfm.c
+    pub fn invmod(&self, modulus: &Self) -> Self {
+        if modulus.is_even() {
+            return self.invmod_slow(modulus);
+        }
+
+        if self.is_zero() || modulus.is_zero() {
+            panic!("base and/or modulus cannot be zero");
+        }
+
+        if self.abs() == *modulus {
+            panic!("cannot invert |a| == modulus");
+        }
+
+        let x = modulus;
+        let y = if self > modulus {
+            self.mod_floor(modulus)
+        } else {
+            self.clone()
+        };
+
+        /* 3. u=x, v=y, B=0, D=1 */
+
+        /* x == modulus, y == value to invert */
+        let mut u = x.clone();
+        /* we need y = |a| */
+        let mut v = y.abs();
+
+        let mut bb = Self::zero();
+        let mut bd = Self::one();
+
+        // here an infinite loop takes the place of `goto top`
+        // where a condition calls for `goto top`, simply continue
+        //
+        // NOTE: need to be cautious to always break/return, else infinite loop
+        loop {
+            /* 4. while u is even do */
+            while u.is_even() {
+                /* 4.1 u = u / 2 */
+                u /= 2_u32;
+
+                /* 4.2 if B is odd then */
+                if bb.is_odd() {
+                    /* B = (B-x)/2 */
+                    bb -= x;
+                }
+
+                /* B = B/2 */
+                bb /= 2_u32;
+            }
+
+            /* 5. while v is even do */
+            while v.is_even() {
+                /* 5.1 v = v/2 */
+                v /= 2_u32;
+
+                /* 5.2 if D is odd then */
+                if bd.is_odd() {
+                    /* D = (D-x)/2 */
+                    bd -= x;
+                }
+
+                /* D = D/2 */
+                bd /= 2_u32;
+            }
+
+            /* 6. if u >= v then */
+            if u >= v {
+                /* u = u - v, B = B - D */
+                u -= &v;
+                bb -= &bd;
+            } else {
+                /* v = v - u, D = D - B */
+                v -= &u;
+                bd -= &bb;
+            }
+
+            /* if u != 0, goto step 4 */
+            if !u.is_zero() {
+                continue;
+            }
+
+            /* now a = B, b = D, gcd == g*v */
+            if !v.is_one() {
+                // if v != 1, there is no inverse
+                panic!("no inverse, GCD != 1");
+            }
+
+            /* while D is too low */
+            while bd.sign() == Minus {
+                bd += modulus;
+            }
+
+            /* while D is too big */
+            let mod_mag = modulus.magnitude();
+            while bd.magnitude() >= mod_mag {
+                bd -= modulus;
+            }
+
+            if self.sign() == Minus {
+                bd = bd.neg();
+            }
+
+            /* D is now the inverse */
+            break;
+        }
+
+        bd
+    }
+
+    fn invmod_slow(&self, modulus: &Self) -> Self {
+        if self.is_even() && modulus.is_even() {
+            panic!("base and modulus are both even");
+        }
+
+        if self.is_zero() || modulus.is_zero() {
+            panic!("base and/or modulus cannot be zero");
+        }
+
+        let x = self.mod_floor(modulus);
+        let y = modulus;
+
+        /* 3. u=x, v=y, A=1, B=0, C=0, D-1 */
+        let mut u = x.clone();
+        let mut v = y.clone();
+        let mut ba = Self::one();
+        let mut bb = Self::zero();
+        let mut bc = Self::zero();
+        let mut bd = Self::one();
+
+        // here an infinite loop takes the place of `goto top`
+        // where a condition calls for `goto top`, simply continue
+        //
+        // NOTE: need to be cautious to always break/return, else infinite loop
+        loop {
+            /* 4. while u is even do */
+            while u.is_even() {
+                /* 4.1 u = u / 2 */
+                u /= 2_u32;
+
+                /* 4.2 if A or B is odd then */
+                if ba.is_odd() || bb.is_odd() {
+                    /* A = (A+y)/2, B = (B-x)/2*/
+                    // div 2 happens unconditionally below
+                    ba += y;
+                    bb -= &x;
+                }
+
+                ba /= 2_u32;
+                bb /= 2_u32;
+            }
+
+            /* 5. while v is even do */
+            while v.is_even() {
+                /* 5.1 v = v / 2 */
+                v /= 2_u32;
+
+                /* 5.2 if C or D is odd then */
+                if bc.is_odd() || bd.is_odd() {
+                    /* C = (C+y)/2, D = (D-x)/2 */
+                    // div 2 happens unconditionally below
+                    bc += y;
+                    bd -= &x;
+                }
+
+                /* C = C/2, D = D/2 */
+                bc /= 2_u32;
+                bd /= 2_u32;
+            }
+
+            /* 6. if u >= v then */
+            if u >= v {
+                /* u = u - v, A = A - C, B = B - D */
+                u -= &v;
+                ba -= &bc;
+                bb -= &bd;
+            } else {
+                /* v = v - u, C = C - A, D = D - B */
+                v -= &u;
+                bc -= &ba;
+                bd -= &bb;
+            }
+
+            /* if u != 0, goto step 4 */
+            if !u.is_zero() {
+                continue;
+            }
+
+            /* now a = C, b = D, gcd == g*v */
+            if !v.is_one() {
+                // if v != 1, there is no inverse
+                panic!("no inverse, GCD != 1");
+            }
+
+            /* while C is too low */
+            while bc.sign() == Minus {
+                bc += y;
+            }
+
+            /* while C is too big */
+            let mod_mag = y.magnitude();
+            while bc.magnitude() > mod_mag {
+                bc -= y;
+            }
+
+            /* C is now the inverse */
+            break;
+        }
+
+        bc
+    }
+
     /// Returns the truncated principal square root of `self` --
     /// see [Roots::sqrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.sqrt).
     pub fn sqrt(&self) -> Self {

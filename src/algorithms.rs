@@ -900,6 +900,10 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
     biguint_from_vec(data)
 }
 
+pub(crate) fn invmod(base: &BigInt, modulus: &BigInt) -> BigInt {
+    base.invmod(modulus)
+}
+
 pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
     debug_assert!(a.last() != Some(&0));
     debug_assert!(b.last() != Some(&0));
@@ -914,7 +918,8 @@ pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 mod algorithm_tests {
     use crate::big_digit::BigDigit;
     use crate::{BigInt, BigUint};
-    use num_traits::Num;
+    use num_integer::Integer;
+    use num_traits::{Num, One};
 
     #[test]
     fn test_sub_sign() {
@@ -932,5 +937,48 @@ mod algorithm_tests {
 
         assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
         assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
+    }
+
+    #[test]
+    fn test_invmod() {
+        use super::invmod;
+
+        let one = BigInt::one();
+
+        let test_modulus = |k| {
+            let nums = [
+                /*[11].to_vec(), */ [43].to_vec(),
+                [67].to_vec(),
+                [0x1, 0xa3].to_vec(),
+                [0x8f, 0xcb, 0x3a, 0xa2, 0x4b, 0x05, 0x5b, 0x4b, 0xfb].to_vec(),
+            ];
+            for i in nums.iter() {
+                let e = BigInt::from_bytes_be(super::Plus, &i);
+
+                let mut inv_e = invmod(&e, &k);
+                inv_e *= &e;
+                inv_e = inv_e.mod_floor(&k);
+
+                assert_eq!(inv_e, one);
+            }
+
+            // test 1 / (k + 1) % k
+            let mut e = k.clone();
+            e += 1;
+            let mut inv_e = invmod(&e, &k);
+            inv_e *= &e;
+            inv_e = inv_e.mod_floor(&k);
+
+            assert_eq!(inv_e, one);
+        };
+
+        // Test even modulus
+        // TODO: for some reason 11 has no inverse mod 265252859812191058636308480000000
+        let mut k = BigInt::from_str_radix("265252859812191058636308480000000", 10).unwrap();
+        test_modulus(k.clone());
+
+        // Test odd modulus
+        k += 1_u32;
+        test_modulus(k);
     }
 }
