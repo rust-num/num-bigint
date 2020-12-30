@@ -1307,3 +1307,19 @@ fn test_pow() {
     check!(u64);
     check!(usize);
 }
+
+#[test]
+fn test_bit() {
+    // 12 = (1100)_2
+    assert!(!BigInt::from(12u8).bit(0));
+    assert!(!BigInt::from(12u8).bit(1));
+    assert!(BigInt::from(12u8).bit(2));
+    assert!(BigInt::from(12u8).bit(3));
+    assert!(!BigInt::from(12u8).bit(4));
+    // -12 = (...110100)_2
+    assert!(!BigInt::from(-12i8).bit(0));
+    assert!(!BigInt::from(-12i8).bit(1));
+    assert!(BigInt::from(-12i8).bit(2));
+    assert!(!BigInt::from(-12i8).bit(3));
+    assert!(BigInt::from(-12i8).bit(4));
+}

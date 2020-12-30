@@ -3254,6 +3254,17 @@ impl BigInt {
     pub fn trailing_zeros(&self) -> Option<u64> {
         self.data.trailing_zeros()
     }
+
+    /// Returns whether the bit in position `bit` is set,
+    /// uses the two's complement for negative numbers
+    pub fn bit(&self, bit: u64) -> bool {
+        let b = self.data.bit(bit);
+        if self.is_negative() && bit > self.data.trailing_zeros().unwrap() {
+            !b
+        } else {
+            b
+        }
+    }
 }
 
 impl_sum_iter_type!(BigInt);
