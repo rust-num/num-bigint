@@ -2717,6 +2717,31 @@ impl BigUint {
     pub fn count_ones(&self) -> u64 {
         self.data.iter().map(|&d| u64::from(d.count_ones())).sum()
     }
+
+    /// Returns whether the bit in the given position is set
+    pub fn bit(&self, bit: u64) -> bool {
+        let bits_per_digit = u64::from(big_digit::BITS);
+        let digit_index = (bit / bits_per_digit) as usize;
+        digit_index < self.data.len()
+            && (self.data[digit_index] & ((1 as BigDigit) << (bit % bits_per_digit))) != 0
+    }
+
+    /// Sets or clears the bit in the given position
+    pub fn set_bit(&mut self, bit: u64, value: bool) {
+        let bits_per_digit = u64::from(big_digit::BITS);
+        let digit_index = (bit / bits_per_digit) as usize;
+        let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+        if value {
+            if digit_index >= self.data.len() {
+                self.data.resize(digit_index + 1, 0);
+            }
+            self.data[digit_index] |= bit_mask;
+        } else {
+            if digit_index < self.data.len() {
+                self.data[digit_index] &= !bit_mask;
+            }
+        }
+    }
 }
 
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
