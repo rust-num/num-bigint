@@ -3258,12 +3258,58 @@ impl BigInt {
     /// Returns whether the bit in position `bit` is set,
     /// uses the two's complement for negative numbers
     pub fn bit(&self, bit: u64) -> bool {
+        // Let the binary representation of a number be
+        //   x 1 0 ... 0
+        // Then the two's complement is
+        //  !x 1 0 ... 0
+        // where !x is obtained from x by flipping each bit
         let b = self.data.bit(bit);
         if self.is_negative() && bit > self.data.trailing_zeros().unwrap() {
             !b
         } else {
             b
         }
+    }
+
+    pub fn set_bit(&mut self, bit: u64, value: bool) {
+        match self.sign {
+            Sign::Plus => self.data.set_bit(bit, value),
+            Sign::NoSign => {
+                if value {
+                    self.data.set_bit(bit, true);
+                    self.sign = Sign::Plus;
+                }
+            }
+            Sign::Minus => {
+                let bits_per_digit = u64::from(big_digit::BITS);
+                if bit < bits_per_digit * self.len() as u64 {
+                    let digit_index = (bit / bits_per_digit) as usize;
+                    let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+                    let mut carry_in = 1;
+                    let mut carry_out = 1;
+                    for (i, d) in self.digits_mut().iter_mut().enumerate() {
+                        let twos_in = negate_carry(*d, &mut carry_in);
+                        let twos_out = if i != digit_index {
+                            // leave as-is
+                            twos_in
+                        } else if value {
+                            // set bit
+                            twos_in | bit_mask
+                        } else {
+                            // clear bit
+                            twos_in & !bit_mask
+                        };
+                        *d = negate_carry(twos_out, &mut carry_out);
+                    }
+                } else {
+                    if !value {
+                        self.data.set_bit(bit, true);
+                    }
+                }
+            }
+        }
+        // the top bit may have been cleared, so normalize
+        self.normalize();
     }
 }
 

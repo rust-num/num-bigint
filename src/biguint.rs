@@ -2739,6 +2739,8 @@ impl BigUint {
         } else {
             if digit_index < self.data.len() {
                 self.data[digit_index] &= !bit_mask;
+                // the top bit may have been cleared, so normalize
+                self.normalize();
             }
         }
     }
