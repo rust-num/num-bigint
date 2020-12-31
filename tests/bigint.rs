@@ -1316,10 +1316,37 @@ fn test_bit() {
     assert!(BigInt::from(12u8).bit(2));
     assert!(BigInt::from(12u8).bit(3));
     assert!(!BigInt::from(12u8).bit(4));
+    assert!(!BigInt::from(12u8).bit(200));
     // -12 = (...110100)_2
     assert!(!BigInt::from(-12i8).bit(0));
     assert!(!BigInt::from(-12i8).bit(1));
     assert!(BigInt::from(-12i8).bit(2));
     assert!(!BigInt::from(-12i8).bit(3));
     assert!(BigInt::from(-12i8).bit(4));
+    assert!(BigInt::from(-12i8).bit(200));
+}
+
+#[test]
+fn test_set_bit() {
+    let mut x = BigInt::zero();
+    x.set_bit(200, true);
+    assert_eq!(x, BigInt::one() << 200);
+    x.set_bit(10, true);
+    x.set_bit(200, false);
+    assert_eq!(x, BigInt::one() << 10);
+    x.set_bit(10, false);
+    x.set_bit(5, false);
+    assert_eq!(x, BigInt::zero());
+
+    x = BigInt::from(-12i8);
+    x.set_bit(200, true);
+    assert_eq!(x, BigInt::from(-12i8));
+    x.set_bit(200, false);
+    assert_eq!(x, BigInt::from_biguint(Minus, BigUint::from(12u8) | (BigUint::one() << 200)));
+    x.set_bit(6, false);
+    assert_eq!(x, BigInt::from_biguint(Minus, BigUint::from(76u8) | (BigUint::one() << 200)));
+    x.set_bit(6, true);
+    assert_eq!(x, BigInt::from_biguint(Minus, BigUint::from(12u8) | (BigUint::one() << 200)));
+    x.set_bit(200, true);
+    assert_eq!(x, BigInt::from(-12i8));
 }

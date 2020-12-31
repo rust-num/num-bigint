@@ -1828,4 +1828,7 @@ fn test_set_bit() {
     x.set_bit(128, false);
     x.set_bit(130, false);
     assert_eq!(x, (BigUint::from(2u8) << 128) | BigUint::from(2u8));
+    x.set_bit(129, false);
+    x.set_bit(1, false);
+    assert_eq!(x, BigUint::zero());
 }
