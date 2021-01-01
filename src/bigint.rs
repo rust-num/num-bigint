@@ -3271,6 +3271,8 @@ impl BigInt {
         }
     }
 
+    /// Sets or clears the bit in the given position,
+    /// uses the two's complement for negative numbers
     pub fn set_bit(&mut self, bit: u64, value: bool) {
         match self.sign {
             Sign::Plus => self.data.set_bit(bit, value),
