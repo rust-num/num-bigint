@@ -3263,11 +3263,12 @@ impl BigInt {
         // Then the two's complement is
         //   ... 1 !x 1 0 ... 0
         // where !x is obtained from x by flipping each bit
-        let b = self.data.bit(bit);
-        if self.is_negative() && bit > self.data.trailing_zeros().unwrap() {
-            !b
+        if bit >= u64::from(big_digit::BITS) * self.len() as u64 {
+            self.is_negative()
+        } else if self.is_negative() && bit > self.data.trailing_zeros().unwrap() {
+            !self.data.bit(bit)
         } else {
-            b
+            self.data.bit(bit)
         }
     }
 
