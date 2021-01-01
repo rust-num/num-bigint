@@ -3285,10 +3285,17 @@ impl BigInt {
             }
             Sign::Minus => {
                 let bits_per_digit = u64::from(big_digit::BITS);
-                if bit < bits_per_digit * self.len() as u64 {
-                    // This implementation corresponds to what the function `bitand_neg_pos` does when
-                    // value=false and what `bitor_neg_pos` does when value=true, except there is no
-                    // need to explicitly iterate over the digits of the right-hand side
+                // The first part of this `if` condition is not necessary but included because
+                // computing trailing_zeros can be avoided when the bit to set/clear is outside
+                // the represented digits
+                if bit >= bits_per_digit * self.len() as u64
+                    || bit > self.data.trailing_zeros().unwrap()
+                {
+                    self.data.set_bit(bit, !value);
+                } else {
+                    // This is the general case that basically corresponds to what `bitor_neg_pos`
+                    // (when setting bit) or `bitand_neg_pos` (when clearing bit) does, except there
+                    // is no need to explicitly iterate over the digits of the right-hand side
                     let bit_index = (bit / bits_per_digit) as usize;
                     let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
                     let mut carry_in = 1;
@@ -3303,13 +3310,6 @@ impl BigInt {
                             twos_in & !bit_mask
                         };
                         *digit = negate_carry(twos_out, &mut carry_out);
-                    }
-                } else {
-                    // The bit to set/clear is outside the represented digits, and thus more significant
-                    // than the most significant bit of the current number. This corresponds to setting
-                    // the bit to the negated value (no-op for value=true)
-                    if !value {
-                        self.data.set_bit(bit, true);
                     }
                 }
             }

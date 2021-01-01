@@ -1349,4 +1349,8 @@ fn test_set_bit() {
     assert_eq!(x, BigInt::from_biguint(Minus, BigUint::from(12u8) | (BigUint::one() << 200)));
     x.set_bit(200, true);
     assert_eq!(x, BigInt::from(-12i8));
+
+    x = BigInt::from_biguint(Minus, BigUint::one() << 200);
+    x.set_bit(40, true);
+    assert_eq!(x, BigInt::from_biguint(Minus, (BigUint::one() << 200) - (BigUint::one() << 40)));
 }
