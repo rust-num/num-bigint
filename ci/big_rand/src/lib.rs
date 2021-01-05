@@ -11,7 +11,7 @@ mod torture;
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
     use num_traits::Zero;
-    use rand::distributions::Uniform;
+    use rand::distributions::{Distribution, Uniform};
     use rand::thread_rng;
     use rand::{Rng, SeedableRng};
 
@@ -192,7 +192,7 @@ mod biguint {
 
         let mut rng = thread_rng();
         let bit_range = Uniform::new(0, 2048);
-        let sample_bits: Vec<_> = rng.sample_iter(&bit_range).take(100).collect();
+        let sample_bits: Vec<_> = bit_range.sample_iter(&mut rng).take(100).collect();
         for bits in sample_bits {
             let x = rng.gen_biguint(bits);
             for n in 2..11 {
