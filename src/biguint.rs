@@ -2423,6 +2423,10 @@ impl BigUint {
             "The radix must be within 2...256"
         );
 
+        if buf.is_empty() {
+            return Some(Zero::zero());
+        }
+
         if radix != 256 && buf.iter().any(|&b| b >= radix as u8) {
             return None;
         }
@@ -2465,6 +2469,10 @@ impl BigUint {
             2 <= radix && radix <= 256,
             "The radix must be within 2...256"
         );
+
+        if buf.is_empty() {
+            return Some(Zero::zero());
+        }
 
         if radix != 256 && buf.iter().any(|&b| b >= radix as u8) {
             return None;
