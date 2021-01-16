@@ -2729,19 +2729,23 @@ impl BigUint {
     /// Returns whether the bit in the given position is set
     pub fn bit(&self, bit: u64) -> bool {
         let bits_per_digit = u64::from(big_digit::BITS);
-        let digit_index = (bit / bits_per_digit) as usize;
+        let digit_index = (bit / bits_per_digit).to_usize().unwrap();
         digit_index < self.data.len()
             && (self.data[digit_index] & ((1 as BigDigit) << (bit % bits_per_digit))) != 0
     }
 
     /// Sets or clears the bit in the given position
+    ///
+    /// Note that setting a bit greater than the current bit length, a reallocation may be needed
+    /// to store the new digits
     pub fn set_bit(&mut self, bit: u64, value: bool) {
         let bits_per_digit = u64::from(big_digit::BITS);
-        let digit_index = (bit / bits_per_digit) as usize;
+        let digit_index = (bit / bits_per_digit).to_usize().unwrap();
         let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
         if value {
             if digit_index >= self.data.len() {
-                self.data.resize(digit_index + 1, 0);
+                let new_len = digit_index.checked_add(1).unwrap();
+                self.data.resize(new_len, 0);
             }
             self.data[digit_index] |= bit_mask;
         } else if digit_index < self.data.len() {

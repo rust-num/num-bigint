@@ -3256,7 +3256,7 @@ impl BigInt {
     }
 
     /// Returns whether the bit in position `bit` is set,
-    /// uses the two's complement for negative numbers
+    /// using the two's complement for negative numbers
     pub fn bit(&self, bit: u64) -> bool {
         // Let the binary representation of a number be
         //   ... 0  x 1 0 ... 0
@@ -3273,7 +3273,7 @@ impl BigInt {
     }
 
     /// Sets or clears the bit in the given position,
-    /// uses the two's complement for negative numbers
+    /// using the two's complement for negative numbers
     pub fn set_bit(&mut self, bit: u64, value: bool) {
         match self.sign {
             Sign::Plus => self.data.set_bit(bit, value),
@@ -3297,7 +3297,7 @@ impl BigInt {
                     // This is the general case that basically corresponds to what `bitor_neg_pos`
                     // (when setting bit) or `bitand_neg_pos` (when clearing bit) does, except there
                     // is no need to explicitly iterate over the digits of the right-hand side
-                    let bit_index = (bit / bits_per_digit) as usize;
+                    let bit_index = (bit / bits_per_digit).to_usize().unwrap();
                     let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
                     let mut carry_in = 1;
                     let mut carry_out = 1;
