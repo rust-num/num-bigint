@@ -1551,6 +1551,8 @@ fn test_from_and_to_radix() {
     }
 
     assert!(BigUint::from_radix_le(&[10, 100, 10], 50).is_none());
+    assert_eq!(BigUint::from_radix_le(&[], 2), Some(BigUint::zero()));
+    assert_eq!(BigUint::from_radix_be(&[], 2), Some(BigUint::zero()));
 }
 
 #[test]
