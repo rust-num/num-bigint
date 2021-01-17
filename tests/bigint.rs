@@ -1311,12 +1311,12 @@ fn test_pow() {
 #[test]
 fn test_bit() {
     // 12 = (1100)_2
-    assert!(!BigInt::from(12u8).bit(0));
-    assert!(!BigInt::from(12u8).bit(1));
-    assert!(BigInt::from(12u8).bit(2));
-    assert!(BigInt::from(12u8).bit(3));
-    assert!(!BigInt::from(12u8).bit(4));
-    assert!(!BigInt::from(12u8).bit(200));
+    assert!(!BigInt::from(0b1100u8).bit(0));
+    assert!(!BigInt::from(0b1100u8).bit(1));
+    assert!(BigInt::from(0b1100u8).bit(2));
+    assert!(BigInt::from(0b1100u8).bit(3));
+    assert!(!BigInt::from(0b1100u8).bit(4));
+    assert!(!BigInt::from(0b1100u8).bit(200));
     // -12 = (...110100)_2
     assert!(!BigInt::from(-12i8).bit(0));
     assert!(!BigInt::from(-12i8).bit(1));
@@ -1365,4 +1365,15 @@ fn test_set_bit() {
         x,
         BigInt::from_biguint(Minus, (BigUint::one() << 200) - (BigUint::one() << 40))
     );
+
+    x = BigInt::from_biguint(Minus, (BigUint::one() << 200) | (BigUint::one() << 100));
+    x.set_bit(100, false);
+    assert_eq!(
+        x,
+        BigInt::from_biguint(Minus, (BigUint::one() << 200) | (BigUint::one() << 101))
+    );
+
+    x = BigInt::from_biguint(Minus, (BigUint::one() << 63) | (BigUint::one() << 62));
+    x.set_bit(62, false);
+    assert_eq!(x, BigInt::from_biguint(Minus, BigUint::one() << 64));
 }

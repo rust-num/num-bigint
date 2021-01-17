@@ -3258,15 +3258,22 @@ impl BigInt {
     /// Returns whether the bit in position `bit` is set,
     /// using the two's complement for negative numbers
     pub fn bit(&self, bit: u64) -> bool {
-        // Let the binary representation of a number be
-        //   ... 0  x 1 0 ... 0
-        // Then the two's complement is
-        //   ... 1 !x 1 0 ... 0
-        // where !x is obtained from x by flipping each bit
-        if bit >= u64::from(big_digit::BITS) * self.len() as u64 {
-            self.is_negative()
-        } else if self.is_negative() && bit > self.data.trailing_zeros().unwrap() {
-            !self.data.bit(bit)
+        if self.is_negative() {
+            // Let the binary representation of a number be
+            //   ... 0  x 1 0 ... 0
+            // Then the two's complement is
+            //   ... 1 !x 1 0 ... 0
+            // where !x is obtained from x by flipping each bit
+            if bit >= u64::from(big_digit::BITS) * self.len() as u64 {
+                true
+            } else {
+                let trailing_zeros = self.data.trailing_zeros().unwrap();
+                match bit.cmp(&trailing_zeros) {
+                    Ordering::Less => false,
+                    Ordering::Equal => true,
+                    Ordering::Greater => !self.data.bit(bit),
+                }
+            }
         } else {
             self.data.bit(bit)
         }
@@ -3278,39 +3285,58 @@ impl BigInt {
         match self.sign {
             Sign::Plus => self.data.set_bit(bit, value),
             Sign::NoSign => {
-                // clearing a bit for zero is a no-op
                 if value {
                     self.data.set_bit(bit, true);
                     self.sign = Sign::Plus;
+                } else {
+                    // clearing a bit for zero is a no-op
                 }
             }
             Sign::Minus => {
                 let bits_per_digit = u64::from(big_digit::BITS);
-                // The first part of this `if` condition is not necessary but included because
-                // computing trailing_zeros can be avoided when the bit to set/clear is outside
-                // the represented digits
-                if bit >= bits_per_digit * self.len() as u64
-                    || bit > self.data.trailing_zeros().unwrap()
-                {
-                    self.data.set_bit(bit, !value);
+                if bit >= bits_per_digit * self.len() as u64 {
+                    if !value {
+                        self.data.set_bit(bit, true);
+                    }
                 } else {
-                    // This is the general case that basically corresponds to what `bitor_neg_pos`
-                    // (when setting bit) or `bitand_neg_pos` (when clearing bit) does, except there
-                    // is no need to explicitly iterate over the digits of the right-hand side
-                    let bit_index = (bit / bits_per_digit).to_usize().unwrap();
-                    let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
-                    let mut carry_in = 1;
-                    let mut carry_out = 1;
-                    for (index, digit) in self.digits_mut().iter_mut().enumerate() {
+                    let trailing_zeros = self.data.trailing_zeros().unwrap();
+                    if bit > trailing_zeros {
+                        self.data.set_bit(bit, !value);
+                    } else if bit < trailing_zeros && !value {
+                        // bit is already cleared
+                    } else if bit == trailing_zeros && value {
+                        // bit is already set
+                    } else {
+                        // general case
+                        let bit_index = (bit / bits_per_digit).to_usize().unwrap();
+                        let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+                        let mut carry_in = 1;
+                        let mut carry_out = 1;
+                        let mut digit_iter = self.digits_mut().iter_mut().skip(bit_index);
+
+                        let digit = digit_iter.next().unwrap();
                         let twos_in = negate_carry(*digit, &mut carry_in);
-                        let twos_out = if index != bit_index {
-                            twos_in
-                        } else if value {
+                        let twos_out = if value {
+                            // set bit
                             twos_in | bit_mask
                         } else {
+                            // clear bit
                             twos_in & !bit_mask
                         };
                         *digit = negate_carry(twos_out, &mut carry_out);
+
+                        for digit in digit_iter {
+                            if carry_in == 0 && carry_out == 0 {
+                                // no more digits will change
+                                break;
+                            }
+                            let twos = negate_carry(*digit, &mut carry_in);
+                            *digit = negate_carry(twos, &mut carry_out);
+                        }
+
+                        if carry_out != 0 {
+                            self.digits_mut().push(1 as BigDigit);
+                        }
                     }
                 }
             }
