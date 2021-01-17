@@ -3268,10 +3268,10 @@ impl BigInt {
                 true
             } else {
                 let trailing_zeros = self.data.trailing_zeros().unwrap();
-                match bit.cmp(&trailing_zeros) {
-                    Ordering::Less => false,
-                    Ordering::Equal => true,
-                    Ordering::Greater => !self.data.bit(bit),
+                match Ord::cmp(&bit, &trailing_zeros) {
+                    Less => false,
+                    Equal => true,
+                    Greater => !self.data.bit(bit),
                 }
             }
         } else {
@@ -3289,7 +3289,7 @@ impl BigInt {
                     self.data.set_bit(bit, true);
                     self.sign = Sign::Plus;
                 } else {
-                    // clearing a bit for zero is a no-op
+                    // Clearing a bit for zero is a no-op
                 }
             }
             Sign::Minus => {
@@ -3299,49 +3299,87 @@ impl BigInt {
                         self.data.set_bit(bit, true);
                     }
                 } else {
+                    // If the Uint number is
+                    //   ... 0  x 1 0 ... 0
+                    // then the two's complement is
+                    //   ... 1 !x 1 0 ... 0
+                    //            |-- bit at position 'trailing_zeros'
+                    // where !x is obtained from x by flipping each bit
                     let trailing_zeros = self.data.trailing_zeros().unwrap();
-                    if bit > trailing_zeros {
-                        self.data.set_bit(bit, !value);
-                    } else if bit < trailing_zeros && !value {
-                        // bit is already cleared
-                    } else if bit == trailing_zeros && value {
-                        // bit is already set
-                    } else {
-                        // general case
-                        let bit_index = (bit / bits_per_digit).to_usize().unwrap();
-                        let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
-                        let mut carry_in = 1;
-                        let mut carry_out = 1;
-                        let mut digit_iter = self.digits_mut().iter_mut().skip(bit_index);
+                    match Ord::cmp(&bit, &trailing_zeros) {
+                        Less => {
+                            if value {
+                                // We need to flip each bit from position 'bit' to 'trailing_zeros', both inclusive
+                                //       ... 1 !x 1 0 ... 0 ... 0
+                                //                        |-- bit at position 'bit'
+                                //                |-- bit at position 'trailing_zeros'
+                                // bit_mask:      1 1 ... 1 0 .. 0
+                                // We do this by xor'ing with the bit_mask
+                                let index_lo = (bit / bits_per_digit).to_usize().unwrap();
+                                let index_hi =
+                                    (trailing_zeros / bits_per_digit).to_usize().unwrap();
+                                let bit_mask_lo = BigDigit::MAX << (bit % bits_per_digit);
+                                let bit_mask_hi = BigDigit::MAX
+                                    >> (bits_per_digit - 1 - (trailing_zeros % bits_per_digit));
+                                let digits = self.digits_mut();
 
-                        let digit = digit_iter.next().unwrap();
-                        let twos_in = negate_carry(*digit, &mut carry_in);
-                        let twos_out = if value {
-                            // set bit
-                            twos_in | bit_mask
-                        } else {
-                            // clear bit
-                            twos_in & !bit_mask
-                        };
-                        *digit = negate_carry(twos_out, &mut carry_out);
-
-                        for digit in digit_iter {
-                            if carry_in == 0 && carry_out == 0 {
-                                // no more digits will change
-                                break;
+                                if index_lo == index_hi {
+                                    digits[index_lo] ^= bit_mask_lo & bit_mask_hi;
+                                } else {
+                                    digits[index_lo] ^= bit_mask_lo;
+                                    for index in (index_lo + 1)..index_hi {
+                                        digits[index] = BigDigit::MAX;
+                                    }
+                                    digits[index_hi] ^= bit_mask_hi;
+                                }
+                            } else {
+                                // Bit is already cleared
                             }
-                            let twos = negate_carry(*digit, &mut carry_in);
-                            *digit = negate_carry(twos, &mut carry_out);
                         }
+                        Equal => {
+                            if value {
+                                // Bit is already set
+                            } else {
+                                // Clearing the bit at position `trailing_zeros` is the only non-trivial
+                                // case and is dealt with by doing similarly to what `bitand_neg_pos`
+                                // does, except we start at digit `bit_index`; all digits below `bit_index`
+                                // are guaranteed to be zero, so initially we must have
+                                // `carry_in` = `carry_out` = 1
+                                let bit_index = (bit / bits_per_digit).to_usize().unwrap();
+                                let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+                                let mut digit_iter = self.digits_mut().iter_mut().skip(bit_index);
+                                let mut carry_in = 1;
+                                let mut carry_out = 1;
 
-                        if carry_out != 0 {
-                            self.digits_mut().push(1 as BigDigit);
+                                let digit = digit_iter.next().unwrap();
+                                let twos_in = negate_carry(*digit, &mut carry_in);
+                                let twos_out = twos_in & !bit_mask;
+                                *digit = negate_carry(twos_out, &mut carry_out);
+
+                                for digit in digit_iter {
+                                    if carry_in == 0 && carry_out == 0 {
+                                        // Exit the loop since no more digits can change
+                                        break;
+                                    }
+                                    let twos = negate_carry(*digit, &mut carry_in);
+                                    *digit = negate_carry(twos, &mut carry_out);
+                                }
+
+                                if carry_out != 0 {
+                                    // All digits have been traversed and there is a carry
+                                    debug_assert_eq!(carry_in, 0);
+                                    self.digits_mut().push(1);
+                                }
+                            }
+                        }
+                        Greater => {
+                            self.data.set_bit(bit, !value);
                         }
                     }
                 }
             }
         }
-        // the top bit may have been cleared, so normalize
+        // The top bit may have been cleared, so normalize
         self.normalize();
     }
 }

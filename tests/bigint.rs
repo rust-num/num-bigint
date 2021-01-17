@@ -1328,9 +1328,18 @@ fn test_bit() {
 
 #[test]
 fn test_set_bit() {
-    let mut x = BigInt::zero();
+    let mut x: BigInt;
+
+    // zero
+    x = BigInt::zero();
     x.set_bit(200, true);
     assert_eq!(x, BigInt::one() << 200);
+    x = BigInt::zero();
+    x.set_bit(200, false);
+    assert_eq!(x, BigInt::zero());
+
+    // positive numbers
+    x = BigInt::from_biguint(Plus, BigUint::one() << 200);
     x.set_bit(10, true);
     x.set_bit(200, false);
     assert_eq!(x, BigInt::one() << 10);
@@ -1338,6 +1347,7 @@ fn test_set_bit() {
     x.set_bit(5, false);
     assert_eq!(x, BigInt::zero());
 
+    // negative numbers
     x = BigInt::from(-12i8);
     x.set_bit(200, true);
     assert_eq!(x, BigInt::from(-12i8));
@@ -1359,6 +1369,13 @@ fn test_set_bit() {
     x.set_bit(200, true);
     assert_eq!(x, BigInt::from(-12i8));
 
+    x = BigInt::from_biguint(Minus, BigUint::one() << 30);
+    x.set_bit(10, true);
+    assert_eq!(
+        x,
+        BigInt::from_biguint(Minus, (BigUint::one() << 30) - (BigUint::one() << 10))
+    );
+
     x = BigInt::from_biguint(Minus, BigUint::one() << 200);
     x.set_bit(40, true);
     assert_eq!(
@@ -1376,4 +1393,8 @@ fn test_set_bit() {
     x = BigInt::from_biguint(Minus, (BigUint::one() << 63) | (BigUint::one() << 62));
     x.set_bit(62, false);
     assert_eq!(x, BigInt::from_biguint(Minus, BigUint::one() << 64));
+
+    x = BigInt::from_biguint(Minus, (BigUint::one() << 200) - BigUint::one());
+    x.set_bit(0, false);
+    assert_eq!(x, BigInt::from_biguint(Minus, BigUint::one() << 200));
 }
