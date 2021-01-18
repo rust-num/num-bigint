@@ -3346,8 +3346,7 @@ impl BigInt {
                         // bit_mask:      1 1 ... 1 0 .. 0
                         // We do this by xor'ing with the bit_mask
                         let index_lo = (bit / bits_per_digit).to_usize().unwrap();
-                        let index_hi =
-                            (trailing_zeros / bits_per_digit).to_usize().unwrap();
+                        let index_hi = (trailing_zeros / bits_per_digit).to_usize().unwrap();
                         let bit_mask_lo = big_digit::MAX << (bit % bits_per_digit);
                         let bit_mask_hi = big_digit::MAX
                             >> (bits_per_digit - 1 - (trailing_zeros % bits_per_digit));
