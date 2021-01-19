@@ -3281,6 +3281,10 @@ impl BigInt {
 
     /// Sets or clears the bit in the given position,
     /// using the two's complement for negative numbers
+    ///
+    /// Note that setting/clearing a bit (for positive/negative numbers,
+    /// respectively) greater than the current bit length, a reallocation
+    /// may be needed to store the new digits
     pub fn set_bit(&mut self, bit: u64, value: bool) {
         match self.sign {
             Sign::Plus => self.data.set_bit(bit, value),
@@ -3312,7 +3316,8 @@ impl BigInt {
                         // Clearing the bit at position `trailing_zeros` is dealt with by doing
                         // similarly to what `bitand_neg_pos` does, except we start at digit
                         // `bit_index`. All digits below `bit_index` are guaranteed to be zero,
-                        // so initially we have `carry_in` = `carry_out` = 1.
+                        // so initially we have `carry_in` = `carry_out` = 1. Furthermore, we
+                        // stop traversing the digits when there are no more carries.
                         let bit_index = (bit / bits_per_digit).to_usize().unwrap();
                         let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
                         let mut digit_iter = self.digits_mut().iter_mut().skip(bit_index);
@@ -3344,7 +3349,7 @@ impl BigInt {
                         //                        |-- bit at position 'bit'
                         //                |-- bit at position 'trailing_zeros'
                         // bit_mask:      1 1 ... 1 0 .. 0
-                        // We do this by xor'ing with the bit_mask
+                        // This is done by xor'ing with the bit_mask
                         let index_lo = (bit / bits_per_digit).to_usize().unwrap();
                         let index_hi = (trailing_zeros / bits_per_digit).to_usize().unwrap();
                         let bit_mask_lo = big_digit::MAX << (bit % bits_per_digit);
@@ -3355,7 +3360,7 @@ impl BigInt {
                         if index_lo == index_hi {
                             digits[index_lo] ^= bit_mask_lo & bit_mask_hi;
                         } else {
-                            digits[index_lo] ^= bit_mask_lo;
+                            digits[index_lo] = bit_mask_lo;
                             for index in (index_lo + 1)..index_hi {
                                 digits[index] = big_digit::MAX;
                             }
@@ -3363,8 +3368,8 @@ impl BigInt {
                         }
                     } else {
                         // We end up here in two cases:
-                        // * bit == trailing_zeros && value: Bit is already set
-                        // * bit < trailing_zeros && !value: Bit is already cleared
+                        //   bit == trailing_zeros && value: Bit is already set
+                        //   bit < trailing_zeros && !value: Bit is already cleared
                     }
                 }
             }
