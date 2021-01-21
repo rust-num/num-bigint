@@ -2297,6 +2297,96 @@ impl Integer for BigInt {
         (BigInt::from(gcd), BigInt::from(lcm))
     }
 
+    /// Greatest common divisor and Bézout coefficients
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use num_integer::{ExtendedGcd, Integer};
+    /// # use num_bigint::BigInt;
+    /// # fn main() {
+    /// let a = BigInt::from(693i16);
+    /// let b = BigInt::from(609i16);
+    /// let ExtendedGcd { gcd, x, y, .. } = a.extended_gcd(&b);
+    /// assert_eq!(gcd, BigInt::from(21i16));
+    /// assert_eq!(x, BigInt::from(-181i16));
+    /// assert_eq!(y, BigInt::from(206i16));
+    /// # }
+    /// ~~~
+    ///
+    /// Based on "Binary extended gcd algorithm",
+    /// Handbook of Applied Cryptography, Ch. 14, Ss. 14.61
+    fn extended_gcd(&self, other: &Self) -> num_integer::ExtendedGcd<Self> {
+        if self <= Self::zero() || other <= Self::zero() {
+            panic!("base and other must be positive, non-zero integers");
+        }
+
+        if self.abs() == *other {
+            panic!("no GCD for |a| == other");
+        }
+
+        let mut echs = self.clone();
+        let mut why = other.clone();
+
+        let mut gg = Self::one();
+
+        while echs.is_even() && why.is_even() {
+            echs >>= 1_u32;
+            why >>= 1_u32;
+            gg <<= 1_u32;
+        }
+
+        let mut xx = echs.clone();
+        let mut yy = why.abs();
+
+        let mut ba = Self::one();
+        let mut bb = Self::zero();
+        let mut bc = Self::zero();
+        let mut bd = Self::one();
+
+        while !xx.is_zero() {
+            while xx.is_even() {
+                xx >>= 1_u32;
+
+                if ba.is_odd() || bb.is_odd() {
+                    ba += &why;
+                    bb -= &echs;
+                }
+
+                ba >>= 1_u32;
+                bb >>= 1_u32;
+            }
+
+            while yy.is_even() {
+                yy >>= 1_u32;
+
+                if bc.is_odd() || bd.is_odd() {
+                    bc += &why;
+                    bd -= &echs;
+                }
+
+                bc >>= 1_u32;
+                bd >>= 1_u32;
+            }
+
+            if xx >= yy {
+                xx -= &yy;
+                ba -= &bc;
+                bb -= &bd;
+            } else {
+                yy -= &xx;
+                bc -= &ba;
+                bd -= &bb;
+            }
+        }
+
+        let mut egcd = num_integer::ExtendedGcd::default();
+        egcd.gcd = gg * yy;
+        egcd.x = bc;
+        egcd.y = bd;
+        egcd
+    }
+
     /// Greatest common divisor, least common multiple, and Bézout coefficients.
     #[inline]
     fn extended_gcd_lcm(&self, other: &BigInt) -> (num_integer::ExtendedGcd<BigInt>, BigInt) {
@@ -3337,4 +3427,14 @@ fn test_assign_from_slice() {
     check(Plus, 0, NoSign, 0);
     check(Minus, 1, Minus, 1);
     check(NoSign, 1, NoSign, 0);
+}
+
+#[test]
+fn test_extended_gcd() {
+    let a = BigInt::from(693i16);
+    let b = BigInt::from(609i16);
+    let num_integer::ExtendedGcd { gcd, x, y, .. } = a.extended_gcd(&b);
+    assert_eq!(gcd, BigInt::from(21i16));
+    assert_eq!(x, BigInt::from(-181i16));
+    assert_eq!(y, BigInt::from(206i16));
 }
