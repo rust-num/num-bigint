@@ -4,29 +4,23 @@
 #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 use crate::std_alloc::Box;
 use crate::std_alloc::{String, Vec};
-use core::cmp::Ordering::{self, Equal, Greater, Less};
-#[cfg(has_try_from)]
-use core::convert::TryFrom;
+use core::cmp::Ordering::{self, Equal};
 use core::default::Default;
 use core::fmt;
 use core::hash;
 use core::ops::{Neg, Not};
-use core::str::{self, FromStr};
+use core::str;
 use core::{i128, u128};
 use core::{i64, u64};
 
 use num_integer::{Integer, Roots};
-use num_traits::{FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
+use num_traits::{Num, One, Pow, Signed, Zero};
 
 use self::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::BigDigit;
-use crate::biguint;
 use crate::biguint::to_str_radix_reversed;
 use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
-use crate::ParseBigIntError;
-#[cfg(has_try_from)]
-use crate::TryFromBigIntError;
 
 mod addition;
 mod division;
@@ -34,6 +28,7 @@ mod multiplication;
 mod subtraction;
 
 mod bits;
+mod convert;
 mod power;
 mod shift;
 
@@ -274,35 +269,6 @@ impl<'a> Not for &'a BigInt {
             Plus => -BigInt::from(&self.data + 1u32),
             Minus => BigInt::from(&self.data - 1u32),
         }
-    }
-}
-
-impl FromStr for BigInt {
-    type Err = ParseBigIntError;
-
-    #[inline]
-    fn from_str(s: &str) -> Result<BigInt, ParseBigIntError> {
-        BigInt::from_str_radix(s, 10)
-    }
-}
-
-impl Num for BigInt {
-    type FromStrRadixErr = ParseBigIntError;
-
-    /// Creates and initializes a BigInt.
-    #[inline]
-    fn from_str_radix(mut s: &str, radix: u32) -> Result<BigInt, ParseBigIntError> {
-        let sign = if s.starts_with('-') {
-            let tail = &s[1..];
-            if !tail.starts_with('+') {
-                s = tail
-            }
-            Minus
-        } else {
-            Plus
-        };
-        let bu = BigUint::from_str_radix(s, radix)?;
-        Ok(BigInt::from_biguint(sign, bu))
     }
 }
 
@@ -630,246 +596,6 @@ impl Roots for BigInt {
     }
 }
 
-impl ToPrimitive for BigInt {
-    #[inline]
-    fn to_i64(&self) -> Option<i64> {
-        match self.sign {
-            Plus => self.data.to_i64(),
-            NoSign => Some(0),
-            Minus => {
-                let n = self.data.to_u64()?;
-                let m: u64 = 1 << 63;
-                match n.cmp(&m) {
-                    Less => Some(-(n as i64)),
-                    Equal => Some(i64::MIN),
-                    Greater => None,
-                }
-            }
-        }
-    }
-
-    #[inline]
-    fn to_i128(&self) -> Option<i128> {
-        match self.sign {
-            Plus => self.data.to_i128(),
-            NoSign => Some(0),
-            Minus => {
-                let n = self.data.to_u128()?;
-                let m: u128 = 1 << 127;
-                match n.cmp(&m) {
-                    Less => Some(-(n as i128)),
-                    Equal => Some(i128::MIN),
-                    Greater => None,
-                }
-            }
-        }
-    }
-
-    #[inline]
-    fn to_u64(&self) -> Option<u64> {
-        match self.sign {
-            Plus => self.data.to_u64(),
-            NoSign => Some(0),
-            Minus => None,
-        }
-    }
-
-    #[inline]
-    fn to_u128(&self) -> Option<u128> {
-        match self.sign {
-            Plus => self.data.to_u128(),
-            NoSign => Some(0),
-            Minus => None,
-        }
-    }
-
-    #[inline]
-    fn to_f32(&self) -> Option<f32> {
-        let n = self.data.to_f32()?;
-        Some(if self.sign == Minus { -n } else { n })
-    }
-
-    #[inline]
-    fn to_f64(&self) -> Option<f64> {
-        let n = self.data.to_f64()?;
-        Some(if self.sign == Minus { -n } else { n })
-    }
-}
-
-macro_rules! impl_try_from_bigint {
-    ($T:ty, $to_ty:path) => {
-        #[cfg(has_try_from)]
-        impl TryFrom<&BigInt> for $T {
-            type Error = TryFromBigIntError<()>;
-
-            #[inline]
-            fn try_from(value: &BigInt) -> Result<$T, TryFromBigIntError<()>> {
-                $to_ty(value).ok_or(TryFromBigIntError::new(()))
-            }
-        }
-
-        #[cfg(has_try_from)]
-        impl TryFrom<BigInt> for $T {
-            type Error = TryFromBigIntError<BigInt>;
-
-            #[inline]
-            fn try_from(value: BigInt) -> Result<$T, TryFromBigIntError<BigInt>> {
-                <$T>::try_from(&value).map_err(|_| TryFromBigIntError::new(value))
-            }
-        }
-    };
-}
-
-impl_try_from_bigint!(u8, ToPrimitive::to_u8);
-impl_try_from_bigint!(u16, ToPrimitive::to_u16);
-impl_try_from_bigint!(u32, ToPrimitive::to_u32);
-impl_try_from_bigint!(u64, ToPrimitive::to_u64);
-impl_try_from_bigint!(usize, ToPrimitive::to_usize);
-impl_try_from_bigint!(u128, ToPrimitive::to_u128);
-
-impl_try_from_bigint!(i8, ToPrimitive::to_i8);
-impl_try_from_bigint!(i16, ToPrimitive::to_i16);
-impl_try_from_bigint!(i32, ToPrimitive::to_i32);
-impl_try_from_bigint!(i64, ToPrimitive::to_i64);
-impl_try_from_bigint!(isize, ToPrimitive::to_isize);
-impl_try_from_bigint!(i128, ToPrimitive::to_i128);
-
-impl FromPrimitive for BigInt {
-    #[inline]
-    fn from_i64(n: i64) -> Option<BigInt> {
-        Some(BigInt::from(n))
-    }
-
-    #[inline]
-    fn from_i128(n: i128) -> Option<BigInt> {
-        Some(BigInt::from(n))
-    }
-
-    #[inline]
-    fn from_u64(n: u64) -> Option<BigInt> {
-        Some(BigInt::from(n))
-    }
-
-    #[inline]
-    fn from_u128(n: u128) -> Option<BigInt> {
-        Some(BigInt::from(n))
-    }
-
-    #[inline]
-    fn from_f64(n: f64) -> Option<BigInt> {
-        if n >= 0.0 {
-            BigUint::from_f64(n).map(BigInt::from)
-        } else {
-            let x = BigUint::from_f64(-n)?;
-            Some(-BigInt::from(x))
-        }
-    }
-}
-
-impl From<i64> for BigInt {
-    #[inline]
-    fn from(n: i64) -> Self {
-        if n >= 0 {
-            BigInt::from(n as u64)
-        } else {
-            let u = u64::MAX - (n as u64) + 1;
-            BigInt {
-                sign: Minus,
-                data: BigUint::from(u),
-            }
-        }
-    }
-}
-
-impl From<i128> for BigInt {
-    #[inline]
-    fn from(n: i128) -> Self {
-        if n >= 0 {
-            BigInt::from(n as u128)
-        } else {
-            let u = u128::MAX - (n as u128) + 1;
-            BigInt {
-                sign: Minus,
-                data: BigUint::from(u),
-            }
-        }
-    }
-}
-
-macro_rules! impl_bigint_from_int {
-    ($T:ty) => {
-        impl From<$T> for BigInt {
-            #[inline]
-            fn from(n: $T) -> Self {
-                BigInt::from(n as i64)
-            }
-        }
-    };
-}
-
-impl_bigint_from_int!(i8);
-impl_bigint_from_int!(i16);
-impl_bigint_from_int!(i32);
-impl_bigint_from_int!(isize);
-
-impl From<u64> for BigInt {
-    #[inline]
-    fn from(n: u64) -> Self {
-        if n > 0 {
-            BigInt {
-                sign: Plus,
-                data: BigUint::from(n),
-            }
-        } else {
-            BigInt::zero()
-        }
-    }
-}
-
-impl From<u128> for BigInt {
-    #[inline]
-    fn from(n: u128) -> Self {
-        if n > 0 {
-            BigInt {
-                sign: Plus,
-                data: BigUint::from(n),
-            }
-        } else {
-            BigInt::zero()
-        }
-    }
-}
-
-macro_rules! impl_bigint_from_uint {
-    ($T:ty) => {
-        impl From<$T> for BigInt {
-            #[inline]
-            fn from(n: $T) -> Self {
-                BigInt::from(n as u64)
-            }
-        }
-    };
-}
-
-impl_bigint_from_uint!(u8);
-impl_bigint_from_uint!(u16);
-impl_bigint_from_uint!(u32);
-impl_bigint_from_uint!(usize);
-
-impl From<BigUint> for BigInt {
-    #[inline]
-    fn from(n: BigUint) -> Self {
-        if n.is_zero() {
-            BigInt::zero()
-        } else {
-            BigInt {
-                sign: Plus,
-                data: n,
-            }
-        }
-    }
-}
-
 impl IntDigits for BigInt {
     #[inline]
     fn digits(&self) -> &[BigDigit] {
@@ -926,92 +652,6 @@ pub trait ToBigInt {
     /// Converts the value of `self` to a `BigInt`.
     fn to_bigint(&self) -> Option<BigInt>;
 }
-
-impl ToBigInt for BigInt {
-    #[inline]
-    fn to_bigint(&self) -> Option<BigInt> {
-        Some(self.clone())
-    }
-}
-
-impl ToBigInt for BigUint {
-    #[inline]
-    fn to_bigint(&self) -> Option<BigInt> {
-        if self.is_zero() {
-            Some(Zero::zero())
-        } else {
-            Some(BigInt {
-                sign: Plus,
-                data: self.clone(),
-            })
-        }
-    }
-}
-
-impl biguint::ToBigUint for BigInt {
-    #[inline]
-    fn to_biguint(&self) -> Option<BigUint> {
-        match self.sign() {
-            Plus => Some(self.data.clone()),
-            NoSign => Some(Zero::zero()),
-            Minus => None,
-        }
-    }
-}
-
-#[cfg(has_try_from)]
-impl TryFrom<&BigInt> for BigUint {
-    type Error = TryFromBigIntError<()>;
-
-    #[inline]
-    fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError<()>> {
-        value
-            .to_biguint()
-            .ok_or_else(|| TryFromBigIntError::new(()))
-    }
-}
-
-#[cfg(has_try_from)]
-impl TryFrom<BigInt> for BigUint {
-    type Error = TryFromBigIntError<BigInt>;
-
-    #[inline]
-    fn try_from(value: BigInt) -> Result<BigUint, TryFromBigIntError<BigInt>> {
-        if value.sign() == Sign::Minus {
-            Err(TryFromBigIntError::new(value))
-        } else {
-            Ok(value.data)
-        }
-    }
-}
-
-macro_rules! impl_to_bigint {
-    ($T:ty, $from_ty:path) => {
-        impl ToBigInt for $T {
-            #[inline]
-            fn to_bigint(&self) -> Option<BigInt> {
-                $from_ty(*self)
-            }
-        }
-    };
-}
-
-impl_to_bigint!(isize, FromPrimitive::from_isize);
-impl_to_bigint!(i8, FromPrimitive::from_i8);
-impl_to_bigint!(i16, FromPrimitive::from_i16);
-impl_to_bigint!(i32, FromPrimitive::from_i32);
-impl_to_bigint!(i64, FromPrimitive::from_i64);
-impl_to_bigint!(i128, FromPrimitive::from_i128);
-
-impl_to_bigint!(usize, FromPrimitive::from_usize);
-impl_to_bigint!(u8, FromPrimitive::from_u8);
-impl_to_bigint!(u16, FromPrimitive::from_u16);
-impl_to_bigint!(u32, FromPrimitive::from_u32);
-impl_to_bigint!(u64, FromPrimitive::from_u64);
-impl_to_bigint!(u128, FromPrimitive::from_u128);
-
-impl_to_bigint!(f32, FromPrimitive::from_f32);
-impl_to_bigint!(f64, FromPrimitive::from_f64);
 
 impl BigInt {
     /// Creates and initializes a BigInt.
@@ -1094,20 +734,7 @@ impl BigInt {
     /// The digits are in big-endian base 2<sup>8</sup>.
     #[inline]
     pub fn from_signed_bytes_be(digits: &[u8]) -> BigInt {
-        let sign = match digits.first() {
-            Some(v) if *v > 0x7f => Sign::Minus,
-            Some(_) => Sign::Plus,
-            None => return BigInt::zero(),
-        };
-
-        if sign == Sign::Minus {
-            // two's-complement the content to retrieve the magnitude
-            let mut digits = Vec::from(digits);
-            twos_complement_be(&mut digits);
-            BigInt::from_biguint(sign, BigUint::from_bytes_be(&*digits))
-        } else {
-            BigInt::from_biguint(sign, BigUint::from_bytes_be(digits))
-        }
+        convert::from_signed_bytes_be(digits)
     }
 
     /// Creates and initializes a `BigInt` from an array of bytes in two's complement.
@@ -1115,20 +742,7 @@ impl BigInt {
     /// The digits are in little-endian base 2<sup>8</sup>.
     #[inline]
     pub fn from_signed_bytes_le(digits: &[u8]) -> BigInt {
-        let sign = match digits.last() {
-            Some(v) if *v > 0x7f => Sign::Minus,
-            Some(_) => Sign::Plus,
-            None => return BigInt::zero(),
-        };
-
-        if sign == Sign::Minus {
-            // two's-complement the content to retrieve the magnitude
-            let mut digits = Vec::from(digits);
-            twos_complement_le(&mut digits);
-            BigInt::from_biguint(sign, BigUint::from_bytes_le(&*digits))
-        } else {
-            BigInt::from_biguint(sign, BigUint::from_bytes_le(digits))
-        }
+        convert::from_signed_bytes_le(digits)
     }
 
     /// Creates and initializes a `BigInt`.
@@ -1310,20 +924,7 @@ impl BigInt {
     /// ```
     #[inline]
     pub fn to_signed_bytes_be(&self) -> Vec<u8> {
-        let mut bytes = self.data.to_bytes_be();
-        let first_byte = bytes.first().cloned().unwrap_or(0);
-        if first_byte > 0x7f
-            && !(first_byte == 0x80
-                && bytes.iter().skip(1).all(Zero::is_zero)
-                && self.sign == Sign::Minus)
-        {
-            // msb used by magnitude, extend by 1 byte
-            bytes.insert(0, 0);
-        }
-        if self.sign == Sign::Minus {
-            twos_complement_be(&mut bytes);
-        }
-        bytes
+        convert::to_signed_bytes_be(self)
     }
 
     /// Returns the two's-complement byte representation of the `BigInt` in little-endian byte order.
@@ -1338,20 +939,7 @@ impl BigInt {
     /// ```
     #[inline]
     pub fn to_signed_bytes_le(&self) -> Vec<u8> {
-        let mut bytes = self.data.to_bytes_le();
-        let last_byte = bytes.last().cloned().unwrap_or(0);
-        if last_byte > 0x7f
-            && !(last_byte == 0x80
-                && bytes.iter().rev().skip(1).all(Zero::is_zero)
-                && self.sign == Sign::Minus)
-        {
-            // msb used by magnitude, extend by 1 byte
-            bytes.push(0);
-        }
-        if self.sign == Sign::Minus {
-            twos_complement_le(&mut bytes);
-        }
-        bytes
+        convert::to_signed_bytes_le(self)
     }
 
     /// Returns the integer formatted as a string in the given radix.
@@ -1562,9 +1150,9 @@ impl BigInt {
             } else {
                 let trailing_zeros = self.data.trailing_zeros().unwrap();
                 match Ord::cmp(&bit, &trailing_zeros) {
-                    Less => false,
-                    Equal => true,
-                    Greater => !self.data.bit(bit),
+                    Ordering::Less => false,
+                    Ordering::Equal => true,
+                    Ordering::Greater => !self.data.bit(bit),
                 }
             }
         } else {
@@ -1596,44 +1184,13 @@ impl BigInt {
     }
 }
 
-/// Perform in-place two's complement of the given binary representation,
-/// in little-endian byte order.
-#[inline]
-fn twos_complement_le(digits: &mut [u8]) {
-    twos_complement(digits)
-}
-
-/// Perform in-place two's complement of the given binary representation
-/// in big-endian byte order.
-#[inline]
-fn twos_complement_be(digits: &mut [u8]) {
-    twos_complement(digits.iter_mut().rev())
-}
-
-/// Perform in-place two's complement of the given digit iterator
-/// starting from the least significant byte.
-#[inline]
-fn twos_complement<'a, I>(digits: I)
-where
-    I: IntoIterator<Item = &'a mut u8>,
-{
-    let mut carry = true;
-    for d in digits {
-        *d = d.not();
-        if carry {
-            *d = d.wrapping_add(1);
-            carry = d.is_zero();
-        }
-    }
-}
-
 #[test]
 fn test_from_biguint() {
     fn check(inp_s: Sign, inp_n: usize, ans_s: Sign, ans_n: usize) {
-        let inp = BigInt::from_biguint(inp_s, FromPrimitive::from_usize(inp_n).unwrap());
+        let inp = BigInt::from_biguint(inp_s, BigUint::from(inp_n));
         let ans = BigInt {
             sign: ans_s,
-            data: FromPrimitive::from_usize(ans_n).unwrap(),
+            data: BigUint::from(ans_n),
         };
         assert_eq!(inp, ans);
     }
@@ -1649,7 +1206,7 @@ fn test_from_slice() {
         let inp = BigInt::from_slice(inp_s, &[inp_n]);
         let ans = BigInt {
             sign: ans_s,
-            data: FromPrimitive::from_u32(ans_n).unwrap(),
+            data: BigUint::from(ans_n),
         };
         assert_eq!(inp, ans);
     }
@@ -1666,7 +1223,7 @@ fn test_assign_from_slice() {
         inp.assign_from_slice(inp_s, &[inp_n]);
         let ans = BigInt {
             sign: ans_s,
-            data: FromPrimitive::from_u32(ans_n).unwrap(),
+            data: BigUint::from(ans_n),
         };
         assert_eq!(inp, ans);
     }
