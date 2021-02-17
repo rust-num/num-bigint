@@ -11,7 +11,7 @@ use core::hash;
 use core::iter::FusedIterator;
 use core::mem;
 use core::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Rem, RemAssign,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign,
     Shl, ShlAssign, Shr, ShrAssign,
 };
 use core::str::{self, FromStr};
@@ -20,11 +20,12 @@ use core::{u32, u64, u8};
 
 use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
-use num_traits::{CheckedDiv, FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero};
+use num_traits::{FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero};
 
 use crate::big_digit::{self, BigDigit};
 
 mod addition;
+mod division;
 mod multiplication;
 mod subtraction;
 
@@ -33,10 +34,7 @@ mod monty;
 
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
-use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
 use self::monty::monty_modpow;
-
-use crate::UsizePromotion;
 
 use crate::ParseBigIntError;
 #[cfg(has_try_from)]
@@ -681,351 +679,32 @@ pow_impl!(u64);
 pow_impl!(usize);
 pow_impl!(u128);
 
-forward_val_ref_binop!(impl Div for BigUint, div);
-forward_ref_val_binop!(impl Div for BigUint, div);
-forward_val_assign!(impl DivAssign for BigUint, div_assign);
-
-impl Div<BigUint> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        let (q, _) = div_rem(self, other);
-        q
-    }
-}
-
-impl<'a, 'b> Div<&'b BigUint> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn div(self, other: &BigUint) -> BigUint {
-        let (q, _) = self.div_rem(other);
-        q
-    }
-}
-impl<'a> DivAssign<&'a BigUint> for BigUint {
-    #[inline]
-    fn div_assign(&mut self, other: &'a BigUint) {
-        *self = &*self / other;
-    }
-}
-
-promote_unsigned_scalars!(impl Div for BigUint, div);
-promote_unsigned_scalars_assign!(impl DivAssign for BigUint, div_assign);
-forward_all_scalar_binop_to_val_val!(impl Div<u32> for BigUint, div);
-forward_all_scalar_binop_to_val_val!(impl Div<u64> for BigUint, div);
-forward_all_scalar_binop_to_val_val!(impl Div<u128> for BigUint, div);
-
-impl Div<u32> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn div(self, other: u32) -> BigUint {
-        let (q, _) = div_rem_digit(self, other as BigDigit);
-        q
-    }
-}
-impl DivAssign<u32> for BigUint {
-    #[inline]
-    fn div_assign(&mut self, other: u32) {
-        *self = &*self / other;
-    }
-}
-
-impl Div<BigUint> for u32 {
-    type Output = BigUint;
-
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self as BigDigit / other.data[0]),
-            _ => Zero::zero(),
-        }
-    }
-}
-
-impl Div<u64> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn div(self, other: u64) -> BigUint {
-        let (q, _) = div_rem(self, From::from(other));
-        q
-    }
-}
-impl DivAssign<u64> for BigUint {
-    #[inline]
-    fn div_assign(&mut self, other: u64) {
-        // a vec of size 0 does not allocate, so this is fairly cheap
-        let temp = mem::replace(self, Zero::zero());
-        *self = temp / other;
-    }
-}
-
-impl Div<BigUint> for u64 {
-    type Output = BigUint;
-
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / u64::from(other.data[0])),
-            2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-            _ => Zero::zero(),
-        }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / other.data[0]),
-            _ => Zero::zero(),
-        }
-    }
-}
-
-impl Div<u128> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn div(self, other: u128) -> BigUint {
-        let (q, _) = div_rem(self, From::from(other));
-        q
-    }
-}
-
-impl DivAssign<u128> for BigUint {
-    #[inline]
-    fn div_assign(&mut self, other: u128) {
-        *self = &*self / other;
-    }
-}
-
-impl Div<BigUint> for u128 {
-    type Output = BigUint;
-
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / u128::from(other.data[0])),
-            2 => From::from(
-                self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-            ),
-            3 => From::from(self / u32_to_u128(0, other.data[2], other.data[1], other.data[0])),
-            4 => From::from(
-                self / u32_to_u128(other.data[3], other.data[2], other.data[1], other.data[0]),
-            ),
-            _ => Zero::zero(),
-        }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / other.data[0] as u128),
-            2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-            _ => Zero::zero(),
-        }
-    }
-}
-
-forward_val_ref_binop!(impl Rem for BigUint, rem);
-forward_ref_val_binop!(impl Rem for BigUint, rem);
-forward_val_assign!(impl RemAssign for BigUint, rem_assign);
-
-impl Rem<BigUint> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(self, other: BigUint) -> BigUint {
-        if let Some(other) = other.to_u32() {
-            &self % other
-        } else {
-            let (_, r) = div_rem(self, other);
-            r
-        }
-    }
-}
-
-impl<'a, 'b> Rem<&'b BigUint> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(self, other: &BigUint) -> BigUint {
-        if let Some(other) = other.to_u32() {
-            self % other
-        } else {
-            let (_, r) = self.div_rem(other);
-            r
-        }
-    }
-}
-impl<'a> RemAssign<&'a BigUint> for BigUint {
-    #[inline]
-    fn rem_assign(&mut self, other: &BigUint) {
-        *self = &*self % other;
-    }
-}
-
-promote_unsigned_scalars!(impl Rem for BigUint, rem);
-promote_unsigned_scalars_assign!(impl RemAssign for BigUint, rem_assign);
-forward_all_scalar_binop_to_ref_val!(impl Rem<u32> for BigUint, rem);
-forward_all_scalar_binop_to_val_val!(impl Rem<u64> for BigUint, rem);
-forward_all_scalar_binop_to_val_val!(impl Rem<u128> for BigUint, rem);
-
-impl<'a> Rem<u32> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(self, other: u32) -> BigUint {
-        rem_digit(self, other as BigDigit).into()
-    }
-}
-impl RemAssign<u32> for BigUint {
-    #[inline]
-    fn rem_assign(&mut self, other: u32) {
-        *self = &*self % other;
-    }
-}
-
-impl<'a> Rem<&'a BigUint> for u32 {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(mut self, other: &'a BigUint) -> BigUint {
-        self %= other;
-        From::from(self)
-    }
-}
-
-macro_rules! impl_rem_assign_scalar {
-    ($scalar:ty, $to_scalar:ident) => {
-        forward_val_assign_scalar!(impl RemAssign for BigUint, $scalar, rem_assign);
-        impl<'a> RemAssign<&'a BigUint> for $scalar {
-            #[inline]
-            fn rem_assign(&mut self, other: &BigUint) {
-                *self = match other.$to_scalar() {
-                    None => *self,
-                    Some(0) => panic!("attempt to divide by zero"),
-                    Some(v) => *self % v
-                };
-            }
-        }
-    }
-}
-
-// we can scalar %= BigUint for any scalar, including signed types
-impl_rem_assign_scalar!(u128, to_u128);
-impl_rem_assign_scalar!(usize, to_usize);
-impl_rem_assign_scalar!(u64, to_u64);
-impl_rem_assign_scalar!(u32, to_u32);
-impl_rem_assign_scalar!(u16, to_u16);
-impl_rem_assign_scalar!(u8, to_u8);
-impl_rem_assign_scalar!(i128, to_i128);
-impl_rem_assign_scalar!(isize, to_isize);
-impl_rem_assign_scalar!(i64, to_i64);
-impl_rem_assign_scalar!(i32, to_i32);
-impl_rem_assign_scalar!(i16, to_i16);
-impl_rem_assign_scalar!(i8, to_i8);
-
-impl Rem<u64> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(self, other: u64) -> BigUint {
-        let (_, r) = div_rem(self, From::from(other));
-        r
-    }
-}
-impl RemAssign<u64> for BigUint {
-    #[inline]
-    fn rem_assign(&mut self, other: u64) {
-        *self = &*self % other;
-    }
-}
-
-impl Rem<BigUint> for u64 {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(mut self, other: BigUint) -> BigUint {
-        self %= other;
-        From::from(self)
-    }
-}
-
-impl Rem<u128> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(self, other: u128) -> BigUint {
-        let (_, r) = div_rem(self, From::from(other));
-        r
-    }
-}
-
-impl RemAssign<u128> for BigUint {
-    #[inline]
-    fn rem_assign(&mut self, other: u128) {
-        *self = &*self % other;
-    }
-}
-
-impl Rem<BigUint> for u128 {
-    type Output = BigUint;
-
-    #[inline]
-    fn rem(mut self, other: BigUint) -> BigUint {
-        self %= other;
-        From::from(self)
-    }
-}
-
-impl CheckedDiv for BigUint {
-    #[inline]
-    fn checked_div(&self, v: &BigUint) -> Option<BigUint> {
-        if v.is_zero() {
-            return None;
-        }
-        Some(self.div(v))
-    }
-}
-
 impl Integer for BigUint {
     #[inline]
     fn div_rem(&self, other: &BigUint) -> (BigUint, BigUint) {
-        div_rem_ref(self, other)
+        division::div_rem_ref(self, other)
     }
 
     #[inline]
     fn div_floor(&self, other: &BigUint) -> BigUint {
-        let (d, _) = div_rem_ref(self, other);
+        let (d, _) = division::div_rem_ref(self, other);
         d
     }
 
     #[inline]
     fn mod_floor(&self, other: &BigUint) -> BigUint {
-        let (_, m) = div_rem_ref(self, other);
+        let (_, m) = division::div_rem_ref(self, other);
         m
     }
 
     #[inline]
     fn div_mod_floor(&self, other: &BigUint) -> (BigUint, BigUint) {
-        div_rem_ref(self, other)
+        division::div_rem_ref(self, other)
     }
 
     #[inline]
     fn div_ceil(&self, other: &BigUint) -> BigUint {
-        let (d, m) = div_rem_ref(self, other);
+        let (d, m) = division::div_rem_ref(self, other);
         if m.is_zero() {
             d
         } else {
@@ -1723,7 +1402,7 @@ fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     let radix = radix as BigDigit;
 
     while digits.data.len() > 1 {
-        let (q, mut r) = div_rem_digit(digits, base);
+        let (q, mut r) = division::div_rem_digit(digits, base);
         for _ in 0..power {
             res.push((r % radix) as u8);
             r /= radix;
