@@ -90,5 +90,5 @@ std = [
     "serde/std"
 ]
 u64_digit = []
-prime = ["rand"]
+prime = ["rand/std_rng"]
 nightly = []
