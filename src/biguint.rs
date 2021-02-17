@@ -8,11 +8,11 @@ use core::convert::TryFrom;
 use core::default::Default;
 use core::fmt;
 use core::hash;
-use core::iter::{FusedIterator, Product, Sum};
+use core::iter::{FusedIterator, Product};
 use core::mem;
 use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Mul, MulAssign,
+    Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use core::str::{self, FromStr};
 use core::{f32, f64};
@@ -21,16 +21,17 @@ use core::{u32, u64, u8};
 use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
 use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
-    Unsigned, Zero,
+    CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero,
 };
 
 use crate::big_digit::{self, BigDigit};
 
+mod addition;
+
 mod algorithms;
 mod monty;
 
-use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
+use self::algorithms::{__sub2rev, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
 use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
@@ -287,7 +288,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
         let n = chunk
             .iter()
             .fold(0, |acc, &d| acc * radix + BigDigit::from(d));
-        add2(&mut data, &[n]);
+        addition::add2(&mut data, &[n]);
     }
 
     biguint_from_vec(data)
@@ -681,167 +682,6 @@ pow_impl!(u32);
 pow_impl!(u64);
 pow_impl!(usize);
 pow_impl!(u128);
-
-forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
-forward_val_assign!(impl AddAssign for BigUint, add_assign);
-
-impl<'a> Add<&'a BigUint> for BigUint {
-    type Output = BigUint;
-
-    fn add(mut self, other: &BigUint) -> BigUint {
-        self += other;
-        self
-    }
-}
-impl<'a> AddAssign<&'a BigUint> for BigUint {
-    #[inline]
-    fn add_assign(&mut self, other: &BigUint) {
-        let self_len = self.data.len();
-        let carry = if self_len < other.data.len() {
-            let lo_carry = __add2(&mut self.data[..], &other.data[..self_len]);
-            self.data.extend_from_slice(&other.data[self_len..]);
-            __add2(&mut self.data[self_len..], &[lo_carry])
-        } else {
-            __add2(&mut self.data[..], &other.data[..])
-        };
-        if carry != 0 {
-            self.data.push(carry);
-        }
-    }
-}
-
-promote_unsigned_scalars!(impl Add for BigUint, add);
-promote_unsigned_scalars_assign!(impl AddAssign for BigUint, add_assign);
-forward_all_scalar_binop_to_val_val_commutative!(impl Add<u32> for BigUint, add);
-forward_all_scalar_binop_to_val_val_commutative!(impl Add<u64> for BigUint, add);
-forward_all_scalar_binop_to_val_val_commutative!(impl Add<u128> for BigUint, add);
-
-impl Add<u32> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn add(mut self, other: u32) -> BigUint {
-        self += other;
-        self
-    }
-}
-
-impl AddAssign<u32> for BigUint {
-    #[inline]
-    fn add_assign(&mut self, other: u32) {
-        if other != 0 {
-            if self.data.is_empty() {
-                self.data.push(0);
-            }
-
-            let carry = __add2(&mut self.data, &[other as BigDigit]);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-}
-
-impl Add<u64> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn add(mut self, other: u64) -> BigUint {
-        self += other;
-        self
-    }
-}
-
-impl AddAssign<u64> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn add_assign(&mut self, other: u64) {
-        let (hi, lo) = big_digit::from_doublebigdigit(other);
-        if hi == 0 {
-            *self += lo;
-        } else {
-            while self.data.len() < 2 {
-                self.data.push(0);
-            }
-
-            let carry = __add2(&mut self.data, &[lo, hi]);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn add_assign(&mut self, other: u64) {
-        if other != 0 {
-            if self.data.is_empty() {
-                self.data.push(0);
-            }
-
-            let carry = __add2(&mut self.data, &[other as BigDigit]);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-}
-
-impl Add<u128> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn add(mut self, other: u128) -> BigUint {
-        self += other;
-        self
-    }
-}
-
-impl AddAssign<u128> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn add_assign(&mut self, other: u128) {
-        if other <= u128::from(u64::max_value()) {
-            *self += other as u64
-        } else {
-            let (a, b, c, d) = u32_from_u128(other);
-            let carry = if a > 0 {
-                while self.data.len() < 4 {
-                    self.data.push(0);
-                }
-                __add2(&mut self.data, &[d, c, b, a])
-            } else {
-                debug_assert!(b > 0);
-                while self.data.len() < 3 {
-                    self.data.push(0);
-                }
-                __add2(&mut self.data, &[d, c, b])
-            };
-
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn add_assign(&mut self, other: u128) {
-        let (hi, lo) = big_digit::from_doublebigdigit(other);
-        if hi == 0 {
-            *self += lo;
-        } else {
-            while self.data.len() < 2 {
-                self.data.push(0);
-            }
-
-            let carry = __add2(&mut self.data, &[lo, hi]);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-}
 
 forward_val_val_binop!(impl Sub for BigUint, sub);
 forward_ref_ref_binop!(impl Sub for BigUint, sub);
@@ -1467,13 +1307,6 @@ impl Rem<BigUint> for u128 {
     fn rem(mut self, other: BigUint) -> BigUint {
         self %= other;
         From::from(self)
-    }
-}
-
-impl CheckedAdd for BigUint {
-    #[inline]
-    fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
-        Some(self.add(v))
     }
 }
 
@@ -3126,7 +2959,6 @@ fn test_plain_modpow() {
     );
 }
 
-impl_sum_iter_type!(BigUint);
 impl_product_iter_type!(BigUint);
 
 pub(crate) trait IntDigits {

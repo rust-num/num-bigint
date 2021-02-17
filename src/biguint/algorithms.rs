@@ -24,34 +24,10 @@ use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 #[cfg(not(use_addcarry))]
 use crate::big_digit::SignedDoubleBigDigit;
 
+use super::addition::{__add2, add2};
+
 // Generic functions for add/subtract/multiply with carry/borrow. These are specialized
 // for some platforms to take advantage of intrinsics, etc.
-
-// Add with carry:
-#[cfg(all(use_addcarry, u64_digit))]
-#[inline]
-fn adc(carry: u8, a: u64, b: u64, out: &mut u64) -> u8 {
-    // Safety: There are absolutely no safety concerns with calling `_addcarry_u64`.
-    // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_addcarry_u64(carry, a, b, out) }
-}
-
-#[cfg(all(use_addcarry, not(u64_digit)))]
-#[inline]
-fn adc(carry: u8, a: u32, b: u32, out: &mut u32) -> u8 {
-    // Safety: There are absolutely no safety concerns with calling `_addcarry_u32`.
-    // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_addcarry_u32(carry, a, b, out) }
-}
-
-// fallback for environments where we don't have an addcarry intrinsic
-#[cfg(not(use_addcarry))]
-#[inline]
-fn adc(carry: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
-    let sum = DoubleBigDigit::from(a) + DoubleBigDigit::from(b) + DoubleBigDigit::from(carry);
-    *out = sum as BigDigit;
-    (sum >> big_digit::BITS) as u8
-}
 
 // Subtract with borrow:
 #[cfg(all(use_addcarry, u64_digit))]
@@ -169,46 +145,6 @@ pub(crate) fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
     }
 
     rem
-}
-
-/// Two argument addition of raw slices, `a += b`, returning the carry.
-///
-/// This is used when the data `Vec` might need to resize to push a non-zero carry, so we perform
-/// the addition first hoping that it will fit.
-///
-/// The caller _must_ ensure that `a` is at least as long as `b`.
-#[inline]
-pub(crate) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
-    debug_assert!(a.len() >= b.len());
-
-    let mut carry = 0;
-    let (a_lo, a_hi) = a.split_at_mut(b.len());
-
-    for (a, b) in a_lo.iter_mut().zip(b) {
-        carry = adc(carry, *a, *b, a);
-    }
-
-    if carry != 0 {
-        for a in a_hi {
-            carry = adc(carry, *a, 0, a);
-            if carry == 0 {
-                break;
-            }
-        }
-    }
-
-    carry as BigDigit
-}
-
-/// Two argument addition of raw slices:
-/// a += b
-///
-/// The caller _must_ ensure that a is big enough to store the result - typically this means
-/// resizing a to max(a.len(), b.len()) + 1, to fit a possible carry.
-pub(crate) fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
-    let carry = __add2(a, b);
-
-    debug_assert!(carry == 0);
 }
 
 pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
