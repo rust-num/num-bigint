@@ -1,8 +1,6 @@
 // `Add`/`Sub` ops may flip from `BigInt` to its `BigUint` magnitude
 #![allow(clippy::suspicious_arithmetic_impl)]
 
-#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
-use crate::std_alloc::Box;
 use crate::std_alloc::{String, Vec};
 use core::cmp::Ordering::{self, Equal};
 use core::default::Default;
@@ -32,6 +30,12 @@ mod convert;
 mod power;
 mod shift;
 
+#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
+mod arbitrary;
+
+#[cfg(feature = "serde")]
+mod serde;
+
 /// A Sign is a `BigInt`'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
 pub enum Sign {
@@ -50,44 +54,6 @@ impl Neg for Sign {
             Minus => Plus,
             NoSign => NoSign,
             Plus => Minus,
-        }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl serde::Serialize for Sign {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // Note: do not change the serialization format, or it may break
-        // forward and backward compatibility of serialized data!
-        match *self {
-            Sign::Minus => (-1i8).serialize(serializer),
-            Sign::NoSign => 0i8.serialize(serializer),
-            Sign::Plus => 1i8.serialize(serializer),
-        }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for Sign {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        use serde::de::Error;
-        use serde::de::Unexpected;
-
-        let sign: i8 = serde::Deserialize::deserialize(deserializer)?;
-        match sign {
-            -1 => Ok(Sign::Minus),
-            0 => Ok(Sign::NoSign),
-            1 => Ok(Sign::Plus),
-            _ => Err(D::Error::invalid_value(
-                Unexpected::Signed(sign.into()),
-                &"a sign of -1, 0, or 1",
-            )),
         }
     }
 }
@@ -114,41 +80,6 @@ impl Clone for BigInt {
     fn clone_from(&mut self, other: &Self) {
         self.sign = other.sign;
         self.data.clone_from(&other.data);
-    }
-}
-
-#[cfg(feature = "quickcheck")]
-impl quickcheck::Arbitrary for BigInt {
-    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
-        let positive = bool::arbitrary(g);
-        let sign = if positive { Sign::Plus } else { Sign::Minus };
-        Self::from_biguint(sign, BigUint::arbitrary(g))
-    }
-
-    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
-        let sign = self.sign();
-        let unsigned_shrink = self.data.shrink();
-        Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
-    }
-}
-
-#[cfg(feature = "arbitrary")]
-mod abitrary_impl {
-    use super::*;
-    use arbitrary::{Arbitrary, Result, Unstructured};
-
-    impl Arbitrary for BigInt {
-        fn arbitrary(u: &mut Unstructured<'_>) -> Result<Self> {
-            let positive = bool::arbitrary(u)?;
-            let sign = if positive { Sign::Plus } else { Sign::Minus };
-            Ok(Self::from_biguint(sign, BigUint::arbitrary(u)?))
-        }
-
-        fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
-            let sign = self.sign();
-            let unsigned_shrink = self.data.shrink();
-            Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
-        }
     }
 }
 
@@ -619,29 +550,6 @@ impl IntDigits for BigInt {
     #[inline]
     fn len(&self) -> usize {
         self.data.len()
-    }
-}
-
-#[cfg(feature = "serde")]
-impl serde::Serialize for BigInt {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // Note: do not change the serialization format, or it may break
-        // forward and backward compatibility of serialized data!
-        (self.sign, &self.data).serialize(serializer)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for BigInt {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let (sign, data) = serde::Deserialize::deserialize(deserializer)?;
-        Ok(BigInt::from_biguint(sign, data))
     }
 }
 

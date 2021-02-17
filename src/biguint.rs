@@ -1,5 +1,3 @@
-#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
-use crate::std_alloc::Box;
 use crate::std_alloc::{String, Vec};
 use core::cmp;
 use core::cmp::Ordering;
@@ -28,6 +26,12 @@ mod monty;
 mod power;
 mod shift;
 
+#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
+mod arbitrary;
+
+#[cfg(feature = "serde")]
+mod serde;
+
 use self::algorithms::cmp_slice;
 pub(crate) use self::convert::to_str_radix_reversed;
 
@@ -50,35 +54,6 @@ impl Clone for BigUint {
     #[inline]
     fn clone_from(&mut self, other: &Self) {
         self.data.clone_from(&other.data);
-    }
-}
-
-#[cfg(feature = "quickcheck")]
-impl quickcheck::Arbitrary for BigUint {
-    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
-        // Use arbitrary from Vec
-        biguint_from_vec(Vec::<BigDigit>::arbitrary(g))
-    }
-
-    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
-        // Use shrinker from Vec
-        Box::new(self.data.shrink().map(biguint_from_vec))
-    }
-}
-
-#[cfg(feature = "arbitrary")]
-mod abitrary_impl {
-    use super::*;
-    use arbitrary::{Arbitrary, Result, Unstructured};
-
-    impl Arbitrary for BigUint {
-        fn arbitrary(u: &mut Unstructured<'_>) -> Result<Self> {
-            Ok(biguint_from_vec(Vec::<BigDigit>::arbitrary(u)?))
-        }
-
-        fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
-            Box::new(self.data.shrink().map(biguint_from_vec))
-        }
     }
 }
 
@@ -1249,107 +1224,6 @@ fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
         (n >> 32) as u32,
         n as u32,
     )
-}
-
-#[cfg(feature = "serde")]
-impl serde::Serialize for BigUint {
-    #[cfg(not(u64_digit))]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // Note: do not change the serialization format, or it may break forward
-        // and backward compatibility of serialized data!  If we ever change the
-        // internal representation, we should still serialize in base-`u32`.
-        let data: &[u32] = &self.data;
-        data.serialize(serializer)
-    }
-
-    #[cfg(u64_digit)]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeSeq;
-        if let Some((&last, data)) = self.data.split_last() {
-            let last_lo = last as u32;
-            let last_hi = (last >> 32) as u32;
-            let u32_len = data.len() * 2 + 1 + (last_hi != 0) as usize;
-            let mut seq = serializer.serialize_seq(Some(u32_len))?;
-            for &x in data {
-                seq.serialize_element(&(x as u32))?;
-                seq.serialize_element(&((x >> 32) as u32))?;
-            }
-            seq.serialize_element(&last_lo)?;
-            if last_hi != 0 {
-                seq.serialize_element(&last_hi)?;
-            }
-            seq.end()
-        } else {
-            let data: &[u32] = &[];
-            data.serialize(serializer)
-        }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for BigUint {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        use serde::de::{SeqAccess, Visitor};
-
-        struct U32Visitor;
-
-        impl<'de> Visitor<'de> for U32Visitor {
-            type Value = BigUint;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                formatter.write_str("a sequence of unsigned 32-bit numbers")
-            }
-
-            #[cfg(not(u64_digit))]
-            fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
-            where
-                S: SeqAccess<'de>,
-            {
-                let len = seq.size_hint().unwrap_or(0);
-                let mut data = Vec::with_capacity(len);
-
-                while let Some(value) = seq.next_element::<u32>()? {
-                    data.push(value);
-                }
-
-                Ok(biguint_from_vec(data))
-            }
-
-            #[cfg(u64_digit)]
-            fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
-            where
-                S: SeqAccess<'de>,
-            {
-                let u32_len = seq.size_hint().unwrap_or(0);
-                let len = u32_len.div_ceil(&2);
-                let mut data = Vec::with_capacity(len);
-
-                while let Some(lo) = seq.next_element::<u32>()? {
-                    let mut value = BigDigit::from(lo);
-                    if let Some(hi) = seq.next_element::<u32>()? {
-                        value |= BigDigit::from(hi) << 32;
-                        data.push(value);
-                    } else {
-                        data.push(value);
-                        break;
-                    }
-                }
-
-                Ok(biguint_from_vec(data))
-            }
-        }
-
-        deserializer.deserialize_seq(U32Visitor)
-    }
 }
 
 #[cfg(not(u64_digit))]
