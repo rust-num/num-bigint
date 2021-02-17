@@ -1,7 +1,6 @@
-use super::algorithms::cmp_slice;
 #[cfg(not(u64_digit))]
 use super::u32_from_u128;
-use super::{biguint_from_vec, BigUint};
+use super::{biguint_from_vec, cmp_slice, BigUint};
 
 use crate::big_digit::{self, BigDigit};
 use crate::Sign::{self, Minus, NoSign, Plus};

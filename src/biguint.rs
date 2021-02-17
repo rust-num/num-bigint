@@ -19,7 +19,6 @@ mod division;
 mod multiplication;
 mod subtraction;
 
-mod algorithms;
 mod bits;
 mod convert;
 mod monty;
@@ -32,7 +31,6 @@ mod arbitrary;
 #[cfg(feature = "serde")]
 mod serde;
 
-use self::algorithms::cmp_slice;
 pub(crate) use self::convert::to_str_radix_reversed;
 
 /// A big unsigned integer type.
@@ -86,6 +84,17 @@ impl Ord for BigUint {
     #[inline]
     fn cmp(&self, other: &BigUint) -> Ordering {
         cmp_slice(&self.data[..], &other.data[..])
+    }
+}
+
+#[inline]
+fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
+    debug_assert!(a.last() != Some(&0));
+    debug_assert!(b.last() != Some(&0));
+
+    match Ord::cmp(&a.len(), &b.len()) {
+        Ordering::Equal => Iterator::cmp(a.iter().rev(), b.iter().rev()),
+        other => other,
     }
 }
 
