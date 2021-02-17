@@ -10,19 +10,16 @@ use core::convert::TryFrom;
 use core::default::Default;
 use core::fmt;
 use core::hash;
-use core::iter::Product;
 use core::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Mul, MulAssign,
-    Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Neg, Not, Rem,
+    RemAssign, Shl, ShlAssign, Shr, ShrAssign,
 };
 use core::str::{self, FromStr};
 use core::{i128, u128};
 use core::{i64, u64};
 
 use num_integer::{Integer, Roots};
-use num_traits::{
-    CheckedDiv, CheckedMul, FromPrimitive, Num, One, Pow, PrimInt, Signed, ToPrimitive, Zero,
-};
+use num_traits::{CheckedDiv, FromPrimitive, Num, One, Pow, PrimInt, Signed, ToPrimitive, Zero};
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -38,6 +35,7 @@ use crate::IsizePromotion;
 use crate::UsizePromotion;
 
 mod addition;
+mod multiplication;
 mod subtraction;
 
 /// A Sign is a `BigInt`'s composing element.
@@ -58,19 +56,6 @@ impl Neg for Sign {
             Minus => Plus,
             NoSign => NoSign,
             Plus => Minus,
-        }
-    }
-}
-
-impl Mul<Sign> for Sign {
-    type Output = Sign;
-
-    #[inline]
-    fn mul(self, other: Sign) -> Sign {
-        match (self, other) {
-            (NoSign, _) | (_, NoSign) => NoSign,
-            (Plus, Plus) | (Minus, Minus) => Plus,
-            (Plus, Minus) | (Minus, Plus) => Minus,
         }
     }
 }
@@ -1050,167 +1035,6 @@ impl_unsigned_abs!(i64, u64);
 impl_unsigned_abs!(i128, u128);
 impl_unsigned_abs!(isize, usize);
 
-forward_all_binop_to_ref_ref!(impl Mul for BigInt, mul);
-
-impl<'a, 'b> Mul<&'b BigInt> for &'a BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: &BigInt) -> BigInt {
-        BigInt::from_biguint(self.sign * other.sign, &self.data * &other.data)
-    }
-}
-
-impl<'a> MulAssign<&'a BigInt> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: &BigInt) {
-        *self = &*self * other;
-    }
-}
-forward_val_assign!(impl MulAssign for BigInt, mul_assign);
-
-promote_all_scalars!(impl Mul for BigInt, mul);
-promote_all_scalars_assign!(impl MulAssign for BigInt, mul_assign);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u32> for BigInt, mul);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigInt, mul);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigInt, mul);
-
-impl Mul<u32> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: u32) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data * other)
-    }
-}
-
-impl MulAssign<u32> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: u32) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
-    }
-}
-
-impl Mul<u64> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: u64) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data * other)
-    }
-}
-
-impl MulAssign<u64> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: u64) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
-    }
-}
-
-impl Mul<u128> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: u128) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data * other)
-    }
-}
-
-impl MulAssign<u128> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: u128) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
-    }
-}
-
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i32> for BigInt, mul);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i64> for BigInt, mul);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i128> for BigInt, mul);
-
-impl Mul<i32> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: i32) -> BigInt {
-        match other.checked_uabs() {
-            Positive(u) => self * u,
-            Negative(u) => -self * u,
-        }
-    }
-}
-
-impl MulAssign<i32> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: i32) {
-        match other.checked_uabs() {
-            Positive(u) => *self *= u,
-            Negative(u) => {
-                self.sign = -self.sign;
-                self.data *= u;
-            }
-        }
-    }
-}
-
-impl Mul<i64> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: i64) -> BigInt {
-        match other.checked_uabs() {
-            Positive(u) => self * u,
-            Negative(u) => -self * u,
-        }
-    }
-}
-
-impl MulAssign<i64> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: i64) {
-        match other.checked_uabs() {
-            Positive(u) => *self *= u,
-            Negative(u) => {
-                self.sign = -self.sign;
-                self.data *= u;
-            }
-        }
-    }
-}
-
-impl Mul<i128> for BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: i128) -> BigInt {
-        match other.checked_uabs() {
-            Positive(u) => self * u,
-            Negative(u) => -self * u,
-        }
-    }
-}
-
-impl MulAssign<i128> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: i128) {
-        match other.checked_uabs() {
-            Positive(u) => *self *= u,
-            Negative(u) => {
-                self.sign = -self.sign;
-                self.data *= u;
-            }
-        }
-    }
-}
-
 forward_all_binop_to_ref_ref!(impl Div for BigInt, div);
 
 impl<'a, 'b> Div<&'b BigInt> for &'a BigInt {
@@ -1656,13 +1480,6 @@ impl<'a> Neg for &'a BigInt {
     #[inline]
     fn neg(self) -> BigInt {
         -self.clone()
-    }
-}
-
-impl CheckedMul for BigInt {
-    #[inline]
-    fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        Some(self.mul(v))
     }
 }
 
@@ -2723,7 +2540,7 @@ impl BigInt {
 
     #[inline]
     pub fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        Some(self.mul(v))
+        Some(self * v)
     }
 
     #[inline]
@@ -2922,8 +2739,6 @@ impl BigInt {
         self.normalize();
     }
 }
-
-impl_product_iter_type!(BigInt);
 
 /// Perform in-place two's complement of the given binary representation,
 /// in little-endian byte order.

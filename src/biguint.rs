@@ -8,11 +8,11 @@ use core::convert::TryFrom;
 use core::default::Default;
 use core::fmt;
 use core::hash;
-use core::iter::{FusedIterator, Product};
+use core::iter::FusedIterator;
 use core::mem;
 use core::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Mul, MulAssign,
-    Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Rem, RemAssign,
+    Shl, ShlAssign, Shr, ShrAssign,
 };
 use core::str::{self, FromStr};
 use core::{f32, f64};
@@ -20,13 +20,12 @@ use core::{u32, u64, u8};
 
 use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
-use num_traits::{
-    CheckedDiv, CheckedMul, FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero,
-};
+use num_traits::{CheckedDiv, FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero};
 
 use crate::big_digit::{self, BigDigit};
 
 mod addition;
+mod multiplication;
 mod subtraction;
 
 mod algorithms;
@@ -35,7 +34,6 @@ mod monty;
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
 use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
-use self::algorithms::{mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
 
 use crate::UsizePromotion;
@@ -281,7 +279,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
 
         let mut carry = 0;
         for d in data.iter_mut() {
-            *d = mac_with_carry(0, *d, base, &mut carry);
+            *d = multiplication::mac_with_carry(0, *d, base, &mut carry);
         }
         debug_assert!(carry == 0);
 
@@ -683,128 +681,6 @@ pow_impl!(u64);
 pow_impl!(usize);
 pow_impl!(u128);
 
-forward_all_binop_to_ref_ref!(impl Mul for BigUint, mul);
-forward_val_assign!(impl MulAssign for BigUint, mul_assign);
-
-impl<'a, 'b> Mul<&'b BigUint> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn mul(self, other: &BigUint) -> BigUint {
-        mul3(&self.data[..], &other.data[..])
-    }
-}
-impl<'a> MulAssign<&'a BigUint> for BigUint {
-    #[inline]
-    fn mul_assign(&mut self, other: &'a BigUint) {
-        *self = &*self * other
-    }
-}
-
-promote_unsigned_scalars!(impl Mul for BigUint, mul);
-promote_unsigned_scalars_assign!(impl MulAssign for BigUint, mul_assign);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u32> for BigUint, mul);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigUint, mul);
-forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigUint, mul);
-
-impl Mul<u32> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn mul(mut self, other: u32) -> BigUint {
-        self *= other;
-        self
-    }
-}
-impl MulAssign<u32> for BigUint {
-    #[inline]
-    fn mul_assign(&mut self, other: u32) {
-        if other == 0 {
-            self.data.clear();
-        } else {
-            let carry = scalar_mul(&mut self.data[..], other as BigDigit);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-}
-
-impl Mul<u64> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn mul(mut self, other: u64) -> BigUint {
-        self *= other;
-        self
-    }
-}
-impl MulAssign<u64> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn mul_assign(&mut self, other: u64) {
-        if other == 0 {
-            self.data.clear();
-        } else if other <= u64::from(BigDigit::max_value()) {
-            *self *= other as BigDigit
-        } else {
-            let (hi, lo) = big_digit::from_doublebigdigit(other);
-            *self = mul3(&self.data[..], &[lo, hi])
-        }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn mul_assign(&mut self, other: u64) {
-        if other == 0 {
-            self.data.clear();
-        } else {
-            let carry = scalar_mul(&mut self.data[..], other as BigDigit);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
-}
-
-impl Mul<u128> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn mul(mut self, other: u128) -> BigUint {
-        self *= other;
-        self
-    }
-}
-
-impl MulAssign<u128> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn mul_assign(&mut self, other: u128) {
-        if other == 0 {
-            self.data.clear();
-        } else if other <= u128::from(BigDigit::max_value()) {
-            *self *= other as BigDigit
-        } else {
-            let (a, b, c, d) = u32_from_u128(other);
-            *self = mul3(&self.data[..], &[d, c, b, a])
-        }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn mul_assign(&mut self, other: u128) {
-        if other == 0 {
-            self.data.clear();
-        } else if other <= BigDigit::max_value() as u128 {
-            *self *= other as BigDigit
-        } else {
-            let (hi, lo) = big_digit::from_doublebigdigit(other);
-            *self = mul3(&self.data[..], &[lo, hi])
-        }
-    }
-}
-
 forward_val_ref_binop!(impl Div for BigUint, div);
 forward_ref_val_binop!(impl Div for BigUint, div);
 forward_val_assign!(impl DivAssign for BigUint, div_assign);
@@ -1111,13 +987,6 @@ impl Rem<BigUint> for u128 {
     fn rem(mut self, other: BigUint) -> BigUint {
         self %= other;
         From::from(self)
-    }
-}
-
-impl CheckedMul for BigUint {
-    #[inline]
-    fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
-        Some(self.mul(v))
     }
 }
 
@@ -2751,8 +2620,6 @@ fn test_plain_modpow() {
         plain_modpow(&two, &exp, &modulus)
     );
 }
-
-impl_product_iter_type!(BigUint);
 
 pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
