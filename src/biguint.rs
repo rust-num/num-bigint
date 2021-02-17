@@ -1,6 +1,6 @@
 #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 use crate::std_alloc::Box;
-use crate::std_alloc::{Cow, String, Vec};
+use crate::std_alloc::{String, Vec};
 use core::cmp;
 use core::cmp::Ordering::{self, Equal, Greater, Less};
 #[cfg(has_try_from)]
@@ -10,10 +10,7 @@ use core::fmt;
 use core::hash;
 use core::iter::FusedIterator;
 use core::mem;
-use core::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign,
-    Shl, ShlAssign, Shr, ShrAssign,
-};
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
 use core::str::{self, FromStr};
 use core::{f32, f64};
 use core::{u32, u64, u8};
@@ -31,8 +28,8 @@ mod subtraction;
 
 mod algorithms;
 mod monty;
+mod shift;
 
-use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
 use self::monty::monty_modpow;
 
@@ -435,87 +432,6 @@ impl<'a> BitXorAssign<&'a BigUint> for BigUint {
         self.normalize();
     }
 }
-
-macro_rules! impl_shift {
-    (@ref $Shx:ident :: $shx:ident, $ShxAssign:ident :: $shx_assign:ident, $rhs:ty) => {
-        impl<'b> $Shx<&'b $rhs> for BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn $shx(self, rhs: &'b $rhs) -> BigUint {
-                $Shx::$shx(self, *rhs)
-            }
-        }
-        impl<'a, 'b> $Shx<&'b $rhs> for &'a BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn $shx(self, rhs: &'b $rhs) -> BigUint {
-                $Shx::$shx(self, *rhs)
-            }
-        }
-        impl<'b> $ShxAssign<&'b $rhs> for BigUint {
-            #[inline]
-            fn $shx_assign(&mut self, rhs: &'b $rhs) {
-                $ShxAssign::$shx_assign(self, *rhs);
-            }
-        }
-    };
-    ($($rhs:ty),+) => {$(
-        impl Shl<$rhs> for BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn shl(self, rhs: $rhs) -> BigUint {
-                biguint_shl(Cow::Owned(self), rhs)
-            }
-        }
-        impl<'a> Shl<$rhs> for &'a BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn shl(self, rhs: $rhs) -> BigUint {
-                biguint_shl(Cow::Borrowed(self), rhs)
-            }
-        }
-        impl ShlAssign<$rhs> for BigUint {
-            #[inline]
-            fn shl_assign(&mut self, rhs: $rhs) {
-                let n = mem::replace(self, BigUint::zero());
-                *self = n << rhs;
-            }
-        }
-        impl_shift! { @ref Shl::shl, ShlAssign::shl_assign, $rhs }
-
-        impl Shr<$rhs> for BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn shr(self, rhs: $rhs) -> BigUint {
-                biguint_shr(Cow::Owned(self), rhs)
-            }
-        }
-        impl<'a> Shr<$rhs> for &'a BigUint {
-            type Output = BigUint;
-
-            #[inline]
-            fn shr(self, rhs: $rhs) -> BigUint {
-                biguint_shr(Cow::Borrowed(self), rhs)
-            }
-        }
-        impl ShrAssign<$rhs> for BigUint {
-            #[inline]
-            fn shr_assign(&mut self, rhs: $rhs) {
-                let n = mem::replace(self, BigUint::zero());
-                *self = n >> rhs;
-            }
-        }
-        impl_shift! { @ref Shr::shr, ShrAssign::shr_assign, $rhs }
-    )*};
-}
-
-impl_shift! { u8, u16, u32, u64, u128, usize }
-impl_shift! { i8, i16, i32, i64, i128, isize }
 
 impl Zero for BigUint {
     #[inline]
