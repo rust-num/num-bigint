@@ -27,9 +27,7 @@ use num_traits::{
 
 use crate::big_digit::{self, BigDigit};
 
-#[path = "algorithms.rs"]
 mod algorithms;
-#[path = "monty.rs"]
 mod monty;
 
 use self::algorithms::{__add2, __sub2rev, add2, sub2, sub2rev};
