@@ -12,7 +12,7 @@ use core::iter::{FusedIterator, Product};
 use core::mem;
 use core::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign, Mul, MulAssign,
-    Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign,
 };
 use core::str::{self, FromStr};
 use core::{f32, f64};
@@ -21,17 +21,17 @@ use core::{u32, u64, u8};
 use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
 use num_traits::{
-    CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero,
+    CheckedDiv, CheckedMul, FromPrimitive, Num, One, Pow, ToPrimitive, Unsigned, Zero,
 };
 
 use crate::big_digit::{self, BigDigit};
 
 mod addition;
+mod subtraction;
 
 mod algorithms;
 mod monty;
 
-use self::algorithms::{__sub2rev, sub2, sub2rev};
 use self::algorithms::{biguint_shl, biguint_shr};
 use self::algorithms::{cmp_slice, fls, ilog2};
 use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
@@ -683,202 +683,6 @@ pow_impl!(u64);
 pow_impl!(usize);
 pow_impl!(u128);
 
-forward_val_val_binop!(impl Sub for BigUint, sub);
-forward_ref_ref_binop!(impl Sub for BigUint, sub);
-forward_val_assign!(impl SubAssign for BigUint, sub_assign);
-
-impl<'a> Sub<&'a BigUint> for BigUint {
-    type Output = BigUint;
-
-    fn sub(mut self, other: &BigUint) -> BigUint {
-        self -= other;
-        self
-    }
-}
-impl<'a> SubAssign<&'a BigUint> for BigUint {
-    fn sub_assign(&mut self, other: &'a BigUint) {
-        sub2(&mut self.data[..], &other.data[..]);
-        self.normalize();
-    }
-}
-
-impl<'a> Sub<BigUint> for &'a BigUint {
-    type Output = BigUint;
-
-    fn sub(self, mut other: BigUint) -> BigUint {
-        let other_len = other.data.len();
-        if other_len < self.data.len() {
-            let lo_borrow = __sub2rev(&self.data[..other_len], &mut other.data);
-            other.data.extend_from_slice(&self.data[other_len..]);
-            if lo_borrow != 0 {
-                sub2(&mut other.data[other_len..], &[1])
-            }
-        } else {
-            sub2rev(&self.data[..], &mut other.data[..]);
-        }
-        other.normalized()
-    }
-}
-
-promote_unsigned_scalars!(impl Sub for BigUint, sub);
-promote_unsigned_scalars_assign!(impl SubAssign for BigUint, sub_assign);
-forward_all_scalar_binop_to_val_val!(impl Sub<u32> for BigUint, sub);
-forward_all_scalar_binop_to_val_val!(impl Sub<u64> for BigUint, sub);
-forward_all_scalar_binop_to_val_val!(impl Sub<u128> for BigUint, sub);
-
-impl Sub<u32> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn sub(mut self, other: u32) -> BigUint {
-        self -= other;
-        self
-    }
-}
-
-impl SubAssign<u32> for BigUint {
-    fn sub_assign(&mut self, other: u32) {
-        sub2(&mut self.data[..], &[other as BigDigit]);
-        self.normalize();
-    }
-}
-
-impl Sub<BigUint> for u32 {
-    type Output = BigUint;
-
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.len() == 0 {
-            other.data.push(self);
-        } else {
-            sub2rev(&[self], &mut other.data[..]);
-        }
-        other.normalized()
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.is_empty() {
-            other.data.push(self as BigDigit);
-        } else {
-            sub2rev(&[self as BigDigit], &mut other.data[..]);
-        }
-        other.normalized()
-    }
-}
-
-impl Sub<u64> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn sub(mut self, other: u64) -> BigUint {
-        self -= other;
-        self
-    }
-}
-
-impl SubAssign<u64> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn sub_assign(&mut self, other: u64) {
-        let (hi, lo) = big_digit::from_doublebigdigit(other);
-        sub2(&mut self.data[..], &[lo, hi]);
-        self.normalize();
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn sub_assign(&mut self, other: u64) {
-        sub2(&mut self.data[..], &[other as BigDigit]);
-        self.normalize();
-    }
-}
-
-impl Sub<BigUint> for u64 {
-    type Output = BigUint;
-
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn sub(self, mut other: BigUint) -> BigUint {
-        while other.data.len() < 2 {
-            other.data.push(0);
-        }
-
-        let (hi, lo) = big_digit::from_doublebigdigit(self);
-        sub2rev(&[lo, hi], &mut other.data[..]);
-        other.normalized()
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn sub(self, mut other: BigUint) -> BigUint {
-        if other.data.is_empty() {
-            other.data.push(self);
-        } else {
-            sub2rev(&[self], &mut other.data[..]);
-        }
-        other.normalized()
-    }
-}
-
-impl Sub<u128> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn sub(mut self, other: u128) -> BigUint {
-        self -= other;
-        self
-    }
-}
-
-impl SubAssign<u128> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn sub_assign(&mut self, other: u128) {
-        let (a, b, c, d) = u32_from_u128(other);
-        sub2(&mut self.data[..], &[d, c, b, a]);
-        self.normalize();
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn sub_assign(&mut self, other: u128) {
-        let (hi, lo) = big_digit::from_doublebigdigit(other);
-        sub2(&mut self.data[..], &[lo, hi]);
-        self.normalize();
-    }
-}
-
-impl Sub<BigUint> for u128 {
-    type Output = BigUint;
-
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn sub(self, mut other: BigUint) -> BigUint {
-        while other.data.len() < 4 {
-            other.data.push(0);
-        }
-
-        let (a, b, c, d) = u32_from_u128(self);
-        sub2rev(&[d, c, b, a], &mut other.data[..]);
-        other.normalized()
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn sub(self, mut other: BigUint) -> BigUint {
-        while other.data.len() < 2 {
-            other.data.push(0);
-        }
-
-        let (hi, lo) = big_digit::from_doublebigdigit(self);
-        sub2rev(&[lo, hi], &mut other.data[..]);
-        other.normalized()
-    }
-}
-
 forward_all_binop_to_ref_ref!(impl Mul for BigUint, mul);
 forward_val_assign!(impl MulAssign for BigUint, mul_assign);
 
@@ -1307,17 +1111,6 @@ impl Rem<BigUint> for u128 {
     fn rem(mut self, other: BigUint) -> BigUint {
         self %= other;
         From::from(self)
-    }
-}
-
-impl CheckedSub for BigUint {
-    #[inline]
-    fn checked_sub(&self, v: &BigUint) -> Option<BigUint> {
-        match self.cmp(v) {
-            Less => None,
-            Equal => Some(Zero::zero()),
-            Greater => Some(self.sub(v)),
-        }
     }
 }
 

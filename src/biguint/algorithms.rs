@@ -5,57 +5,19 @@ use core::iter::repeat;
 use core::mem;
 use num_traits::{One, PrimInt, Zero};
 
-#[cfg(all(use_addcarry, target_arch = "x86_64"))]
-use core::arch::x86_64 as arch;
-
-#[cfg(all(use_addcarry, target_arch = "x86"))]
-use core::arch::x86 as arch;
-
 use crate::biguint::biguint_from_vec;
 use crate::biguint::BigUint;
 
 use crate::bigint::BigInt;
-use crate::bigint::Sign;
 use crate::bigint::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 
-// only needed for the fallback implementation of `sbb`
-#[cfg(not(use_addcarry))]
-use crate::big_digit::SignedDoubleBigDigit;
-
 use super::addition::{__add2, add2};
+use super::subtraction::{sub2, sub_sign};
 
 // Generic functions for add/subtract/multiply with carry/borrow. These are specialized
 // for some platforms to take advantage of intrinsics, etc.
-
-// Subtract with borrow:
-#[cfg(all(use_addcarry, u64_digit))]
-#[inline]
-fn sbb(borrow: u8, a: u64, b: u64, out: &mut u64) -> u8 {
-    // Safety: There are absolutely no safety concerns with calling `_subborrow_u64`.
-    // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_subborrow_u64(borrow, a, b, out) }
-}
-
-#[cfg(all(use_addcarry, not(u64_digit)))]
-#[inline]
-fn sbb(borrow: u8, a: u32, b: u32, out: &mut u32) -> u8 {
-    // Safety: There are absolutely no safety concerns with calling `_subborrow_u32`.
-    // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_subborrow_u32(borrow, a, b, out) }
-}
-
-// fallback for environments where we don't have a subborrow intrinsic
-#[cfg(not(use_addcarry))]
-#[inline]
-fn sbb(borrow: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
-    let difference = SignedDoubleBigDigit::from(a)
-        - SignedDoubleBigDigit::from(b)
-        - SignedDoubleBigDigit::from(borrow);
-    *out = difference as BigDigit;
-    u8::from(difference < 0)
-}
 
 #[inline]
 pub(crate) fn mac_with_carry(
@@ -145,85 +107,6 @@ pub(crate) fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
     }
 
     rem
-}
-
-pub(crate) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
-    let mut borrow = 0;
-
-    let len = cmp::min(a.len(), b.len());
-    let (a_lo, a_hi) = a.split_at_mut(len);
-    let (b_lo, b_hi) = b.split_at(len);
-
-    for (a, b) in a_lo.iter_mut().zip(b_lo) {
-        borrow = sbb(borrow, *a, *b, a);
-    }
-
-    if borrow != 0 {
-        for a in a_hi {
-            borrow = sbb(borrow, *a, 0, a);
-            if borrow == 0 {
-                break;
-            }
-        }
-    }
-
-    // note: we're _required_ to fail on underflow
-    assert!(
-        borrow == 0 && b_hi.iter().all(|x| *x == 0),
-        "Cannot subtract b from a because b is larger than a."
-    );
-}
-
-// Only for the Sub impl. `a` and `b` must have same length.
-#[inline]
-pub(crate) fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> u8 {
-    debug_assert!(b.len() == a.len());
-
-    let mut borrow = 0;
-
-    for (ai, bi) in a.iter().zip(b) {
-        borrow = sbb(borrow, *ai, *bi, bi);
-    }
-
-    borrow
-}
-
-pub(crate) fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
-    debug_assert!(b.len() >= a.len());
-
-    let len = cmp::min(a.len(), b.len());
-    let (a_lo, a_hi) = a.split_at(len);
-    let (b_lo, b_hi) = b.split_at_mut(len);
-
-    let borrow = __sub2rev(a_lo, b_lo);
-
-    assert!(a_hi.is_empty());
-
-    // note: we're _required_ to fail on underflow
-    assert!(
-        borrow == 0 && b_hi.iter().all(|x| *x == 0),
-        "Cannot subtract b from a because b is larger than a."
-    );
-}
-
-pub(crate) fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
-    // Normalize:
-    let a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
-    let b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
-
-    match cmp_slice(a, b) {
-        Greater => {
-            let mut a = a.to_vec();
-            sub2(&mut a, b);
-            (Plus, biguint_from_vec(a))
-        }
-        Less => {
-            let mut b = b.to_vec();
-            sub2(&mut b, a);
-            (Minus, biguint_from_vec(b))
-        }
-        _ => (NoSign, Zero::zero()),
-    }
 }
 
 /// Three argument multiply accumulate:
@@ -843,30 +726,5 @@ pub(crate) fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
     match Ord::cmp(&a.len(), &b.len()) {
         Equal => Iterator::cmp(a.iter().rev(), b.iter().rev()),
         other => other,
-    }
-}
-
-#[cfg(test)]
-mod algorithm_tests {
-    use crate::big_digit::BigDigit;
-    use crate::{BigInt, BigUint};
-    use num_traits::Num;
-
-    #[test]
-    fn test_sub_sign() {
-        use super::sub_sign;
-
-        fn sub_sign_i(a: &[BigDigit], b: &[BigDigit]) -> BigInt {
-            let (sign, val) = sub_sign(a, b);
-            BigInt::from_biguint(sign, val)
-        }
-
-        let a = BigUint::from_str_radix("265252859812191058636308480000000", 10).unwrap();
-        let b = BigUint::from_str_radix("26525285981219105863630848000000", 10).unwrap();
-        let a_i = BigInt::from(a.clone());
-        let b_i = BigInt::from(b.clone());
-
-        assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
-        assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
     }
 }
