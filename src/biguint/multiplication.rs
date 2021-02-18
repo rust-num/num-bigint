@@ -1,16 +1,17 @@
 use super::addition::{__add2, add2};
-use super::subtraction::{sub2, sub_sign};
+use super::subtraction::sub2;
 #[cfg(not(u64_digit))]
 use super::u32_from_u128;
-use super::{biguint_from_vec, BigUint};
+use super::{biguint_from_vec, cmp_slice, BigUint};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
-use crate::bigint::Sign::{Minus, NoSign, Plus};
+use crate::Sign::{self, Minus, NoSign, Plus};
 use crate::{BigInt, UsizePromotion};
 
+use core::cmp::Ordering;
 use core::iter::Product;
 use core::ops::{Mul, MulAssign};
-use num_traits::{CheckedMul, One};
+use num_traits::{CheckedMul, One, Zero};
 
 #[inline]
 pub(super) fn mac_with_carry(
@@ -335,6 +336,26 @@ fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     carry as BigDigit
 }
 
+fn sub_sign(mut a: &[BigDigit], mut b: &[BigDigit]) -> (Sign, BigUint) {
+    // Normalize:
+    a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
+    b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
+
+    match cmp_slice(a, b) {
+        Ordering::Greater => {
+            let mut a = a.to_vec();
+            sub2(&mut a, b);
+            (Plus, biguint_from_vec(a))
+        }
+        Ordering::Less => {
+            let mut b = b.to_vec();
+            sub2(&mut b, a);
+            (Minus, biguint_from_vec(b))
+        }
+        Ordering::Equal => (NoSign, Zero::zero()),
+    }
+}
+
 forward_all_binop_to_ref_ref!(impl Mul for BigUint, mul);
 forward_val_assign!(impl MulAssign for BigUint, mul_assign);
 
@@ -465,3 +486,22 @@ impl CheckedMul for BigUint {
 }
 
 impl_product_iter_type!(BigUint);
+
+#[test]
+fn test_sub_sign() {
+    use crate::BigInt;
+    use num_traits::Num;
+
+    fn sub_sign_i(a: &[BigDigit], b: &[BigDigit]) -> BigInt {
+        let (sign, val) = sub_sign(a, b);
+        BigInt::from_biguint(sign, val)
+    }
+
+    let a = BigUint::from_str_radix("265252859812191058636308480000000", 10).unwrap();
+    let b = BigUint::from_str_radix("26525285981219105863630848000000", 10).unwrap();
+    let a_i = BigInt::from(a.clone());
+    let b_i = BigInt::from(b.clone());
+
+    assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
+    assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
+}

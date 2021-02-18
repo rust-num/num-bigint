@@ -1,9 +1,8 @@
 #[cfg(not(u64_digit))]
 use super::u32_from_u128;
-use super::{biguint_from_vec, cmp_slice, BigUint};
+use super::BigUint;
 
 use crate::big_digit::{self, BigDigit};
-use crate::Sign::{self, Minus, NoSign, Plus};
 use crate::UsizePromotion;
 
 use core::cmp::Ordering::{Equal, Greater, Less};
@@ -103,26 +102,6 @@ fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
         borrow == 0 && b_hi.iter().all(|x| *x == 0),
         "Cannot subtract b from a because b is larger than a."
     );
-}
-
-pub(super) fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
-    // Normalize:
-    let a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
-    let b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
-
-    match cmp_slice(a, b) {
-        Greater => {
-            let mut a = a.to_vec();
-            sub2(&mut a, b);
-            (Plus, biguint_from_vec(a))
-        }
-        Less => {
-            let mut b = b.to_vec();
-            sub2(&mut b, a);
-            (Minus, biguint_from_vec(b))
-        }
-        _ => (NoSign, Zero::zero()),
-    }
 }
 
 forward_val_val_binop!(impl Sub for BigUint, sub);
@@ -330,23 +309,4 @@ impl CheckedSub for BigUint {
             Greater => Some(self.sub(v)),
         }
     }
-}
-
-#[test]
-fn test_sub_sign() {
-    use crate::BigInt;
-    use num_traits::Num;
-
-    fn sub_sign_i(a: &[BigDigit], b: &[BigDigit]) -> BigInt {
-        let (sign, val) = sub_sign(a, b);
-        BigInt::from_biguint(sign, val)
-    }
-
-    let a = BigUint::from_str_radix("265252859812191058636308480000000", 10).unwrap();
-    let b = BigUint::from_str_radix("26525285981219105863630848000000", 10).unwrap();
-    let a_i = BigInt::from(a.clone());
-    let b_i = BigInt::from(b.clone());
-
-    assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
-    assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
 }
