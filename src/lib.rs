@@ -228,6 +228,8 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
 
 pub use crate::biguint::BigUint;
 pub use crate::biguint::ToBigUint;
+pub use crate::biguint::U32Digits;
+pub use crate::biguint::U64Digits;
 
 pub use crate::bigint::BigInt;
 pub use crate::bigint::Sign;
