@@ -8,7 +8,7 @@ use core::convert::TryFrom;
 use core::default::Default;
 use core::fmt;
 use core::hash;
-use core::iter::{Product, Sum};
+use core::iter::{FusedIterator, Product, Sum};
 use core::mem;
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
@@ -174,6 +174,17 @@ impl FromStr for BigUint {
     fn from_str(s: &str) -> Result<BigUint, ParseBigIntError> {
         BigUint::from_str_radix(s, 10)
     }
+}
+
+/// Convert a u32 chunk (len is either 1 or 2) to a single u64 digit
+#[inline]
+fn u32_chunk_to_u64(chunk: &[u32]) -> u64 {
+    // raw could have odd length
+    let mut digit = chunk[0] as u64;
+    if let Some(&hi) = chunk.get(1) {
+        digit |= (hi as u64) << 32;
+    }
+    digit
 }
 
 // Convert from a power of two radix (bits == ilog2(radix)) where bits evenly divides
@@ -2277,6 +2288,231 @@ pub(crate) fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
+/// An iterator of `u32` digits representation of a `BigUint` or `BigInt`,
+/// ordered least significant digit first.
+pub struct U32Digits<'a> {
+    #[cfg(u64_digit)]
+    data: &'a [u64],
+    #[cfg(u64_digit)]
+    next_is_lo: bool,
+    #[cfg(u64_digit)]
+    last_hi_is_zero: bool,
+
+    #[cfg(not(u64_digit))]
+    it: core::slice::Iter<'a, u32>,
+}
+
+#[cfg(u64_digit)]
+impl<'a> U32Digits<'a> {
+    #[inline]
+    fn new(data: &'a [u64]) -> Self {
+        let last_hi_is_zero = data
+            .last()
+            .map(|&last| {
+                let last_hi = (last >> 32) as u32;
+                last_hi == 0
+            })
+            .unwrap_or(false);
+        U32Digits {
+            data,
+            next_is_lo: true,
+            last_hi_is_zero,
+        }
+    }
+}
+
+#[cfg(u64_digit)]
+impl Iterator for U32Digits<'_> {
+    type Item = u32;
+    #[inline]
+    fn next(&mut self) -> Option<u32> {
+        match self.data.split_first() {
+            Some((&first, data)) => {
+                let next_is_lo = self.next_is_lo;
+                self.next_is_lo = !next_is_lo;
+                if next_is_lo {
+                    Some(first as u32)
+                } else {
+                    self.data = data;
+                    if data.is_empty() && self.last_hi_is_zero {
+                        self.last_hi_is_zero = false;
+                        None
+                    } else {
+                        Some((first >> 32) as u32)
+                    }
+                }
+            }
+            None => None,
+        }
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+
+    #[inline]
+    fn last(self) -> Option<u32> {
+        self.data.last().map(|&last| {
+            if self.last_hi_is_zero {
+                last as u32
+            } else {
+                (last >> 32) as u32
+            }
+        })
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        self.len()
+    }
+}
+
+#[cfg(u64_digit)]
+impl ExactSizeIterator for U32Digits<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.data.len() * 2 - usize::from(self.last_hi_is_zero) - usize::from(!self.next_is_lo)
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl<'a> U32Digits<'a> {
+    #[inline]
+    fn new(data: &'a [u32]) -> Self {
+        Self { it: data.iter() }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl Iterator for U32Digits<'_> {
+    type Item = u32;
+    #[inline]
+    fn next(&mut self) -> Option<u32> {
+        self.it.next().cloned()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.it.size_hint()
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<u32> {
+        self.it.nth(n).cloned()
+    }
+
+    #[inline]
+    fn last(self) -> Option<u32> {
+        self.it.last().cloned()
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        self.it.count()
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl ExactSizeIterator for U32Digits<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.it.len()
+    }
+}
+
+impl FusedIterator for U32Digits<'_> {}
+
+/// An iterator of `u64` digits representation of a `BigUint` or `BigInt`,
+/// ordered least significant digit first.
+pub struct U64Digits<'a> {
+    #[cfg(not(u64_digit))]
+    it: core::slice::Chunks<'a, u32>,
+
+    #[cfg(u64_digit)]
+    it: core::slice::Iter<'a, u64>,
+}
+
+#[cfg(not(u64_digit))]
+impl<'a> U64Digits<'a> {
+    #[inline]
+    fn new(data: &'a [u32]) -> Self {
+        U64Digits { it: data.chunks(2) }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl Iterator for U64Digits<'_> {
+    type Item = u64;
+    #[inline]
+    fn next(&mut self) -> Option<u64> {
+        self.it.next().map(u32_chunk_to_u64)
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+
+    #[inline]
+    fn last(self) -> Option<u64> {
+        self.it.last().map(u32_chunk_to_u64)
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        self.len()
+    }
+}
+
+#[cfg(u64_digit)]
+impl<'a> U64Digits<'a> {
+    #[inline]
+    fn new(data: &'a [u64]) -> Self {
+        Self { it: data.iter() }
+    }
+}
+
+#[cfg(u64_digit)]
+impl Iterator for U64Digits<'_> {
+    type Item = u64;
+    #[inline]
+    fn next(&mut self) -> Option<u64> {
+        self.it.next().cloned()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.it.size_hint()
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<u64> {
+        self.it.nth(n).cloned()
+    }
+
+    #[inline]
+    fn last(self) -> Option<u64> {
+        self.it.last().cloned()
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        self.it.count()
+    }
+}
+
+impl ExactSizeIterator for U64Digits<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.it.len()
+    }
+}
+
+impl FusedIterator for U64Digits<'_> {}
+
 /// Creates and initializes a `BigUint`.
 ///
 /// The digits are in little-endian base matching `BigDigit`.
@@ -2326,14 +2562,7 @@ impl BigUint {
         self.data.extend_from_slice(slice);
 
         #[cfg(u64_digit)]
-        self.data.extend(slice.chunks(2).map(|chunk| {
-            // raw could have odd length
-            let mut digit = BigDigit::from(chunk[0]);
-            if let Some(&hi) = chunk.get(1) {
-                digit |= BigDigit::from(hi) << 32;
-            }
-            digit
-        }));
+        self.data.extend(slice.chunks(2).map(u32_chunk_to_u64));
 
         self.normalize();
     }
@@ -2546,30 +2775,63 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn to_u32_digits(&self) -> Vec<u32> {
-        let mut digits = Vec::new();
+        self.iter_u32_digits().collect()
+    }
 
-        #[cfg(not(u64_digit))]
-        digits.clone_from(&self.data);
+    /// Returns the `u64` digits representation of the `BigUint` ordered least significant digit
+    /// first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).to_u64_digits(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).to_u64_digits(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).to_u64_digits(), vec![4294967296]);
+    /// assert_eq!(BigUint::from(112500000000u64).to_u64_digits(), vec![112500000000]);
+    /// assert_eq!(BigUint::from(1u128 << 64).to_u64_digits(), vec![0, 1]);
+    /// ```
+    #[inline]
+    pub fn to_u64_digits(&self) -> Vec<u64> {
+        self.iter_u64_digits().collect()
+    }
 
-        #[cfg(u64_digit)]
-        {
-            if let Some((&last, data)) = self.data.split_last() {
-                let last_lo = last as u32;
-                let last_hi = (last >> 32) as u32;
-                let u32_len = data.len() * 2 + 1 + (last_hi != 0) as usize;
-                digits.reserve_exact(u32_len);
-                for &x in data {
-                    digits.push(x as u32);
-                    digits.push((x >> 32) as u32);
-                }
-                digits.push(last_lo);
-                if last_hi != 0 {
-                    digits.push(last_hi);
-                }
-            }
-        }
+    /// Returns an iterator of `u32` digits representation of the `BigUint` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).iter_u32_digits().collect::<Vec<u32>>(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).iter_u32_digits().collect::<Vec<u32>>(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).iter_u32_digits().collect::<Vec<u32>>(), vec![0, 1]);
+    /// assert_eq!(BigUint::from(112500000000u64).iter_u32_digits().collect::<Vec<u32>>(), vec![830850304, 26]);
+    /// ```
+    #[inline]
+    pub fn iter_u32_digits(&self) -> U32Digits<'_> {
+        U32Digits::new(self.data.as_slice())
+    }
 
-        digits
+    /// Returns an iterator of `u64` digits representation of the `BigUint` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).iter_u64_digits().collect::<Vec<u64>>(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967296]);
+    /// assert_eq!(BigUint::from(112500000000u64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000]);
+    /// assert_eq!(BigUint::from(1u128 << 64).iter_u64_digits().collect::<Vec<u64>>(), vec![0, 1]);
+    /// ```
+    #[inline]
+    pub fn iter_u64_digits(&self) -> U64Digits<'_> {
+        U64Digits::new(self.data.as_slice())
     }
 
     /// Returns the integer formatted as a string in the given radix.
@@ -3142,4 +3404,46 @@ fn test_pow_biguint() {
     let exponent = BigUint::from(3u8);
 
     assert_eq!(BigUint::from(125u8), base.pow(exponent));
+}
+
+#[test]
+fn test_iter_u32_digits() {
+    let n = BigUint::from(5u8);
+    let mut it = n.iter_u32_digits();
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(5));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+
+    let n = BigUint::from(112500000000u64);
+    let mut it = n.iter_u32_digits();
+    assert_eq!(it.len(), 2);
+    assert_eq!(it.next(), Some(830850304));
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(26));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+}
+
+#[test]
+fn test_iter_u64_digits() {
+    let n = BigUint::from(5u8);
+    let mut it = n.iter_u64_digits();
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(5));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+
+    let n = BigUint::from(18_446_744_073_709_551_616u128);
+    let mut it = n.iter_u64_digits();
+    assert_eq!(it.len(), 2);
+    assert_eq!(it.next(), Some(0));
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(1));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
 }

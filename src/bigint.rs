@@ -31,7 +31,7 @@ use self::Sign::{Minus, NoSign, Plus};
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::biguint;
 use crate::biguint::to_str_radix_reversed;
-use crate::biguint::{BigUint, IntDigits};
+use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
 use crate::ParseBigIntError;
 #[cfg(has_try_from)]
 use crate::TryFromBigIntError;
@@ -2979,6 +2979,65 @@ impl BigInt {
     #[inline]
     pub fn to_u32_digits(&self) -> (Sign, Vec<u32>) {
         (self.sign, self.data.to_u32_digits())
+    }
+
+    /// Returns the sign and the `u64` digits representation of the `BigInt` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::{BigInt, Sign};
+    ///
+    /// assert_eq!(BigInt::from(-1125).to_u64_digits(), (Sign::Minus, vec![1125]));
+    /// assert_eq!(BigInt::from(4294967295u32).to_u64_digits(), (Sign::Plus, vec![4294967295]));
+    /// assert_eq!(BigInt::from(4294967296u64).to_u64_digits(), (Sign::Plus, vec![4294967296]));
+    /// assert_eq!(BigInt::from(-112500000000i64).to_u64_digits(), (Sign::Minus, vec![112500000000]));
+    /// assert_eq!(BigInt::from(112500000000i64).to_u64_digits(), (Sign::Plus, vec![112500000000]));
+    /// assert_eq!(BigInt::from(1u128 << 64).to_u64_digits(), (Sign::Plus, vec![0, 1]));
+    /// ```
+    #[inline]
+    pub fn to_u64_digits(&self) -> (Sign, Vec<u64>) {
+        (self.sign, self.data.to_u64_digits())
+    }
+
+    /// Returns an iterator of `u32` digits representation of the `BigInt` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigInt;
+    ///
+    /// assert_eq!(BigInt::from(-1125).iter_u32_digits().collect::<Vec<u32>>(), vec![1125]);
+    /// assert_eq!(BigInt::from(4294967295u32).iter_u32_digits().collect::<Vec<u32>>(), vec![4294967295]);
+    /// assert_eq!(BigInt::from(4294967296u64).iter_u32_digits().collect::<Vec<u32>>(), vec![0, 1]);
+    /// assert_eq!(BigInt::from(-112500000000i64).iter_u32_digits().collect::<Vec<u32>>(), vec![830850304, 26]);
+    /// assert_eq!(BigInt::from(112500000000i64).iter_u32_digits().collect::<Vec<u32>>(), vec![830850304, 26]);
+    /// ```
+    #[inline]
+    pub fn iter_u32_digits(&self) -> U32Digits<'_> {
+        self.data.iter_u32_digits()
+    }
+
+    /// Returns an iterator of `u64` digits representation of the `BigInt` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigInt;
+    ///
+    /// assert_eq!(BigInt::from(-1125).iter_u64_digits().collect::<Vec<u64>>(), vec![1125u64]);
+    /// assert_eq!(BigInt::from(4294967295u32).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967295u64]);
+    /// assert_eq!(BigInt::from(4294967296u64).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967296u64]);
+    /// assert_eq!(BigInt::from(-112500000000i64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000u64]);
+    /// assert_eq!(BigInt::from(112500000000i64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000u64]);
+    /// assert_eq!(BigInt::from(1u128 << 64).iter_u64_digits().collect::<Vec<u64>>(), vec![0, 1]);
+    /// ```
+    #[inline]
+    pub fn iter_u64_digits(&self) -> U64Digits<'_> {
+        self.data.iter_u64_digits()
     }
 
     /// Returns the two's-complement byte representation of the `BigInt` in big-endian byte order.
