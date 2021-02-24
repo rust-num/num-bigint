@@ -31,7 +31,7 @@ use self::Sign::{Minus, NoSign, Plus};
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::biguint;
 use crate::biguint::to_str_radix_reversed;
-use crate::biguint::{BigUint, IntDigits, IterU32Digits, IterU64Digits};
+use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
 use crate::ParseBigIntError;
 #[cfg(has_try_from)]
 use crate::TryFromBigIntError;
@@ -3000,7 +3000,7 @@ impl BigInt {
         (self.sign, self.data.to_u64_digits())
     }
 
-    /// Returns an iterator of `u32` digits representation of the `BigUint` ordered least
+    /// Returns an iterator of `u32` digits representation of the `BigInt` ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -3015,11 +3015,11 @@ impl BigInt {
     /// assert_eq!(BigInt::from(112500000000i64).iter_u32_digits().collect::<Vec<u32>>(), vec![830850304, 26]);
     /// ```
     #[inline]
-    pub fn iter_u32_digits(&self) -> IterU32Digits<'_> {
+    pub fn iter_u32_digits(&self) -> U32Digits<'_> {
         self.data.iter_u32_digits()
     }
 
-    /// Returns an iterator of `u64` digits representation of the `BigUint` ordered least
+    /// Returns an iterator of `u64` digits representation of the `BigInt` ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -3034,7 +3034,7 @@ impl BigInt {
     /// assert_eq!(BigInt::from(112500000000i64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000u64]);
     /// ```
     #[inline]
-    pub fn iter_u64_digits(&self) -> IterU64Digits<'_> {
+    pub fn iter_u64_digits(&self) -> U64Digits<'_> {
         self.data.iter_u64_digits()
     }
 
