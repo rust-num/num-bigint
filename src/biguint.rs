@@ -2301,6 +2301,7 @@ pub struct U32Digits<'a> {
     #[cfg(not(u64_digit))]
     it: core::slice::Iter<'a, u32>,
 }
+
 #[cfg(u64_digit)]
 impl<'a> U32Digits<'a> {
     #[inline]
@@ -2319,6 +2320,7 @@ impl<'a> U32Digits<'a> {
         }
     }
 }
+
 #[cfg(u64_digit)]
 impl Iterator for U32Digits<'_> {
     type Item = u32;
@@ -2366,6 +2368,7 @@ impl Iterator for U32Digits<'_> {
         self.len()
     }
 }
+
 #[cfg(u64_digit)]
 impl ExactSizeIterator for U32Digits<'_> {
     #[inline]
@@ -2381,6 +2384,7 @@ impl<'a> U32Digits<'a> {
         Self { it: data.iter() }
     }
 }
+
 #[cfg(not(u64_digit))]
 impl Iterator for U32Digits<'_> {
     type Item = u32;
@@ -2409,6 +2413,7 @@ impl Iterator for U32Digits<'_> {
         self.it.count()
     }
 }
+
 #[cfg(not(u64_digit))]
 impl ExactSizeIterator for U32Digits<'_> {
     #[inline]
@@ -2428,6 +2433,7 @@ pub struct U64Digits<'a> {
     #[cfg(u64_digit)]
     it: core::slice::Iter<'a, u64>,
 }
+
 #[cfg(not(u64_digit))]
 impl<'a> U64Digits<'a> {
     #[inline]
@@ -2460,13 +2466,6 @@ impl Iterator for U64Digits<'_> {
         self.len()
     }
 }
-#[cfg(not(u64_digit))]
-impl ExactSizeIterator for U64Digits<'_> {
-    #[inline]
-    fn len(&self) -> usize {
-        self.it.len()
-    }
-}
 
 #[cfg(u64_digit)]
 impl<'a> U64Digits<'a> {
@@ -2475,6 +2474,7 @@ impl<'a> U64Digits<'a> {
         Self { it: data.iter() }
     }
 }
+
 #[cfg(u64_digit)]
 impl Iterator for U64Digits<'_> {
     type Item = u64;
@@ -2503,13 +2503,14 @@ impl Iterator for U64Digits<'_> {
         self.it.count()
     }
 }
-#[cfg(u64_digit)]
+
 impl ExactSizeIterator for U64Digits<'_> {
     #[inline]
     fn len(&self) -> usize {
         self.it.len()
     }
 }
+
 impl FusedIterator for U64Digits<'_> {}
 
 /// Creates and initializes a `BigUint`.
