@@ -7,8 +7,11 @@ edition = "2018"
 [dependencies]
 num-integer = "0.1.42"
 num-traits = "0.2.11"
-quickcheck = "0.9"
 quickcheck_macros = "0.9"
+
+[dependencies.quickcheck]
+version = "0.9"
+default-features = false
 
 [dependencies.num-bigint]
 features = ["quickcheck"]
