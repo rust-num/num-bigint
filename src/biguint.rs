@@ -2790,6 +2790,7 @@ impl BigUint {
     /// assert_eq!(BigUint::from(4294967295u32).to_u64_digits(), vec![4294967295]);
     /// assert_eq!(BigUint::from(4294967296u64).to_u64_digits(), vec![4294967296]);
     /// assert_eq!(BigUint::from(112500000000u64).to_u64_digits(), vec![112500000000]);
+    /// assert_eq!(BigUint::from(1u128 << 64).to_u64_digits(), vec![0, 1]);
     /// ```
     #[inline]
     pub fn to_u64_digits(&self) -> Vec<u64> {
@@ -2826,6 +2827,7 @@ impl BigUint {
     /// assert_eq!(BigUint::from(4294967295u32).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967295]);
     /// assert_eq!(BigUint::from(4294967296u64).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967296]);
     /// assert_eq!(BigUint::from(112500000000u64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000]);
+    /// assert_eq!(BigUint::from(1u128 << 64).iter_u64_digits().collect::<Vec<u64>>(), vec![0, 1]);
     /// ```
     #[inline]
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
