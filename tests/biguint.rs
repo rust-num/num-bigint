@@ -1808,3 +1808,29 @@ fn test_count_ones() {
     let x: BigUint = (BigUint::from(3u8) << 128) | BigUint::from(3u8);
     assert_eq!(x.count_ones(), 4);
 }
+
+#[test]
+fn test_bit() {
+    assert!(!BigUint::from(0u8).bit(0));
+    assert!(!BigUint::from(0u8).bit(100));
+    assert!(!BigUint::from(42u8).bit(4));
+    assert!(BigUint::from(42u8).bit(5));
+    let x: BigUint = (BigUint::from(3u8) << 128) | BigUint::from(3u8);
+    assert!(x.bit(129));
+    assert!(!x.bit(130));
+}
+
+#[test]
+fn test_set_bit() {
+    let mut x = BigUint::from(3u8);
+    x.set_bit(128, true);
+    x.set_bit(129, true);
+    assert_eq!(x, (BigUint::from(3u8) << 128) | BigUint::from(3u8));
+    x.set_bit(0, false);
+    x.set_bit(128, false);
+    x.set_bit(130, false);
+    assert_eq!(x, (BigUint::from(2u8) << 128) | BigUint::from(2u8));
+    x.set_bit(129, false);
+    x.set_bit(1, false);
+    assert_eq!(x, BigUint::zero());
+}

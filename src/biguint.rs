@@ -2725,6 +2725,43 @@ impl BigUint {
     pub fn count_ones(&self) -> u64 {
         self.data.iter().map(|&d| u64::from(d.count_ones())).sum()
     }
+
+    /// Returns whether the bit in the given position is set
+    pub fn bit(&self, bit: u64) -> bool {
+        let bits_per_digit = u64::from(big_digit::BITS);
+        if let Some(digit_index) = (bit / bits_per_digit).to_usize() {
+            if let Some(digit) = self.data.get(digit_index) {
+                let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+                return (digit & bit_mask) != 0;
+            }
+        }
+        false
+    }
+
+    /// Sets or clears the bit in the given position
+    ///
+    /// Note that setting a bit greater than the current bit length, a reallocation may be needed
+    /// to store the new digits
+    pub fn set_bit(&mut self, bit: u64, value: bool) {
+        // Note: we're saturating `digit_index` and `new_len` -- any such case is guaranteed to
+        // fail allocation, and that's more consistent than adding our own overflow panics.
+        let bits_per_digit = u64::from(big_digit::BITS);
+        let digit_index = (bit / bits_per_digit)
+            .to_usize()
+            .unwrap_or(core::usize::MAX);
+        let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+        if value {
+            if digit_index >= self.data.len() {
+                let new_len = digit_index.saturating_add(1);
+                self.data.resize(new_len, 0);
+            }
+            self.data[digit_index] |= bit_mask;
+        } else if digit_index < self.data.len() {
+            self.data[digit_index] &= !bit_mask;
+            // the top bit may have been cleared, so normalize
+            self.normalize();
+        }
+    }
 }
 
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
