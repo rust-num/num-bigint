@@ -1317,6 +1317,7 @@ fn test_bit() {
     assert!(BigInt::from(0b1100u8).bit(3));
     assert!(!BigInt::from(0b1100u8).bit(4));
     assert!(!BigInt::from(0b1100u8).bit(200));
+    assert!(!BigInt::from(0b1100u8).bit(u64::MAX));
     // -12 = (...110100)_2
     assert!(!BigInt::from(-12i8).bit(0));
     assert!(!BigInt::from(-12i8).bit(1));
@@ -1324,6 +1325,7 @@ fn test_bit() {
     assert!(!BigInt::from(-12i8).bit(3));
     assert!(BigInt::from(-12i8).bit(4));
     assert!(BigInt::from(-12i8).bit(200));
+    assert!(BigInt::from(-12i8).bit(u64::MAX));
 }
 
 #[test]

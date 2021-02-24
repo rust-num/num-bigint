@@ -2729,9 +2729,13 @@ impl BigUint {
     /// Returns whether the bit in the given position is set
     pub fn bit(&self, bit: u64) -> bool {
         let bits_per_digit = u64::from(big_digit::BITS);
-        let digit_index = (bit / bits_per_digit).to_usize().unwrap();
-        digit_index < self.data.len()
-            && (self.data[digit_index] & ((1 as BigDigit) << (bit % bits_per_digit))) != 0
+        if let Some(digit_index) = (bit / bits_per_digit).to_usize() {
+            if let Some(digit) = self.data.get(digit_index) {
+                let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+                return (digit & bit_mask) != 0;
+            }
+        }
+        false
     }
 
     /// Sets or clears the bit in the given position
