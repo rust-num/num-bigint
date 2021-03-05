@@ -13,7 +13,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-num-bigint = "0.3"
+num-bigint = "0.4"
 ```
 
 ## Features
@@ -30,7 +30,7 @@ feature is enabled. To enable it include rand as
 
 ```toml
 rand = "0.8"
-num-bigint = { version = "0.3", features = ["rand"] }
+num-bigint = { version = "0.4", features = ["rand"] }
 ```
 
 Note that you must use the version of `rand` that `num-bigint` is compatible

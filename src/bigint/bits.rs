@@ -517,8 +517,8 @@ pub(super) fn set_negative_bit(x: &mut BigInt, bit: u64, value: bool) {
                 digits[index_lo] ^= bit_mask_lo & bit_mask_hi;
             } else {
                 digits[index_lo] = bit_mask_lo;
-                for index in (index_lo + 1)..index_hi {
-                    digits[index] = big_digit::MAX;
+                for digit in &mut digits[index_lo + 1..index_hi] {
+                    *digit = big_digit::MAX;
                 }
                 digits[index_hi] ^= bit_mask_hi;
             }
