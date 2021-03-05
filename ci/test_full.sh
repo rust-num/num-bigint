@@ -28,10 +28,10 @@ if ! check_version $MSRV ; then
 fi
 
 STD_FEATURES=(serde)
-check_version 1.34 && STD_FEATURES+=(quickcheck)
 check_version 1.36 && STD_FEATURES+=(rand)
 check_version 1.36 && NO_STD_FEATURES=(serde rand)
 check_version 1.40 && STD_FEATURES+=(arbitrary)
+check_version 1.46 && STD_FEATURES+=(quickcheck)
 echo "Testing supported features: ${STD_FEATURES[*]}"
 if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"

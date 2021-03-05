@@ -62,12 +62,12 @@ default-features = false
 
 [dependencies.quickcheck]
 optional = true
-version = "0.9"
+version = "1"
 default-features = false
 
 [dependencies.arbitrary]
 optional = true
-version = "0.4"
+version = "1"
 default-features = false
 
 [build-dependencies]

@@ -35,7 +35,6 @@ pub(crate) use self::convert::to_str_radix_reversed;
 pub use self::iter::{U32Digits, U64Digits};
 
 /// A big unsigned integer type.
-#[derive(Debug)]
 pub struct BigUint {
     data: Vec<BigDigit>,
 }
@@ -103,6 +102,12 @@ impl Default for BigUint {
     #[inline]
     fn default() -> BigUint {
         Zero::zero()
+    }
+}
+
+impl fmt::Debug for BigUint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 

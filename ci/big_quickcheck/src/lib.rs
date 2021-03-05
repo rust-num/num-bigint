@@ -9,7 +9,7 @@
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
 use num_traits::{Num, One, Signed, Zero};
-use quickcheck::{QuickCheck, StdThreadGen, TestResult};
+use quickcheck::{Gen, QuickCheck, TestResult};
 use quickcheck_macros::quickcheck;
 
 #[quickcheck]
@@ -42,8 +42,8 @@ fn quickcheck_signed_eq_symmetric(a: BigInt, b: BigInt) -> bool {
 
 #[test]
 fn quickcheck_arith_primitive() {
-    let gen = StdThreadGen::new(usize::max_value());
-    let mut qc = QuickCheck::with_gen(gen);
+    let gen = Gen::new(usize::max_value());
+    let mut qc = QuickCheck::new().gen(gen);
 
     fn test_unsigned_add_primitive(a: usize, b: usize) -> TestResult {
         let actual = BigUint::from(a) + BigUint::from(b);
@@ -79,11 +79,11 @@ fn quickcheck_arith_primitive() {
         }
     }
 
-    fn test_signed_sub_primitive(a: i128, b: i128) -> bool {
-        if b < a {
-            BigInt::from(a - b) == BigInt::from(a) - BigInt::from(b)
-        } else {
-            BigInt::from(b - a) == BigInt::from(b) - BigInt::from(a)
+    fn test_signed_sub_primitive(a: i128, b: i128) -> TestResult {
+        let actual = BigInt::from(a) - BigInt::from(b);
+        match a.checked_sub(b) {
+            None => TestResult::discard(),
+            Some(expected) => TestResult::from_bool(BigInt::from(expected) == actual),
         }
     }
 
@@ -96,7 +96,7 @@ fn quickcheck_arith_primitive() {
     }
 
     fn test_signed_div_primitive(a: i128, b: i128) -> TestResult {
-        if b == 0 {
+        if b == 0 || (a == i128::MIN && b == -1) {
             TestResult::discard()
         } else {
             TestResult::from_bool(BigInt::from(a / b) == BigInt::from(a) / BigInt::from(b))
@@ -108,7 +108,7 @@ fn quickcheck_arith_primitive() {
     qc.quickcheck(test_unsigned_mul_primitive as fn(u64, u64) -> bool);
     qc.quickcheck(test_signed_mul_primitive as fn(i64, i64) -> bool);
     qc.quickcheck(test_unsigned_sub_primitive as fn(u128, u128) -> bool);
-    qc.quickcheck(test_signed_sub_primitive as fn(i128, i128) -> bool);
+    qc.quickcheck(test_signed_sub_primitive as fn(i128, i128) -> TestResult);
     qc.quickcheck(test_unsigned_div_primitive as fn(u128, u128) -> TestResult);
     qc.quickcheck(test_signed_div_primitive as fn(i128, i128) -> TestResult);
 }
@@ -280,8 +280,8 @@ fn quickcheck_signed_conversion(a: BigInt, radix: u8) -> TestResult {
 
 #[test]
 fn quicktest_shift() {
-    let gen = StdThreadGen::new(usize::max_value());
-    let mut qc = QuickCheck::with_gen(gen);
+    let gen = Gen::new(usize::max_value());
+    let mut qc = QuickCheck::new().gen(gen);
 
     fn test_shr_unsigned(a: u64, shift: u8) -> TestResult {
         let shift = (shift % 64) as usize; //shift at most 64 bits
@@ -317,8 +317,8 @@ fn quicktest_shift() {
 
 #[test]
 fn quickcheck_modpow() {
-    let gen = StdThreadGen::new(usize::max_value());
-    let mut qc = QuickCheck::with_gen(gen);
+    let gen = Gen::new(usize::max_value());
+    let mut qc = QuickCheck::new().gen(gen);
 
     fn simple_modpow(base: &BigInt, exponent: &BigInt, modulus: &BigInt) -> BigInt {
         assert!(!exponent.is_negative());

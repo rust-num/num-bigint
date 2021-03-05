@@ -59,7 +59,6 @@ impl Neg for Sign {
 }
 
 /// A big signed integer type.
-#[derive(Debug)]
 pub struct BigInt {
     sign: Sign,
     data: BigUint,
@@ -134,6 +133,12 @@ impl Default for BigInt {
     #[inline]
     fn default() -> BigInt {
         Zero::zero()
+    }
+}
+
+impl fmt::Debug for BigInt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 

@@ -1,11 +1,13 @@
 use super::{biguint_from_vec, BigUint};
 
 use crate::big_digit::BigDigit;
-use crate::std_alloc::{Box, Vec};
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::Box;
+use crate::std_alloc::Vec;
 
 #[cfg(feature = "quickcheck")]
 impl quickcheck::Arbitrary for BigUint {
-    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         // Use arbitrary from Vec
         biguint_from_vec(Vec::<BigDigit>::arbitrary(g))
     }
@@ -17,12 +19,16 @@ impl quickcheck::Arbitrary for BigUint {
 }
 
 #[cfg(feature = "arbitrary")]
-impl arbitrary::Arbitrary for BigUint {
+impl arbitrary::Arbitrary<'_> for BigUint {
     fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
         Ok(biguint_from_vec(Vec::<BigDigit>::arbitrary(u)?))
     }
 
-    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
-        Box::new(self.data.shrink().map(biguint_from_vec))
+    fn arbitrary_take_rest(u: arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        Ok(biguint_from_vec(Vec::<BigDigit>::arbitrary_take_rest(u)?))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        Vec::<BigDigit>::size_hint(depth)
     }
 }
