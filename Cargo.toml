@@ -8,11 +8,16 @@ categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT OR Apache-2.0"
 name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
-version = "0.3.2"
+version = "0.4.0-pre"
+publish = false
 readme = "README.md"
 build = "build.rs"
 exclude = ["/bors.toml", "/ci/*", "/.github/*"]
 edition = "2018"
+
+[features]
+default = ["std"]
+std = ["num-integer/std", "num-traits/std"]
 
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
@@ -47,7 +52,7 @@ features = ["i128"]
 
 [dependencies.rand]
 optional = true
-version = "0.7"
+version = "0.8"
 default-features = false
 
 [dependencies.serde]
@@ -64,10 +69,6 @@ default-features = false
 optional = true
 version = "0.4"
 default-features = false
-
-[features]
-default = ["std"]
-std = ["num-integer/std", "num-traits/std"]
 
 [build-dependencies]
 autocfg = "1"

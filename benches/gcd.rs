@@ -6,17 +6,10 @@ extern crate test;
 use num_bigint::{BigUint, RandBigInt};
 use num_integer::Integer;
 use num_traits::Zero;
-use rand::rngs::StdRng;
-use rand::SeedableRng;
 use test::Bencher;
 
-fn get_rng() -> StdRng {
-    let mut seed = [0; 32];
-    for i in 1..32 {
-        seed[usize::from(i)] = i;
-    }
-    SeedableRng::from_seed(seed)
-}
+mod rng;
+use rng::get_rng;
 
 fn bench(b: &mut Bencher, bits: u64, gcd: fn(&BigUint, &BigUint) -> BigUint) {
     let mut rng = get_rng();

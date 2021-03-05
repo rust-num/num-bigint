@@ -4,9 +4,10 @@
 extern crate test;
 
 use num_bigint::{BigUint, RandBigInt};
-use rand::rngs::StdRng;
-use rand::SeedableRng;
 use test::Bencher;
+
+mod rng;
+use rng::get_rng;
 
 // The `big64` cases demonstrate the speed of cases where the value
 // can be converted to a `u64` primitive for faster calculation.
@@ -15,14 +16,6 @@ use test::Bencher;
 // a better initial guess of the actual value.
 //
 // The `big2k` and `big4k` cases are too big for `f64`, and use a simpler guess.
-
-fn get_rng() -> StdRng {
-    let mut seed = [0; 32];
-    for i in 1..32 {
-        seed[usize::from(i)] = i;
-    }
-    SeedableRng::from_seed(seed)
-}
 
 fn check(x: &BigUint, n: u32) {
     let root = x.nth_root(n);
