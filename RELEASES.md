@@ -1,3 +1,20 @@
+# Release 0.4.0 (2021-03-05)
+
+### Breaking Changes
+
+- Updated public dependences on [arbitrary, quickcheck][194], and [rand][185]:
+  - `arbitrary` support has been updated to 1.0, requiring Rust 1.40.
+  - `quickcheck` support has been updated to 1.0, requiring Rust 1.46.
+  - `rand` support has been updated to 0.8, requiring Rust 1.36.
+- [`Debug` now shows plain numeric values for `BigInt` and `BigUint`][195],
+  rather than the raw list of internal digits.
+
+**Contributors**: @cuviper, @Gelbpunkt
+
+[185]: https://github.com/rust-num/num-bigint/pull/185
+[194]: https://github.com/rust-num/num-bigint/pull/194
+[195]: https://github.com/rust-num/num-bigint/pull/195
+
 # Release 0.3.2 (2021-03-04)
 
 - [The new `BigUint` methods `count_ones` and `trailing_ones`][175] return the
