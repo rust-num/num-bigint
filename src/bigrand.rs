@@ -2,7 +2,6 @@
 
 use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
-use rand::AsByteSliceMut;
 use rand::Rng;
 
 use BigInt;
@@ -48,12 +47,11 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         use super::big_digit::BITS;
         let (digits, rem) = bit_size.div_rem(&BITS);
         let mut data = smallvec![BigDigit::default(); digits + (rem > 0) as usize];
-        // `fill_bytes` is faster than many `gen::<u32>` calls
-        self.fill_bytes(data[..].as_byte_slice_mut());
-        // Swap bytes per the `Rng::fill` source. This might be
-        // unnecessary if reproducibility across architectures is not
-        // desired.
-        data.to_le();
+
+        // `fill` is faster than many `gen::<u32>` calls
+        // Internally this calls `SeedableRng` where implementors are responsible for adjusting endianness for reproducable values.
+        self.fill(data.as_mut_slice());
+
         if rem > 0 {
             data[digits] >>= BITS - rem;
         }

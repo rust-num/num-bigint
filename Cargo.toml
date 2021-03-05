@@ -1,10 +1,13 @@
 [package]
-authors = ["dignifiedquire <dignifiedquire@gmail.com>", "The Rust Project Developers"]
+authors = [
+    "dignifiedquire <dignifiedquire@gmail.com>",
+    "The Rust Project Developers"
+]
 description = "Big integer implementation for Rust"
 documentation = "https://docs.rs/num-bigint-dig"
 homepage = "https://github.com/dignifiedquire/num-bigint"
 keywords = ["mathematics", "numerics", "bignum"]
-categories = [ "algorithms", "data-structures", "science" ]
+categories = ["algorithms", "data-structures", "science"]
 license = "MIT/Apache-2.0"
 name = "num-bigint-dig"
 repository = "https://github.com/dignifiedquire/num-bigint"
@@ -36,7 +39,7 @@ default-features = false
 
 [dependencies.rand]
 optional = true
-version = "0.7"
+version = "0.8.3"
 default-features = false
 
 [dependencies.zeroize]
@@ -65,10 +68,10 @@ version = "1.2.7"
 default-features = false
 
 [dev-dependencies]
-rand_chacha = "0.2"
-rand_xorshift = "0.2"
-rand_isaac = "0.2"
-rand = { version = "0.7", features = ["small_rng"] }
+rand_chacha = "0.3"
+rand_xorshift = "0.3"
+rand_isaac = "0.3"
+rand = { version = "0.8", features = ["small_rng"] }
 
 [dev-dependencies.serde_test]
 version = "1.0"
@@ -79,7 +82,13 @@ autocfg = "0.1.5"
 [features]
 default = ["std", "i128", "u64_digit"]
 i128 = ["num-integer/i128", "num-traits/i128"]
-std = ["num-integer/std", "num-traits/std", "smallvec/write", "rand/std", "serde/std"]
+std = [
+    "num-integer/std",
+    "num-traits/std",
+    "smallvec/write",
+    "rand/std",
+    "serde/std"
+]
 u64_digit = []
-prime = ["rand"]
+prime = ["rand/std_rng"]
 nightly = []
