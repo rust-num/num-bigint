@@ -1,11 +1,12 @@
 use super::{BigInt, Sign};
 
+#[cfg(feature = "quickcheck")]
 use crate::std_alloc::Box;
 use crate::BigUint;
 
 #[cfg(feature = "quickcheck")]
 impl quickcheck::Arbitrary for BigInt {
-    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let positive = bool::arbitrary(g);
         let sign = if positive { Sign::Plus } else { Sign::Minus };
         Self::from_biguint(sign, BigUint::arbitrary(g))
@@ -19,16 +20,20 @@ impl quickcheck::Arbitrary for BigInt {
 }
 
 #[cfg(feature = "arbitrary")]
-impl arbitrary::Arbitrary for BigInt {
+impl arbitrary::Arbitrary<'_> for BigInt {
     fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
         let positive = bool::arbitrary(u)?;
         let sign = if positive { Sign::Plus } else { Sign::Minus };
         Ok(Self::from_biguint(sign, BigUint::arbitrary(u)?))
     }
 
-    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
-        let sign = self.sign();
-        let unsigned_shrink = self.data.shrink();
-        Box::new(unsigned_shrink.map(move |x| BigInt::from_biguint(sign, x)))
+    fn arbitrary_take_rest(mut u: arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let positive = bool::arbitrary(&mut u)?;
+        let sign = if positive { Sign::Plus } else { Sign::Minus };
+        Ok(Self::from_biguint(sign, BigUint::arbitrary_take_rest(u)?))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        arbitrary::size_hint::and(bool::size_hint(depth), BigUint::size_hint(depth))
     }
 }
