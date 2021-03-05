@@ -5,17 +5,13 @@ extern crate test;
 
 use num_bigint::{BigInt, BigUint, RandBigInt};
 use num_traits::{FromPrimitive, Num, One, Zero};
-use rand::rngs::StdRng;
-use rand::SeedableRng;
+use rand::prelude::*;
+use rand_xorshift::XorShiftRng;
 use std::mem::replace;
 use test::Bencher;
 
-fn get_rng() -> StdRng {
-    let mut seed = [0; 32];
-    for i in 1..32 {
-        seed[usize::from(i)] = i;
-    }
-    SeedableRng::from_seed(seed)
+fn get_rng() -> impl Rng {
+    XorShiftRng::seed_from_u64(0x1234_5678_9abc_def0)
 }
 
 fn multiply_bench(b: &mut Bencher, xbits: u64, ybits: u64) {

@@ -1,14 +1,10 @@
 use num_bigint::RandBigInt;
 use num_traits::Zero;
 use rand::prelude::*;
-use rand::rngs::SmallRng;
+use rand_xorshift::XorShiftRng;
 
-fn get_rng() -> SmallRng {
-    let seed = [
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-        26, 27, 28, 29, 30, 31, 32,
-    ];
-    SmallRng::from_seed(seed)
+fn get_rng() -> impl Rng {
+    XorShiftRng::seed_from_u64(0x1234_5678_9abc_def0)
 }
 
 fn test_mul_divide_torture_count(count: usize) {

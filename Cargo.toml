@@ -15,6 +15,10 @@ build = "build.rs"
 exclude = ["/bors.toml", "/ci/*", "/.github/*"]
 edition = "2018"
 
+[features]
+default = ["std"]
+std = ["num-integer/std", "num-traits/std"]
+
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
 
@@ -66,9 +70,8 @@ optional = true
 version = "0.4"
 default-features = false
 
-[features]
-default = ["std"]
-std = ["num-integer/std", "num-traits/std"]
-
 [build-dependencies]
 autocfg = "1"
+
+[dev-dependencies]
+rand_xorshift = "0.3"

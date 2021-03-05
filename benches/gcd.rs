@@ -6,16 +6,12 @@ extern crate test;
 use num_bigint::{BigUint, RandBigInt};
 use num_integer::Integer;
 use num_traits::Zero;
-use rand::rngs::StdRng;
-use rand::SeedableRng;
+use rand::prelude::*;
+use rand_xorshift::XorShiftRng;
 use test::Bencher;
 
-fn get_rng() -> StdRng {
-    let mut seed = [0; 32];
-    for i in 1..32 {
-        seed[usize::from(i)] = i;
-    }
-    SeedableRng::from_seed(seed)
+fn get_rng() -> impl Rng {
+    XorShiftRng::seed_from_u64(0x1234_5678_9abc_def0)
 }
 
 fn bench(b: &mut Bencher, bits: u64, gcd: fn(&BigUint, &BigUint) -> BigUint) {
