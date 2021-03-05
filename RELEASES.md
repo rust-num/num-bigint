@@ -1,3 +1,23 @@
+# Release 0.3.2 (2021-03-04)
+
+- [The new `BigUint` methods `count_ones` and `trailing_ones`][175] return the
+  number of `1` bits in the entire value or just its least-significant tail,
+  respectively.
+- [The new `BigInt` and `BigUint` methods `bit` and `set_bit`][183] will read
+  and write individual bits of the value. For negative `BigInt`, bits are
+  determined as if they were in the two's complement representation.
+- [The `from_radix_le` and `from_radix_be` methods][187] now accept empty
+  buffers to represent zero.
+- [`BigInt` and `BigUint` can now iterate digits as `u32` or `u64`][192],
+  regardless of the actual internal digit size.
+
+**Contributors**: @BartMassey, @cuviper, @janmarthedal, @sebastianv89, @Speedy37
+
+[175]: https://github.com/rust-num/num-bigint/pull/175
+[183]: https://github.com/rust-num/num-bigint/pull/183
+[187]: https://github.com/rust-num/num-bigint/pull/187
+[192]: https://github.com/rust-num/num-bigint/pull/192
+
 # Release 0.3.1 (2020-11-03)
 
 - [Addition and subtraction now uses intrinsics][141] for performance on `x86`
