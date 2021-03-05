@@ -3,7 +3,7 @@ use num_traits::Zero;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;
 
-fn get_rng() -> impl Rng {
+fn get_rng() -> XorShiftRng {
     XorShiftRng::seed_from_u64(0x1234_5678_9abc_def0)
 }
 
