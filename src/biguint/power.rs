@@ -85,7 +85,7 @@ macro_rules! pow_impl {
                     exp >>= 1;
                     base = &base * &base;
                     if exp & 1 == 1 {
-                        acc = &acc * &base;
+                        acc *= &base;
                     }
                 }
                 acc
@@ -185,7 +185,8 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
         let mut unit = |exp_is_odd| {
             base = &base * &base % modulus;
             if exp_is_odd {
-                acc = &acc * &base % modulus;
+                acc *= &base;
+                acc %= modulus;
             }
         };
 

@@ -11,7 +11,7 @@ use crate::{BigInt, UsizePromotion};
 use core::cmp::Ordering;
 use core::iter::Product;
 use core::ops::{Mul, MulAssign};
-use num_traits::{CheckedMul, One, Zero};
+use num_traits::{CheckedMul, FromPrimitive, One, Zero};
 
 #[inline]
 pub(super) fn mac_with_carry(
@@ -155,28 +155,28 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
 
         // We reuse the same BigUint for all the intermediate multiplies and have to size p
         // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
-        let len = x1.len() + y1.len() + 1;
+        let len = x1.len() + y1.len();
         let mut p = BigUint { data: vec![0; len] };
 
         // p2 = x1 * y1
-        mac3(&mut p.data[..], x1, y1);
+        mac3(&mut p.data, x1, y1);
 
         // Not required, but the adds go faster if we drop any unneeded 0s from the end:
         p.normalize();
 
-        add2(&mut acc[b..], &p.data[..]);
-        add2(&mut acc[b * 2..], &p.data[..]);
+        add2(&mut acc[b..], &p.data);
+        add2(&mut acc[b * 2..], &p.data);
 
         // Zero out p before the next multiply:
         p.data.truncate(0);
         p.data.resize(len, 0);
 
         // p0 = x0 * y0
-        mac3(&mut p.data[..], x0, y0);
+        mac3(&mut p.data, x0, y0);
         p.normalize();
 
-        add2(&mut acc[..], &p.data[..]);
-        add2(&mut acc[b..], &p.data[..]);
+        add2(acc, &p.data);
+        add2(&mut acc[b..], &p.data);
 
         // p1 = (x1 - x0) * (y1 - y0)
         // We do this one last, since it may be negative and acc can't ever be negative:
@@ -188,13 +188,13 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
                 p.data.truncate(0);
                 p.data.resize(len, 0);
 
-                mac3(&mut p.data[..], &j0.data[..], &j1.data[..]);
+                mac3(&mut p.data, &j0.data, &j1.data);
                 p.normalize();
 
-                sub2(&mut acc[b..], &p.data[..]);
+                sub2(&mut acc[b..], &p.data);
             }
             Minus => {
-                mac3(&mut acc[b..], &j0.data[..], &j1.data[..]);
+                mac3(&mut acc[b..], &j0.data, &j1.data);
             }
             NoSign => (),
         }
@@ -321,25 +321,41 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
 }
 
 fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
-    let len = x.len() + y.len() + 1;
+    let len = x.len() + y.len();
     let mut prod = BigUint { data: vec![0; len] };
 
-    mac3(&mut prod.data[..], x, y);
+    mac3(&mut prod.data, x, y);
     prod.normalized()
 }
 
-fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
-    let mut carry = 0;
-    for a in a.iter_mut() {
-        *a = mul_with_carry(*a, b, &mut carry);
+fn scalar_mul(a: &mut BigUint, b: BigDigit) {
+    match b {
+        0 => a.set_zero(),
+        1 => {}
+        _ => {
+            if b.is_power_of_two() {
+                *a <<= b.trailing_zeros();
+            } else {
+                let mut carry = 0;
+                for a in a.data.iter_mut() {
+                    *a = mul_with_carry(*a, b, &mut carry);
+                }
+                if carry != 0 {
+                    a.data.push(carry as BigDigit);
+                }
+            }
+        }
     }
-    carry as BigDigit
 }
 
 fn sub_sign(mut a: &[BigDigit], mut b: &[BigDigit]) -> (Sign, BigUint) {
     // Normalize:
-    a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
-    b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
+    if let Some(&0) = a.last() {
+        a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
+    }
+    if let Some(&0) = b.last() {
+        b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
+    }
 
     match cmp_slice(a, b) {
         Ordering::Greater => {
@@ -356,22 +372,55 @@ fn sub_sign(mut a: &[BigDigit], mut b: &[BigDigit]) -> (Sign, BigUint) {
     }
 }
 
-forward_all_binop_to_ref_ref!(impl Mul for BigUint, mul);
-forward_val_assign!(impl MulAssign for BigUint, mul_assign);
+macro_rules! impl_mul {
+    ($(impl<$($a:lifetime),*> Mul<$Other:ty> for $Self:ty;)*) => {$(
+        impl<$($a),*> Mul<$Other> for $Self {
+            type Output = BigUint;
 
-impl<'a, 'b> Mul<&'b BigUint> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn mul(self, other: &BigUint) -> BigUint {
-        mul3(&self.data[..], &other.data[..])
-    }
+            #[inline]
+            fn mul(self, other: $Other) -> BigUint {
+                match (&*self.data, &*other.data) {
+                    // multiply by zero
+                    (&[], _) | (_, &[]) => BigUint::zero(),
+                    // multiply by a scalar
+                    (_, &[digit]) => self * digit,
+                    (&[digit], _) => other * digit,
+                    // full multiplication
+                    (x, y) => mul3(x, y),
+                }
+            }
+        }
+    )*}
 }
-impl<'a> MulAssign<&'a BigUint> for BigUint {
-    #[inline]
-    fn mul_assign(&mut self, other: &'a BigUint) {
-        *self = &*self * other
-    }
+impl_mul! {
+    impl<> Mul<BigUint> for BigUint;
+    impl<'b> Mul<&'b BigUint> for BigUint;
+    impl<'a> Mul<BigUint> for &'a BigUint;
+    impl<'a, 'b> Mul<&'b BigUint> for &'a BigUint;
+}
+
+macro_rules! impl_mul_assign {
+    ($(impl<$($a:lifetime),*> MulAssign<$Other:ty> for BigUint;)*) => {$(
+        impl<$($a),*> MulAssign<$Other> for BigUint {
+            #[inline]
+            fn mul_assign(&mut self, other: $Other) {
+                match (&*self.data, &*other.data) {
+                    // multiply by zero
+                    (&[], _) => {},
+                    (_, &[]) => self.set_zero(),
+                    // multiply by a scalar
+                    (_, &[digit]) => *self *= digit,
+                    (&[digit], _) => *self = other * digit,
+                    // full multiplication
+                    (x, y) => *self = mul3(x, y),
+                }
+            }
+        }
+    )*}
+}
+impl_mul_assign! {
+    impl<> MulAssign<BigUint> for BigUint;
+    impl<'a> MulAssign<&'a BigUint> for BigUint;
 }
 
 promote_unsigned_scalars!(impl Mul for BigUint, mul);
@@ -392,14 +441,7 @@ impl Mul<u32> for BigUint {
 impl MulAssign<u32> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u32) {
-        if other == 0 {
-            self.data.clear();
-        } else {
-            let carry = scalar_mul(&mut self.data[..], other as BigDigit);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
+        scalar_mul(self, other as BigDigit);
     }
 }
 
@@ -416,27 +458,18 @@ impl MulAssign<u64> for BigUint {
     #[cfg(not(u64_digit))]
     #[inline]
     fn mul_assign(&mut self, other: u64) {
-        if other == 0 {
-            self.data.clear();
-        } else if other <= u64::from(BigDigit::max_value()) {
-            *self *= other as BigDigit
+        if let Some(other) = BigDigit::from_u64(other) {
+            scalar_mul(self, other);
         } else {
             let (hi, lo) = big_digit::from_doublebigdigit(other);
-            *self = mul3(&self.data[..], &[lo, hi])
+            *self = mul3(&self.data, &[lo, hi]);
         }
     }
 
     #[cfg(u64_digit)]
     #[inline]
     fn mul_assign(&mut self, other: u64) {
-        if other == 0 {
-            self.data.clear();
-        } else {
-            let carry = scalar_mul(&mut self.data[..], other as BigDigit);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
+        scalar_mul(self, other);
     }
 }
 
@@ -454,26 +487,25 @@ impl MulAssign<u128> for BigUint {
     #[cfg(not(u64_digit))]
     #[inline]
     fn mul_assign(&mut self, other: u128) {
-        if other == 0 {
-            self.data.clear();
-        } else if other <= u128::from(BigDigit::max_value()) {
-            *self *= other as BigDigit
+        if let Some(other) = BigDigit::from_u128(other) {
+            scalar_mul(self, other);
         } else {
-            let (a, b, c, d) = u32_from_u128(other);
-            *self = mul3(&self.data[..], &[d, c, b, a])
+            *self = match u32_from_u128(other) {
+                (0, 0, c, d) => mul3(&self.data, &[d, c]),
+                (0, b, c, d) => mul3(&self.data, &[d, c, b]),
+                (a, b, c, d) => mul3(&self.data, &[d, c, b, a]),
+            };
         }
     }
 
     #[cfg(u64_digit)]
     #[inline]
     fn mul_assign(&mut self, other: u128) {
-        if other == 0 {
-            self.data.clear();
-        } else if other <= BigDigit::max_value() as u128 {
-            *self *= other as BigDigit
+        if let Some(other) = BigDigit::from_u128(other) {
+            scalar_mul(self, other);
         } else {
             let (hi, lo) = big_digit::from_doublebigdigit(other);
-            *self = mul3(&self.data[..], &[lo, hi])
+            *self = mul3(&self.data, &[lo, hi]);
         }
     }
 }
@@ -502,6 +534,6 @@ fn test_sub_sign() {
     let a_i = BigInt::from(a.clone());
     let b_i = BigInt::from(b.clone());
 
-    assert_eq!(sub_sign_i(&a.data[..], &b.data[..]), &a_i - &b_i);
-    assert_eq!(sub_sign_i(&b.data[..], &a.data[..]), &b_i - &a_i);
+    assert_eq!(sub_sign_i(&a.data, &b.data), &a_i - &b_i);
+    assert_eq!(sub_sign_i(&b.data, &a.data), &b_i - &a_i);
 }
