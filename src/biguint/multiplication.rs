@@ -312,10 +312,10 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         //
         // This particular sequence is given by Bodrato and is an interpolation
         // of the above equations.
-        let mut comp3: BigInt = (r3 - &r1) / 3;
-        let mut comp1: BigInt = (r1 - &r2) / 2;
+        let mut comp3: BigInt = (r3 - &r1) / 3u32;
+        let mut comp1: BigInt = (r1 - &r2) >> 1;
         let mut comp2: BigInt = r2 - &r0;
-        comp3 = (&comp2 - comp3) / 2 + &r4 * 2;
+        comp3 = ((&comp2 - comp3) >> 1) + (&r4 << 1);
         comp2 += &comp1 - &r4;
         comp1 -= &comp3;
 
