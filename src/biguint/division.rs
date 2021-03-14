@@ -41,6 +41,10 @@ fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, Big
 
 #[inline]
 pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
+    if b == 0 {
+        panic!("attempt to divide by zero")
+    }
+
     let mut rem = 0;
 
     if b <= big_digit::HALF {
@@ -62,6 +66,10 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
 
 #[inline]
 fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
+    if b == 0 {
+        panic!("attempt to divide by zero")
+    }
+
     let mut rem = 0;
 
     if b <= big_digit::HALF {
