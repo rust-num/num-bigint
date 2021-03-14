@@ -1,5 +1,7 @@
 use num_bigint::BigUint;
-use num_traits::{ToPrimitive, Zero};
+use num_traits::{One, ToPrimitive, Zero};
+
+use std::panic::catch_unwind;
 
 mod consts;
 use crate::consts::*;
@@ -110,4 +112,12 @@ fn test_scalar_div_rem() {
             assert_unsigned_scalar_assign_op!(a %= b == d);
         }
     }
+}
+
+#[test]
+fn test_scalar_div_rem_zero() {
+    catch_unwind(|| BigUint::zero() / 0u32).unwrap_err();
+    catch_unwind(|| BigUint::zero() % 0u32).unwrap_err();
+    catch_unwind(|| BigUint::one() / 0u32).unwrap_err();
+    catch_unwind(|| BigUint::one() % 0u32).unwrap_err();
 }

@@ -1,8 +1,9 @@
 use num_bigint::BigInt;
 use num_bigint::Sign::Plus;
-use num_traits::{Signed, ToPrimitive, Zero};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 
 use std::ops::Neg;
+use std::panic::catch_unwind;
 
 mod consts;
 use crate::consts::*;
@@ -145,4 +146,12 @@ fn test_scalar_div_rem() {
             check(&a, b, &c, &d);
         }
     }
+}
+
+#[test]
+fn test_scalar_div_rem_zero() {
+    catch_unwind(|| BigInt::zero() / 0u32).unwrap_err();
+    catch_unwind(|| BigInt::zero() % 0u32).unwrap_err();
+    catch_unwind(|| BigInt::one() / 0u32).unwrap_err();
+    catch_unwind(|| BigInt::one() % 0u32).unwrap_err();
 }
