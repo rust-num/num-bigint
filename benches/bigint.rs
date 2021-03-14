@@ -39,7 +39,7 @@ fn factorial(n: usize) -> BigUint {
     let mut f: BigUint = One::one();
     for i in 1..=n {
         let bu: BigUint = FromPrimitive::from_usize(i).unwrap();
-        f += bu;
+        f *= bu;
     }
     f
 }
@@ -349,6 +349,21 @@ fn pow_bench_bigexp(b: &mut Bencher) {
             }
         }
     });
+}
+
+#[bench]
+fn pow_bench_1e1000(b: &mut Bencher) {
+    b.iter(|| BigUint::from(10u32).pow(1_000));
+}
+
+#[bench]
+fn pow_bench_1e10000(b: &mut Bencher) {
+    b.iter(|| BigUint::from(10u32).pow(10_000));
+}
+
+#[bench]
+fn pow_bench_1e100000(b: &mut Bencher) {
+    b.iter(|| BigUint::from(10u32).pow(100_000));
 }
 
 /// This modulus is the prime from the 2048-bit MODP DH group:
