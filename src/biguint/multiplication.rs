@@ -2,7 +2,7 @@ use super::addition::{__add2, add2};
 use super::subtraction::sub2;
 #[cfg(not(u64_digit))]
 use super::u32_from_u128;
-use super::{biguint_from_vec, cmp_slice, BigUint};
+use super::{biguint_from_vec, cmp_slice, BigUint, IntDigits};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::Sign::{self, Minus, NoSign, Plus};
@@ -322,14 +322,24 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // Recomposition. The coefficients of the polynomial are now known.
         //
         // Evaluate at w(t) where t is our given base to get the result.
-        let bits = u64::from(big_digit::BITS) * i as u64;
-        let result = r0
-            + (comp1 << bits)
-            + (comp2 << (2 * bits))
-            + (comp3 << (3 * bits))
-            + (r4 << (4 * bits));
-        let result_pos = result.to_biguint().unwrap();
-        add2(&mut acc[..], &result_pos.data);
+        //
+        //     let bits = u64::from(big_digit::BITS) * i as u64;
+        //     let result = r0
+        //         + (comp1 << bits)
+        //         + (comp2 << (2 * bits))
+        //         + (comp3 << (3 * bits))
+        //         + (r4 << (4 * bits));
+        //     let result_pos = result.to_biguint().unwrap();
+        //     add2(&mut acc[..], &result_pos.data);
+        //
+        // But with less intermediate copying:
+        for (j, result) in [&r0, &comp1, &comp2, &comp3, &r4].iter().enumerate().rev() {
+            match result.sign() {
+                Plus => add2(&mut acc[i * j..], result.digits()),
+                Minus => sub2(&mut acc[i * j..], result.digits()),
+                NoSign => {}
+            }
+        }
     }
 }
 
