@@ -66,7 +66,20 @@ fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
 /// Three argument multiply accumulate:
 /// acc += b * c
 #[allow(clippy::many_single_char_names)]
-fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
+    // Least-significant zeros have no effect on the output.
+    if let Some(&0) = b.first() {
+        let nz = b.iter().position(|&d| d != 0).unwrap();
+        b = &b[nz..];
+        acc = &mut acc[nz..];
+    }
+    if let Some(&0) = c.first() {
+        let nz = c.iter().position(|&d| d != 0).unwrap();
+        c = &c[nz..];
+        acc = &mut acc[nz..];
+    }
+
+    let acc = acc;
     let (x, y) = if b.len() < c.len() { (b, c) } else { (c, b) };
 
     // We use three algorithms for different input sizes.
