@@ -846,8 +846,9 @@ impl BigUint {
     /// be nonzero.
     #[inline]
     fn normalize(&mut self) {
-        while let Some(&0) = self.data.last() {
-            self.data.pop();
+        if let Some(&0) = self.data.last() {
+            let len = self.data.iter().rposition(|&d| d != 0).map_or(0, |i| i + 1);
+            self.data.truncate(len);
         }
         if self.data.len() < self.data.capacity() / 4 {
             self.data.shrink_to_fit();
