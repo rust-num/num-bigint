@@ -21,24 +21,49 @@ impl Mul<Sign> for Sign {
     }
 }
 
-forward_all_binop_to_ref_ref!(impl Mul for BigInt, mul);
+macro_rules! impl_mul {
+    ($(impl<$($a:lifetime),*> Mul<$Other:ty> for $Self:ty;)*) => {$(
+        impl<$($a),*> Mul<$Other> for $Self {
+            type Output = BigInt;
 
-impl<'a, 'b> Mul<&'b BigInt> for &'a BigInt {
-    type Output = BigInt;
-
-    #[inline]
-    fn mul(self, other: &BigInt) -> BigInt {
-        BigInt::from_biguint(self.sign * other.sign, &self.data * &other.data)
-    }
+            #[inline]
+            fn mul(self, other: $Other) -> BigInt {
+                // automatically match value/ref
+                let BigInt { data: x, .. } = self;
+                let BigInt { data: y, .. } = other;
+                BigInt::from_biguint(self.sign * other.sign, x * y)
+            }
+        }
+    )*}
+}
+impl_mul! {
+    impl<> Mul<BigInt> for BigInt;
+    impl<'b> Mul<&'b BigInt> for BigInt;
+    impl<'a> Mul<BigInt> for &'a BigInt;
+    impl<'a, 'b> Mul<&'b BigInt> for &'a BigInt;
 }
 
-impl<'a> MulAssign<&'a BigInt> for BigInt {
-    #[inline]
-    fn mul_assign(&mut self, other: &BigInt) {
-        *self = &*self * other;
-    }
+macro_rules! impl_mul_assign {
+    ($(impl<$($a:lifetime),*> MulAssign<$Other:ty> for BigInt;)*) => {$(
+        impl<$($a),*> MulAssign<$Other> for BigInt {
+            #[inline]
+            fn mul_assign(&mut self, other: $Other) {
+                // automatically match value/ref
+                let BigInt { data: y, .. } = other;
+                self.data *= y;
+                if self.data.is_zero() {
+                    self.sign = NoSign;
+                } else {
+                    self.sign = self.sign * other.sign;
+                }
+            }
+        }
+    )*}
 }
-forward_val_assign!(impl MulAssign for BigInt, mul_assign);
+impl_mul_assign! {
+    impl<> MulAssign<BigInt> for BigInt;
+    impl<'a> MulAssign<&'a BigInt> for BigInt;
+}
 
 promote_all_scalars!(impl Mul for BigInt, mul);
 promote_all_scalars_assign!(impl MulAssign for BigInt, mul_assign);

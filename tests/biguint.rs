@@ -1776,6 +1776,10 @@ fn test_pow() {
     check!(u64);
     check!(u128);
     check!(usize);
+
+    let pow_1e10000 = BigUint::from(10u32).pow(10_000_u32);
+    let manual_1e10000 = repeat(10u32).take(10_000).product::<BigUint>();
+    assert!(manual_1e10000 == pow_1e10000);
 }
 
 #[test]
