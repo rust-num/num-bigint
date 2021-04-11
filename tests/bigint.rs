@@ -1404,3 +1404,42 @@ fn test_set_bit() {
     x.set_bit(0, false);
     assert_eq!(x, BigInt::from_biguint(Minus, BigUint::one() << 200));
 }
+
+#[test]
+fn test_truncate() {
+    let x = BigInt::from(0xfedcba9012345678_u64);
+    assert_eq!(x.truncate_u8(), 0x78);
+    assert_eq!(x.truncate_u16(), 0x5678);
+    assert_eq!(x.truncate_u32(), 0x12345678);
+    assert_eq!(x.truncate_u64(), 0xfedcba9012345678);
+    assert_eq!(x.truncate_u128(), 0xfedcba9012345678);
+    assert_eq!(x.truncate_i8(), 0x78);
+    assert_eq!(x.truncate_i16(), 0x5678);
+    assert_eq!(x.truncate_i32(), 0x12345678);
+    assert_eq!(x.truncate_i64(), -0x123456fedcba988);
+    assert_eq!(x.truncate_i128(), 0xfedcba9012345678);
+
+    let x = BigInt::zero();
+    assert_eq!(x.truncate_u8(), 0);
+    assert_eq!(x.truncate_u16(), 0);
+    assert_eq!(x.truncate_u32(), 0);
+    assert_eq!(x.truncate_u64(), 0);
+    assert_eq!(x.truncate_u128(), 0);
+    assert_eq!(x.truncate_i8(), 0);
+    assert_eq!(x.truncate_i16(), 0);
+    assert_eq!(x.truncate_i32(), 0);
+    assert_eq!(x.truncate_i64(), 0);
+    assert_eq!(x.truncate_i128(), 0);
+
+    let x = -BigInt::from(500);
+    assert_eq!(x.truncate_u8(), 0x0c);
+    assert_eq!(x.truncate_u16(), 0xfe0c);
+    assert_eq!(x.truncate_u32(), 0xfffffe0c);
+    assert_eq!(x.truncate_u64(), 0xfffffffffffffe0c);
+    assert_eq!(x.truncate_u128(), 0xfffffffffffffffffffffffffffffe0c);
+    assert_eq!(x.truncate_i8(), 0x0c);
+    assert_eq!(x.truncate_i16(), -500);
+    assert_eq!(x.truncate_i32(), -500);
+    assert_eq!(x.truncate_i64(), -500);
+    assert_eq!(x.truncate_i128(), -500);
+}

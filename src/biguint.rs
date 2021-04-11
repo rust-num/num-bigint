@@ -24,6 +24,7 @@ mod iter;
 mod monty;
 mod power;
 mod shift;
+mod truncate;
 
 #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 mod arbitrary;
