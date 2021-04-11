@@ -23,7 +23,7 @@ macro_rules! impl_truncate_large {
 }
 
 macro_rules! impl_truncate_from {
-    ($truncate_from:ident: $($T:ty, $truncate_to:ident);* $(;)?) => {
+    ($truncate_from:ident: $($T:ty, $truncate_to:ident);* $(;)*) => {
         $(
             #[inline]
             pub fn $truncate_to(&self) -> $T {
