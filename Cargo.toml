@@ -77,7 +77,7 @@ rand = { version = "0.8", features = ["small_rng"] }
 version = "1.0"
 
 [build-dependencies]
-autocfg = "0.1.5"
+autocfg = "1.0"
 
 [features]
 default = ["std", "i128", "u64_digit"]
