@@ -55,6 +55,13 @@ impl Clone for BigUint {
     }
 }
 
+impl From<&BigUint> for BigUint {
+    #[inline]
+    fn from(value: &BigUint) -> Self {
+        value.clone()
+    }
+}
+
 impl hash::Hash for BigUint {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
