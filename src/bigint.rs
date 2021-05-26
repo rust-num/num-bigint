@@ -29,6 +29,7 @@ mod bits;
 mod convert;
 mod power;
 mod shift;
+mod truncate;
 
 #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 mod arbitrary;
