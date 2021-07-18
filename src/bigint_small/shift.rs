@@ -1,5 +1,4 @@
-use super::BigIntSmall;
-use super::Sign::NoSign;
+use super::{BigIntSmall, BigUint};
 
 use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use num_traits::{PrimInt, Signed, Zero};
@@ -35,7 +34,7 @@ macro_rules! impl_shift {
 
             #[inline]
             fn shl(self, rhs: $rhs) -> BigIntSmall {
-                BigIntSmall::from_biguint(self.sign, self.data << rhs)
+                BigIntSmall::from_biguint(self.sign(), self.to_biguint_unchecked() << rhs)
             }
         }
         impl<'a> Shl<$rhs> for &'a BigIntSmall {
@@ -43,13 +42,17 @@ macro_rules! impl_shift {
 
             #[inline]
             fn shl(self, rhs: $rhs) -> BigIntSmall {
-                BigIntSmall::from_biguint(self.sign, &self.data << rhs)
+                BigIntSmall::from_biguint(self.sign(), (&self.data() as &BigUint) << rhs)
             }
         }
         impl ShlAssign<$rhs> for BigIntSmall {
             #[inline]
             fn shl_assign(&mut self, rhs: $rhs) {
-                self.data <<= rhs
+                let v = std::mem::replace(self, BigIntSmall::zero());
+                let (sign, mut uint) = v.into_parts();
+                uint <<= rhs;
+                *self = BigIntSmall::from_biguint(sign, uint)
+                // self.data <<= rhs
             }
         }
         impl_shift! { @ref Shl::shl, ShlAssign::shl_assign, $rhs }
@@ -60,9 +63,10 @@ macro_rules! impl_shift {
             #[inline]
             fn shr(self, rhs: $rhs) -> BigIntSmall {
                 let round_down = shr_round_down(&self, rhs);
-                let data = self.data >> rhs;
+                let (sign, uint) = self.into_parts();
+                let data = uint >> rhs;
                 let data = if round_down { data + 1u8 } else { data };
-                BigIntSmall::from_biguint(self.sign, data)
+                BigIntSmall::from_biguint(sign, data)
             }
         }
         impl<'a> Shr<$rhs> for &'a BigIntSmall {
@@ -71,21 +75,23 @@ macro_rules! impl_shift {
             #[inline]
             fn shr(self, rhs: $rhs) -> BigIntSmall {
                 let round_down = shr_round_down(self, rhs);
-                let data = &self.data >> rhs;
+                let data = &self.data() as &BigUint >> rhs;
                 let data = if round_down { data + 1u8 } else { data };
-                BigIntSmall::from_biguint(self.sign, data)
+                BigIntSmall::from_biguint(self.sign(), data)
             }
         }
         impl ShrAssign<$rhs> for BigIntSmall {
             #[inline]
             fn shr_assign(&mut self, rhs: $rhs) {
                 let round_down = shr_round_down(self, rhs);
-                self.data >>= rhs;
+                let v = std::mem::replace(self, BigIntSmall::zero());
+                let (sign, mut uint) = v.into_parts();
+                uint >>= rhs;
+                // self.data >>= rhs;
                 if round_down {
-                    self.data += 1u8;
-                } else if self.data.is_zero() {
-                    self.sign = NoSign;
+                    uint += 1u8;
                 }
+                *self = BigIntSmall::from_biguint(sign, uint)
             }
         }
         impl_shift! { @ref Shr::shr, ShrAssign::shr_assign, $rhs }

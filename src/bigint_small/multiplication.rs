@@ -1,25 +1,11 @@
 use super::CheckedUnsignedAbs::{Negative, Positive};
-use super::Sign::{self, Minus, NoSign, Plus};
-use super::{BigIntSmall, UnsignedAbs};
+use super::{BigIntSmall, BigUint, UnsignedAbs};
 
 use crate::{IsizePromotion, UsizePromotion};
 
 use core::iter::Product;
 use core::ops::{Mul, MulAssign};
 use num_traits::{CheckedMul, One, Zero};
-
-impl Mul<Sign> for Sign {
-    type Output = Sign;
-
-    #[inline]
-    fn mul(self, other: Sign) -> Sign {
-        match (self, other) {
-            (NoSign, _) | (_, NoSign) => NoSign,
-            (Plus, Plus) | (Minus, Minus) => Plus,
-            (Plus, Minus) | (Minus, Plus) => Minus,
-        }
-    }
-}
 
 macro_rules! impl_mul {
     ($(impl<$($a:lifetime),*> Mul<$Other:ty> for $Self:ty;)*) => {$(
@@ -29,9 +15,11 @@ macro_rules! impl_mul {
             #[inline]
             fn mul(self, other: $Other) -> BigIntSmall {
                 // automatically match value/ref
-                let BigIntSmall { data: x, .. } = self;
-                let BigIntSmall { data: y, .. } = other;
-                BigIntSmall::from_biguint(self.sign * other.sign, x * y)
+                let self_data = self.data();
+                let other_data = other.data();
+                // BigUint multiplication doesn't reuse buffers so it doesn't
+                // hurt performance to always use references.
+                BigIntSmall::from_biguint(self.sign() * other.sign(), &self_data as &BigUint * &other_data as &BigUint)
             }
         }
     )*}
@@ -44,25 +32,29 @@ impl_mul! {
 }
 
 macro_rules! impl_mul_assign {
-    ($(impl<$($a:lifetime),*> MulAssign<$Other:ty> for BigInt;)*) => {$(
+    ($(impl<$($a:lifetime),*> MulAssign<$Other:ty> for BigIntSmall;)*) => {$(
         impl<$($a),*> MulAssign<$Other> for BigIntSmall {
             #[inline]
             fn mul_assign(&mut self, other: $Other) {
                 // automatically match value/ref
-                let BigIntSmall { data: y, .. } = other;
-                self.data *= y;
-                if self.data.is_zero() {
-                    self.sign = NoSign;
-                } else {
-                    self.sign = self.sign * other.sign;
-                }
+                let sign = self.sign() * other.sign();
+                let uint = &self.data() as &BigUint * &other.data() as &BigUint;
+                *self = BigIntSmall::from_biguint( sign, uint)
+
+                // let BigIntSmall { data: y, .. } = other;
+                // self.data *= y;
+                // if self.data.is_zero() {
+                //     self.sign = NoSign;
+                // } else {
+                //     self.sign = self.sign * other.sign;
+                // }
             }
         }
     )*}
 }
 impl_mul_assign! {
-    impl<> MulAssign<BigIntSmall> for BigInt;
-    impl<'a> MulAssign<&'a BigIntSmall> for BigInt;
+    impl<> MulAssign<BigIntSmall> for BigIntSmall;
+    impl<'a> MulAssign<&'a BigIntSmall> for BigIntSmall;
 }
 
 promote_all_scalars!(impl Mul for BigIntSmall, mul);
@@ -76,17 +68,21 @@ impl Mul<u32> for BigIntSmall {
 
     #[inline]
     fn mul(self, other: u32) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data * other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint * other)
     }
 }
 
 impl MulAssign<u32> for BigIntSmall {
     #[inline]
     fn mul_assign(&mut self, other: u32) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint *= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data *= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -95,17 +91,21 @@ impl Mul<u64> for BigIntSmall {
 
     #[inline]
     fn mul(self, other: u64) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data * other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint * other)
     }
 }
 
 impl MulAssign<u64> for BigIntSmall {
     #[inline]
     fn mul_assign(&mut self, other: u64) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint *= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data *= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -114,17 +114,21 @@ impl Mul<u128> for BigIntSmall {
 
     #[inline]
     fn mul(self, other: u128) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data * other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint * other)
     }
 }
 
 impl MulAssign<u128> for BigIntSmall {
     #[inline]
     fn mul_assign(&mut self, other: u128) {
-        self.data *= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint *= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data *= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -150,7 +154,7 @@ impl MulAssign<i32> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self *= u,
             Negative(u) => {
-                self.sign = -self.sign;
+                *self.mut_sign() = -self.sign();
                 self.data *= u;
             }
         }
@@ -175,7 +179,7 @@ impl MulAssign<i64> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self *= u,
             Negative(u) => {
-                self.sign = -self.sign;
+                *self.mut_sign() = -self.sign();
                 self.data *= u;
             }
         }
@@ -200,7 +204,7 @@ impl MulAssign<i128> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self *= u,
             Negative(u) => {
-                self.sign = -self.sign;
+                *self.mut_sign() = -self.sign();
                 self.data *= u;
             }
         }

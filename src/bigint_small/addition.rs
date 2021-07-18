@@ -1,6 +1,6 @@
 use super::CheckedUnsignedAbs::{Negative, Positive};
 use super::Sign::{Minus, NoSign, Plus};
-use super::{BigIntSmall, UnsignedAbs};
+use super::{BigIntSmall, BigUint, UnsignedAbs};
 
 use crate::{IsizePromotion, UsizePromotion};
 
@@ -15,15 +15,17 @@ use num_traits::{CheckedAdd, Zero};
 // val/ref combination, deferring that decision to BigUint's own forwarding.
 macro_rules! bigint_add {
     ($a:expr, $a_owned:expr, $a_data:expr, $b:expr, $b_owned:expr, $b_data:expr) => {
-        match ($a.sign, $b.sign) {
+        match ($a.sign(), $b.sign()) {
             (_, NoSign) => $a_owned,
             (NoSign, _) => $b_owned,
             // same sign => keep the sign with the sum of magnitudes
-            (Plus, Plus) | (Minus, Minus) => BigIntSmall::from_biguint($a.sign, $a_data + $b_data),
+            (Plus, Plus) | (Minus, Minus) => {
+                BigIntSmall::from_biguint($a.sign(), $a_data + $b_data)
+            }
             // opposite signs => keep the sign of the larger with the difference of magnitudes
-            (Plus, Minus) | (Minus, Plus) => match $a.data.cmp(&$b.data) {
-                Less => BigIntSmall::from_biguint($b.sign, $b_data - $a_data),
-                Greater => BigIntSmall::from_biguint($a.sign, $a_data - $b_data),
+            (Plus, Minus) | (Minus, Plus) => match $a.data().cmp(&$b.data()) {
+                Less => BigIntSmall::from_biguint($b.sign(), $b_data - $a_data),
+                Greater => BigIntSmall::from_biguint($a.sign(), $a_data - $b_data),
                 Equal => Zero::zero(),
             },
         }
@@ -38,10 +40,10 @@ impl<'a, 'b> Add<&'b BigIntSmall> for &'a BigIntSmall {
         bigint_add!(
             self,
             self.clone(),
-            &self.data,
+            &self.data() as &BigUint,
             other,
             other.clone(),
-            &other.data
+            &other.data() as &BigUint
         )
     }
 }
@@ -51,7 +53,14 @@ impl<'a> Add<BigIntSmall> for &'a BigIntSmall {
 
     #[inline]
     fn add(self, other: BigIntSmall) -> BigIntSmall {
-        bigint_add!(self, self.clone(), &self.data, other, other, other.data)
+        bigint_add!(
+            self,
+            self.clone(),
+            &self.data() as &BigUint,
+            other,
+            other,
+            other.to_biguint_unchecked()
+        )
     }
 }
 
@@ -60,7 +69,14 @@ impl<'a> Add<&'a BigIntSmall> for BigIntSmall {
 
     #[inline]
     fn add(self, other: &BigIntSmall) -> BigIntSmall {
-        bigint_add!(self, self, self.data, other, other.clone(), &other.data)
+        bigint_add!(
+            self,
+            self,
+            self.to_biguint_unchecked(),
+            other,
+            other.clone(),
+            &other.data() as &BigUint
+        )
     }
 }
 
@@ -69,7 +85,14 @@ impl Add<BigIntSmall> for BigIntSmall {
 
     #[inline]
     fn add(self, other: BigIntSmall) -> BigIntSmall {
-        bigint_add!(self, self, self.data, other, other, other.data)
+        bigint_add!(
+            self,
+            self,
+            self.to_biguint_unchecked(),
+            other,
+            other,
+            other.to_biguint_unchecked()
+        )
     }
 }
 
@@ -93,13 +116,13 @@ impl Add<u32> for BigIntSmall {
 
     #[inline]
     fn add(self, other: u32) -> BigIntSmall {
-        match self.sign {
+        match self.sign() {
             NoSign => From::from(other),
-            Plus => BigIntSmall::from(self.data + other),
-            Minus => match self.data.cmp(&From::from(other)) {
+            Plus => BigIntSmall::from(self.to_biguint_unchecked() + other),
+            Minus => match self.data().cmp(&BigIntSmall::from(other).data()) {
                 Equal => Zero::zero(),
-                Less => BigIntSmall::from(other - self.data),
-                Greater => -BigIntSmall::from(self.data - other),
+                Less => BigIntSmall::from(other - self.to_biguint_unchecked()),
+                Greater => -BigIntSmall::from(self.to_biguint_unchecked() - other),
             },
         }
     }
@@ -118,13 +141,13 @@ impl Add<u64> for BigIntSmall {
 
     #[inline]
     fn add(self, other: u64) -> BigIntSmall {
-        match self.sign {
+        match self.sign() {
             NoSign => From::from(other),
-            Plus => BigIntSmall::from(self.data + other),
-            Minus => match self.data.cmp(&From::from(other)) {
+            Plus => BigIntSmall::from(self.to_biguint_unchecked() + other),
+            Minus => match self.data().cmp(&BigIntSmall::from(other).data()) {
                 Equal => Zero::zero(),
-                Less => BigIntSmall::from(other - self.data),
-                Greater => -BigIntSmall::from(self.data - other),
+                Less => BigIntSmall::from(other - self.to_biguint_unchecked()),
+                Greater => -BigIntSmall::from(self.to_biguint_unchecked() - other),
             },
         }
     }
@@ -143,13 +166,13 @@ impl Add<u128> for BigIntSmall {
 
     #[inline]
     fn add(self, other: u128) -> BigIntSmall {
-        match self.sign {
+        match self.sign() {
             NoSign => BigIntSmall::from(other),
-            Plus => BigIntSmall::from(self.data + other),
-            Minus => match self.data.cmp(&From::from(other)) {
+            Plus => BigIntSmall::from(self.to_biguint_unchecked() + other),
+            Minus => match self.data().cmp(&BigIntSmall::from(other).data()) {
                 Equal => BigIntSmall::zero(),
-                Less => BigIntSmall::from(other - self.data),
-                Greater => -BigIntSmall::from(self.data - other),
+                Less => BigIntSmall::from(other - self.to_biguint_unchecked()),
+                Greater => -BigIntSmall::from(self.to_biguint_unchecked() - other),
             },
         }
     }

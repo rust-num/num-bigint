@@ -1,6 +1,5 @@
 use super::CheckedUnsignedAbs::{Negative, Positive};
-use super::Sign::NoSign;
-use super::{BigIntSmall, UnsignedAbs};
+use super::{BigIntSmall, BigUint, UnsignedAbs};
 
 use crate::{IsizePromotion, UsizePromotion};
 
@@ -39,17 +38,21 @@ impl Div<u32> for BigIntSmall {
 
     #[inline]
     fn div(self, other: u32) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data / other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint / other)
     }
 }
 
 impl DivAssign<u32> for BigIntSmall {
     #[inline]
     fn div_assign(&mut self, other: u32) {
-        self.data /= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint /= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data /= other;
+        // if self.data.is_zero() {
+        //     *self.mut_sign() = NoSign;
+        // }
     }
 }
 
@@ -67,17 +70,21 @@ impl Div<u64> for BigIntSmall {
 
     #[inline]
     fn div(self, other: u64) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data / other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint / other)
     }
 }
 
 impl DivAssign<u64> for BigIntSmall {
     #[inline]
     fn div_assign(&mut self, other: u64) {
-        self.data /= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint /= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data /= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -95,17 +102,21 @@ impl Div<u128> for BigIntSmall {
 
     #[inline]
     fn div(self, other: u128) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data / other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint / other)
     }
 }
 
 impl DivAssign<u128> for BigIntSmall {
     #[inline]
     fn div_assign(&mut self, other: u128) {
-        self.data /= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint /= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data /= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -114,7 +125,7 @@ impl Div<BigIntSmall> for u128 {
 
     #[inline]
     fn div(self, other: BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from_biguint(other.sign, self / other.data)
+        BigIntSmall::from_biguint(other.sign(), self / &other.data() as &BigUint)
     }
 }
 
@@ -140,7 +151,7 @@ impl DivAssign<i32> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self /= u,
             Negative(u) => {
-                self.sign = -self.sign;
+                *self.mut_sign() = -self.sign();
                 *self /= u;
             }
         }
@@ -177,7 +188,7 @@ impl DivAssign<i64> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self /= u,
             Negative(u) => {
-                self.sign = -self.sign;
+                *self.mut_sign() = -self.sign();
                 *self /= u;
             }
         }
@@ -214,7 +225,7 @@ impl DivAssign<i128> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self /= u,
             Negative(u) => {
-                self.sign = -self.sign;
+                *self.mut_sign() = -self.sign();
                 *self /= u;
             }
         }
@@ -270,17 +281,21 @@ impl Rem<u32> for BigIntSmall {
 
     #[inline]
     fn rem(self, other: u32) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data % other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint % other)
     }
 }
 
 impl RemAssign<u32> for BigIntSmall {
     #[inline]
     fn rem_assign(&mut self, other: u32) {
-        self.data %= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint %= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data %= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -289,7 +304,7 @@ impl Rem<BigIntSmall> for u32 {
 
     #[inline]
     fn rem(self, other: BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from(self % other.data)
+        BigIntSmall::from(self % &other.data() as &BigUint)
     }
 }
 
@@ -298,17 +313,21 @@ impl Rem<u64> for BigIntSmall {
 
     #[inline]
     fn rem(self, other: u64) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data % other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint % other)
     }
 }
 
 impl RemAssign<u64> for BigIntSmall {
     #[inline]
     fn rem_assign(&mut self, other: u64) {
-        self.data %= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint %= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data %= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 
@@ -317,7 +336,7 @@ impl Rem<BigIntSmall> for u64 {
 
     #[inline]
     fn rem(self, other: BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from(self % other.data)
+        BigIntSmall::from(self % &other.data() as &BigUint)
     }
 }
 
@@ -326,17 +345,21 @@ impl Rem<u128> for BigIntSmall {
 
     #[inline]
     fn rem(self, other: u128) -> BigIntSmall {
-        BigIntSmall::from_biguint(self.sign, self.data % other)
+        BigIntSmall::from_biguint(self.sign(), &self.data() as &BigUint % other)
     }
 }
 
 impl RemAssign<u128> for BigIntSmall {
     #[inline]
     fn rem_assign(&mut self, other: u128) {
-        self.data %= other;
-        if self.data.is_zero() {
-            self.sign = NoSign;
-        }
+        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let (sign, mut uint) = owned.into_parts();
+        uint %= other;
+        *self = BigIntSmall::from_biguint(sign, uint)
+        // self.data %= other;
+        // if self.data.is_zero() {
+        //     self.sign = NoSign;
+        // }
     }
 }
 

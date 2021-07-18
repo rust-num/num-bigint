@@ -2,6 +2,8 @@
 #![allow(clippy::suspicious_arithmetic_impl)]
 
 use crate::std_alloc::{String, Vec};
+// use crate::BigInt;
+use crate::Sign;
 use core::cmp::Ordering::{self, Equal};
 use core::default::Default;
 use core::fmt;
@@ -10,6 +12,7 @@ use core::ops::{Neg, Not};
 use core::str;
 use core::{i128, u128};
 use core::{i64, u64};
+use std::borrow::Cow;
 
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, Signed, Zero};
@@ -36,28 +39,6 @@ mod arbitrary;
 #[cfg(feature = "serde")]
 mod serde;
 
-/// A Sign is a `BigInt`'s composing element.
-#[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
-pub enum Sign {
-    Minus,
-    NoSign,
-    Plus,
-}
-
-impl Neg for Sign {
-    type Output = Sign;
-
-    /// Negate Sign value.
-    #[inline]
-    fn neg(self) -> Sign {
-        match self {
-            Minus => Plus,
-            NoSign => NoSign,
-            Plus => Minus,
-        }
-    }
-}
-
 /// A big signed integer type.
 pub struct BigIntSmall {
     sign: Sign,
@@ -70,14 +51,14 @@ impl Clone for BigIntSmall {
     #[inline]
     fn clone(&self) -> Self {
         BigIntSmall {
-            sign: self.sign,
+            sign: self.sign(),
             data: self.data.clone(),
         }
     }
 
     #[inline]
     fn clone_from(&mut self, other: &Self) {
-        self.sign = other.sign;
+        *self.mut_sign() = other.sign();
         self.data.clone_from(&other.data);
     }
 }
@@ -85,10 +66,10 @@ impl Clone for BigIntSmall {
 impl hash::Hash for BigIntSmall {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
-        self.sign.hash(state);
-        if self.sign != NoSign {
-            self.data.hash(state);
+        debug_assert!((self.sign() != NoSign) ^ self.data().is_zero());
+        self.sign().hash(state);
+        if self.sign() != NoSign {
+            self.data().hash(state);
         }
     }
 }
@@ -96,9 +77,9 @@ impl hash::Hash for BigIntSmall {
 impl PartialEq for BigIntSmall {
     #[inline]
     fn eq(&self, other: &BigIntSmall) -> bool {
-        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
-        debug_assert!((other.sign != NoSign) ^ other.data.is_zero());
-        self.sign == other.sign && (self.sign == NoSign || self.data == other.data)
+        debug_assert!((self.sign() != NoSign) ^ self.data().is_zero());
+        debug_assert!((other.sign() != NoSign) ^ other.data().is_zero());
+        self.sign() == other.sign() && (self.sign() == NoSign || self.data() == other.data())
     }
 }
 
@@ -114,17 +95,17 @@ impl PartialOrd for BigIntSmall {
 impl Ord for BigIntSmall {
     #[inline]
     fn cmp(&self, other: &BigIntSmall) -> Ordering {
-        debug_assert!((self.sign != NoSign) ^ self.data.is_zero());
-        debug_assert!((other.sign != NoSign) ^ other.data.is_zero());
-        let scmp = self.sign.cmp(&other.sign);
+        debug_assert!((self.sign() != NoSign) ^ self.data().is_zero());
+        debug_assert!((other.sign() != NoSign) ^ other.data().is_zero());
+        let scmp = self.sign().cmp(&other.sign());
         if scmp != Equal {
             return scmp;
         }
 
-        match self.sign {
+        match self.sign() {
             NoSign => Equal,
-            Plus => self.data.cmp(&other.data),
-            Minus => other.data.cmp(&self.data),
+            Plus => self.data().cmp(&other.data()),
+            Minus => other.data().cmp(&self.data()),
         }
     }
 }
@@ -144,31 +125,31 @@ impl fmt::Debug for BigIntSmall {
 
 impl fmt::Display for BigIntSmall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.pad_integral(!self.is_negative(), "", &self.data.to_str_radix(10))
+        f.pad_integral(!self.is_negative(), "", &self.data().to_str_radix(10))
     }
 }
 
 impl fmt::Binary for BigIntSmall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.pad_integral(!self.is_negative(), "0b", &self.data.to_str_radix(2))
+        f.pad_integral(!self.is_negative(), "0b", &self.data().to_str_radix(2))
     }
 }
 
 impl fmt::Octal for BigIntSmall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.pad_integral(!self.is_negative(), "0o", &self.data.to_str_radix(8))
+        f.pad_integral(!self.is_negative(), "0o", &self.data().to_str_radix(8))
     }
 }
 
 impl fmt::LowerHex for BigIntSmall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.pad_integral(!self.is_negative(), "0x", &self.data.to_str_radix(16))
+        f.pad_integral(!self.is_negative(), "0x", &self.data().to_str_radix(16))
     }
 }
 
 impl fmt::UpperHex for BigIntSmall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut s = self.data.to_str_radix(16);
+        let mut s = self.data().to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(!self.is_negative(), "0x", &s)
     }
@@ -181,18 +162,19 @@ impl fmt::UpperHex for BigIntSmall {
 impl Not for BigIntSmall {
     type Output = BigIntSmall;
 
-    fn not(mut self) -> BigIntSmall {
-        match self.sign {
+    fn not(self) -> BigIntSmall {
+        let (sign, mut uint) = self.into_parts();
+        match sign {
             NoSign | Plus => {
-                self.data += 1u32;
-                self.sign = Minus;
+                uint += 1u32;
+                BigIntSmall::from_biguint(Minus, uint)
             }
             Minus => {
-                self.data -= 1u32;
-                self.sign = if self.data.is_zero() { NoSign } else { Plus };
+                uint -= 1u32;
+                BigIntSmall::from_biguint(Plus, uint)
             }
         }
-        self
+        // self
     }
 }
 
@@ -200,10 +182,10 @@ impl<'a> Not for &'a BigIntSmall {
     type Output = BigIntSmall;
 
     fn not(self) -> BigIntSmall {
-        match self.sign {
+        match self.sign() {
             NoSign => -BigIntSmall::one(),
-            Plus => -BigIntSmall::from(&self.data + 1u32),
-            Minus => BigIntSmall::from(&self.data - 1u32),
+            Plus => -BigIntSmall::from(&self.data() as &BigUint + 1u32),
+            Minus => BigIntSmall::from(&self.data() as &BigUint - 1u32),
         }
     }
 }
@@ -220,12 +202,12 @@ impl Zero for BigIntSmall {
     #[inline]
     fn set_zero(&mut self) {
         self.data.set_zero();
-        self.sign = NoSign;
+        *self.mut_sign() = NoSign;
     }
 
     #[inline]
     fn is_zero(&self) -> bool {
-        self.sign == NoSign
+        self.sign() == NoSign
     }
 }
 
@@ -241,19 +223,19 @@ impl One for BigIntSmall {
     #[inline]
     fn set_one(&mut self) {
         self.data.set_one();
-        self.sign = Plus;
+        *self.mut_sign() = Plus;
     }
 
     #[inline]
     fn is_one(&self) -> bool {
-        self.sign == Plus && self.data.is_one()
+        self.sign() == Plus && self.data().is_one()
     }
 }
 
 impl Signed for BigIntSmall {
     #[inline]
     fn abs(&self) -> BigIntSmall {
-        match self.sign {
+        match self.sign() {
             Plus | NoSign => self.clone(),
             Minus => BigIntSmall::from(self.data.clone()),
         }
@@ -270,7 +252,7 @@ impl Signed for BigIntSmall {
 
     #[inline]
     fn signum(&self) -> BigIntSmall {
-        match self.sign {
+        match self.sign() {
             Plus => BigIntSmall::one(),
             Minus => -BigIntSmall::one(),
             NoSign => BigIntSmall::zero(),
@@ -279,12 +261,12 @@ impl Signed for BigIntSmall {
 
     #[inline]
     fn is_positive(&self) -> bool {
-        self.sign == Plus
+        self.sign() == Plus
     }
 
     #[inline]
     fn is_negative(&self) -> bool {
-        self.sign == Minus
+        self.sign() == Minus
     }
 }
 
@@ -337,7 +319,7 @@ impl Neg for BigIntSmall {
 
     #[inline]
     fn neg(mut self) -> BigIntSmall {
-        self.sign = -self.sign;
+        *self.mut_sign() = -self.sign();
         self
     }
 }
@@ -355,9 +337,9 @@ impl Integer for BigIntSmall {
     #[inline]
     fn div_rem(&self, other: &BigIntSmall) -> (BigIntSmall, BigIntSmall) {
         // r.sign == self.sign
-        let (d_ui, r_ui) = self.data.div_rem(&other.data);
-        let d = BigIntSmall::from_biguint(self.sign, d_ui);
-        let r = BigIntSmall::from_biguint(self.sign, r_ui);
+        let (d_ui, r_ui) = self.data().div_rem(&other.data());
+        let d = BigIntSmall::from_biguint(self.sign(), d_ui);
+        let r = BigIntSmall::from_biguint(self.sign(), r_ui);
         if other.is_negative() {
             (-d, r)
         } else {
@@ -367,9 +349,9 @@ impl Integer for BigIntSmall {
 
     #[inline]
     fn div_floor(&self, other: &BigIntSmall) -> BigIntSmall {
-        let (d_ui, m) = self.data.div_mod_floor(&other.data);
+        let (d_ui, m) = self.data().div_mod_floor(&other.data());
         let d = BigIntSmall::from(d_ui);
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => d,
             (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => {
                 if m.is_zero() {
@@ -385,9 +367,9 @@ impl Integer for BigIntSmall {
     #[inline]
     fn mod_floor(&self, other: &BigIntSmall) -> BigIntSmall {
         // m.sign == other.sign
-        let m_ui = self.data.mod_floor(&other.data);
-        let m = BigIntSmall::from_biguint(other.sign, m_ui);
-        match (self.sign, other.sign) {
+        let m_ui = self.data().mod_floor(&other.data());
+        let m = BigIntSmall::from_biguint(other.sign(), m_ui);
+        match (self.sign(), other.sign()) {
             (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => m,
             (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => {
                 if m.is_zero() {
@@ -402,10 +384,10 @@ impl Integer for BigIntSmall {
 
     fn div_mod_floor(&self, other: &BigIntSmall) -> (BigIntSmall, BigIntSmall) {
         // m.sign == other.sign
-        let (d_ui, m_ui) = self.data.div_mod_floor(&other.data);
+        let (d_ui, m_ui) = self.data().div_mod_floor(&other.data());
         let d = BigIntSmall::from(d_ui);
-        let m = BigIntSmall::from_biguint(other.sign, m_ui);
-        match (self.sign, other.sign) {
+        let m = BigIntSmall::from_biguint(other.sign(), m_ui);
+        match (self.sign(), other.sign()) {
             (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => (d, m),
             (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => {
                 if m.is_zero() {
@@ -420,9 +402,9 @@ impl Integer for BigIntSmall {
 
     #[inline]
     fn div_ceil(&self, other: &Self) -> Self {
-        let (d_ui, m) = self.data.div_mod_floor(&other.data);
+        let (d_ui, m) = self.data().div_mod_floor(&other.data());
         let d = BigIntSmall::from(d_ui);
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (Plus, Minus) | (NoSign, Minus) | (Minus, Plus) => -d,
             (Plus, Plus) | (NoSign, Plus) | (Minus, Minus) => {
                 if m.is_zero() {
@@ -440,20 +422,20 @@ impl Integer for BigIntSmall {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from(self.data.gcd(&other.data))
+        BigIntSmall::from(self.data().gcd(&other.data()))
     }
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
     #[inline]
     fn lcm(&self, other: &BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from(self.data.lcm(&other.data))
+        BigIntSmall::from(self.data().lcm(&other.data()))
     }
 
     /// Calculates the Greatest Common Divisor (GCD) and
     /// Lowest Common Multiple (LCM) together.
     #[inline]
     fn gcd_lcm(&self, other: &BigIntSmall) -> (BigIntSmall, BigIntSmall) {
-        let (gcd, lcm) = self.data.gcd_lcm(&other.data);
+        let (gcd, lcm) = self.data().gcd_lcm(&other.data());
         (BigIntSmall::from(gcd), BigIntSmall::from(lcm))
     }
 
@@ -467,7 +449,9 @@ impl Integer for BigIntSmall {
         let lcm = if egcd.gcd.is_zero() {
             BigIntSmall::zero()
         } else {
-            BigIntSmall::from(&self.data / &egcd.gcd.data * &other.data)
+            BigIntSmall::from(
+                &self.data() as &BigUint / &egcd.gcd.data() as &BigUint * &other.data() as &BigUint,
+            )
         };
         (egcd, lcm)
     }
@@ -481,19 +465,19 @@ impl Integer for BigIntSmall {
     /// Returns `true` if the number is a multiple of `other`.
     #[inline]
     fn is_multiple_of(&self, other: &BigIntSmall) -> bool {
-        self.data.is_multiple_of(&other.data)
+        self.data().is_multiple_of(&other.data())
     }
 
     /// Returns `true` if the number is divisible by `2`.
     #[inline]
     fn is_even(&self) -> bool {
-        self.data.is_even()
+        self.data().is_even()
     }
 
     /// Returns `true` if the number is not divisible by `2`.
     #[inline]
     fn is_odd(&self) -> bool {
-        self.data.is_odd()
+        self.data().is_odd()
     }
 
     /// Rounds up to nearest multiple of argument.
@@ -521,17 +505,17 @@ impl Roots for BigIntSmall {
             n
         );
 
-        BigIntSmall::from_biguint(self.sign, self.data.nth_root(n))
+        BigIntSmall::from_biguint(self.sign(), self.data().nth_root(n))
     }
 
     fn sqrt(&self) -> Self {
         assert!(!self.is_negative(), "square root is imaginary");
 
-        BigIntSmall::from_biguint(self.sign, self.data.sqrt())
+        BigIntSmall::from_biguint(self.sign(), self.data().sqrt())
     }
 
     fn cbrt(&self) -> Self {
-        BigIntSmall::from_biguint(self.sign, self.data.cbrt())
+        BigIntSmall::from_biguint(self.sign(), self.data().cbrt())
     }
 }
 
@@ -548,16 +532,16 @@ impl IntDigits for BigIntSmall {
     fn normalize(&mut self) {
         self.data.normalize();
         if self.data.is_zero() {
-            self.sign = NoSign;
+            *self.mut_sign() = NoSign;
         }
     }
     #[inline]
     fn capacity(&self) -> usize {
-        self.data.capacity()
+        self.data().capacity()
     }
     #[inline]
     fn len(&self) -> usize {
-        self.data.len()
+        self.data().len()
     }
 }
 
@@ -609,7 +593,7 @@ impl BigIntSmall {
             self.set_zero();
         } else {
             self.data.assign_from_slice(slice);
-            self.sign = if self.data.is_zero() { NoSign } else { sign };
+            *self.mut_sign() = if self.data.is_zero() { NoSign } else { sign };
         }
     }
 
@@ -732,7 +716,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_bytes_be(&self) -> (Sign, Vec<u8>) {
-        (self.sign, self.data.to_bytes_be())
+        (self.sign(), self.data().to_bytes_be())
     }
 
     /// Returns the sign and the byte representation of the `BigInt` in little-endian byte order.
@@ -747,7 +731,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_bytes_le(&self) -> (Sign, Vec<u8>) {
-        (self.sign, self.data.to_bytes_le())
+        (self.sign(), self.data().to_bytes_le())
     }
 
     /// Returns the sign and the `u32` digits representation of the `BigInt` ordered least
@@ -766,7 +750,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_u32_digits(&self) -> (Sign, Vec<u32>) {
-        (self.sign, self.data.to_u32_digits())
+        (self.sign(), self.data().to_u32_digits())
     }
 
     /// Returns the sign and the `u64` digits representation of the `BigInt` ordered least
@@ -786,7 +770,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_u64_digits(&self) -> (Sign, Vec<u64>) {
-        (self.sign, self.data.to_u64_digits())
+        (self.sign(), self.data().to_u64_digits())
     }
 
     /// Returns an iterator of `u32` digits representation of the `BigInt` ordered least
@@ -897,7 +881,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_radix_be(&self, radix: u32) -> (Sign, Vec<u8>) {
-        (self.sign, self.data.to_radix_be(radix))
+        (self.sign(), self.data().to_radix_be(radix))
     }
 
     /// Returns the integer in the requested base in little-endian digit order.
@@ -916,7 +900,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_radix_le(&self, radix: u32) -> (Sign, Vec<u8>) {
-        (self.sign, self.data.to_radix_le(radix))
+        (self.sign(), self.data().to_radix_le(radix))
     }
 
     /// Returns the sign of the `BigInt` as a `Sign`.
@@ -934,6 +918,14 @@ impl BigIntSmall {
     #[inline]
     pub fn sign(&self) -> Sign {
         self.sign
+    }
+
+    fn mut_sign(&mut self) -> &mut Sign {
+        &mut self.sign
+    }
+
+    fn data(&self) -> Cow<'_, BigUint> {
+        Cow::Borrowed(&self.data)
     }
 
     /// Returns the magnitude of the `BigInt` as a `BigUint`.
@@ -968,21 +960,25 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn into_parts(self) -> (Sign, BigUint) {
-        (self.sign, self.data)
+        (self.sign(), self.data)
+    }
+
+    pub fn to_biguint_unchecked(self) -> BigUint {
+        self.data
     }
 
     /// Determines the fewest bits necessary to express the `BigInt`,
     /// not including the sign.
     #[inline]
     pub fn bits(&self) -> u64 {
-        self.data.bits()
+        self.data().bits()
     }
 
     /// Converts this `BigInt` into a `BigUint`, if it's not negative.
     #[inline]
     pub fn to_biguint(&self) -> Option<BigUint> {
-        match self.sign {
-            Plus => Some(self.data.clone()),
+        match self.sign() {
+            Plus => Some(self.data().into_owned()),
             NoSign => Some(Zero::zero()),
             Minus => None,
         }
@@ -1049,7 +1045,7 @@ impl BigIntSmall {
     /// Returns the number of least-significant bits that are zero,
     /// or `None` if the entire number is zero.
     pub fn trailing_zeros(&self) -> Option<u64> {
-        self.data.trailing_zeros()
+        self.data().trailing_zeros()
     }
 
     /// Returns whether the bit in position `bit` is set,
@@ -1064,15 +1060,15 @@ impl BigIntSmall {
             if bit >= u64::from(crate::big_digit::BITS) * self.len() as u64 {
                 true
             } else {
-                let trailing_zeros = self.data.trailing_zeros().unwrap();
+                let trailing_zeros = self.data().trailing_zeros().unwrap();
                 match Ord::cmp(&bit, &trailing_zeros) {
                     Ordering::Less => false,
                     Ordering::Equal => true,
-                    Ordering::Greater => !self.data.bit(bit),
+                    Ordering::Greater => !self.data().bit(bit),
                 }
             }
         } else {
-            self.data.bit(bit)
+            self.data().bit(bit)
         }
     }
 
@@ -1083,13 +1079,13 @@ impl BigIntSmall {
     /// respectively) greater than the current bit length, a reallocation
     /// may be needed to store the new digits
     pub fn set_bit(&mut self, bit: u64, value: bool) {
-        match self.sign {
+        match self.sign() {
             Sign::Plus => self.data.set_bit(bit, value),
             Sign::Minus => bits::set_negative_bit(self, bit, value),
             Sign::NoSign => {
                 if value {
                     self.data.set_bit(bit, true);
-                    self.sign = Sign::Plus;
+                    *self.mut_sign() = Sign::Plus;
                 } else {
                     // Clearing a bit for zero is a no-op
                 }

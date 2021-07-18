@@ -44,11 +44,11 @@ impl Num for BigIntSmall {
 impl ToPrimitive for BigIntSmall {
     #[inline]
     fn to_i64(&self) -> Option<i64> {
-        match self.sign {
-            Plus => self.data.to_i64(),
+        match self.sign() {
+            Plus => self.data().to_i64(),
             NoSign => Some(0),
             Minus => {
-                let n = self.data.to_u64()?;
+                let n = self.data().to_u64()?;
                 let m: u64 = 1 << 63;
                 match n.cmp(&m) {
                     Less => Some(-(n as i64)),
@@ -61,11 +61,11 @@ impl ToPrimitive for BigIntSmall {
 
     #[inline]
     fn to_i128(&self) -> Option<i128> {
-        match self.sign {
-            Plus => self.data.to_i128(),
+        match self.sign() {
+            Plus => self.data().to_i128(),
             NoSign => Some(0),
             Minus => {
-                let n = self.data.to_u128()?;
+                let n = self.data().to_u128()?;
                 let m: u128 = 1 << 127;
                 match n.cmp(&m) {
                     Less => Some(-(n as i128)),
@@ -78,8 +78,8 @@ impl ToPrimitive for BigIntSmall {
 
     #[inline]
     fn to_u64(&self) -> Option<u64> {
-        match self.sign {
-            Plus => self.data.to_u64(),
+        match self.sign() {
+            Plus => self.data().to_u64(),
             NoSign => Some(0),
             Minus => None,
         }
@@ -87,8 +87,8 @@ impl ToPrimitive for BigIntSmall {
 
     #[inline]
     fn to_u128(&self) -> Option<u128> {
-        match self.sign {
-            Plus => self.data.to_u128(),
+        match self.sign() {
+            Plus => self.data().to_u128(),
             NoSign => Some(0),
             Minus => None,
         }
@@ -96,14 +96,14 @@ impl ToPrimitive for BigIntSmall {
 
     #[inline]
     fn to_f32(&self) -> Option<f32> {
-        let n = self.data.to_f32()?;
-        Some(if self.sign == Minus { -n } else { n })
+        let n = self.data().to_f32()?;
+        Some(if self.sign() == Minus { -n } else { n })
     }
 
     #[inline]
     fn to_f64(&self) -> Option<f64> {
-        let n = self.data.to_f64()?;
-        Some(if self.sign == Minus { -n } else { n })
+        let n = self.data().to_f64()?;
+        Some(if self.sign() == Minus { -n } else { n })
     }
 }
 
