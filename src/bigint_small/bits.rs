@@ -1,5 +1,6 @@
 use super::BigIntSmall;
 use super::Sign::{Minus, NoSign, Plus};
+use crate::BigUint;
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::biguint::IntDigits;
@@ -113,9 +114,9 @@ impl<'a, 'b> BitAnd<&'b BigIntSmall> for &'a BigIntSmall {
 
     #[inline]
     fn bitand(self, other: &BigIntSmall) -> BigIntSmall {
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (NoSign, _) | (_, NoSign) => BigIntSmall::zero(),
-            (Plus, Plus) => BigIntSmall::from(&self.data & &other.data),
+            (Plus, Plus) => BigIntSmall::from(&self.data() as &BigUint & &other.data() as &BigUint),
             (Plus, Minus) => self.clone() & other,
             (Minus, Plus) => other.clone() & self,
             (Minus, Minus) => {
@@ -144,14 +145,17 @@ forward_val_assign!(impl BitAndAssign for BigIntSmall, bitand_assign);
 
 impl<'a> BitAndAssign<&'a BigIntSmall> for BigIntSmall {
     fn bitand_assign(&mut self, other: &BigIntSmall) {
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (NoSign, _) => {}
             (_, NoSign) => self.set_zero(),
             (Plus, Plus) => {
-                self.data &= &other.data;
-                if self.data.is_zero() {
-                    self.sign = NoSign;
-                }
+                let n = std::mem::replace(self, BigIntSmall::zero());
+                let mut uint = n.into_biguint();
+                uint &= &other.data() as &BigUint;
+                *self = BigIntSmall::from_biguint(Plus, uint)
+                // if self.data.is_zero() {
+                //     self.sign = NoSign;
+                // }
             }
             (Plus, Minus) => {
                 bitand_pos_neg(self.digits_mut(), other.digits());
@@ -159,7 +163,7 @@ impl<'a> BitAndAssign<&'a BigIntSmall> for BigIntSmall {
             }
             (Minus, Plus) => {
                 bitand_neg_pos(self.digits_mut(), other.digits());
-                self.sign = Plus;
+                *self.mut_sign() = Plus;
                 self.normalize();
             }
             (Minus, Minus) => {
@@ -252,10 +256,10 @@ impl<'a, 'b> BitOr<&'b BigIntSmall> for &'a BigIntSmall {
 
     #[inline]
     fn bitor(self, other: &BigIntSmall) -> BigIntSmall {
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (NoSign, _) => other.clone(),
             (_, NoSign) => self.clone(),
-            (Plus, Plus) => BigIntSmall::from(&self.data | &other.data),
+            (Plus, Plus) => BigIntSmall::from(&self.data() as &BigUint | &other.data() as &BigUint),
             (Plus, Minus) => other.clone() | self,
             (Minus, Plus) => self.clone() | other,
             (Minus, Minus) => {
@@ -284,13 +288,19 @@ forward_val_assign!(impl BitOrAssign for BigIntSmall, bitor_assign);
 
 impl<'a> BitOrAssign<&'a BigIntSmall> for BigIntSmall {
     fn bitor_assign(&mut self, other: &BigIntSmall) {
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (_, NoSign) => {}
             (NoSign, _) => self.clone_from(other),
-            (Plus, Plus) => self.data |= &other.data,
+            (Plus, Plus) => {
+                let n = std::mem::replace(self, BigIntSmall::zero());
+                let mut uint = n.into_biguint();
+                uint |= &other.data() as &BigUint;
+                *self = BigIntSmall::from_biguint(Plus, uint)
+                // self.data |= &other.data
+            }
             (Plus, Minus) => {
                 bitor_pos_neg(self.digits_mut(), other.digits());
-                self.sign = Minus;
+                *self.mut_sign() = Minus;
                 self.normalize();
             }
             (Minus, Plus) => {
@@ -422,18 +432,22 @@ forward_val_assign!(impl BitXorAssign for BigIntSmall, bitxor_assign);
 
 impl<'a> BitXorAssign<&'a BigIntSmall> for BigIntSmall {
     fn bitxor_assign(&mut self, other: &BigIntSmall) {
-        match (self.sign, other.sign) {
+        match (self.sign(), other.sign()) {
             (_, NoSign) => {}
             (NoSign, _) => self.clone_from(other),
             (Plus, Plus) => {
-                self.data ^= &other.data;
-                if self.data.is_zero() {
-                    self.sign = NoSign;
-                }
+                let n = std::mem::replace(self, BigIntSmall::zero());
+                let mut uint = n.into_biguint();
+                uint ^= &other.data() as &BigUint;
+                *self = BigIntSmall::from_biguint(Plus, uint)
+                // self.data ^= &other.data;
+                // if self.data.is_zero() {
+                //     self.sign = NoSign;
+                // }
             }
             (Plus, Minus) => {
                 bitxor_pos_neg(self.digits_mut(), other.digits());
-                self.sign = Minus;
+                *self.mut_sign() = Minus;
                 self.normalize();
             }
             (Minus, Plus) => {
@@ -442,7 +456,7 @@ impl<'a> BitXorAssign<&'a BigIntSmall> for BigIntSmall {
             }
             (Minus, Minus) => {
                 bitxor_neg_neg(self.digits_mut(), other.digits());
-                self.sign = Plus;
+                *self.mut_sign() = Plus;
                 self.normalize();
             }
         }
@@ -450,8 +464,8 @@ impl<'a> BitXorAssign<&'a BigIntSmall> for BigIntSmall {
 }
 
 pub(super) fn set_negative_bit(x: &mut BigIntSmall, bit: u64, value: bool) {
-    debug_assert_eq!(x.sign, Minus);
-    let data = &mut x.data;
+    debug_assert_eq!(x.sign(), Minus);
+    let data = x.biguint_mut();
 
     let bits_per_digit = u64::from(big_digit::BITS);
     if bit >= bits_per_digit * data.len() as u64 {

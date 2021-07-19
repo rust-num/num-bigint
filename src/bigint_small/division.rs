@@ -61,7 +61,7 @@ impl Div<BigIntSmall> for u32 {
 
     #[inline]
     fn div(self, other: BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from_biguint(other.sign, self / other.data)
+        BigIntSmall::from_biguint(other.sign(), self / other.into_biguint())
     }
 }
 
@@ -93,7 +93,7 @@ impl Div<BigIntSmall> for u64 {
 
     #[inline]
     fn div(self, other: BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from_biguint(other.sign, self / other.data)
+        BigIntSmall::from_biguint(other.sign(), self / other.into_biguint())
     }
 }
 
@@ -368,7 +368,7 @@ impl Rem<BigIntSmall> for u128 {
 
     #[inline]
     fn rem(self, other: BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from(self % other.data)
+        BigIntSmall::from(self % other.into_biguint())
     }
 }
 

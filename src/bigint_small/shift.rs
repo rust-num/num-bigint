@@ -34,7 +34,7 @@ macro_rules! impl_shift {
 
             #[inline]
             fn shl(self, rhs: $rhs) -> BigIntSmall {
-                BigIntSmall::from_biguint(self.sign(), self.to_biguint_unchecked() << rhs)
+                BigIntSmall::from_biguint(self.sign(), self.into_biguint() << rhs)
             }
         }
         impl<'a> Shl<$rhs> for &'a BigIntSmall {

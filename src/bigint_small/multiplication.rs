@@ -154,8 +154,12 @@ impl MulAssign<i32> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self *= u,
             Negative(u) => {
-                *self.mut_sign() = -self.sign();
-                self.data *= u;
+                // *self.mut_sign() = -self.sign();
+                // self.data *= u;
+                let owned = std::mem::replace(self, BigIntSmall::zero());
+                let (sign, mut uint) = owned.into_parts();
+                uint *= u;
+                *self = BigIntSmall::from_biguint(-sign, uint)
             }
         }
     }
@@ -179,8 +183,12 @@ impl MulAssign<i64> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self *= u,
             Negative(u) => {
-                *self.mut_sign() = -self.sign();
-                self.data *= u;
+                // *self.mut_sign() = -self.sign();
+                // self.data *= u;
+                let owned = std::mem::replace(self, BigIntSmall::zero());
+                let (sign, mut uint) = owned.into_parts();
+                uint *= u;
+                *self = BigIntSmall::from_biguint(-sign, uint)
             }
         }
     }
@@ -204,8 +212,12 @@ impl MulAssign<i128> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self *= u,
             Negative(u) => {
-                *self.mut_sign() = -self.sign();
-                self.data *= u;
+                // *self.mut_sign() = -self.sign();
+                // self.data *= u;
+                let owned = std::mem::replace(self, BigIntSmall::zero());
+                let (sign, mut uint) = owned.into_parts();
+                uint *= u;
+                *self = BigIntSmall::from_biguint(-sign, uint)
             }
         }
     }

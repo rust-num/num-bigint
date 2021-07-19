@@ -184,10 +184,7 @@ impl From<i64> for BigIntSmall {
             BigIntSmall::from(n as u64)
         } else {
             let u = core::u64::MAX - (n as u64) + 1;
-            BigIntSmall {
-                sign: Minus,
-                data: BigUint::from(u),
-            }
+            BigIntSmall::from_biguint(Minus, BigUint::from(u))
         }
     }
 }
@@ -199,10 +196,7 @@ impl From<i128> for BigIntSmall {
             BigIntSmall::from(n as u128)
         } else {
             let u = core::u128::MAX - (n as u128) + 1;
-            BigIntSmall {
-                sign: Minus,
-                data: BigUint::from(u),
-            }
+            BigIntSmall::from_biguint(Minus, BigUint::from(u))
         }
     }
 }
@@ -227,10 +221,7 @@ impl From<u64> for BigIntSmall {
     #[inline]
     fn from(n: u64) -> Self {
         if n > 0 {
-            BigIntSmall {
-                sign: Plus,
-                data: BigUint::from(n),
-            }
+            BigIntSmall::from(BigUint::from(n))
         } else {
             BigIntSmall::zero()
         }
@@ -241,10 +232,7 @@ impl From<u128> for BigIntSmall {
     #[inline]
     fn from(n: u128) -> Self {
         if n > 0 {
-            BigIntSmall {
-                sign: Plus,
-                data: BigUint::from(n),
-            }
+            BigIntSmall::from(BigUint::from(n))
         } else {
             BigIntSmall::zero()
         }
@@ -273,10 +261,7 @@ impl From<BigUint> for BigIntSmall {
         if n.is_zero() {
             BigIntSmall::zero()
         } else {
-            BigIntSmall {
-                sign: Plus,
-                data: n,
-            }
+            BigIntSmall::from_biguint(Plus, n)
         }
     }
 }
@@ -294,10 +279,7 @@ impl ToBigInt for BigUint {
         if self.is_zero() {
             Some(Zero::zero())
         } else {
-            Some(BigIntSmall {
-                sign: Plus,
-                data: self.clone(),
-            })
+            Some(BigIntSmall::from_biguint(Plus, self.clone()))
         }
     }
 }
@@ -306,7 +288,7 @@ impl ToBigUint for BigIntSmall {
     #[inline]
     fn to_biguint(&self) -> Option<BigUint> {
         match self.sign() {
-            Plus => Some(self.data.clone()),
+            Plus => Some(self.data().into_owned().clone()),
             NoSign => Some(Zero::zero()),
             Minus => None,
         }
@@ -334,7 +316,7 @@ impl TryFrom<BigIntSmall> for BigUint {
         if value.sign() == Sign::Minus {
             Err(TryFromBigIntError::new(value))
         } else {
-            Ok(value.data)
+            Ok(value.into_biguint())
         }
     }
 }
@@ -405,15 +387,17 @@ pub(super) fn from_signed_bytes_le(digits: &[u8]) -> BigIntSmall {
 
 #[inline]
 pub(super) fn to_signed_bytes_be(x: &BigIntSmall) -> Vec<u8> {
-    let mut bytes = x.data.to_bytes_be();
+    let mut bytes = x.data().to_bytes_be();
     let first_byte = bytes.first().cloned().unwrap_or(0);
     if first_byte > 0x7f
-        && !(first_byte == 0x80 && bytes.iter().skip(1).all(Zero::is_zero) && x.sign == Sign::Minus)
+        && !(first_byte == 0x80
+            && bytes.iter().skip(1).all(Zero::is_zero)
+            && x.sign() == Sign::Minus)
     {
         // msb used by magnitude, extend by 1 byte
         bytes.insert(0, 0);
     }
-    if x.sign == Sign::Minus {
+    if x.sign() == Sign::Minus {
         twos_complement_be(&mut bytes);
     }
     bytes
@@ -421,17 +405,17 @@ pub(super) fn to_signed_bytes_be(x: &BigIntSmall) -> Vec<u8> {
 
 #[inline]
 pub(super) fn to_signed_bytes_le(x: &BigIntSmall) -> Vec<u8> {
-    let mut bytes = x.data.to_bytes_le();
+    let mut bytes = x.data().to_bytes_le();
     let last_byte = bytes.last().cloned().unwrap_or(0);
     if last_byte > 0x7f
         && !(last_byte == 0x80
             && bytes.iter().rev().skip(1).all(Zero::is_zero)
-            && x.sign == Sign::Minus)
+            && x.sign() == Sign::Minus)
     {
         // msb used by magnitude, extend by 1 byte
         bytes.push(0);
     }
-    if x.sign == Sign::Minus {
+    if x.sign() == Sign::Minus {
         twos_complement_le(&mut bytes);
     }
     bytes

@@ -27,7 +27,7 @@ macro_rules! pow_impl {
 
             #[inline]
             fn pow(self, rhs: $T) -> BigIntSmall {
-                BigIntSmall::from_biguint(powsign(self.sign, &rhs), self.data.pow(rhs))
+                BigIntSmall::from_biguint(powsign(self.sign(), &rhs), self.into_biguint().pow(rhs))
             }
         }
 
@@ -36,7 +36,7 @@ macro_rules! pow_impl {
 
             #[inline]
             fn pow(self, rhs: &$T) -> BigIntSmall {
-                BigIntSmall::from_biguint(powsign(self.sign, rhs), self.data.pow(rhs))
+                BigIntSmall::from_biguint(powsign(self.sign(), rhs), self.into_biguint().pow(rhs))
             }
         }
 
@@ -45,7 +45,10 @@ macro_rules! pow_impl {
 
             #[inline]
             fn pow(self, rhs: $T) -> BigIntSmall {
-                BigIntSmall::from_biguint(powsign(self.sign, &rhs), Pow::pow(&self.data, rhs))
+                BigIntSmall::from_biguint(
+                    powsign(self.sign(), &rhs),
+                    Pow::pow(&self.data() as &BigUint, rhs),
+                )
             }
         }
 
@@ -54,7 +57,10 @@ macro_rules! pow_impl {
 
             #[inline]
             fn pow(self, rhs: &$T) -> BigIntSmall {
-                BigIntSmall::from_biguint(powsign(self.sign, rhs), Pow::pow(&self.data, rhs))
+                BigIntSmall::from_biguint(
+                    powsign(self.sign(), rhs),
+                    Pow::pow(&self.data() as &BigUint, rhs),
+                )
             }
         }
     };
@@ -82,7 +88,7 @@ pub(super) fn modpow(
         "attempt to calculate with zero modulus!"
     );
 
-    let result = x.data.modpow(&exponent.data, &modulus.data);
+    let result = x.data().modpow(&exponent.data(), &modulus.data());
     if result.is_zero() {
         return BigIntSmall::zero();
     }
@@ -90,8 +96,8 @@ pub(super) fn modpow(
     // The sign of the result follows the modulus, like `mod_floor`.
     let (sign, mag) = match (x.is_negative() && exponent.is_odd(), modulus.is_negative()) {
         (false, false) => (Plus, result),
-        (true, false) => (Plus, &modulus.data - result),
-        (false, true) => (Minus, &modulus.data - result),
+        (true, false) => (Plus, &modulus.data() as &BigUint - result),
+        (false, true) => (Minus, &modulus.data() as &BigUint - result),
         (true, true) => (Minus, result),
     };
     BigIntSmall::from_biguint(sign, mag)
