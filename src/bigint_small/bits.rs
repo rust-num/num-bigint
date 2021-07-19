@@ -163,7 +163,7 @@ impl<'a> BitAndAssign<&'a BigIntSmall> for BigIntSmall {
             }
             (Minus, Plus) => {
                 bitand_neg_pos(self.digits_mut(), other.digits());
-                *self.mut_sign() = Plus;
+                self.set_sign(Plus);
                 self.normalize();
             }
             (Minus, Minus) => {
@@ -300,7 +300,7 @@ impl<'a> BitOrAssign<&'a BigIntSmall> for BigIntSmall {
             }
             (Plus, Minus) => {
                 bitor_pos_neg(self.digits_mut(), other.digits());
-                *self.mut_sign() = Minus;
+                self.set_sign(Minus);
                 self.normalize();
             }
             (Minus, Plus) => {
@@ -447,7 +447,7 @@ impl<'a> BitXorAssign<&'a BigIntSmall> for BigIntSmall {
             }
             (Plus, Minus) => {
                 bitxor_pos_neg(self.digits_mut(), other.digits());
-                *self.mut_sign() = Minus;
+                self.set_sign(Minus);
                 self.normalize();
             }
             (Minus, Plus) => {
@@ -456,7 +456,7 @@ impl<'a> BitXorAssign<&'a BigIntSmall> for BigIntSmall {
             }
             (Minus, Minus) => {
                 bitxor_neg_neg(self.digits_mut(), other.digits());
-                *self.mut_sign() = Plus;
+                self.set_sign(Plus);
                 self.normalize();
             }
         }

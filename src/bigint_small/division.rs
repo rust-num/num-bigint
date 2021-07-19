@@ -151,7 +151,7 @@ impl DivAssign<i32> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self /= u,
             Negative(u) => {
-                *self.mut_sign() = -self.sign();
+                self.toggle_sign();
                 *self /= u;
             }
         }
@@ -188,7 +188,7 @@ impl DivAssign<i64> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self /= u,
             Negative(u) => {
-                *self.mut_sign() = -self.sign();
+                self.toggle_sign();
                 *self /= u;
             }
         }
@@ -225,7 +225,7 @@ impl DivAssign<i128> for BigIntSmall {
         match other.checked_uabs() {
             Positive(u) => *self /= u,
             Negative(u) => {
-                *self.mut_sign() = -self.sign();
+                self.toggle_sign();
                 *self /= u;
             }
         }

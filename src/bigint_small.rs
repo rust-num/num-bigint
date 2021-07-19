@@ -40,20 +40,29 @@ mod arbitrary;
 mod serde;
 
 /// A big signed integer type.
-pub struct BigIntSmall {
-    sign_i: Sign,
-    data_i: BigUint,
+// pub struct BigIntSmall {
+//     sign_i: Sign,
+//     data_i: BigUint,
+// }
+pub enum BigIntSmall {
+    MinusBig(BigUint),
+    PlusBig(BigUint),
 }
+use BigIntSmall::*;
 
 // Note: derived `Clone` doesn't specialize `clone_from`,
 // but we want to keep the allocation in `data`.
 impl Clone for BigIntSmall {
     #[inline]
     fn clone(&self) -> Self {
-        BigIntSmall {
-            sign_i: self.sign(),
-            data_i: self.data_i.clone(),
+        match self {
+            MinusBig(big) => MinusBig(big.clone()),
+            PlusBig(big) => PlusBig(big.clone()),
         }
+        // BigIntSmall {
+        //     sign_i: self.sign(),
+        //     data_i: self.data_i.clone(),
+        // }
     }
 
     // #[inline]
@@ -315,7 +324,7 @@ impl Neg for BigIntSmall {
 
     #[inline]
     fn neg(mut self) -> BigIntSmall {
-        *self.mut_sign() = -self.sign();
+        self.toggle_sign();
         self
     }
 }
@@ -519,21 +528,43 @@ impl IntDigits for BigIntSmall {
     #[inline]
     fn digits(&self) -> &[BigDigit] {
         // Can easily be written for compact formats
-        self.data_i.digits()
+        match self {
+            MinusBig(big) => big.digits(),
+            PlusBig(big) => big.digits(),
+        }
+        // self.data_i.digits()
     }
 
     #[inline]
     fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
         // Must convert from compact format first.
-        self.data_i.digits_mut()
+        match self {
+            MinusBig(big) => big.digits_mut(),
+            PlusBig(big) => big.digits_mut(),
+        }
+        // self.data_i.digits_mut()
     }
 
     #[inline]
     fn normalize(&mut self) {
-        self.data_i.normalize();
-        if self.data_i.is_zero() {
-            *self.mut_sign() = NoSign;
+        match self {
+            MinusBig(big) => {
+                big.normalize();
+                if big.is_zero() {
+                    self.set_zero();
+                }
+            }
+            PlusBig(big) => {
+                big.normalize();
+                if big.is_zero() {
+                    self.set_zero();
+                }
+            }
         }
+        // self.data_i.normalize();
+        // if self.data_i.is_zero() {
+        //     *self.mut_sign() = NoSign;
+        // }
     }
     #[inline]
     fn capacity(&self) -> usize {
@@ -573,10 +604,15 @@ impl BigIntSmall {
             sign = NoSign;
         }
 
-        BigIntSmall {
-            sign_i: sign,
-            data_i: data,
+        match sign {
+            Minus => MinusBig(data),
+            NoSign => PlusBig(data),
+            Plus => PlusBig(data),
         }
+        // BigIntSmall {
+        //     sign_i: sign,
+        //     data_i: data,
+        // }
     }
 
     /// Creates and initializes a `BigInt`.
@@ -592,12 +628,13 @@ impl BigIntSmall {
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
-        if sign == NoSign {
-            self.set_zero();
-        } else {
-            self.data_i.assign_from_slice(slice);
-            *self.mut_sign() = if self.data_i.is_zero() { NoSign } else { sign };
-        }
+        *self = BigIntSmall::from_slice(sign, slice)
+        // if sign == NoSign {
+        //     self.set_zero();
+        // } else {
+        //     self.data_i.assign_from_slice(slice);
+        //     *self.mut_sign() = if self.data_i.is_zero() { NoSign } else { sign };
+        // }
     }
 
     /// Creates and initializes a `BigInt`.
@@ -792,7 +829,11 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn iter_u32_digits(&self) -> U32Digits<'_> {
-        self.data_i.iter_u32_digits()
+        match self {
+            MinusBig(big) => big.iter_u32_digits(),
+            PlusBig(big) => big.iter_u32_digits(),
+        }
+        // self.data_i.iter_u32_digits()
     }
 
     /// Returns an iterator of `u64` digits representation of the `BigInt` ordered least
@@ -812,7 +853,11 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
-        self.data_i.iter_u64_digits()
+        match self {
+            MinusBig(big) => big.iter_u64_digits(),
+            PlusBig(big) => big.iter_u64_digits(),
+        }
+        // self.data_i.iter_u64_digits()
     }
 
     /// Returns the two's-complement byte representation of the `BigInt` in big-endian byte order.
@@ -858,7 +903,7 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn to_str_radix(&self, radix: u32) -> String {
-        let mut v = to_str_radix_reversed(&self.data_i, radix);
+        let mut v = to_str_radix_reversed(&self.data() as &BigUint, radix);
 
         if self.is_negative() {
             v.push(b'-');
@@ -920,15 +965,52 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn sign(&self) -> Sign {
-        self.sign_i
+        match self {
+            MinusBig(_) => Minus,
+            PlusBig(big) => {
+                if big.is_zero() {
+                    NoSign
+                } else {
+                    Plus
+                }
+            }
+        }
+        // self.sign_i
     }
 
-    fn mut_sign(&mut self) -> &mut Sign {
-        &mut self.sign_i
+    // sign = -sign;
+    fn toggle_sign(&mut self) {
+        if self.sign() == NoSign {
+            return;
+        }
+        match std::mem::replace(self, BigIntSmall::zero()) {
+            MinusBig(big) => *self = PlusBig(big),
+            PlusBig(big) => *self = MinusBig(big),
+        }
     }
+
+    fn set_sign(&mut self, sign: Sign) {
+        if self.sign() == sign {
+            return;
+        }
+        let uint = std::mem::replace(self, BigIntSmall::zero()).into_biguint();
+        match sign {
+            NoSign => self.set_zero(),
+            Minus => *self = MinusBig(uint),
+            Plus => *self = PlusBig(uint),
+        }
+    }
+
+    // fn mut_sign(&mut self) -> &mut Sign {
+    //     &mut self.sign_i
+    // }
 
     fn data(&self) -> Cow<'_, BigUint> {
-        Cow::Borrowed(&self.data_i)
+        match self {
+            MinusBig(big) => Cow::Borrowed(big),
+            PlusBig(big) => Cow::Borrowed(big),
+        }
+        // Cow::Borrowed(&self.data_i)
     }
 
     /// Returns the magnitude of the `BigInt` as a `BigUint`.
@@ -945,7 +1027,8 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn magnitude(&self) -> &BigUint {
-        &self.data_i
+        panic!("There isn't always a BigUint inside a BigIntSmall")
+        // &self.data_i
     }
 
     /// Convert this `BigInt` into its `Sign` and `BigUint` magnitude,
@@ -963,15 +1046,23 @@ impl BigIntSmall {
     /// ```
     #[inline]
     pub fn into_parts(self) -> (Sign, BigUint) {
-        (self.sign(), self.data_i)
+        (self.sign(), self.into_biguint())
     }
 
     pub fn into_biguint(self) -> BigUint {
-        self.data_i
+        match self {
+            MinusBig(big) => big,
+            PlusBig(big) => big,
+        }
+        // self.data_i
     }
 
     pub fn biguint_mut(&mut self) -> &mut BigUint {
-        &mut self.data_i
+        match self {
+            MinusBig(big) => big,
+            PlusBig(big) => big,
+        }
+        // &mut self.data_i
     }
 
     /// Determines the fewest bits necessary to express the `BigInt`,
@@ -1087,12 +1178,16 @@ impl BigIntSmall {
     /// may be needed to store the new digits
     pub fn set_bit(&mut self, bit: u64, value: bool) {
         match self.sign() {
-            Sign::Plus => self.data_i.set_bit(bit, value),
+            Sign::Plus => {
+                let uint = self.biguint_mut();
+                uint.set_bit(bit, value)
+            }
             Sign::Minus => bits::set_negative_bit(self, bit, value),
             Sign::NoSign => {
                 if value {
-                    self.data_i.set_bit(bit, true);
-                    *self.mut_sign() = Sign::Plus;
+                    let uint = self.biguint_mut();
+                    uint.set_bit(bit, true);
+                    self.set_sign(Sign::Plus);
                 } else {
                     // Clearing a bit for zero is a no-op
                 }
