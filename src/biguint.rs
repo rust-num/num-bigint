@@ -47,7 +47,7 @@ impl Clone for BigUint {
     #[inline]
     fn clone(&self) -> Self {
         BigUint {
-            data: self.data.clone(),
+            data: SmallVec::from_slice(&self.data), // This uses memcpy rather than repeated calls to .clone().
         }
     }
 
