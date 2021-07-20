@@ -17,6 +17,8 @@ use std::borrow::Cow;
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, Signed, Zero};
 
+use smallvec::{smallvec, SmallVec};
+
 use self::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::BigDigit;
@@ -550,32 +552,33 @@ impl IntDigits for BigIntSmall {
     }
 
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
-        // Must convert from compact format first.
-        match self {
-            MinusBig(big) => big.digits_mut(),
-            MinusMedium(digits) => {
-                let uint = BigUint::from_digits(digits);
-                *self = MinusBig(uint);
-                self.digits_mut()
-            }
-            MinusSmall(digit) => {
-                let uint = BigUint::from(*digit);
-                *self = MinusBig(uint);
-                self.digits_mut()
-            }
-            PlusSmall(digit) => {
-                let uint = BigUint::from(*digit);
-                *self = MinusBig(uint);
-                self.digits_mut()
-            }
-            PlusMedium(digits) => {
-                let uint = BigUint::from_digits(digits);
-                *self = PlusBig(uint);
-                self.digits_mut()
-            }
-            PlusBig(big) => big.digits_mut(),
-        }
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; 3]> {
+        todo!()
+        // // Must convert from compact format first.
+        // match self {
+        //     MinusBig(big) => big.digits_mut(),
+        //     MinusMedium(digits) => {
+        //         let uint = BigUint::from_digits(digits);
+        //         *self = MinusBig(uint);
+        //         self.digits_mut()
+        //     }
+        //     MinusSmall(digit) => {
+        //         let uint = BigUint::from(*digit);
+        //         *self = MinusBig(uint);
+        //         self.digits_mut()
+        //     }
+        //     PlusSmall(digit) => {
+        //         let uint = BigUint::from(*digit);
+        //         *self = MinusBig(uint);
+        //         self.digits_mut()
+        //     }
+        //     PlusMedium(digits) => {
+        //         let uint = BigUint::from_digits(digits);
+        //         *self = PlusBig(uint);
+        //         self.digits_mut()
+        //     }
+        //     PlusBig(big) => big.digits_mut(),
+        // }
         // self.data_i.digits_mut()
     }
 

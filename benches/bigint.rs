@@ -13,8 +13,8 @@ use rng::get_rng;
 
 fn multiply_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.gen_biguint(xbits);
+    let y = rng.gen_biguint(ybits);
 
     b.iter(|| &x * &y);
 }

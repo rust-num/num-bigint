@@ -6,6 +6,8 @@ use super::BigUint;
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::UsizePromotion;
 
+use smallvec::smallvec;
+
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
@@ -125,7 +127,7 @@ fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     }
 
     if d.data.len() == 1 {
-        if d.data == [1] {
+        if d.data[0] == 1 {
             return (u, Zero::zero());
         }
         let (div, rem) = div_rem_digit(u, d.data[0]);
@@ -172,7 +174,7 @@ pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     }
 
     if d.data.len() == 1 {
-        if d.data == [1] {
+        if d.data[0] == 1 {
             return (u.clone(), Zero::zero());
         }
 
@@ -240,7 +242,7 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
     let q_len = a.data.len() - b.data.len() + 1;
     let mut q = BigUint {
-        data: vec![0; q_len],
+        data: smallvec![0; q_len],
     };
 
     for j in (0..q_len).rev() {

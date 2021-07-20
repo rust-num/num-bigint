@@ -8,6 +8,8 @@ use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::Sign::{self, Minus, NoSign, Plus};
 use crate::{BigInt, UsizePromotion};
 
+use smallvec::smallvec;
+
 use core::cmp::Ordering;
 use core::iter::Product;
 use core::ops::{Mul, MulAssign};
@@ -169,7 +171,9 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // We reuse the same BigUint for all the intermediate multiplies and have to size p
         // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
         let len = x1.len() + y1.len();
-        let mut p = BigUint { data: vec![0; len] };
+        let mut p = BigUint {
+            data: smallvec![0; len],
+        };
 
         // p2 = x1 * y1
         mac3(&mut p.data, x1, y1);
@@ -345,7 +349,9 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 
 fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
     let len = x.len() + y.len();
-    let mut prod = BigUint { data: vec![0; len] };
+    let mut prod = BigUint {
+        data: smallvec![0; len],
+    };
 
     mac3(&mut prod.data, x, y);
     prod.normalized()
@@ -400,9 +406,15 @@ macro_rules! impl_mul {
         impl<$($a),*> Mul<$Other> for $Self {
             type Output = BigUint;
 
-            #[inline]
+            #[inline(always)]
             fn mul(self, other: $Other) -> BigUint {
                 match (&*self.data, &*other.data) {
+                    (&[a], &[b]) => {
+                        use crate::big_digit::*;
+                        let a = a as DoubleBigDigit;
+                        let b = b as DoubleBigDigit;
+                        BigUint::from(a*b)
+                    },
                     // multiply by zero
                     (&[], _) | (_, &[]) => BigUint::zero(),
                     // multiply by a scalar
@@ -431,6 +443,16 @@ macro_rules! impl_mul_assign {
                     // multiply by zero
                     (&[], _) => {},
                     (_, &[]) => self.set_zero(),
+                    // multiply by a scalar
+                    (&[a], &[b]) => {
+                        use crate::big_digit::*;
+                        let a = a as DoubleBigDigit;
+                        let b = b as DoubleBigDigit;
+                        let (lo, hi) = from_doublebigdigit(a*b);
+                        self.data.clear();
+                        self.data.push(lo);
+                        self.data.push(hi);
+                    },
                     // multiply by a scalar
                     (_, &[digit]) => *self *= digit,
                     (&[digit], _) => *self = other * digit,
