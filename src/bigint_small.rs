@@ -33,12 +33,6 @@ mod convert;
 mod power;
 mod shift;
 
-#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
-mod arbitrary;
-
-#[cfg(feature = "serde")]
-mod serde;
-
 /// A big signed integer type.
 // pub struct BigIntSmall {
 //     sign_i: Sign,
@@ -46,6 +40,10 @@ mod serde;
 // }
 pub enum BigIntSmall {
     MinusBig(BigUint),
+    MinusMedium([BigDigit; 3]),
+    MinusSmall(BigDigit),
+    PlusSmall(BigDigit),
+    PlusMedium([BigDigit; 3]),
     PlusBig(BigUint),
 }
 use BigIntSmall::*;
@@ -57,6 +55,10 @@ impl Clone for BigIntSmall {
     fn clone(&self) -> Self {
         match self {
             MinusBig(big) => MinusBig(big.clone()),
+            &MinusMedium(medium) => MinusMedium(medium),
+            &MinusSmall(small) => MinusSmall(small),
+            &PlusSmall(small) => PlusSmall(small),
+            &PlusMedium(medium) => PlusMedium(medium),
             PlusBig(big) => PlusBig(big.clone()),
         }
         // BigIntSmall {
@@ -202,7 +204,8 @@ impl<'a> Not for &'a BigIntSmall {
 impl Zero for BigIntSmall {
     #[inline]
     fn zero() -> BigIntSmall {
-        BigIntSmall::from(BigUint::zero())
+        BigIntSmall::PlusBig(BigUint::zero())
+        // BigIntSmall::from(BigUint::zero())
     }
 
     #[inline]
@@ -221,7 +224,8 @@ impl Zero for BigIntSmall {
 impl One for BigIntSmall {
     #[inline]
     fn one() -> BigIntSmall {
-        BigIntSmall::from(BigUint::one())
+        BigIntSmall::PlusBig(BigUint::one())
+        // BigIntSmall::from(BigUint::one())
     }
 
     #[inline]
@@ -334,7 +338,7 @@ impl<'a> Neg for &'a BigIntSmall {
 
     #[inline]
     fn neg(self) -> BigIntSmall {
-        -self.clone()
+        self.clone().neg()
     }
 }
 
@@ -427,7 +431,13 @@ impl Integer for BigIntSmall {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &BigIntSmall) -> BigIntSmall {
-        BigIntSmall::from(self.data().gcd(&other.data()))
+        match (self, other) {
+            (PlusSmall(a), PlusSmall(b)) => PlusSmall(a.gcd(b)),
+            (PlusSmall(a), MinusSmall(b)) => PlusSmall(a.gcd(b)),
+            (MinusSmall(a), PlusSmall(b)) => PlusSmall(a.gcd(b)),
+            (MinusSmall(a), MinusSmall(b)) => PlusSmall(a.gcd(b)),
+            _ => BigIntSmall::from(self.data().gcd(&other.data())),
+        }
     }
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
@@ -530,6 +540,10 @@ impl IntDigits for BigIntSmall {
         // Can easily be written for compact formats
         match self {
             MinusBig(big) => big.digits(),
+            MinusMedium(digits) => digits,
+            MinusSmall(digit) => std::slice::from_ref(digit),
+            PlusSmall(digit) => std::slice::from_ref(digit),
+            PlusMedium(digits) => digits,
             PlusBig(big) => big.digits(),
         }
         // self.data_i.digits()
@@ -540,6 +554,26 @@ impl IntDigits for BigIntSmall {
         // Must convert from compact format first.
         match self {
             MinusBig(big) => big.digits_mut(),
+            MinusMedium(digits) => {
+                let uint = BigUint::from_digits(digits);
+                *self = MinusBig(uint);
+                self.digits_mut()
+            }
+            MinusSmall(digit) => {
+                let uint = BigUint::from(*digit);
+                *self = MinusBig(uint);
+                self.digits_mut()
+            }
+            PlusSmall(digit) => {
+                let uint = BigUint::from(*digit);
+                *self = MinusBig(uint);
+                self.digits_mut()
+            }
+            PlusMedium(digits) => {
+                let uint = BigUint::from_digits(digits);
+                *self = PlusBig(uint);
+                self.digits_mut()
+            }
             PlusBig(big) => big.digits_mut(),
         }
         // self.data_i.digits_mut()
@@ -554,6 +588,16 @@ impl IntDigits for BigIntSmall {
                     self.set_zero();
                 }
             }
+            MinusMedium([0, 0, 0]) => {
+                self.set_zero();
+            }
+            MinusMedium(_) => {}
+            MinusSmall(0) => {
+                self.set_zero();
+            }
+            MinusSmall(_) => {}
+            PlusSmall(_) => {}
+            PlusMedium(_) => {}
             PlusBig(big) => {
                 big.normalize();
                 if big.is_zero() {
@@ -831,6 +875,10 @@ impl BigIntSmall {
     pub fn iter_u32_digits(&self) -> U32Digits<'_> {
         match self {
             MinusBig(big) => big.iter_u32_digits(),
+            MinusMedium(digits) => U32Digits::new(digits),
+            MinusSmall(small) => U32Digits::new(std::slice::from_ref(small)),
+            PlusSmall(small) => U32Digits::new(std::slice::from_ref(small)),
+            PlusMedium(digits) => U32Digits::new(digits),
             PlusBig(big) => big.iter_u32_digits(),
         }
         // self.data_i.iter_u32_digits()
@@ -855,6 +903,10 @@ impl BigIntSmall {
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
         match self {
             MinusBig(big) => big.iter_u64_digits(),
+            MinusMedium(digits) => U64Digits::new(digits),
+            MinusSmall(small) => U64Digits::new(std::slice::from_ref(small)),
+            PlusSmall(small) => U64Digits::new(std::slice::from_ref(small)),
+            PlusMedium(digits) => U64Digits::new(digits),
             PlusBig(big) => big.iter_u64_digits(),
         }
         // self.data_i.iter_u64_digits()
@@ -967,6 +1019,10 @@ impl BigIntSmall {
     pub fn sign(&self) -> Sign {
         match self {
             MinusBig(_) => Minus,
+            MinusMedium(_) => Minus,
+            MinusSmall(_) => Minus,
+            PlusSmall(_) => Plus,
+            PlusMedium(_) => Plus,
             PlusBig(big) => {
                 if big.is_zero() {
                     NoSign
@@ -983,8 +1039,12 @@ impl BigIntSmall {
         if self.sign() == NoSign {
             return;
         }
-        match std::mem::replace(self, BigIntSmall::zero()) {
+        match self.take() {
             MinusBig(big) => *self = PlusBig(big),
+            MinusMedium(digits) => *self = PlusMedium(digits),
+            MinusSmall(small) => *self = PlusSmall(small),
+            PlusSmall(small) => *self = MinusSmall(small),
+            PlusMedium(digits) => *self = MinusMedium(digits),
             PlusBig(big) => *self = MinusBig(big),
         }
     }
@@ -993,7 +1053,7 @@ impl BigIntSmall {
         if self.sign() == sign {
             return;
         }
-        let uint = std::mem::replace(self, BigIntSmall::zero()).into_biguint();
+        let uint = self.take().into_biguint();
         match sign {
             NoSign => self.set_zero(),
             Minus => *self = MinusBig(uint),
@@ -1008,6 +1068,10 @@ impl BigIntSmall {
     fn data(&self) -> Cow<'_, BigUint> {
         match self {
             MinusBig(big) => Cow::Borrowed(big),
+            MinusMedium(digits) => Cow::Owned(BigUint::from_digits(digits)),
+            &MinusSmall(small) => Cow::Owned(BigUint::from(small)),
+            &PlusSmall(small) => Cow::Owned(BigUint::from(small)),
+            PlusMedium(digits) => Cow::Owned(BigUint::from_digits(digits)),
             PlusBig(big) => Cow::Borrowed(big),
         }
         // Cow::Borrowed(&self.data_i)
@@ -1052,6 +1116,10 @@ impl BigIntSmall {
     pub fn into_biguint(self) -> BigUint {
         match self {
             MinusBig(big) => big,
+            MinusMedium(digits) => BigUint::from_digits(&digits),
+            MinusSmall(small) => BigUint::from(small),
+            PlusSmall(small) => BigUint::from(small),
+            PlusMedium(digits) => BigUint::from_digits(&digits),
             PlusBig(big) => big,
         }
         // self.data_i
@@ -1060,9 +1128,33 @@ impl BigIntSmall {
     pub fn biguint_mut(&mut self) -> &mut BigUint {
         match self {
             MinusBig(big) => big,
+            MinusMedium(digits) => {
+                let uint = BigUint::from_digits(digits);
+                *self = MinusBig(uint);
+                self.biguint_mut()
+            }
+            MinusSmall(small) => {
+                let uint = BigUint::from(*small);
+                *self = MinusBig(uint);
+                self.biguint_mut()
+            }
+            PlusSmall(small) => {
+                let uint = BigUint::from(*small);
+                *self = PlusBig(uint);
+                self.biguint_mut()
+            }
+            PlusMedium(digits) => {
+                let uint = BigUint::from_digits(digits);
+                *self = PlusBig(uint);
+                self.biguint_mut()
+            }
             PlusBig(big) => big,
         }
         // &mut self.data_i
+    }
+
+    fn take(&mut self) -> BigIntSmall {
+        std::mem::replace(self, PlusBig(BigUint::zero()))
     }
 
     /// Determines the fewest bits necessary to express the `BigInt`,

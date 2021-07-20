@@ -545,6 +545,12 @@ impl BigUint {
         big
     }
 
+    pub fn from_digits(slice: &[BigDigit]) -> BigUint {
+        BigUint {
+            data: Vec::from(slice),
+        }
+    }
+
     /// Assign a value to a `BigUint`.
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.

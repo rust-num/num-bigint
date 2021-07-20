@@ -3,7 +3,7 @@
 
 extern crate test;
 
-use num_bigint::{BigUint, RandBigInt};
+use num_bigint::{BigIntSmall, BigUint, RandBigInt};
 use num_integer::Integer;
 use num_traits::Zero;
 use test::Bencher;
@@ -17,6 +17,14 @@ fn bench(b: &mut Bencher, bits: u64, gcd: fn(&BigUint, &BigUint) -> BigUint) {
     let y = rng.gen_biguint(bits);
 
     assert_eq!(euclid(&x, &y), x.gcd(&y));
+
+    b.iter(|| gcd(&x, &y));
+}
+
+fn bench_small(b: &mut Bencher, bits: u64, gcd: fn(&BigIntSmall, &BigIntSmall) -> BigIntSmall) {
+    let mut rng = get_rng();
+    let x = rng.gen_bigintsmall(bits);
+    let y = rng.gen_bigintsmall(bits);
 
     b.iter(|| gcd(&x, &y));
 }
@@ -73,4 +81,9 @@ fn gcd_stein_1024(b: &mut Bencher) {
 #[bench]
 fn gcd_stein_4096(b: &mut Bencher) {
     bench(b, 4096, BigUint::gcd);
+}
+
+#[bench]
+fn gcd_small_0064(b: &mut Bencher) {
+    bench_small(b, 64, BigIntSmall::gcd);
 }

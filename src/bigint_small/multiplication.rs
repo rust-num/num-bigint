@@ -5,7 +5,7 @@ use crate::{IsizePromotion, UsizePromotion};
 
 use core::iter::Product;
 use core::ops::{Mul, MulAssign};
-use num_traits::{CheckedMul, One, Zero};
+use num_traits::{CheckedMul, One};
 
 macro_rules! impl_mul {
     ($(impl<$($a:lifetime),*> Mul<$Other:ty> for $Self:ty;)*) => {$(
@@ -14,6 +14,20 @@ macro_rules! impl_mul {
 
             #[inline]
             fn mul(self, other: $Other) -> BigIntSmall {
+                use BigIntSmall::*;
+                match (&self, &other) {
+                    (PlusSmall(a), PlusSmall(b)) => {
+                        let c = *a as u128 * *b as u128;
+                        return BigIntSmall::from(c);
+                    }
+                    (MinusSmall(a), MinusSmall(b)) => {
+                        let c = *a as u128 * *b as u128;
+                        return -BigIntSmall::from(c);
+                    }
+                    _ => {
+                        // dbg!(&self, &other);
+                    }
+                }
                 // automatically match value/ref
                 let self_data = self.data();
                 let other_data = other.data();
@@ -75,7 +89,7 @@ impl Mul<u32> for BigIntSmall {
 impl MulAssign<u32> for BigIntSmall {
     #[inline]
     fn mul_assign(&mut self, other: u32) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint *= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -98,7 +112,7 @@ impl Mul<u64> for BigIntSmall {
 impl MulAssign<u64> for BigIntSmall {
     #[inline]
     fn mul_assign(&mut self, other: u64) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint *= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -121,7 +135,7 @@ impl Mul<u128> for BigIntSmall {
 impl MulAssign<u128> for BigIntSmall {
     #[inline]
     fn mul_assign(&mut self, other: u128) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint *= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -156,7 +170,7 @@ impl MulAssign<i32> for BigIntSmall {
             Negative(u) => {
                 // *self.mut_sign() = -self.sign();
                 // self.data *= u;
-                let owned = std::mem::replace(self, BigIntSmall::zero());
+                let owned = self.take();
                 let (sign, mut uint) = owned.into_parts();
                 uint *= u;
                 *self = BigIntSmall::from_biguint(-sign, uint)
@@ -185,7 +199,7 @@ impl MulAssign<i64> for BigIntSmall {
             Negative(u) => {
                 // *self.mut_sign() = -self.sign();
                 // self.data *= u;
-                let owned = std::mem::replace(self, BigIntSmall::zero());
+                let owned = self.take();
                 let (sign, mut uint) = owned.into_parts();
                 uint *= u;
                 *self = BigIntSmall::from_biguint(-sign, uint)
@@ -214,7 +228,7 @@ impl MulAssign<i128> for BigIntSmall {
             Negative(u) => {
                 // *self.mut_sign() = -self.sign();
                 // self.data *= u;
-                let owned = std::mem::replace(self, BigIntSmall::zero());
+                let owned = self.take();
                 let (sign, mut uint) = owned.into_parts();
                 uint *= u;
                 *self = BigIntSmall::from_biguint(-sign, uint)

@@ -183,8 +183,9 @@ impl From<i64> for BigIntSmall {
         if n >= 0 {
             BigIntSmall::from(n as u64)
         } else {
-            let u = core::u64::MAX - (n as u64) + 1;
-            BigIntSmall::from_biguint(Minus, BigUint::from(u))
+            BigIntSmall::MinusSmall(n.unsigned_abs())
+            // let u = core::u64::MAX - (n as u64) + 1;
+            // BigIntSmall::from_biguint(Minus, BigUint::from(u))
         }
     }
 }
@@ -221,7 +222,8 @@ impl From<u64> for BigIntSmall {
     #[inline]
     fn from(n: u64) -> Self {
         if n > 0 {
-            BigIntSmall::from(BigUint::from(n))
+            BigIntSmall::PlusSmall(n)
+            // BigIntSmall::from(BigUint::from(n))
         } else {
             BigIntSmall::zero()
         }
@@ -232,7 +234,11 @@ impl From<u128> for BigIntSmall {
     #[inline]
     fn from(n: u128) -> Self {
         if n > 0 {
-            BigIntSmall::from(BigUint::from(n))
+            match u64::from_u128(n) {
+                Some(u) => BigIntSmall::PlusSmall(u),
+                None => BigIntSmall::PlusMedium([n as u64, (n >> 64) as u64, 0]),
+                // None => BigIntSmall::from(BigUint::from(n)),
+            }
         } else {
             BigIntSmall::zero()
         }

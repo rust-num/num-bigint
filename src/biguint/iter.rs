@@ -20,7 +20,7 @@ pub struct U32Digits<'a> {
 #[cfg(u64_digit)]
 impl<'a> U32Digits<'a> {
     #[inline]
-    pub(super) fn new(data: &'a [u64]) -> Self {
+    pub(crate) fn new(data: &'a [u64]) -> Self {
         let last_hi_is_zero = data
             .last()
             .map(|&last| {
@@ -185,7 +185,7 @@ impl Iterator for U64Digits<'_> {
 #[cfg(u64_digit)]
 impl<'a> U64Digits<'a> {
     #[inline]
-    pub(super) fn new(data: &'a [u64]) -> Self {
+    pub(crate) fn new(data: &'a [u64]) -> Self {
         Self { it: data.iter() }
     }
 }

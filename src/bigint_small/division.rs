@@ -45,7 +45,7 @@ impl Div<u32> for BigIntSmall {
 impl DivAssign<u32> for BigIntSmall {
     #[inline]
     fn div_assign(&mut self, other: u32) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint /= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -77,7 +77,7 @@ impl Div<u64> for BigIntSmall {
 impl DivAssign<u64> for BigIntSmall {
     #[inline]
     fn div_assign(&mut self, other: u64) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint /= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -109,7 +109,7 @@ impl Div<u128> for BigIntSmall {
 impl DivAssign<u128> for BigIntSmall {
     #[inline]
     fn div_assign(&mut self, other: u128) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint /= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -288,7 +288,7 @@ impl Rem<u32> for BigIntSmall {
 impl RemAssign<u32> for BigIntSmall {
     #[inline]
     fn rem_assign(&mut self, other: u32) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint %= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -320,7 +320,7 @@ impl Rem<u64> for BigIntSmall {
 impl RemAssign<u64> for BigIntSmall {
     #[inline]
     fn rem_assign(&mut self, other: u64) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint %= other;
         *self = BigIntSmall::from_biguint(sign, uint)
@@ -352,7 +352,7 @@ impl Rem<u128> for BigIntSmall {
 impl RemAssign<u128> for BigIntSmall {
     #[inline]
     fn rem_assign(&mut self, other: u128) {
-        let owned = std::mem::replace(self, BigIntSmall::zero());
+        let owned = self.take();
         let (sign, mut uint) = owned.into_parts();
         uint %= other;
         *self = BigIntSmall::from_biguint(sign, uint)

@@ -3,7 +3,7 @@
 
 extern crate test;
 
-use num_bigint::{BigInt, BigUint, RandBigInt};
+use num_bigint::{BigIntSmall, BigUint, RandBigInt};
 use num_traits::{FromPrimitive, Num, One, Zero};
 use std::mem::replace;
 use test::Bencher;
@@ -13,24 +13,24 @@ use rng::get_rng;
 
 fn multiply_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.gen_bigintsmall(xbits);
+    let y = rng.gen_bigintsmall(ybits);
 
     b.iter(|| &x * &y);
 }
 
 fn divide_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.gen_bigintsmall(xbits);
+    let y = rng.gen_bigintsmall(ybits);
 
     b.iter(|| &x / &y);
 }
 
 fn remainder_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.gen_bigintsmall(xbits);
+    let y = rng.gen_bigintsmall(ybits);
 
     b.iter(|| &x % &y);
 }
@@ -186,7 +186,7 @@ fn fib_to_string(b: &mut Bencher) {
 
 fn to_str_radix_bench(b: &mut Bencher, radix: u32) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(1009);
+    let x = rng.gen_bigintsmall(1009);
     b.iter(|| x.to_str_radix(radix));
 }
 
@@ -217,10 +217,10 @@ fn to_str_radix_36(b: &mut Bencher) {
 
 fn from_str_radix_bench(b: &mut Bencher, radix: u32) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(1009);
+    let x = rng.gen_bigintsmall(1009);
     let s = x.to_str_radix(radix);
-    assert_eq!(x, BigInt::from_str_radix(&s, radix).unwrap());
-    b.iter(|| BigInt::from_str_radix(&s, radix));
+    assert_eq!(x, BigIntSmall::from_str_radix(&s, radix).unwrap());
+    b.iter(|| BigIntSmall::from_str_radix(&s, radix));
 }
 
 #[bench]
@@ -251,7 +251,7 @@ fn from_str_radix_36(b: &mut Bencher) {
 fn rand_bench(b: &mut Bencher, bits: u64) {
     let mut rng = get_rng();
 
-    b.iter(|| rng.gen_bigint(bits));
+    b.iter(|| rng.gen_bigintsmall(bits));
 }
 
 #[bench]
@@ -322,9 +322,9 @@ fn shr(b: &mut Bencher) {
 fn hash(b: &mut Bencher) {
     use std::collections::HashSet;
     let mut rng = get_rng();
-    let v: Vec<BigInt> = (1000..2000).map(|bits| rng.gen_bigint(bits)).collect();
+    let v: Vec<BigIntSmall> = (1000..2000).map(|bits| rng.gen_bigintsmall(bits)).collect();
     b.iter(|| {
-        let h: HashSet<&BigInt> = v.iter().collect();
+        let h: HashSet<&BigIntSmall> = v.iter().collect();
         assert_eq!(h.len(), v.len());
     });
 }
