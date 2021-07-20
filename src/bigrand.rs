@@ -4,7 +4,7 @@ use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
 
 use crate::BigInt;
-// use crate::BigIntSmall;
+use crate::BigIntSmall;
 use crate::BigUint;
 use crate::Sign::*;
 
