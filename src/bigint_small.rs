@@ -17,7 +17,7 @@ use std::borrow::Cow;
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, Signed, Zero};
 
-use smallvec::{smallvec, SmallVec};
+use smallvec::SmallVec;
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -552,7 +552,7 @@ impl IntDigits for BigIntSmall {
     }
 
     #[inline]
-    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; 3]> {
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; BigUint::INLINED]> {
         todo!()
         // // Must convert from compact format first.
         // match self {
