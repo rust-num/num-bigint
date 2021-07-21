@@ -222,8 +222,16 @@ impl Integer for BigUint {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
-        if self.data.len() == 1 && other.data.len() == 1 {
-            return BigUint::from(self.data[0].gcd(&other.data[0]));
+        // use core::convert::TryInto;
+        if let Some(x) = self.to_u64() {
+            if let Some(y) = other.to_u64() {
+                return BigUint::from(x.gcd(&y));
+            }
+        }
+        if let Some(x) = self.to_u128() {
+            if let Some(y) = other.to_u128() {
+                return BigUint::from(x.gcd(&y));
+            }
         }
         #[inline]
         fn twos(x: &BigUint) -> u64 {
