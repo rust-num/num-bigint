@@ -488,6 +488,7 @@ impl From<u64> for BigUint {
 }
 
 impl From<u128> for BigUint {
+    #[cfg(not(u64_digit))]
     #[inline]
     fn from(mut n: u128) -> Self {
         let mut ret: BigUint = Zero::zero();
@@ -498,6 +499,30 @@ impl From<u128> for BigUint {
         }
 
         ret
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn from(n: u128) -> Self {
+        use smallvec::smallvec;
+        let (lo, hi) = crate::big_digit::from_doublebigdigit(n);
+        if hi == 0 {
+            BigUint {
+                data: smallvec![lo],
+            }
+        } else {
+            BigUint {
+                data: smallvec![lo, hi],
+            }
+        }
+        // let mut ret: BigUint = Zero::zero();
+
+        // while n != 0 {
+        //     ret.data.push(n as BigDigit);
+        //     n >>= big_digit::BITS;
+        // }
+
+        // ret
     }
 }
 
