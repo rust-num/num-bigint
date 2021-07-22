@@ -92,6 +92,42 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
     biguint_from_smallvec(data)
 }
 
+use crate::big_digit::BigDigit;
+#[inline(never)]
+pub(crate) fn biguint_shr_mut<T: PrimInt>(n: &mut BigUint, shift: T) {
+    if shift < T::zero() {
+        panic!("attempt to shift right with negative");
+    }
+    if n.is_zero() || shift.is_zero() {
+        return;
+    }
+    let bits = T::from(big_digit::BITS).unwrap();
+    let digits = (shift / bits).to_usize().unwrap_or(core::usize::MAX);
+    let shift = (shift % bits).to_u8().unwrap();
+    slice_shr2(&mut n.data, digits, shift);
+    n.data.truncate(n.data.len() - digits);
+    n.normalize();
+}
+
+fn slice_shr2(data: &mut [BigDigit], digits: usize, shift: u8) {
+    if digits >= data.len() {
+        return;
+    }
+    if digits > 0 {
+        data.copy_within(digits.., 0);
+    }
+
+    if shift > 0 {
+        let mut borrow = 0;
+        let borrow_shift = big_digit::BITS as u8 - shift;
+        for elem in data.iter_mut().rev() {
+            let new_borrow = *elem << borrow_shift;
+            *elem = (*elem >> shift) | borrow;
+            borrow = new_borrow;
+        }
+    }
+}
+
 macro_rules! impl_shift {
     (@ref $Shx:ident :: $shx:ident, $ShxAssign:ident :: $shx_assign:ident, $rhs:ty) => {
         impl<'b> $Shx<&'b $rhs> for BigUint {
@@ -162,8 +198,7 @@ macro_rules! impl_shift {
         impl ShrAssign<$rhs> for BigUint {
             #[inline]
             fn shr_assign(&mut self, rhs: $rhs) {
-                let n = mem::replace(self, BigUint::zero());
-                *self = n >> rhs;
+                biguint_shr_mut(self, rhs)
             }
         }
         impl_shift! { @ref Shr::shr, ShrAssign::shr_assign, $rhs }
