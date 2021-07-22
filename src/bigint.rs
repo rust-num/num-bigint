@@ -303,6 +303,7 @@ enum CheckedUnsignedAbs<T> {
     Negative(T),
 }
 use self::CheckedUnsignedAbs::{Negative, Positive};
+use crate::{U32DigitsBe, U64DigitsBe};
 
 macro_rules! impl_unsigned_abs {
     ($Signed:ty, $Unsigned:ty) => {
@@ -823,6 +824,45 @@ impl BigInt {
     #[inline]
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
         self.data.iter_u64_digits()
+    }
+
+    /// Returns an iterator of `u32` digits representation of the `BigInt` ordered most
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigInt;
+    ///
+    /// assert_eq!(BigInt::from(-1125).iter_u32_digits().collect::<Vec<u32>>(), vec![1125]);
+    /// assert_eq!(BigInt::from(4294967295u32).iter_u32_digits().collect::<Vec<u32>>(), vec![4294967295]);
+    /// assert_eq!(BigInt::from(4294967296u64).iter_u32_digits().collect::<Vec<u32>>(), vec![1, 0]);
+    /// assert_eq!(BigInt::from(-112500000000i64).iter_u32_digits().collect::<Vec<u32>>(), vec![26, 830850304]);
+    /// assert_eq!(BigInt::from(112500000000i64).iter_u32_digits().collect::<Vec<u32>>(), vec![26, 830850304]);
+    /// ```
+    #[inline]
+    pub fn iter_u32_digits_be(&self) -> U32DigitsBe<'_> {
+        self.data.iter_u32_digits_be()
+    }
+
+    /// Returns an iterator of `u64` digits representation of the `BigInt` ordered most
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigInt;
+    ///
+    /// assert_eq!(BigInt::from(-1125).iter_u64_digits().collect::<Vec<u64>>(), vec![1125u64]);
+    /// assert_eq!(BigInt::from(4294967295u32).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967295u64]);
+    /// assert_eq!(BigInt::from(4294967296u64).iter_u64_digits().collect::<Vec<u64>>(), vec![4294967296u64]);
+    /// assert_eq!(BigInt::from(-112500000000i64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000u64]);
+    /// assert_eq!(BigInt::from(112500000000i64).iter_u64_digits().collect::<Vec<u64>>(), vec![112500000000u64]);
+    /// assert_eq!(BigInt::from(1u128 << 64).iter_u64_digits().collect::<Vec<u64>>(), vec![1, 0]);
+    /// ```
+    #[inline]
+    pub fn iter_u64_digits_be(&self) -> U64DigitsBe<'_> {
+        self.data.iter_u64_digits_be()
     }
 
     /// Returns the two's-complement byte representation of the `BigInt` in big-endian byte order.
