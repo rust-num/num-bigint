@@ -1083,7 +1083,7 @@ fn test_from_slice() {
 fn test_from_slice() {
     fn check(slice: &[u32], data: &[BigDigit]) {
         assert_eq!(
-            BigUint::from_slice(slice).data,
+            BigUint::from_slice(slice).data.as_slice(),
             data,
             "from {:?}, to {:?}",
             slice,
