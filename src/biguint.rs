@@ -30,9 +30,11 @@ mod arbitrary;
 
 #[cfg(feature = "serde")]
 mod serde;
+mod iter_be;
 
 pub(crate) use self::convert::to_str_radix_reversed;
 pub use self::iter::{U32Digits, U64Digits};
+pub use self::iter_be::{U32DigitsBe, U64DigitsBe};
 
 /// A big unsigned integer type.
 pub struct BigUint {
@@ -772,6 +774,43 @@ impl BigUint {
     #[inline]
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
         U64Digits::new(self.data.as_slice())
+    }
+
+    /// Returns an iterator of `u32` digits representation of the `BigUint` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).iter_u32_digits_be().collect::<Vec<u32>>(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).iter_u32_digits_be().collect::<Vec<u32>>(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).iter_u32_digits_be().collect::<Vec<u32>>(), vec![0, 1]);
+    /// assert_eq!(BigUint::from(112500000000u64).iter_u32_digits_be().collect::<Vec<u32>>(), vec![26, 830850304]);
+    /// ```
+    #[inline]
+    pub fn iter_u32_digits_be(&self) -> U32DigitsBe<'_> {
+        U32DigitsBe::new(self.data.as_slice())
+    }
+
+    /// Returns an iterator of `u64` digits representation of the `BigUint` ordered least
+    /// significant digit first.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    ///
+    /// assert_eq!(BigUint::from(1125u32).iter_u64_digits_be().collect::<Vec<u64>>(), vec![1125]);
+    /// assert_eq!(BigUint::from(4294967295u32).iter_u64_digits_be().collect::<Vec<u64>>(), vec![4294967295]);
+    /// assert_eq!(BigUint::from(4294967296u64).iter_u64_digits_be().collect::<Vec<u64>>(), vec![4294967296]);
+    /// assert_eq!(BigUint::from(112500000000u64).iter_u64_digits_be().collect::<Vec<u64>>(), vec![112500000000]);
+    /// assert_eq!(BigUint::from(1u128 << 64).iter_u64_digits_be().collect::<Vec<u64>>(), vec![1, 0]);
+    /// ```
+    #[inline]
+    pub fn iter_u64_digits_be(&self) -> U64DigitsBe<'_> {
+        U64DigitsBe::new(self.data.as_slice())
     }
 
     /// Returns the integer formatted as a string in the given radix.

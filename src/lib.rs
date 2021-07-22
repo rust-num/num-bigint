@@ -231,6 +231,8 @@ pub use crate::biguint::BigUint;
 pub use crate::biguint::ToBigUint;
 pub use crate::biguint::U32Digits;
 pub use crate::biguint::U64Digits;
+pub use crate::biguint::U32DigitsBe;
+pub use crate::biguint::U64DigitsBe;
 
 pub use crate::bigint::BigInt;
 pub use crate::bigint::Sign;
