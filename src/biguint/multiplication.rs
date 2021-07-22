@@ -448,10 +448,11 @@ macro_rules! impl_mul_assign {
                         use crate::big_digit::*;
                         let a = a as DoubleBigDigit;
                         let b = b as DoubleBigDigit;
-                        let (lo, hi) = from_doublebigdigit(a*b);
+                        let (hi, lo) = from_doublebigdigit(a*b);
                         self.data.clear();
                         self.data.push(lo);
                         self.data.push(hi);
+                        self.normalize();
                     },
                     // multiply by a scalar
                     (_, &[digit]) => *self *= digit,

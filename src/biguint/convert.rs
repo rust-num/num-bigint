@@ -505,15 +505,17 @@ impl From<u128> for BigUint {
     #[inline]
     fn from(n: u128) -> Self {
         use smallvec::smallvec;
-        let (lo, hi) = crate::big_digit::from_doublebigdigit(n);
-        if hi == 0 {
+        let (hi, lo) = crate::big_digit::from_doublebigdigit(n);
+        if hi != 0 {
+            BigUint {
+                data: smallvec![lo, hi],
+            }
+        } else if lo != 0 {
             BigUint {
                 data: smallvec![lo],
             }
         } else {
-            BigUint {
-                data: smallvec![lo, hi],
-            }
+            BigUint { data: smallvec![] }
         }
         // let mut ret: BigUint = Zero::zero();
 
