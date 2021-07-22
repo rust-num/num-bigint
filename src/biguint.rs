@@ -46,22 +46,22 @@ pub struct BigUint {
 impl Clone for BigUint {
     #[inline]
     fn clone(&self) -> Self {
-        #[inline(never)]
-        fn cold_clone(a: &BigUint) -> BigUint {
-            BigUint {
-                data: SmallVec::from_slice(&a.data), // This uses memcpy rather than repeated calls to .clone().
-            }
-        }
-        if self.data.spilled() {
-            cold_clone(self)
-        } else {
-            BigUint {
-                data: unsafe { std::ptr::read(&self.data) },
-            }
-        }
-        // BigUint {
-        //     data: SmallVec::from_slice(&self.data), // This uses memcpy rather than repeated calls to .clone().
+        // #[inline(never)]
+        // fn cold_clone(a: &BigUint) -> BigUint {
+        //     BigUint {
+        //         data: SmallVec::from_slice(&a.data), // This uses memcpy rather than repeated calls to .clone().
+        //     }
         // }
+        // if self.data.spilled() {
+        //     cold_clone(self)
+        // } else {
+        //     BigUint {
+        //         data: unsafe { std::ptr::read(&self.data) },
+        //     }
+        // }
+        BigUint {
+            data: SmallVec::from_slice(&self.data), // This uses memcpy rather than repeated calls to .clone().
+        }
     }
 
     #[inline]
