@@ -109,12 +109,14 @@ pub(crate) fn biguint_shr_mut<T: PrimInt>(n: &mut BigUint, shift: T) {
     n.normalize();
 }
 
-fn slice_shr2(data: &mut [BigDigit], digits: usize, shift: u8) {
+fn slice_shr2(mut data: &mut [BigDigit], digits: usize, shift: u8) {
     if digits >= data.len() {
         return;
     }
     if digits > 0 {
+        let len = data.len();
         data.copy_within(digits.., 0);
+        data = &mut data[0..len - digits];
     }
 
     if shift > 0 {
