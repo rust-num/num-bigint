@@ -411,9 +411,7 @@ macro_rules! impl_mul {
                 match (&*self.data, &*other.data) {
                     (&[a], &[b]) => {
                         use crate::big_digit::*;
-                        let a = a as DoubleBigDigit;
-                        let b = b as DoubleBigDigit;
-                        BigUint::from(a*b)
+                        BigUint::from(a as DoubleBigDigit * b as DoubleBigDigit)
                     },
                     // multiply by zero
                     (&[], _) | (_, &[]) => BigUint::zero(),
@@ -446,13 +444,7 @@ macro_rules! impl_mul_assign {
                     // multiply by a scalar
                     (&[a], &[b]) => {
                         use crate::big_digit::*;
-                        let a = a as DoubleBigDigit;
-                        let b = b as DoubleBigDigit;
-                        let (hi, lo) = from_doublebigdigit(a*b);
-                        self.data.clear();
-                        self.data.push(lo);
-                        self.data.push(hi);
-                        self.normalize();
+                        *self = BigUint::from(a as DoubleBigDigit * b as DoubleBigDigit);
                     },
                     // multiply by a scalar
                     (_, &[digit]) => *self *= digit,
