@@ -13,8 +13,8 @@ use rng::get_rng;
 
 fn multiply_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_biguint(xbits);
-    let y = rng.gen_biguint(ybits);
+    let x = rng.gen_bigint(xbits);
+    let y = rng.gen_bigint(ybits);
 
     b.iter(|| &x * &y);
 }
@@ -65,16 +65,6 @@ fn fib2(n: usize) -> BigUint {
         f0 = &f1 - f0;
     }
     f0
-}
-
-#[bench]
-fn multiply_tiny(b: &mut Bencher) {
-    multiply_bench(b, 32, 32);
-}
-
-#[bench]
-fn multiply_small(b: &mut Bencher) {
-    multiply_bench(b, 64, 64);
 }
 
 #[bench]
