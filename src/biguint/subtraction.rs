@@ -117,6 +117,7 @@ impl<'a> Sub<&'a BigUint> for BigUint {
     }
 }
 impl<'a> SubAssign<&'a BigUint> for BigUint {
+    #[inline]
     fn sub_assign(&mut self, other: &'a BigUint) {
         sub2(&mut self.data[..], &other.data[..]);
         self.normalize();

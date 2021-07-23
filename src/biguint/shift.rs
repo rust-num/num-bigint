@@ -93,7 +93,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
 }
 
 use crate::big_digit::BigDigit;
-#[inline(never)]
+#[inline]
 pub(crate) fn biguint_shr_mut<T: PrimInt>(n: &mut BigUint, shift: T) {
     if shift < T::zero() {
         panic!("attempt to shift right with negative");
