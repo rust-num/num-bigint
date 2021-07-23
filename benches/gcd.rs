@@ -22,14 +22,6 @@ fn bench(b: &mut Bencher, bits: u64, gcd: fn(&BigUint, &BigUint) -> BigUint) {
     b.iter(|| gcd(&x, &y));
 }
 
-// fn bench_small(b: &mut Bencher, bits: u64, gcd: fn(&BigIntSmall, &BigIntSmall) -> BigIntSmall) {
-//     let mut rng = get_rng();
-//     let x = rng.gen_bigintsmall(bits);
-//     let y = rng.gen_bigintsmall(bits);
-
-//     b.iter(|| gcd(&x, &y));
-// }
-
 fn euclid(x: &BigUint, y: &BigUint) -> BigUint {
     // Use Euclid's algorithm
     let mut m = x.clone();
@@ -83,8 +75,3 @@ fn gcd_stein_1024(b: &mut Bencher) {
 fn gcd_stein_4096(b: &mut Bencher) {
     bench(b, 4096, BigUint::gcd);
 }
-
-// #[bench]
-// fn gcd_small_0064(b: &mut Bencher) {
-//     bench_small(b, 64, BigIntSmall::gcd);
-// }
