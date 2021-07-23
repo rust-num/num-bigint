@@ -122,7 +122,6 @@ use std::error::Error;
 mod macros;
 
 mod bigint;
-mod bigint_small;
 mod biguint;
 
 #[cfg(feature = "rand")]
@@ -236,7 +235,6 @@ pub use crate::biguint::U64Digits;
 pub use crate::bigint::BigInt;
 pub use crate::bigint::Sign;
 pub use crate::bigint::ToBigInt;
-pub use crate::bigint_small::BigIntSmall;
 
 #[cfg(feature = "rand")]
 pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};

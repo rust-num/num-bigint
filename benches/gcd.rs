@@ -4,7 +4,6 @@
 extern crate test;
 
 use num_bigint::{BigUint, RandBigInt};
-// use num_bigint::BigIntSmall;
 use num_integer::Integer;
 use num_traits::Zero;
 use test::Bencher;
