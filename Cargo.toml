@@ -16,6 +16,7 @@ edition       = "2018"
 
 [features]
 default = ["std"]
+union   = ["smallvec/union"]
 std     = ["num-integer/std", "num-traits/std"]
 
 [package.metadata.docs.rs]
