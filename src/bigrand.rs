@@ -4,7 +4,6 @@ use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
 
 use crate::BigInt;
-use crate::BigIntSmall;
 use crate::BigUint;
 use crate::Sign::*;
 
@@ -22,9 +21,6 @@ pub trait RandBigInt {
 
     /// Generate a random BigInt of the given bit size.
     fn gen_bigint(&mut self, bit_size: u64) -> BigInt;
-
-    // /// Generate a random BigInt of the given bit size.
-    fn gen_bigintsmall(&mut self, bit_size: u64) -> BigIntSmall;
 
     /// Generate a random `BigUint` less than the given bound. Fails
     /// when the bound is zero.
@@ -109,41 +105,6 @@ impl<R: Rng + ?Sized> RandBigInt for R {
                 Minus
             };
             return BigInt::from_biguint(sign, biguint);
-        }
-    }
-
-    fn gen_bigintsmall(&mut self, bit_size: u64) -> BigIntSmall {
-        loop {
-            // Generate a random BigUint...
-            let biguint = self.gen_biguint(bit_size);
-            // ...and then randomly assign it a Sign...
-            let sign = if biguint.is_zero() {
-                // ...except that if the BigUint is zero, we need to try
-                // again with probability 0.5. This is because otherwise,
-                // the probability of generating a zero BigInt would be
-                // double that of any other number.
-                if self.gen() {
-                    continue;
-                } else {
-                    NoSign
-                }
-            } else if self.gen() {
-                Plus
-            } else {
-                Minus
-            };
-            use core::convert::TryInto;
-            match (&biguint).try_into() {
-                Ok(digit) => match sign {
-                    NoSign => return BigIntSmall::zero(),
-                    Plus => return BigIntSmall::PlusSmall(digit),
-                    Minus => return BigIntSmall::MinusSmall(digit),
-                },
-                _ => {
-                    // eprintln!("Failed to convert: {} {}", bit_size, &biguint);
-                    return BigIntSmall::from_biguint(sign, biguint);
-                }
-            }
         }
     }
 
