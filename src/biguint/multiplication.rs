@@ -406,7 +406,7 @@ macro_rules! impl_mul {
         impl<$($a),*> Mul<$Other> for $Self {
             type Output = BigUint;
 
-            #[inline(always)]
+            #[inline]
             fn mul(self, other: $Other) -> BigUint {
                 match (&*self.data, &*other.data) {
                     (&[a], &[b]) => {
