@@ -128,6 +128,14 @@ impl<'a> Sub<BigUint> for &'a BigUint {
     type Output = BigUint;
 
     fn sub(self, mut other: BigUint) -> BigUint {
+        use num_traits::ToPrimitive;
+        if !self.data.spilled() {
+            if let Some(x) = self.to_u64() {
+                if let Some(y) = other.to_u64() {
+                    return BigUint::from(x - y);
+                }
+            }
+        }
         let other_len = other.data.len();
         if other_len < self.data.len() {
             let lo_borrow = __sub2rev(&self.data[..other_len], &mut other.data);

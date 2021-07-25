@@ -47,6 +47,12 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
         panic!("attempt to divide by zero")
     }
 
+    if !a.data.spilled() {
+        if let Some(x) = a.to_u64() {
+            return (BigUint::from(x / b), x % b);
+        }
+    }
+
     let mut rem = 0;
 
     if b <= big_digit::HALF {

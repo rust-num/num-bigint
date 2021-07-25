@@ -891,9 +891,12 @@ impl BigUint {
             let len = self.data.iter().rposition(|&d| d != 0).map_or(0, |i| i + 1);
             self.data.truncate(len);
         }
-        if self.data.len() < self.data.capacity() / 4 {
-            self.data.shrink_to_fit();
-        }
+        // Shrinking hurts performance of many algorithms which do not care about deallocating working memory.
+        // For example, 'to_str_radix' consumes a BigUint by dividing out digits. The possibility of shrinking
+        // the BigUint in the inner loop significantly lowers performance.
+        // if self.data.len() < self.data.capacity() / 4 {
+        //     self.data.shrink_to_fit();
+        // }
     }
 
     /// Returns a normalized `BigUint`.
