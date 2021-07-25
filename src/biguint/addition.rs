@@ -164,7 +164,7 @@ impl Add<u64> for BigUint {
     fn add(mut self, other: u64) -> BigUint {
         use num_traits::ToPrimitive;
         if !self.data.spilled() {
-            if let Some(x) = other.to_u64() {
+            if let Some(x) = self.to_u64() {
                 return BigUint::from(x as u128 + other as u128);
             }
         }
