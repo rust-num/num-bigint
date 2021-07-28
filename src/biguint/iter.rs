@@ -85,6 +85,30 @@ impl Iterator for U32Digits<'_> {
 }
 
 #[cfg(u64_digit)]
+impl DoubleEndedIterator for U32Digits<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self.data.split_last() {
+            Some((&last, data)) => {
+                let last_is_lo = self.last_hi_is_zero;
+                self.last_hi_is_zero = !last_is_lo;
+                if last_is_lo {
+                    self.data = data;
+                    if data.is_empty() && !self.next_is_lo {
+                        self.next_is_lo = true;
+                        None
+                    } else {
+                        Some(last as u32)
+                    }
+                } else {
+                    Some((last >> 32) as u32)
+                }
+            }
+            None => None,
+        }
+    }
+}
+
+#[cfg(u64_digit)]
 impl ExactSizeIterator for U32Digits<'_> {
     #[inline]
     fn len(&self) -> usize {
@@ -126,6 +150,13 @@ impl Iterator for U32Digits<'_> {
     #[inline]
     fn count(self) -> usize {
         self.it.count()
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl DoubleEndedIterator for U32Digits<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.it.next_back().copied()
     }
 }
 
@@ -182,6 +213,13 @@ impl Iterator for U64Digits<'_> {
     }
 }
 
+#[cfg(not(u64_digit))]
+impl DoubleEndedIterator for U64Digits<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.it.next_back().map(u32_chunk_to_u64)
+    }
+}
+
 #[cfg(u64_digit)]
 impl<'a> U64Digits<'a> {
     #[inline]
@@ -216,6 +254,13 @@ impl Iterator for U64Digits<'_> {
     #[inline]
     fn count(self) -> usize {
         self.it.count()
+    }
+}
+
+#[cfg(u64_digit)]
+impl DoubleEndedIterator for U64Digits<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.it.next_back().cloned()
     }
 }
 
@@ -266,6 +311,48 @@ fn test_iter_u64_digits() {
     assert_eq!(it.next(), Some(0));
     assert_eq!(it.len(), 1);
     assert_eq!(it.next(), Some(1));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+}
+
+#[test]
+fn test_iter_u32_digits_be() {
+    let n = super::BigUint::from(5u8);
+    let mut it = n.iter_u32_digits();
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(5));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+
+    let n = super::BigUint::from(112500000000u64);
+    let mut it = n.iter_u32_digits();
+    assert_eq!(it.len(), 2);
+    assert_eq!(it.next(), Some(830850304));
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next(), Some(26));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+}
+
+#[test]
+fn test_iter_u64_digits_be() {
+    let n = super::BigUint::from(5u8);
+    let mut it = n.iter_u64_digits();
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next_back(), Some(5));
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+    assert_eq!(it.len(), 0);
+    assert_eq!(it.next(), None);
+
+    let n = super::BigUint::from(18_446_744_073_709_551_616u128);
+    let mut it = n.iter_u64_digits();
+    assert_eq!(it.len(), 2);
+    assert_eq!(it.next_back(), Some(1));
+    assert_eq!(it.len(), 1);
+    assert_eq!(it.next_back(), Some(0));
     assert_eq!(it.len(), 0);
     assert_eq!(it.next(), None);
 }
