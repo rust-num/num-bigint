@@ -29,9 +29,15 @@ macro_rules! impl_mul {
             #[inline]
             fn mul(self, other: $Other) -> BigInt {
                 // automatically match value/ref
+                // from_biguint optimizes poorly if it cannot tell NoSign is impossible.
+                if self.is_zero() || other.is_zero() {
+                    return BigInt::zero();
+                }
+                let new_sign = if (self.sign() == Minus) ^ (other.sign() == Minus) { Minus } else { Plus };
                 let BigInt { data: x, .. } = self;
                 let BigInt { data: y, .. } = other;
-                BigInt::from_biguint(self.sign * other.sign, x * y)
+                BigInt::from_biguint(new_sign, x * y)
+                // BigInt::from_biguint(self.sign * other.sign, x * y)
             }
         }
     )*}

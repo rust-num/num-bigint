@@ -292,3 +292,7 @@ mod big_digit {
         DoubleBigDigit::from(lo) | (DoubleBigDigit::from(hi) << BITS)
     }
 }
+
+pub fn mul_test(a: &BigUint, b: &BigUint) -> BigUint {
+    a * b
+}

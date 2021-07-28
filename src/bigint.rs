@@ -14,6 +14,8 @@ use core::{i64, u64};
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, Signed, Zero};
 
+use smallvec::SmallVec;
+
 use self::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::BigDigit;
@@ -538,7 +540,7 @@ impl IntDigits for BigInt {
         self.data.digits()
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; BigUint::INLINED]> {
         self.data.digits_mut()
     }
     #[inline]

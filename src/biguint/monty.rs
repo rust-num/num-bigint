@@ -6,6 +6,8 @@ use num_traits::{One, Zero};
 use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 use crate::biguint::BigUint;
 
+use smallvec::SmallVec;
+
 struct MontyReducer {
     n0inv: BigDigit,
 }
@@ -75,13 +77,13 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
     }
 
     if c == 0 {
-        z.data = z.data[n..].to_vec();
+        z.data = SmallVec::from_vec(z.data[n..].to_vec());
     } else {
         {
             let (mut first, second) = z.data.split_at_mut(n);
             sub_vv(&mut first, &second, &m.data);
         }
-        z.data = z.data[..n].to_vec();
+        z.data = SmallVec::from_vec(z.data[..n].to_vec());
     }
 
     z

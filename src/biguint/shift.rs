@@ -1,7 +1,9 @@
-use super::{biguint_from_vec, BigUint};
+use super::{biguint_from_smallvec, BigUint};
 
 use crate::big_digit;
-use crate::std_alloc::{Cow, Vec};
+use crate::std_alloc::Cow;
+
+use smallvec::SmallVec;
 
 use core::mem;
 use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
@@ -26,9 +28,9 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         0 => n.into_owned().data,
         _ => {
             let len = digits.saturating_add(n.data.len() + 1);
-            let mut data = Vec::with_capacity(len);
+            let mut data = SmallVec::with_capacity(len);
             data.resize(digits, 0);
-            data.extend(n.data.iter());
+            data.extend(n.data.iter().copied());
             data
         }
     };
@@ -46,7 +48,7 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         }
     }
 
-    biguint_from_vec(data)
+    biguint_from_smallvec(data)
 }
 
 #[inline]
@@ -70,7 +72,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         return n;
     }
     let mut data = match n {
-        Cow::Borrowed(n) => n.data[digits..].to_vec(),
+        Cow::Borrowed(n) => SmallVec::from_slice(&n.data[digits..]),
         Cow::Owned(mut n) => {
             n.data.drain(..digits);
             n.data
@@ -87,7 +89,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         }
     }
 
-    biguint_from_vec(data)
+    biguint_from_smallvec(data)
 }
 
 macro_rules! impl_shift {

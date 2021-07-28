@@ -13,6 +13,8 @@ use core::{u32, u64, u8};
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, ToPrimitive, Unsigned, Zero};
 
+use smallvec::{smallvec, SmallVec};
+
 mod addition;
 mod division;
 mod multiplication;
@@ -36,7 +38,7 @@ pub use self::iter::{U32Digits, U64Digits};
 
 /// A big unsigned integer type.
 pub struct BigUint {
-    data: Vec<BigDigit>,
+    data: SmallVec<[BigDigit; BigUint::INLINED]>,
 }
 
 // Note: derived `Clone` doesn't specialize `clone_from`,
@@ -44,8 +46,21 @@ pub struct BigUint {
 impl Clone for BigUint {
     #[inline]
     fn clone(&self) -> Self {
+        // #[inline(never)]
+        // fn cold_clone(a: &BigUint) -> BigUint {
+        //     BigUint {
+        //         data: SmallVec::from_slice(&a.data), // This uses memcpy rather than repeated calls to .clone().
+        //     }
+        // }
+        // if self.data.spilled() {
+        //     cold_clone(self)
+        // } else {
+        //     BigUint {
+        //         data: unsafe { std::ptr::read(&self.data) },
+        //     }
+        // }
         BigUint {
-            data: self.data.clone(),
+            data: SmallVec::from_slice(&self.data), // This uses memcpy rather than repeated calls to .clone().
         }
     }
 
@@ -146,7 +161,9 @@ impl fmt::Octal for BigUint {
 impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
-        BigUint { data: Vec::new() }
+        BigUint {
+            data: SmallVec::new(),
+        }
     }
 
     #[inline]
@@ -163,7 +180,7 @@ impl Zero for BigUint {
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint { data: vec![1] }
+        BigUint { data: smallvec![1] }
     }
 
     #[inline]
@@ -218,6 +235,17 @@ impl Integer for BigUint {
     /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
+        // use core::convert::TryInto;
+        // if let Some(x) = self.to_u64() {
+        //     if let Some(y) = other.to_u64() {
+        //         return BigUint::from(x.gcd(&y));
+        //     }
+        // }
+        // if let Some(x) = self.to_u128() {
+        //     if let Some(y) = other.to_u128() {
+        //         return BigUint::from(x.gcd(&y));
+        //     }
+        // }
         #[inline]
         fn twos(x: &BigUint) -> u64 {
             x.trailing_zeros().unwrap_or(0)
@@ -512,10 +540,23 @@ pub trait ToBigUint {
 /// The digits are in little-endian base matching `BigDigit`.
 #[inline]
 pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
+    BigUint {
+        data: SmallVec::from_vec(digits),
+    }
+    .normalized()
+}
+
+/// Creates and initializes a `BigUint`.
+///
+/// The digits are in little-endian base matching `BigDigit`.
+#[inline]
+pub(crate) fn biguint_from_smallvec(digits: SmallVec<[BigDigit; BigUint::INLINED]>) -> BigUint {
     BigUint { data: digits }.normalized()
 }
 
 impl BigUint {
+    pub(crate) const INLINED: usize = 2;
+
     /// Creates and initializes a `BigUint`.
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
@@ -850,9 +891,12 @@ impl BigUint {
             let len = self.data.iter().rposition(|&d| d != 0).map_or(0, |i| i + 1);
             self.data.truncate(len);
         }
-        if self.data.len() < self.data.capacity() / 4 {
-            self.data.shrink_to_fit();
-        }
+        // Shrinking hurts performance of many algorithms which do not care about deallocating working memory.
+        // For example, 'to_str_radix' consumes a BigUint by dividing out digits. The possibility of shrinking
+        // the BigUint in the inner loop significantly lowers performance.
+        // if self.data.len() < self.data.capacity() / 4 {
+        //     self.data.shrink_to_fit();
+        // }
     }
 
     /// Returns a normalized `BigUint`.
@@ -958,7 +1002,7 @@ impl BigUint {
 
 pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; BigUint::INLINED]>;
     fn normalize(&mut self);
     fn capacity(&self) -> usize;
     fn len(&self) -> usize;
@@ -970,7 +1014,7 @@ impl IntDigits for BigUint {
         &self.data
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; BigUint::INLINED]> {
         &mut self.data
     }
     #[inline]
@@ -1036,7 +1080,7 @@ fn test_from_slice() {
 fn test_from_slice() {
     fn check(slice: &[u32], data: &[BigDigit]) {
         assert_eq!(
-            BigUint::from_slice(slice).data,
+            BigUint::from_slice(slice).data.as_slice(),
             data,
             "from {:?}, to {:?}",
             slice,
