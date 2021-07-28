@@ -1,4 +1,4 @@
-use super::{biguint_from_smallvec, BigUint};
+use super::{biguint_from_bigdigitvec, BigUint};
 
 use crate::big_digit;
 use crate::std_alloc::Cow;
@@ -48,7 +48,7 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         }
     }
 
-    biguint_from_smallvec(data)
+    biguint_from_bigdigitvec(data)
 }
 
 #[inline]
@@ -89,7 +89,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         }
     }
 
-    biguint_from_smallvec(data)
+    biguint_from_bigdigitvec(data)
 }
 
 use crate::big_digit::BigDigit;

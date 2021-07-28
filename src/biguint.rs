@@ -38,8 +38,10 @@ pub use self::iter::{U32Digits, U64Digits};
 
 /// A big unsigned integer type.
 pub struct BigUint {
-    data: SmallVec<[BigDigit; BigUint::INLINED]>,
+    data: BigDigitVec,
 }
+
+pub(crate) type BigDigitVec = SmallVec<[BigDigit; BigUint::INLINED]>;
 
 // Note: derived `Clone` doesn't specialize `clone_from`,
 // but we want to keep the allocation in `data`.
@@ -550,7 +552,7 @@ pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
 ///
 /// The digits are in little-endian base matching `BigDigit`.
 #[inline]
-pub(crate) fn biguint_from_smallvec(digits: SmallVec<[BigDigit; BigUint::INLINED]>) -> BigUint {
+pub(crate) fn biguint_from_bigdigitvec(digits: BigDigitVec) -> BigUint {
     BigUint { data: digits }.normalized()
 }
 
@@ -1002,7 +1004,7 @@ impl BigUint {
 
 pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
-    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; BigUint::INLINED]>;
+    fn digits_mut(&mut self) -> &mut BigDigitVec;
     fn normalize(&mut self);
     fn capacity(&self) -> usize;
     fn len(&self) -> usize;
@@ -1014,7 +1016,7 @@ impl IntDigits for BigUint {
         &self.data
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut SmallVec<[BigDigit; BigUint::INLINED]> {
+    fn digits_mut(&mut self) -> &mut BigDigitVec {
         &mut self.data
     }
     #[inline]
