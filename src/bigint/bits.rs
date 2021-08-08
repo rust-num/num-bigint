@@ -577,6 +577,7 @@ impl BitAndAssign<u64> for BigInt {
         match self.sign {
             Minus => {
                 bitand_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.sign = Plus;
                 self.normalize();
             }
             NoSign => self.set_zero(),
@@ -597,6 +598,7 @@ impl BitAndAssign<u64> for BigInt {
                     self.digits_mut(),
                     &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Plus;
                 self.normalize();
             }
             NoSign => self.set_zero(),
@@ -626,6 +628,7 @@ impl BitAndAssign<u128> for BigInt {
                     self.digits_mut(),
                     &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Plus;
                 self.normalize();
             }
             NoSign => self.set_zero(),
@@ -651,6 +654,7 @@ impl BitAndAssign<u128> for BigInt {
                         (rhs >> (big_digit::BITS * 3)) as BigDigit,
                     ],
                 );
+                self.sign = Plus;
                 self.normalize();
             }
             NoSign => self.set_zero(),
@@ -698,6 +702,7 @@ impl BitAndAssign<i32> for BigInt {
             },
             (Minus, Plus) => {
                 bitand_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.sign = Plus;
                 self.normalize();
             }
             (Plus, _) => {
@@ -730,6 +735,7 @@ impl BitAndAssign<i64> for BigInt {
             },
             (Minus, Plus) => {
                 bitand_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.sign = Plus;
                 self.normalize();
             }
             (Plus, _) => {
@@ -759,6 +765,7 @@ impl BitAndAssign<i64> for BigInt {
                     self.digits_mut(),
                     &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Plus;
                 self.normalize();
             }
             (Plus, _) => {
@@ -797,6 +804,7 @@ impl BitAndAssign<i128> for BigInt {
                     self.digits_mut(),
                     &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Plus;
                 self.normalize();
             }
             (Plus, _) => {
@@ -836,6 +844,7 @@ impl BitAndAssign<i128> for BigInt {
                         (rhs >> (big_digit::BITS * 3)) as BigDigit,
                     ],
                 );
+                self.sign = Plus;
                 self.normalize();
             }
             (Plus, _) => {
@@ -1011,6 +1020,7 @@ impl BitOrAssign<i32> for BigInt {
             (Plus, Minus) => {
                 let u_rhs = rhs.wrapping_abs() as u32;
                 bitor_pos_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1048,6 +1058,7 @@ impl BitOrAssign<i64> for BigInt {
             (Plus, Minus) => {
                 let u_rhs = rhs.wrapping_abs() as u64;
                 bitor_pos_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1085,6 +1096,7 @@ impl BitOrAssign<i64> for BigInt {
                     self.digits_mut(),
                     &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1131,6 +1143,7 @@ impl BitOrAssign<i128> for BigInt {
                     self.digits_mut(),
                     &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1183,6 +1196,7 @@ impl BitOrAssign<i128> for BigInt {
                         (rhs >> (big_digit::BITS * 3)) as BigDigit,
                     ],
                 );
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1341,6 +1355,7 @@ impl BitXorAssign<i32> for BigInt {
             (Minus, Minus) => {
                 let u_rhs = rhs.wrapping_abs() as u32;
                 bitxor_neg_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.sign = Plus;
                 self.normalize();
             },
             (Minus, Plus) => {
@@ -1354,6 +1369,7 @@ impl BitXorAssign<i32> for BigInt {
             (Plus, Minus) => {
                 let u_rhs = rhs.wrapping_abs() as u32;
                 bitxor_pos_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1378,6 +1394,7 @@ impl BitXorAssign<i64> for BigInt {
             (Minus, Minus) => {
                 let u_rhs = rhs.wrapping_abs() as u64;
                 bitxor_neg_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.sign = Plus;
                 self.normalize();
             },
             (Minus, Plus) => {
@@ -1391,6 +1408,7 @@ impl BitXorAssign<i64> for BigInt {
             (Plus, Minus) => {
                 let u_rhs = rhs.wrapping_abs() as u64;
                 bitxor_pos_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1409,6 +1427,7 @@ impl BitXorAssign<i64> for BigInt {
                     self.digits_mut(),
                     &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Plus;
                 self.normalize();
             },
             (Minus, Plus) => {
@@ -1428,6 +1447,7 @@ impl BitXorAssign<i64> for BigInt {
                     self.digits_mut(),
                     &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1455,6 +1475,7 @@ impl BitXorAssign<i128> for BigInt {
                     self.digits_mut(),
                     &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Plus;
                 self.normalize();
             },
             (Minus, Plus) => {
@@ -1474,6 +1495,7 @@ impl BitXorAssign<i128> for BigInt {
                     self.digits_mut(),
                     &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
                 );
+                self.sign = Minus;
                 self.normalize();
             }
         }
@@ -1497,6 +1519,7 @@ impl BitXorAssign<i128> for BigInt {
                         (rhs >> (big_digit::BITS * 3)) as BigDigit,
                     ],
                 );
+                self.sign = Plus;
                 self.normalize();
             },
             (Minus, Plus) => {
@@ -1526,6 +1549,7 @@ impl BitXorAssign<i128> for BigInt {
                         (rhs >> (big_digit::BITS * 3)) as BigDigit,
                     ],
                 );
+                self.sign = Minus;
                 self.normalize();
             }
         }
