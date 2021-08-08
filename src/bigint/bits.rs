@@ -845,3 +845,346 @@ impl BitAndAssign<i128> for BigInt {
         }
     }
 }
+
+promote_unsigned_scalars!(impl BitOr for BigInt, bitor);
+promote_unsigned_scalars_assign!(impl BitOrAssign for BigInt, bitor_assign);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<u32> for BigInt, bitor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<u64> for BigInt, bitor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<u128> for BigInt, bitor);
+
+impl BitOr<u32> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, rhs: u32) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+impl BitOrAssign<u32> for BigInt {
+    fn bitor_assign(&mut self, rhs: u32) {
+        match self.sign {
+            Minus => {
+                bitor_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.normalize();
+            }
+            NoSign => *self = rhs.into(),
+            Plus => {
+                self.data |= rhs;
+                self.normalize();
+            }
+        }
+    }
+}
+
+impl BitOr<u64> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, rhs: u64) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitOrAssign<u64> for BigInt {
+    fn bitor_assign(&mut self, rhs: u64) {
+        match self.sign {
+            Minus => {
+                bitor_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.normalize();
+            }
+            NoSign => *self = rhs.into(),
+            Plus => {
+                self.data |= rhs;
+                self.normalize();
+            }
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitOrAssign<u64> for BigInt {
+    fn bitor_assign(&mut self, rhs: u64) {
+        match self.sign {
+            Minus => {
+                bitor_neg_pos(
+                    self.digits_mut(),
+                    &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            }
+            NoSign => *self = rhs.into(),
+            Plus => {
+                self.data |= rhs;
+                self.normalize();
+            }
+        }
+    }
+}
+
+impl BitOr<u128> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, rhs: u128) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitOrAssign<u128> for BigInt {
+    fn bitor_assign(&mut self, rhs: u128) {
+        match self.sign {
+            Minus => {
+                bitor_neg_pos(
+                    self.digits_mut(),
+                    &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            }
+            NoSign => *self = rhs.into(),
+            Plus => {
+                self.data |= rhs;
+                self.normalize();
+            }
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitOrAssign<u128> for BigInt {
+    fn bitor_assign(&mut self, rhs: u128) {
+        match self.sign {
+            Minus => {
+                bitor_neg_pos(
+                    self.digits_mut(),
+                    &[
+                        rhs as BigDigit,
+                        (rhs >> big_digit::BITS) as BigDigit,
+                        (rhs >> (big_digit::BITS * 2)) as BigDigit,
+                        (rhs >> (big_digit::BITS * 3)) as BigDigit,
+                    ],
+                );
+                self.normalize();
+            }
+            NoSign => *self = rhs.into(),
+            Plus => {
+                self.data |= rhs;
+                self.normalize();
+            }
+        }
+    }
+}
+
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<i32> for BigInt, bitor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<i64> for BigInt, bitor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<i128> for BigInt, bitor);
+
+impl BitOr<i32> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, rhs: i32) -> Self::Output {
+        self &= rhs;
+        self
+    }
+}
+
+impl BitOrAssign<i32> for BigInt {
+    fn bitor_assign(&mut self, rhs: i32) {
+        match (self.sign, get_sign(&rhs)) {
+            (NoSign, _) => *self = rhs.into(),
+            (_, NoSign) => {}
+            (Minus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u32;
+                bitor_neg_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.normalize();
+            },
+            (Minus, Plus) => {
+                bitor_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.normalize();
+            }
+            (Plus, Plus) => {
+                self.data |= rhs as u32;
+                self.normalize();
+            }
+            (Plus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u32;
+                bitor_pos_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.normalize();
+            }
+        }
+    }
+}
+
+impl BitOr<i64> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, rhs: i64) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitOrAssign<i64> for BigInt {
+    fn bitor_assign(&mut self, rhs: i64) {
+        match (self.sign, get_sign(&rhs)) {
+            (NoSign, _) => *self = rhs.into(),
+            (_, NoSign) => {}
+            (Minus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u64;
+                bitor_neg_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.normalize();
+            },
+            (Minus, Plus) => {
+                bitor_neg_pos(self.digits_mut(), &[rhs as BigDigit]);
+                self.normalize();
+            }
+            (Plus, Plus) => {
+                self.data |= rhs as u64;
+                self.normalize();
+            }
+            (Plus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u64;
+                bitor_pos_neg(self.digits_mut(), &[u_rhs as BigDigit]);
+                self.normalize();
+            }
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitOrAssign<i64> for BigInt {
+    fn bitor_assign(&mut self, rhs: i64) {
+        match (self.sign, get_sign(&rhs)) {
+            (NoSign, _) => *self = rhs.into(),
+            (_, NoSign) => {}
+            (Minus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u64;
+                bitor_neg_neg(
+                    self.digits_mut(),
+                    &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            },
+            (Minus, Plus) => {
+                bitor_neg_pos(
+                    self.digits_mut(),
+                    &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            }
+            (Plus, Plus) => {
+                self.data |= rhs as u64;
+                self.normalize();
+            }
+            (Plus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u64;
+                bitor_pos_neg(
+                    self.digits_mut(),
+                    &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            }
+        }
+    }
+}
+
+impl BitOr<i128> for BigInt {
+    type Output = BigInt;
+
+    fn bitor(mut self, rhs: i128) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitOrAssign<i128> for BigInt {
+    fn bitor_assign(&mut self, rhs: i128) {
+        match (self.sign, get_sign(&rhs)) {
+            (NoSign, _) => *self = rhs.into(),
+            (_, NoSign) => {}
+            (Minus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u128;
+                bitor_neg_neg(
+                    self.digits_mut(),
+                    &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            },
+            (Minus, Plus) => {
+                bitor_neg_pos(
+                    self.digits_mut(),
+                    &[rhs as BigDigit, (rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            }
+            (Plus, Plus) => {
+                self.data |= rhs as u128;
+                self.normalize();
+            }
+            (Plus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u128;
+                bitor_pos_neg(
+                    self.digits_mut(),
+                    &[u_rhs as BigDigit, (u_rhs >> big_digit::BITS) as BigDigit],
+                );
+                self.normalize();
+            }
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitOrAssign<i128> for BigInt {
+    fn bitor_assign(&mut self, rhs: i128) {
+        match (self.sign, get_sign(&rhs)) {
+            (NoSign, _) => *self = rhs.into(),
+            (_, NoSign) => {}
+            (Minus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u128;
+                bitor_neg_neg(
+                    self.digits_mut(),
+                    &[
+                        rhs as BigDigit,
+                        (rhs >> big_digit::BITS) as BigDigit,
+                        (rhs >> (big_digit::BITS * 2)) as BigDigit,
+                        (rhs >> (big_digit::BITS * 3)) as BigDigit,
+                    ],
+                );
+                self.normalize();
+            },
+            (Minus, Plus) => {
+                bitor_neg_pos(
+                    self.digits_mut(),
+                    &[
+                        rhs as BigDigit,
+                        (rhs >> big_digit::BITS) as BigDigit,
+                        (rhs >> (big_digit::BITS * 2)) as BigDigit,
+                        (rhs >> (big_digit::BITS * 3)) as BigDigit,
+                    ],
+                );
+                self.normalize();
+            }
+            (Plus, Plus) => {
+                self.data |= rhs as u128;
+                self.normalize();
+            }
+            (Plus, Minus) => {
+                let u_rhs = rhs.wrapping_abs() as u128;
+                bitor_pos_neg(
+                    self.digits_mut(),
+                    &[
+                        rhs as BigDigit,
+                        (rhs >> big_digit::BITS) as BigDigit,
+                        (rhs >> (big_digit::BITS * 2)) as BigDigit,
+                        (rhs >> (big_digit::BITS * 3)) as BigDigit,
+                    ],
+                );
+                self.normalize();
+            }
+        }
+    }
+}
