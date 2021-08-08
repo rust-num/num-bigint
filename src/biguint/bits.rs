@@ -318,3 +318,130 @@ impl BitAndAssign<i128> for BigUint {
         }
     }
 }
+
+// Implementation note: Bitwise or (and xor) are not implemented for signed
+// types because there is no reasonable value for the result to be if rhs is
+// negative.
+
+promote_unsigned_scalars!(impl BitOr for BigUint, bitor);
+promote_unsigned_scalars_assign!(impl BitOrAssign for BigUint, bitor_assign);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<u32> for BigUint, bitor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<u64> for BigUint, bitor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitOr<u128> for BigUint, bitor);
+
+impl BitOr<u32> for BigUint {
+    type Output = BigUint;
+
+    fn bitor(mut self, rhs: u32) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+impl BitOrAssign<u32> for BigUint {
+    fn bitor_assign(&mut self, rhs: u32) {
+        if !self.is_zero() {
+            self.data[0] |= rhs as BigDigit;
+        } else {
+            *self = rhs.into();
+        }
+    }
+}
+
+impl BitOr<u64> for BigUint {
+    type Output = BigUint;
+
+    fn bitor(mut self, rhs: u64) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitOrAssign<u64> for BigUint {
+    fn bitor_assign(&mut self, rhs: u64) {
+        if !self.is_zero() {
+            self.data[0] |= rhs;
+        } else {
+            self.data.push(rhs);
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitOrAssign<u64> for BigUint {
+    fn bitor_assign(&mut self, rhs: u64) {
+        match self.data.len() {
+            0 => *self = rhs.into(),
+            1 => {
+                self.data[0] |= rhs as BigDigit;
+                if rhs > big_digit::MAX {
+                    self.data.push((rhs >> big_digit::BITS) as BigDigit);
+                }
+            }
+            _ => {
+                self.data[0] |= rhs as BigDigit;
+                self.data[1] |= (rhs >> big_digit::BITS) as u32;
+            }
+        }
+    }
+}
+
+impl BitOr<u128> for BigUint {
+    type Output = BigUint;
+
+    fn bitor(mut self, rhs: u128) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitOrAssign<u128> for BigUint {
+    fn bitor_assign(&mut self, rhs: u128) {
+        if !self.is_zero() {
+            self.data[0] |= rhs as BigDigit;
+            if self.data.len() > 1 {
+                self.data[1] |= (rhs >> big_digit::BITS) as BigDigit;
+            } else if rhs > big_digit::MAX as u128 {
+                self.data.push((rhs >> big_digit::BITS) as BigDigit);
+            }
+        } else {
+            *self = rhs.into();
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitOrAssign<u128> for BigUint {
+    fn bitor_assign(&mut self, rhs: u128) {
+        let [a, b, c, d] = rhs.into();
+        match self.data.len() {
+            0 => *self = rhs.into(),
+            1 => {
+                self.data[0] &= rhs as BigDigit;
+                self.data.push( (rhs >> big_digit::BITS) as BigDigit);
+                self.data.push( (rhs >> (big_digit::BITS * 2)) as BigDigit);
+                self.data.push( (rhs >> (big_digit::BITS * 3)) as BigDigit);
+            }
+            2 => {
+                self.data[0] &= rhs as BigDigit;
+                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
+                self.data.push( (rhs >> (big_digit::BITS * 2)) as BigDigit);
+                self.data.push( (rhs >> (big_digit::BITS * 3)) as BigDigit);
+            }
+            3 => {
+                self.data[0] &= rhs as BigDigit;
+                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
+                self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
+                self.data.push( (rhs >> (big_digit::BITS * 3)) as BigDigit);
+            }
+            _ => {
+                self.data[0] &= rhs as BigDigit;
+                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
+                self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
+                self.data[3] &= (rhs >> (big_digit::BITS * 3)) as BigDigit;
+            }
+        }
+    }
+}
