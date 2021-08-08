@@ -460,3 +460,126 @@ impl BitOrAssign<u128> for BigUint {
         }
     }
 }
+
+promote_unsigned_scalars!(impl BitXor for BigUint, bitxor);
+promote_unsigned_scalars_assign!(impl BitXorAssign for BigUint, bitxor_assign);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitXor<u32> for BigUint, bitxor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitXor<u64> for BigUint, bitxor);
+forward_all_scalar_binop_to_val_val_commutative!(impl BitXor<u128> for BigUint, bitxor);
+
+impl BitXor<u32> for BigUint {
+    type Output = BigUint;
+
+    fn bitxor(mut self, rhs: u32) -> Self::Output {
+        self ^= rhs;
+        self
+    }
+}
+
+impl BitXorAssign<u32> for BigUint {
+    fn bitxor_assign(&mut self, rhs: u32) {
+        if !self.is_zero() {
+            self.data[0] ^= rhs as BigDigit;
+        } else {
+            *self = rhs.into();
+        }
+    }
+}
+
+impl BitXor<u64> for BigUint {
+    type Output = BigUint;
+
+    fn bitxor(mut self, rhs: u64) -> Self::Output {
+        self ^= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitXorAssign<u64> for BigUint {
+    fn bitxor_assign(&mut self, rhs: u64) {
+        if !self.is_zero() {
+            self.data[0] ^= rhs;
+        } else {
+            self.data.push(rhs);
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitXorAssign<u64> for BigUint {
+    fn bitxor_assign(&mut self, rhs: u64) {
+        match self.data.len() {
+            0 => *self = rhs.into(),
+            1 => {
+                self.data[0] ^= rhs as BigDigit;
+                if rhs > big_digit::MAX {
+                    self.data.push((rhs >> big_digit::BITS) as BigDigit);
+                }
+            }
+            _ => {
+                self.data[0] ^= rhs as BigDigit;
+                self.data[1] ^= (rhs >> big_digit::BITS) as u32;
+            }
+        }
+    }
+}
+
+impl BitXor<u128> for BigUint {
+    type Output = BigUint;
+
+    fn bitxor(mut self, rhs: u128) -> Self::Output {
+        self ^= rhs;
+        self
+    }
+}
+
+#[cfg(u64_digit)]
+impl BitXorAssign<u128> for BigUint {
+    fn bitxor_assign(&mut self, rhs: u128) {
+        if !self.is_zero() {
+            self.data[0] ^= rhs as BigDigit;
+            if self.data.len() > 1 {
+                self.data[1] ^= (rhs >> big_digit::BITS) as BigDigit;
+            } else if rhs > big_digit::MAX as u128 {
+                self.data.push((rhs >> big_digit::BITS) as BigDigit);
+            }
+        } else {
+            *self = rhs.into();
+        }
+    }
+}
+
+#[cfg(not(u64_digit))]
+impl BitXorAssign<u128> for BigUint {
+    fn bitxor_assign(&mut self, rhs: u128) {
+        let a = rhs as BigDigit;
+        let b = (rhs >> big_digit::BITS) as BigDigit;
+        let c = (rhs >> (big_digit::BITS * 2)) as BigDigit;
+        let d = (rhs >> (big_digit::BITS * 2)) as BigDigit;
+        match self.data.len() {
+            0 => *self = rhs.into(),
+            1 => {
+                self.data[0] ^= a;
+                push_nonzero(&mut self.data, &[b, c, d]);
+            }
+            2 => {
+                self.data[0] ^= a;
+                self.data[1] ^= b;
+                push_nonzero(&mut self.data, &[c, d]);
+            }
+            3 => {
+                self.data[0] ^= a;
+                self.data[1] ^= b;
+                self.data[2] ^= c;
+                push_nonzero(&mut self.data, &[d]);
+            }
+            _ => {
+                self.data[0] ^= a;
+                self.data[1] ^= b;
+                self.data[2] ^= c;
+                self.data[3] ^= d;
+            }
+        }
+    }
+}
