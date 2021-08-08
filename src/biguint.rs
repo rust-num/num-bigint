@@ -954,6 +954,40 @@ impl BigUint {
             self.normalize();
         }
     }
+
+    /// Returns `true` if and only if `self == 2^k` for some `k`.
+    pub fn is_power_of_two(&self) -> bool {
+        self.count_ones() == 1
+    }
+
+    /// Returns the smallest power of two greater than or equal to `self`.
+    pub fn next_power_of_two(mut self) -> BigUint {
+        match self.data.len() {
+            0 => BigUint::one(),
+            1 => {
+                match self.data[0].checked_next_power_of_two() {
+                    Option::Some(x) => self.data[0] = x,
+                    Option::None => {
+                        self.data[0] = 0;
+                        self.data.push(1);
+                    }
+                }
+                self
+            }
+            i => {
+                match self.data[i - 1].checked_next_power_of_two() {
+                    Option::Some(x) => self.data[i - 1] = x,
+                    Option::None => {
+                        self.data[i - 1] = 0;
+                        self.data.push(1);
+                    }
+                }
+                // Note: When we bump the MSRV to >= 1.50.0, we can replace this with slice::fill
+                self.data[..i - 1].iter_mut().for_each(|x| *x = 0);
+                self
+            }
+        }
+    }
 }
 
 pub(crate) trait IntDigits {
