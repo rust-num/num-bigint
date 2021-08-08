@@ -176,3 +176,18 @@ fn test_bitwise_i64() {
         }
     }
 }
+
+#[test]
+fn test_bitwise_primitive() {
+    for &prim_a in I64_VALUES.iter() {
+        let a = prim_a.to_bigint().unwrap();
+        for &prim_b in I64_VALUES.iter() {
+            let and = (prim_a & prim_b).to_bigint().unwrap();
+            let or = (prim_a | prim_b).to_bigint().unwrap();
+            let xor = (prim_a ^ prim_b).to_bigint().unwrap();
+            assert_eq!(a.clone() & prim_b, and, "{:x} & {:x}", a, prim_b.to_bigint().unwrap());
+            assert_eq!(a.clone() | prim_b, or, "{:x} | {:x}", a, prim_b.to_bigint().unwrap());
+            assert_eq!(a.clone() ^ prim_b, xor, "{:x} ^ {:x}", a, prim_b.to_bigint().unwrap());
+        }
+    }
+}
