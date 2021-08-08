@@ -3,6 +3,9 @@ use super::{BigUint, IntDigits};
 use crate::big_digit::{self, BigDigit};
 use crate::{IsizePromotion, UsizePromotion};
 
+#[cfg(not(u64_digit))]
+use crate::std_alloc::Vec;
+
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
 use num_traits::Zero;
 
@@ -412,35 +415,47 @@ impl BitOrAssign<u128> for BigUint {
     }
 }
 
+#[inline]
+#[cfg(not(u64_digit))]
+fn push_nonzero<T: Zero + Copy>(data: &mut Vec<T>, to_add: &[T]) {
+    for i in to_add {
+        if i.is_zero() {
+            return;
+        } else {
+            data.push(*i);
+        }
+    }
+}
+
 #[cfg(not(u64_digit))]
 impl BitOrAssign<u128> for BigUint {
     fn bitor_assign(&mut self, rhs: u128) {
-        let [a, b, c, d] = rhs.into();
+        let a = rhs as BigDigit;
+        let b = (rhs >> big_digit::BITS) as BigDigit;
+        let c = (rhs >> (big_digit::BITS * 2)) as BigDigit;
+        let d = (rhs >> (big_digit::BITS * 2)) as BigDigit;
         match self.data.len() {
             0 => *self = rhs.into(),
             1 => {
-                self.data[0] &= rhs as BigDigit;
-                self.data.push( (rhs >> big_digit::BITS) as BigDigit);
-                self.data.push( (rhs >> (big_digit::BITS * 2)) as BigDigit);
-                self.data.push( (rhs >> (big_digit::BITS * 3)) as BigDigit);
+                self.data[0] &= a;
+                push_nonzero(&mut self.data, &[b, c, d]);
             }
             2 => {
-                self.data[0] &= rhs as BigDigit;
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                self.data.push( (rhs >> (big_digit::BITS * 2)) as BigDigit);
-                self.data.push( (rhs >> (big_digit::BITS * 3)) as BigDigit);
+                self.data[0] &= a;
+                self.data[1] &= b;
+                push_nonzero(&mut self.data, &[c, d]);
             }
             3 => {
-                self.data[0] &= rhs as BigDigit;
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
-                self.data.push( (rhs >> (big_digit::BITS * 3)) as BigDigit);
+                self.data[0] &= a;
+                self.data[1] &= b;
+                self.data[2] &= c;
+                push_nonzero(&mut self.data, &[d]);
             }
             _ => {
-                self.data[0] &= rhs as BigDigit;
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
-                self.data[3] &= (rhs >> (big_digit::BITS * 3)) as BigDigit;
+                self.data[0] &= a;
+                self.data[1] &= b;
+                self.data[2] &= c;
+                self.data[3] &= d;
             }
         }
     }
