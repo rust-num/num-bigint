@@ -4,7 +4,7 @@ use crate::std_alloc::{String, Vec};
 use core::cmp;
 use core::cmp::Ordering;
 use core::default::Default;
-use core::fmt;
+use core::fmt::{self, Write};
 use core::hash;
 use core::mem;
 use core::str;
@@ -141,6 +141,72 @@ impl fmt::Octal for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0o", &self.to_str_radix(8))
     }
+}
+
+impl fmt::LowerExp for BigUint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Option::Some(small) = self.to_u64() {
+            fmt::LowerExp::fmt(&small, f)
+        } else {
+            // The max digits that can fit into a f64, which ensures
+            // that printing won't have rounding errors.
+            const MAX_FLOAT_DIGITS: usize = 14;
+            if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
+                let as_f64 = self.to_f64().unwrap();
+                if as_f64.is_finite() {
+                    fmt::LowerExp::fmt(&as_f64, f)
+                } else {
+                    fmt_exp_slow(self, f, false)
+                }
+            } else {
+                fmt_exp_slow(self, f, false)
+            }
+        }
+    }
+}
+
+impl fmt::UpperExp for BigUint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Option::Some(small) = self.to_u64() {
+            fmt::UpperExp::fmt(&small, f)
+        } else {
+            // The max digits that can fit into a f64, which ensures
+            // that printing won't have rounding errors.
+            const MAX_FLOAT_DIGITS: usize = 14;
+            if f.precision().filter(|&x| x < MAX_FLOAT_DIGITS).is_some() {
+                let as_f64 = self.to_f64().unwrap();
+                if as_f64.is_finite() {
+                    fmt::UpperExp::fmt(&as_f64, f)
+                } else {
+                    fmt_exp_slow(self, f, true)
+                }
+            } else {
+                fmt_exp_slow(self, f, true)
+            }
+        }
+    }
+}
+
+fn fmt_exp_slow(x: &BigUint, f: &mut fmt::Formatter<'_>, upper: bool) -> fmt::Result {
+    let precision = f.precision().unwrap_or(16);
+    let digits = to_str_radix_reversed(x, 10);
+    let mut buffer = String::with_capacity(precision + 5);
+    debug_assert!(digits.len() > 1, "Values with fewer digits should use direct formatting");
+    let mut iter = digits.iter().rev();
+    buffer.push(*iter.next().unwrap() as char);
+    buffer.push('.');
+    for &ch in iter.take(precision) {
+        buffer.push(ch as char);
+    }
+    // Add trailing zeroes when explicit precision given
+    if f.precision().is_some() {
+        for _ in 0..precision.saturating_sub(digits.len() - 1) {
+            buffer.push('0');
+        }
+    }
+    buffer.push(if upper { 'E' } else { 'e' });
+    write!(buffer, "{}", digits.len() - 1)?;
+    f.pad_integral(true, "", &buffer)
 }
 
 impl Zero for BigUint {
