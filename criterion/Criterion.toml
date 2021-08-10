@@ -1,0 +1,3 @@
+output_format = "quiet"
+plotting_backend = "disabled"
+
