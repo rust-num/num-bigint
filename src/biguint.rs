@@ -33,6 +33,7 @@ mod serde;
 
 pub(crate) use self::convert::to_str_radix_reversed;
 pub use self::iter::{U32Digits, U64Digits};
+use crate::Sign;
 
 /// A big unsigned integer type.
 pub struct BigUint {
@@ -156,10 +157,10 @@ impl fmt::LowerExp for BigUint {
                 if as_f64.is_finite() {
                     fmt::LowerExp::fmt(&as_f64, f)
                 } else {
-                    fmt_exp_slow(self, f, false)
+                    fmt_exp_slow(self, f, false, true)
                 }
             } else {
-                fmt_exp_slow(self, f, false)
+                fmt_exp_slow(self, f, false, true)
             }
         }
     }
@@ -178,16 +179,16 @@ impl fmt::UpperExp for BigUint {
                 if as_f64.is_finite() {
                     fmt::UpperExp::fmt(&as_f64, f)
                 } else {
-                    fmt_exp_slow(self, f, true)
+                    fmt_exp_slow(self, f, true, true)
                 }
             } else {
-                fmt_exp_slow(self, f, true)
+                fmt_exp_slow(self, f, true, true)
             }
         }
     }
 }
 
-fn fmt_exp_slow(x: &BigUint, f: &mut fmt::Formatter<'_>, upper: bool) -> fmt::Result {
+pub(crate) fn fmt_exp_slow(x: &BigUint, f: &mut fmt::Formatter<'_>, upper: bool, is_nonneg: bool) -> fmt::Result {
     let precision = f.precision().unwrap_or(16);
     let digits = to_str_radix_reversed(x, 10);
     let mut buffer = String::with_capacity(precision + 5);
@@ -206,7 +207,7 @@ fn fmt_exp_slow(x: &BigUint, f: &mut fmt::Formatter<'_>, upper: bool) -> fmt::Re
     }
     buffer.push(if upper { 'E' } else { 'e' });
     write!(buffer, "{}", digits.len() - 1)?;
-    f.pad_integral(true, "", &buffer)
+    f.pad_integral(is_nonneg, "", &buffer)
 }
 
 impl Zero for BigUint {

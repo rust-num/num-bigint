@@ -12,12 +12,12 @@ use core::{i128, u128};
 use core::{i64, u64};
 
 use num_integer::{Integer, Roots};
-use num_traits::{Num, One, Pow, Signed, Zero};
+use num_traits::{Num, One, Pow, Signed, Zero, ToPrimitive};
 
 use self::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::BigDigit;
-use crate::biguint::to_str_radix_reversed;
+use crate::biguint::{to_str_radix_reversed, fmt_exp_slow};
 use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
 
 mod addition;
@@ -171,6 +171,50 @@ impl fmt::UpperHex for BigInt {
         let mut s = self.data.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(!self.is_negative(), "0x", &s)
+    }
+}
+
+impl fmt::LowerExp for BigInt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Option::Some(small) = self.to_u64() {
+            fmt::LowerExp::fmt(&small, f)
+        } else {
+            // The max digits that can fit into a f64, which ensures
+            // that printing won't have rounding errors.
+            const MAX_FLOAT_DIGITS: usize = 14;
+            if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
+                let as_f64 = self.to_f64().unwrap();
+                if as_f64.is_finite() {
+                    fmt::LowerExp::fmt(&as_f64, f)
+                } else {
+                    fmt_exp_slow(self.magnitude(), f, false, !self.is_negative())
+                }
+            } else {
+                fmt_exp_slow(self.magnitude(), f, false, !self.is_negative())
+            }
+        }
+    }
+}
+
+impl fmt::UpperExp for BigInt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Option::Some(small) = self.to_i64() {
+            fmt::UpperExp::fmt(&small, f)
+        } else {
+            // The max digits that can fit into a f64, which ensures
+            // that printing won't have rounding errors.
+            const MAX_FLOAT_DIGITS: usize = 14;
+            if f.precision().filter(|&x| x < MAX_FLOAT_DIGITS).is_some() {
+                let as_f64 = self.to_f64().unwrap();
+                if as_f64.is_finite() {
+                    fmt::UpperExp::fmt(&as_f64, f)
+                } else {
+                    fmt_exp_slow(self.magnitude(), f, true, !self.is_negative())
+                }
+            } else {
+                fmt_exp_slow(self.magnitude(), f, true, !self.is_negative())
+            }
+        }
     }
 }
 
