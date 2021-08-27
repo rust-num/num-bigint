@@ -37,6 +37,9 @@ if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"
 fi
 
+# arbitrary 1.0.1 added const-generic arrays, which requires Rust 1.51
+check_version 1.51.0 || cargo update -p arbitrary --precise 1.0.0
+
 set -x
 
 # test the default with std
