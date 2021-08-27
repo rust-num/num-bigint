@@ -1,7 +1,7 @@
 use super::addition::__add2;
 #[cfg(not(u64_digit))]
 use super::u32_to_u128;
-use super::BigUint;
+use super::{cmp_slice, BigUint};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::UsizePromotion;
@@ -153,14 +153,14 @@ fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     //
     let shift = d.data.last().unwrap().leading_zeros() as usize;
 
-    let (q, r) = if shift == 0 {
+    if shift == 0 {
         // no need to clone d
-        div_rem_core(u, &d)
+        div_rem_core(u, &d.data)
     } else {
-        div_rem_core(u << shift, &(d << shift))
-    };
-    // renormalize the remainder
-    (q, r >> shift)
+        let (q, r) = div_rem_core(u << shift, &(d << shift).data);
+        // renormalize the remainder
+        (q, r >> shift)
+    }
 }
 
 pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
@@ -195,24 +195,21 @@ pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     //
     let shift = d.data.last().unwrap().leading_zeros() as usize;
 
-    let (q, r) = if shift == 0 {
+    if shift == 0 {
         // no need to clone d
-        div_rem_core(u.clone(), d)
+        div_rem_core(u.clone(), &d.data)
     } else {
-        div_rem_core(u << shift, &(d << shift))
-    };
-    // renormalize the remainder
-    (q, r >> shift)
+        let (q, r) = div_rem_core(u << shift, &(d << shift).data);
+        // renormalize the remainder
+        (q, r >> shift)
+    }
 }
 
 /// An implementation of the base division algorithm.
 /// Knuth, TAOCP vol 2 section 4.3.1, algorithm D, with an improvement from exercises 19-21.
-fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
-    debug_assert!(
-        a.data.len() >= b.data.len()
-            && b.data.len() > 1
-            && b.data.last().unwrap().leading_zeros() == 0
-    );
+fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
+    debug_assert!(a.data.len() >= b.len() && b.len() > 1);
+    debug_assert!(b.last().unwrap().leading_zeros() == 0);
 
     // The algorithm works by incrementally calculating "guesses", q0, for the next digit of the
     // quotient. Once we have any number q0 such that (q0 << j) * b <= a, we can set
@@ -235,16 +232,16 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
     let mut a0 = 0;
 
     // [b1, b0] are the two most significant digits of the divisor. They never change.
-    let b0 = *b.data.last().unwrap();
-    let b1 = b.data[b.data.len() - 2];
+    let b0 = *b.last().unwrap();
+    let b1 = b[b.len() - 2];
 
-    let q_len = a.data.len() - b.data.len() + 1;
+    let q_len = a.data.len() - b.len() + 1;
     let mut q = BigUint {
         data: vec![0; q_len],
     };
 
     for j in (0..q_len).rev() {
-        debug_assert!(a.data.len() == b.data.len() + j);
+        debug_assert!(a.data.len() == b.len() + j);
 
         let a1 = *a.data.last().unwrap();
         let a2 = a.data[a.data.len() - 2];
@@ -280,11 +277,11 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
         // q0 is now either the correct quotient digit, or in rare cases 1 too large.
         // Subtract (q0 << j) from a. This may overflow, in which case we will have to correct.
 
-        let mut borrow = sub_mul_digit_same_len(&mut a.data[j..], &b.data, q0);
+        let mut borrow = sub_mul_digit_same_len(&mut a.data[j..], b, q0);
         if borrow > a0 {
             // q0 is too large. We need to add back one multiple of b.
             q0 -= 1;
-            borrow -= __add2(&mut a.data[j..], &b.data);
+            borrow -= __add2(&mut a.data[j..], b);
         }
         // The top digit of a, stored in a0, has now been zeroed.
         debug_assert!(borrow == a0);
@@ -298,7 +295,7 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
     a.data.push(a0);
     a.normalize();
 
-    debug_assert!(a < *b);
+    debug_assert_eq!(cmp_slice(&a.data, b), Less);
 
     (q.normalized(), a)
 }

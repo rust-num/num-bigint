@@ -1601,6 +1601,16 @@ fn test_all_str_radix() {
 }
 
 #[test]
+fn test_big_str() {
+    for n in 2..=20_u32 {
+        let x: BigUint = BigUint::from(n).pow(10_000_u32);
+        let s = x.to_string();
+        let y: BigUint = s.parse().unwrap();
+        assert_eq!(x, y);
+    }
+}
+
+#[test]
 fn test_lower_hex() {
     let a = BigUint::parse_bytes(b"A", 16).unwrap();
     let hello = BigUint::parse_bytes(b"22405534230753963835153736737", 10).unwrap();
