@@ -98,6 +98,8 @@ mod std_alloc {
     #[cfg(any(feature = "quickcheck"))]
     pub(crate) use std::boxed::Box;
     pub(crate) use std::string::String;
+    #[cfg(not(feature = "smallvec"))]
+    pub(crate) use std::vec;
     pub(crate) use std::vec::Vec;
 }
 
@@ -111,12 +113,59 @@ mod std_alloc {
     #[cfg(any(feature = "quickcheck"))]
     pub(crate) use alloc::boxed::Box;
     pub(crate) use alloc::string::String;
+    #[cfg(not(feature = "smallvec"))]
+    pub(crate) use alloc::vec;
     pub(crate) use alloc::vec::Vec;
 }
 
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error::Error;
+
+#[cfg(feature = "smallvec")]
+mod backend {
+
+    const INLINED: usize = 2;
+
+    pub(crate) use smallvec::{smallvec as vec, SmallVec};
+    pub(crate) type Vec<T> = SmallVec<[T; INLINED]>;
+
+    pub(crate) fn clone<T: Copy>(vec: &Vec<T>) -> Vec<T> {
+        Vec::from_slice(vec) // This uses memcpy rather than repeated calls to .clone().
+    }
+
+    pub(crate) fn from_slice<T: Copy>(slice: &[T]) -> Vec<T> {
+        Vec::from_slice(slice)
+    }
+
+    pub(crate) fn from_vec<T: Copy>(vec: crate::std_alloc::Vec<T>) -> Vec<T> {
+        Vec::from_vec(vec)
+    }
+
+    pub(crate) fn inlined<T: Copy>(vec: &Vec<T>) -> bool {
+        !vec.spilled()
+    }
+}
+
+#[cfg(not(feature = "smallvec"))]
+mod backend {
+    pub(crate) use crate::std_alloc::{vec, Vec};
+    pub(crate) fn clone<T: Copy>(vec: &Vec<T>) -> Vec<T> {
+        vec.clone()
+    }
+
+    pub(crate) fn from_slice<T: Copy>(slice: &[T]) -> Vec<T> {
+        slice.to_vec()
+    }
+
+    pub(crate) fn from_vec<T: Copy>(vec: Vec<T>) -> Vec<T> {
+        vec
+    }
+
+    pub(crate) fn inlined<T: Copy>(_vec: &Vec<T>) -> bool {
+        false
+    }
+}
 
 #[macro_use]
 mod macros;

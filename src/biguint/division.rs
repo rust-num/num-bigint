@@ -6,7 +6,7 @@ use super::BigUint;
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::UsizePromotion;
 
-use smallvec::smallvec;
+use crate::backend;
 
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
@@ -47,7 +47,7 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
         panic!("attempt to divide by zero")
     }
 
-    if !a.data.spilled() {
+    if backend::inlined(&a.data) {
         if let Some(x) = a.to_u64() {
             return (BigUint::from(x / b), x % b);
         }
@@ -248,7 +248,7 @@ fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
 
     let q_len = a.data.len() - b.data.len() + 1;
     let mut q = BigUint {
-        data: smallvec![0; q_len],
+        data: backend::vec![0; q_len],
     };
 
     for j in (0..q_len).rev() {

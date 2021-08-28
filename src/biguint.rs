@@ -13,7 +13,7 @@ use core::{u32, u64, u8};
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, ToPrimitive, Unsigned, Zero};
 
-use smallvec::{smallvec, SmallVec};
+use crate::backend;
 
 mod addition;
 mod division;
@@ -41,28 +41,15 @@ pub struct BigUint {
     data: BigDigitVec,
 }
 
-pub(crate) type BigDigitVec = SmallVec<[BigDigit; BigUint::INLINED]>;
+pub(crate) type BigDigitVec = backend::Vec<BigDigit>;
 
 // Note: derived `Clone` doesn't specialize `clone_from`,
 // but we want to keep the allocation in `data`.
 impl Clone for BigUint {
     #[inline]
     fn clone(&self) -> Self {
-        // #[inline(never)]
-        // fn cold_clone(a: &BigUint) -> BigUint {
-        //     BigUint {
-        //         data: SmallVec::from_slice(&a.data), // This uses memcpy rather than repeated calls to .clone().
-        //     }
-        // }
-        // if self.data.spilled() {
-        //     cold_clone(self)
-        // } else {
-        //     BigUint {
-        //         data: unsafe { std::ptr::read(&self.data) },
-        //     }
-        // }
         BigUint {
-            data: SmallVec::from_slice(&self.data), // This uses memcpy rather than repeated calls to .clone().
+            data: backend::clone(&self.data),
         }
     }
 
@@ -164,7 +151,7 @@ impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
         BigUint {
-            data: SmallVec::new(),
+            data: backend::Vec::new(),
         }
     }
 
@@ -182,7 +169,9 @@ impl Zero for BigUint {
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint { data: smallvec![1] }
+        BigUint {
+            data: backend::vec![1],
+        }
     }
 
     #[inline]
@@ -543,7 +532,7 @@ pub trait ToBigUint {
 #[inline]
 pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
     BigUint {
-        data: SmallVec::from_vec(digits),
+        data: backend::from_vec(digits),
     }
     .normalized()
 }
@@ -557,8 +546,6 @@ pub(crate) fn biguint_from_bigdigitvec(digits: BigDigitVec) -> BigUint {
 }
 
 impl BigUint {
-    pub(crate) const INLINED: usize = 2;
-
     /// Creates and initializes a `BigUint`.
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.

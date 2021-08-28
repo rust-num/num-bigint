@@ -3,7 +3,7 @@ use super::{biguint_from_bigdigitvec, BigUint};
 use crate::big_digit;
 use crate::std_alloc::Cow;
 
-use smallvec::SmallVec;
+use crate::backend;
 
 use core::mem;
 use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
@@ -28,7 +28,7 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         0 => n.into_owned().data,
         _ => {
             let len = digits.saturating_add(n.data.len() + 1);
-            let mut data = SmallVec::with_capacity(len);
+            let mut data = backend::Vec::with_capacity(len);
             data.resize(digits, 0);
             data.extend(n.data.iter().copied());
             data
@@ -72,7 +72,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         return n;
     }
     let mut data = match n {
-        Cow::Borrowed(n) => SmallVec::from_slice(&n.data[digits..]),
+        Cow::Borrowed(n) => backend::from_slice(&n.data[digits..]),
         Cow::Owned(mut n) => {
             n.data.drain(..digits);
             n.data

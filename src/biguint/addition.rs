@@ -5,6 +5,8 @@ use super::{BigUint, IntDigits};
 use crate::big_digit::{self, BigDigit};
 use crate::UsizePromotion;
 
+use crate::backend;
+
 use core::iter::Sum;
 use core::ops::{Add, AddAssign};
 use num_traits::{CheckedAdd, Zero};
@@ -91,7 +93,7 @@ impl<'a> Add<&'a BigUint> for BigUint {
 
     #[inline]
     fn add(mut self, other: &BigUint) -> BigUint {
-        if !other.data.spilled() {
+        if backend::inlined(&other.data) {
             use num_traits::ToPrimitive;
             if let Some(x) = other.to_u64() {
                 return self + x;
@@ -104,7 +106,7 @@ impl<'a> Add<&'a BigUint> for BigUint {
 impl<'a> AddAssign<&'a BigUint> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: &BigUint) {
-        if !other.data.spilled() {
+        if backend::inlined(&other.data) {
             use num_traits::ToPrimitive;
             if let Some(x) = other.to_u64() {
                 self.add_assign(x);
@@ -163,7 +165,7 @@ impl Add<u64> for BigUint {
     #[inline]
     fn add(mut self, other: u64) -> BigUint {
         use num_traits::ToPrimitive;
-        if !self.data.spilled() {
+        if backend::inlined(&self.data) {
             if let Some(x) = self.to_u64() {
                 return BigUint::from(x as u128 + other as u128);
             }

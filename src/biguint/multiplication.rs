@@ -8,7 +8,7 @@ use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::Sign::{self, Minus, NoSign, Plus};
 use crate::{BigInt, UsizePromotion};
 
-use smallvec::smallvec;
+use crate::backend;
 
 use core::cmp::Ordering;
 use core::iter::Product;
@@ -172,7 +172,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
         let len = x1.len() + y1.len();
         let mut p = BigUint {
-            data: smallvec![0; len],
+            data: backend::vec![0; len],
         };
 
         // p2 = x1 * y1
@@ -350,7 +350,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
     let len = x.len() + y.len();
     let mut prod = BigUint {
-        data: smallvec![0; len],
+        data: backend::vec![0; len],
     };
 
     mac3(&mut prod.data, x, y);

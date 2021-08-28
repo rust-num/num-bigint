@@ -5,6 +5,8 @@ use super::BigUint;
 use crate::big_digit::{self, BigDigit};
 use crate::UsizePromotion;
 
+use crate::backend;
+
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::ops::{Sub, SubAssign};
 use num_traits::{CheckedSub, Zero};
@@ -129,7 +131,7 @@ impl<'a> Sub<BigUint> for &'a BigUint {
 
     fn sub(self, mut other: BigUint) -> BigUint {
         use num_traits::ToPrimitive;
-        if !self.data.spilled() {
+        if backend::inlined(&self.data) {
             if let Some(x) = self.to_u64() {
                 if let Some(y) = other.to_u64() {
                     return BigUint::from(x - y);

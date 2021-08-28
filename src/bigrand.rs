@@ -8,7 +8,7 @@ use crate::BigInt;
 use crate::BigUint;
 use crate::Sign::*;
 
-use crate::biguint::biguint_from_smallvec;
+use crate::biguint::biguint_from_vec;
 
 use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
@@ -61,20 +61,18 @@ impl<R: Rng + ?Sized> RandBigInt for R {
 
     #[cfg(u64_digit)]
     fn gen_biguint(&mut self, bit_size: u64) -> BigUint {
-        use smallvec::smallvec;
-
         let (digits, rem) = bit_size.div_rem(&64);
         let len = (digits + (rem > 0) as u64)
             .to_usize()
             .expect("capacity overflow");
-        let mut data = smallvec![0u64; len];
+        let mut data = vec![0u64; len];
         gen_bits(self, data.as_mut_slice(), rem);
         #[cfg(target_endian = "big")]
         for digit in &mut data {
             // swap u32 digits into u64 endianness
             *digit = (*digit << 32) | (*digit >> 32);
         }
-        biguint_from_smallvec(data)
+        biguint_from_vec(data)
     }
 
     fn gen_bigint(&mut self, bit_size: u64) -> BigInt {

@@ -16,7 +16,6 @@ edition = "2018"
 
 [features]
 default = ["std"]
-union = ["smallvec/union"]
 std = ["num-integer/std", "num-traits/std"]
 
 [package.metadata.docs.rs]
@@ -39,7 +38,7 @@ harness = false
 name = "shootout-pidigits"
 
 [dependencies]
-smallvec = { version = "1.6.1" }
+smallvec = { version = "1.6.1", optional = true, features = ["union"] }
 
 [dependencies.num-integer]
 version = "0.1.42"
