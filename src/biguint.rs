@@ -988,6 +988,10 @@ impl BigUint {
             }
         }
     }
+
+    pub fn to_next_power_of_two(&self) -> BigUint {
+        self.clone().next_power_of_two()
+    }
 }
 
 pub(crate) trait IntDigits {
