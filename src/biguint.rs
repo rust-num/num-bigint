@@ -8,7 +8,7 @@ use core::fmt::{self, Write};
 use core::hash;
 use core::mem;
 use core::str;
-use core::{u32, u64, u8};
+use core::{u32, u64, u8, f64};
 
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, ToPrimitive, Unsigned, Zero};
