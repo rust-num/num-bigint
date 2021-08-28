@@ -174,35 +174,40 @@ fn fib_to_string(b: &mut Bencher) {
     b.iter(|| fib.to_string());
 }
 
-fn to_str_radix_bench(b: &mut Bencher, radix: u32) {
+fn to_str_radix_bench(b: &mut Bencher, radix: u32, bits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(1009);
+    let x = rng.gen_bigint(bits);
     b.iter(|| x.to_str_radix(radix));
 }
 
 #[bench]
 fn to_str_radix_02(b: &mut Bencher) {
-    to_str_radix_bench(b, 2);
+    to_str_radix_bench(b, 2, 1009);
 }
 
 #[bench]
 fn to_str_radix_08(b: &mut Bencher) {
-    to_str_radix_bench(b, 8);
+    to_str_radix_bench(b, 8, 1009);
 }
 
 #[bench]
 fn to_str_radix_10(b: &mut Bencher) {
-    to_str_radix_bench(b, 10);
+    to_str_radix_bench(b, 10, 1009);
+}
+
+#[bench]
+fn to_str_radix_10_2(b: &mut Bencher) {
+    to_str_radix_bench(b, 10, 10009);
 }
 
 #[bench]
 fn to_str_radix_16(b: &mut Bencher) {
-    to_str_radix_bench(b, 16);
+    to_str_radix_bench(b, 16, 1009);
 }
 
 #[bench]
 fn to_str_radix_36(b: &mut Bencher) {
-    to_str_radix_bench(b, 36);
+    to_str_radix_bench(b, 36, 1009);
 }
 
 fn from_str_radix_bench(b: &mut Bencher, radix: u32) {
