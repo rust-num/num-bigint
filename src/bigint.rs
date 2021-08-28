@@ -12,12 +12,12 @@ use core::{i128, u128};
 use core::{i64, u64};
 
 use num_integer::{Integer, Roots};
-use num_traits::{Num, One, Pow, Signed, Zero, ToPrimitive};
+use num_traits::{Num, One, Pow, Signed, ToPrimitive, Zero};
 
 use self::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::BigDigit;
-use crate::biguint::{to_str_radix_reversed, fmt_exp_slow};
+use crate::biguint::{fmt_exp_slow, to_str_radix_reversed};
 use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
 
 mod addition;
