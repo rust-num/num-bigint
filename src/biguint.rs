@@ -143,49 +143,43 @@ impl fmt::Octal for BigUint {
     }
 }
 
+// When we bump the MSRV to >= 1.42, we can add a fast-path where this fits into a u64.
+
 impl fmt::LowerExp for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Option::Some(small) = self.to_u64() {
-            fmt::LowerExp::fmt(&small, f)
-        } else {
-            // The max digits that can fit into a f64, which ensures
-            // that printing won't have rounding errors.
-            const MAX_FLOAT_DIGITS: usize = 14;
-            if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
-                let as_f64 = self.to_f64().unwrap();
-                if as_f64.is_finite() {
-                    fmt::LowerExp::fmt(&as_f64, f)
-                } else {
-                    fmt_exp_slow(self, f, false, true)
-                }
+        // The max digits that can fit into a f64, which ensures
+        // that printing won't have rounding errors.
+        const MAX_FLOAT_DIGITS: usize = 14;
+        if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
+            let as_f64 = self.to_f64().unwrap();
+            if as_f64.is_finite() {
+                fmt::LowerExp::fmt(&as_f64, f)
             } else {
                 fmt_exp_slow(self, f, false, true)
             }
+        } else {
+            fmt_exp_slow(self, f, false, true)
         }
     }
 }
 
 impl fmt::UpperExp for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Option::Some(small) = self.to_u64() {
-            fmt::UpperExp::fmt(&small, f)
-        } else {
-            // The max digits that can fit into a f64, minus 1 to ensure there
-            // aren't any rounding errors.
-            const MAX_FLOAT_DIGITS: u32 = f64::DIGITS - 1;
-            if f.precision()
-                .filter(|&x| x < (MAX_FLOAT_DIGITS as usize))
-                .is_some()
-            {
-                let as_f64 = self.to_f64().unwrap();
-                if as_f64.is_finite() {
-                    fmt::UpperExp::fmt(&as_f64, f)
-                } else {
-                    fmt_exp_slow(self, f, true, true)
-                }
+        // The max digits that can fit into a f64, minus 1 to ensure there
+        // aren't any rounding errors.
+        const MAX_FLOAT_DIGITS: u32 = f64::DIGITS - 1;
+        if f.precision()
+            .filter(|&x| x < (MAX_FLOAT_DIGITS as usize))
+            .is_some()
+        {
+            let as_f64 = self.to_f64().unwrap();
+            if as_f64.is_finite() {
+                fmt::UpperExp::fmt(&as_f64, f)
             } else {
                 fmt_exp_slow(self, f, true, true)
             }
+        } else {
+            fmt_exp_slow(self, f, true, true)
         }
     }
 }

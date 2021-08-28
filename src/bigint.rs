@@ -174,46 +174,40 @@ impl fmt::UpperHex for BigInt {
     }
 }
 
+// When we bump the MSRV to >= 1.42, we can add a fast-path where this fits into an i64.
+
 impl fmt::LowerExp for BigInt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Option::Some(small) = self.to_u64() {
-            fmt::LowerExp::fmt(&small, f)
-        } else {
-            // The max digits that can fit into a f64, which ensures
-            // that printing won't have rounding errors.
-            const MAX_FLOAT_DIGITS: usize = 14;
-            if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
-                let as_f64 = self.to_f64().unwrap();
-                if as_f64.is_finite() {
-                    fmt::LowerExp::fmt(&as_f64, f)
-                } else {
-                    fmt_exp_slow(self.magnitude(), f, false, !self.is_negative())
-                }
+        // The max digits that can fit into a f64, which ensures
+        // that printing won't have rounding errors.
+        const MAX_FLOAT_DIGITS: usize = 14;
+        if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
+            let as_f64 = self.to_f64().unwrap();
+            if as_f64.is_finite() {
+                fmt::LowerExp::fmt(&as_f64, f)
             } else {
                 fmt_exp_slow(self.magnitude(), f, false, !self.is_negative())
             }
+        } else {
+            fmt_exp_slow(self.magnitude(), f, false, !self.is_negative())
         }
     }
 }
 
 impl fmt::UpperExp for BigInt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Option::Some(small) = self.to_i64() {
-            fmt::UpperExp::fmt(&small, f)
-        } else {
-            // The max digits that can fit into a f64, which ensures
-            // that printing won't have rounding errors.
-            const MAX_FLOAT_DIGITS: usize = 14;
-            if f.precision().filter(|&x| x < MAX_FLOAT_DIGITS).is_some() {
-                let as_f64 = self.to_f64().unwrap();
-                if as_f64.is_finite() {
-                    fmt::UpperExp::fmt(&as_f64, f)
-                } else {
-                    fmt_exp_slow(self.magnitude(), f, true, !self.is_negative())
-                }
+        // The max digits that can fit into a f64, which ensures
+        // that printing won't have rounding errors.
+        const MAX_FLOAT_DIGITS: usize = 14;
+        if f.precision().filter(|&x| x < MAX_FLOAT_DIGITS).is_some() {
+            let as_f64 = self.to_f64().unwrap();
+            if as_f64.is_finite() {
+                fmt::UpperExp::fmt(&as_f64, f)
             } else {
                 fmt_exp_slow(self.magnitude(), f, true, !self.is_negative())
             }
+        } else {
+            fmt_exp_slow(self.magnitude(), f, true, !self.is_negative())
         }
     }
 }
