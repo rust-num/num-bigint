@@ -18,7 +18,7 @@ use self::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::BigDigit;
 use crate::biguint::to_str_radix_reversed;
-use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
+use crate::biguint::{BigDigitVec, BigUint, IntDigits, U32Digits, U64Digits};
 
 mod addition;
 mod division;
@@ -538,7 +538,7 @@ impl IntDigits for BigInt {
         self.data.digits()
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+    fn digits_mut(&mut self) -> &mut BigDigitVec {
         self.data.digits_mut()
     }
     #[inline]

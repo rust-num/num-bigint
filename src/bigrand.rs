@@ -3,6 +3,7 @@
 use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
 
+use crate::big_digit::BigDigit;
 use crate::BigInt;
 use crate::BigUint;
 use crate::Sign::*;
@@ -37,12 +38,12 @@ pub trait RandBigInt {
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
 }
 
-fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
+fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [BigDigit], rem: u64) {
     // `fill` is faster than many `gen::<u32>` calls
     rng.fill(data);
     if rem > 0 {
         let last = data.len() - 1;
-        data[last] >>= 32 - rem;
+        data[last] >>= crate::big_digit::BITS as u64 - rem;
     }
 }
 
@@ -60,22 +61,12 @@ impl<R: Rng + ?Sized> RandBigInt for R {
 
     #[cfg(u64_digit)]
     fn gen_biguint(&mut self, bit_size: u64) -> BigUint {
-        use core::slice;
-
-        let (digits, rem) = bit_size.div_rem(&32);
+        let (digits, rem) = bit_size.div_rem(&64);
         let len = (digits + (rem > 0) as u64)
             .to_usize()
             .expect("capacity overflow");
-        let native_digits = bit_size.div_ceil(&64);
-        let native_len = native_digits.to_usize().expect("capacity overflow");
-        let mut data = vec![0u64; native_len];
-        unsafe {
-            // Generate bits in a `&mut [u32]` slice for value stability
-            let ptr = data.as_mut_ptr() as *mut u32;
-            debug_assert!(native_len * 2 >= len);
-            let data = slice::from_raw_parts_mut(ptr, len);
-            gen_bits(self, data, rem);
-        }
+        let mut data = vec![0u64; len];
+        gen_bits(self, data.as_mut_slice(), rem);
         #[cfg(target_endian = "big")]
         for digit in &mut data {
             // swap u32 digits into u64 endianness

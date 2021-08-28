@@ -1,7 +1,9 @@
-use super::{biguint_from_vec, BigUint};
+use super::{biguint_from_bigdigitvec, BigUint};
 
 use crate::big_digit;
-use crate::std_alloc::{Cow, Vec};
+use crate::std_alloc::Cow;
+
+use crate::backend;
 
 use core::mem;
 use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
@@ -26,9 +28,9 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         0 => n.into_owned().data,
         _ => {
             let len = digits.saturating_add(n.data.len() + 1);
-            let mut data = Vec::with_capacity(len);
+            let mut data = backend::Vec::with_capacity(len);
             data.resize(digits, 0);
-            data.extend(n.data.iter());
+            data.extend(n.data.iter().copied());
             data
         }
     };
@@ -46,7 +48,7 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         }
     }
 
-    biguint_from_vec(data)
+    biguint_from_bigdigitvec(data)
 }
 
 #[inline]
@@ -70,7 +72,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         return n;
     }
     let mut data = match n {
-        Cow::Borrowed(n) => n.data[digits..].to_vec(),
+        Cow::Borrowed(n) => backend::from_slice(&n.data[digits..]),
         Cow::Owned(mut n) => {
             n.data.drain(..digits);
             n.data
@@ -87,7 +89,45 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
         }
     }
 
-    biguint_from_vec(data)
+    biguint_from_bigdigitvec(data)
+}
+
+use crate::big_digit::BigDigit;
+#[inline]
+pub(crate) fn biguint_shr_mut<T: PrimInt>(n: &mut BigUint, shift: T) {
+    if shift < T::zero() {
+        panic!("attempt to shift right with negative");
+    }
+    if n.is_zero() || shift.is_zero() {
+        return;
+    }
+    let bits = T::from(big_digit::BITS).unwrap();
+    let digits = (shift / bits).to_usize().unwrap_or(core::usize::MAX);
+    let shift = (shift % bits).to_u8().unwrap();
+    slice_shr2(&mut n.data, digits, shift);
+    n.data.truncate(n.data.len() - digits);
+    n.normalize();
+}
+
+fn slice_shr2(mut data: &mut [BigDigit], digits: usize, shift: u8) {
+    if digits >= data.len() {
+        return;
+    }
+    if digits > 0 {
+        let len = data.len();
+        data.copy_within(digits.., 0);
+        data = &mut data[0..len - digits];
+    }
+
+    if shift > 0 {
+        let mut borrow = 0;
+        let borrow_shift = big_digit::BITS as u8 - shift;
+        for elem in data.iter_mut().rev() {
+            let new_borrow = *elem << borrow_shift;
+            *elem = (*elem >> shift) | borrow;
+            borrow = new_borrow;
+        }
+    }
 }
 
 macro_rules! impl_shift {
@@ -160,8 +200,7 @@ macro_rules! impl_shift {
         impl ShrAssign<$rhs> for BigUint {
             #[inline]
             fn shr_assign(&mut self, rhs: $rhs) {
-                let n = mem::replace(self, BigUint::zero());
-                *self = n >> rhs;
+                biguint_shr_mut(self, rhs)
             }
         }
         impl_shift! { @ref Shr::shr, ShrAssign::shr_assign, $rhs }
