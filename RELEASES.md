@@ -1,3 +1,17 @@
+# Release 0.4.1 (2021-08-27)
+
+- [Fixed scalar divide-by-zero panics.][200]
+- [Implemented `DoubleEndedIterator` for `U32Digits` and `U64Digits`.][208]
+- [Optimized multiplication to avoid unnecessary allocations.][199]
+- [Optimized string formatting for very large values.][216]
+
+**Contributors**: @cuviper, @PatrickNorton
+
+[199]: https://github.com/rust-num/num-bigint/pull/199
+[200]: https://github.com/rust-num/num-bigint/pull/200
+[208]: https://github.com/rust-num/num-bigint/pull/208
+[216]: https://github.com/rust-num/num-bigint/pull/216
+
 # Release 0.4.0 (2021-03-05)
 
 ### Breaking Changes
