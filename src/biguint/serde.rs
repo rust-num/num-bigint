@@ -89,7 +89,7 @@ impl<'de> Visitor<'de> for U32Visitor {
         use num_integer::Integer;
 
         let u32_len = seq.size_hint().unwrap_or(0);
-        let len = u32_len.div_ceil(&2);
+        let len = Integer::div_ceil(&u32_len, &2);
         let mut data = Vec::with_capacity(len);
 
         while let Some(lo) = seq.next_element::<u32>()? {
