@@ -37,6 +37,12 @@
 [194]: https://github.com/rust-num/num-bigint/pull/194
 [195]: https://github.com/rust-num/num-bigint/pull/195
 
+# Release 0.3.3 (2021-09-03)
+
+- [Use explicit `Integer::div_ceil` to avoid the new unstable method.][219]
+
+**Contributors**: @catenacyber, @cuviper
+
 # Release 0.3.2 (2021-03-04)
 
 - [The new `BigUint` methods `count_ones` and `trailing_ones`][175] return the
