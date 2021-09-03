@@ -65,8 +65,8 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits != 0);
     debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
-    let big_digits = (v.len() as u64).saturating_mul(bits.into());
-    let big_digits = Integer::div_ceil(&big_digits, &big_digit::BITS.into())
+    let total_bits = (v.len() as u64).saturating_mul(bits.into());
+    let big_digits = Integer::div_ceil(&total_bits, &big_digit::BITS.into())
         .to_usize()
         .unwrap_or(core::usize::MAX);
     let mut data = Vec::with_capacity(big_digits);
@@ -579,8 +579,7 @@ pub(super) fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     let last_i = u.data.len() - 1;
     let mask: BigDigit = (1 << bits) - 1;
     let digits_per_big_digit = big_digit::BITS / bits;
-    let digits = u.bits();
-    let digits = Integer::div_ceil(&digits, &u64::from(bits))
+    let digits = Integer::div_ceil(&u.bits(), &u64::from(bits))
         .to_usize()
         .unwrap_or(core::usize::MAX);
     let mut res = Vec::with_capacity(digits);
@@ -606,8 +605,7 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     debug_assert!(!u.is_zero() && bits <= 8 && big_digit::BITS % bits != 0);
 
     let mask: BigDigit = (1 << bits) - 1;
-    let digits = u.bits();
-    let digits = Integer::div_ceil(&digits, &u64::from(bits))
+    let digits = Integer::div_ceil(&u.bits(), &u64::from(bits))
         .to_usize()
         .unwrap_or(core::usize::MAX);
     let mut res = Vec::with_capacity(digits);
