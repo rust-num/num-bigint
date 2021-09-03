@@ -66,7 +66,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         let len = (digits + (rem > 0) as u64)
             .to_usize()
             .expect("capacity overflow");
-        let native_digits = bit_size.div_ceil(&64);
+        let native_digits = Integer::div_ceil(&bit_size, &64);
         let native_len = native_digits.to_usize().expect("capacity overflow");
         let mut data = vec![0u64; native_len];
         unsafe {

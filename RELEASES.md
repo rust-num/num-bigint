@@ -1,3 +1,11 @@
+# Release 0.4.2 (2021-09-03)
+
+- [Use explicit `Integer::div_ceil` to avoid the new unstable method.][219]
+
+**Contributors**: @catenacyber, @cuviper
+
+[219]: https://github.com/rust-num/num-bigint/pull/219
+
 # Release 0.4.1 (2021-08-27)
 
 - [Fixed scalar divide-by-zero panics.][200]
