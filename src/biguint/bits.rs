@@ -1,7 +1,7 @@
 use super::{BigUint, IntDigits};
 
 use crate::big_digit::{self, BigDigit};
-use crate::{IsizePromotion, UsizePromotion};
+use crate::UsizePromotion;
 
 #[cfg(not(u64_digit))]
 use crate::std_alloc::Vec;
@@ -99,8 +99,8 @@ impl<'a> BitXorAssign<&'a BigUint> for BigUint {
     }
 }
 
-promote_all_scalars!(impl BitAnd for BigUint, bitand);
-promote_all_scalars_assign!(impl BitAndAssign for BigUint, bitand_assign);
+promote_unsigned_scalars!(impl BitAnd for BigUint, bitand);
+promote_unsigned_scalars_assign!(impl BitAndAssign for BigUint, bitand_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl BitAnd<u32> for BigUint, bitand);
 forward_all_scalar_binop_to_val_val_commutative!(impl BitAnd<u64> for BigUint, bitand);
 forward_all_scalar_binop_to_val_val_commutative!(impl BitAnd<u128> for BigUint, bitand);
@@ -198,125 +198,6 @@ impl BitAndAssign<u128> for BigUint {
                 self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
                 self.data[3] &= (rhs >> (big_digit::BITS * 3)) as BigDigit;
                 self.data.drain(4..);
-            }
-        }
-    }
-}
-
-// Implementation note: The signed bitwise variants work because `i* as u*`
-// produces numbers with identical bit patterns, thus bitwise operations will
-// return identical results. The only semantic difference lies in the leading
-// zeroes, which (conceptually) are all 0 if positive, and all one when
-// negative. As such, this will only truncate the leading bits when positive,
-// since x & 0 == 0.
-
-forward_all_scalar_binop_to_val_val_commutative!(impl BitAnd<i32> for BigUint, bitand);
-forward_all_scalar_binop_to_val_val_commutative!(impl BitAnd<i64> for BigUint, bitand);
-forward_all_scalar_binop_to_val_val_commutative!(impl BitAnd<i128> for BigUint, bitand);
-
-impl BitAnd<i32> for BigUint {
-    type Output = BigUint;
-
-    fn bitand(mut self, rhs: i32) -> Self::Output {
-        self &= rhs;
-        self
-    }
-}
-
-impl BitAndAssign<i32> for BigUint {
-    fn bitand_assign(&mut self, rhs: i32) {
-        if !self.is_zero() {
-            self.data[0] &= rhs as BigDigit;
-            if rhs >= 0 {
-                self.data.drain(1..);
-            }
-        }
-    }
-}
-
-impl BitAnd<i64> for BigUint {
-    type Output = BigUint;
-
-    fn bitand(mut self, rhs: i64) -> Self::Output {
-        self &= rhs;
-        self
-    }
-}
-
-#[cfg(u64_digit)]
-impl BitAndAssign<i64> for BigUint {
-    fn bitand_assign(&mut self, rhs: i64) {
-        if !self.is_zero() {
-            self.data[0] &= rhs as BigDigit;
-            if rhs >= 0 {
-                self.data.drain(1..);
-            }
-        }
-    }
-}
-
-#[cfg(not(u64_digit))]
-impl BitAndAssign<i64> for BigUint {
-    fn bitand_assign(&mut self, rhs: i64) {
-        if !self.is_zero() {
-            self.data[0] &= rhs as BigDigit;
-            if self.data.len() > 1 {
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                if rhs >= 0 {
-                    self.data.drain(2..);
-                }
-            }
-        }
-    }
-}
-
-impl BitAnd<i128> for BigUint {
-    type Output = BigUint;
-
-    fn bitand(mut self, rhs: i128) -> Self::Output {
-        self &= rhs;
-        self
-    }
-}
-
-#[cfg(u64_digit)]
-impl BitAndAssign<i128> for BigUint {
-    fn bitand_assign(&mut self, rhs: i128) {
-        if !self.is_zero() {
-            self.data[0] &= rhs as BigDigit;
-            if self.data.len() > 1 {
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                if rhs >= 0 {
-                    self.data.drain(2..);
-                }
-            }
-        }
-    }
-}
-
-#[cfg(not(u64_digit))]
-impl BitAndAssign<i128> for BigUint {
-    fn bitand_assign(&mut self, rhs: i128) {
-        match self.data.len() {
-            0 => {}
-            1 => self.data[0] &= rhs as BigDigit,
-            2 => {
-                self.data[0] &= rhs as BigDigit;
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-            }
-            3 => {
-                self.data[0] &= rhs as BigDigit;
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
-            }
-            _ => {
-                self.data[0] &= rhs as BigDigit;
-                self.data[1] &= (rhs >> big_digit::BITS) as BigDigit;
-                self.data[2] &= (rhs >> (big_digit::BITS * 2)) as BigDigit;
-                self.data[3] &= (rhs >> (big_digit::BITS * 3)) as BigDigit;
-                if rhs >= 0 {
-                    self.data.drain(4..);
-                }
             }
         }
     }
