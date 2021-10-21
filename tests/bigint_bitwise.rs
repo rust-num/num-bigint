@@ -185,9 +185,27 @@ fn test_bitwise_primitive() {
             let and = (prim_a & prim_b).to_bigint().unwrap();
             let or = (prim_a | prim_b).to_bigint().unwrap();
             let xor = (prim_a ^ prim_b).to_bigint().unwrap();
-            assert_eq!(a.clone() & prim_b, and, "{:x} & {:x}", a, prim_b.to_bigint().unwrap());
-            assert_eq!(a.clone() | prim_b, or, "{:x} | {:x}", a, prim_b.to_bigint().unwrap());
-            assert_eq!(a.clone() ^ prim_b, xor, "{:x} ^ {:x}", a, prim_b.to_bigint().unwrap());
+            assert_eq!(
+                a.clone() & prim_b,
+                and,
+                "{:x} & {:x}",
+                a,
+                prim_b.to_bigint().unwrap()
+            );
+            assert_eq!(
+                a.clone() | prim_b,
+                or,
+                "{:x} | {:x}",
+                a,
+                prim_b.to_bigint().unwrap()
+            );
+            assert_eq!(
+                a.clone() ^ prim_b,
+                xor,
+                "{:x} ^ {:x}",
+                a,
+                prim_b.to_bigint().unwrap()
+            );
         }
     }
 }
