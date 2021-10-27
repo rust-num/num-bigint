@@ -1095,6 +1095,19 @@ impl BigInt {
         // The top bit may have been cleared, so normalize
         self.normalize();
     }
+
+    /// Sets the sign of the `BigInt`.
+    /// Does not change the sign if the value is 0.
+    /// If the sign is `Sign::NoSign`, the value will be set to 0.
+    #[inline]
+    pub fn set_sign(&mut self, sign: Sign) {
+        if sign == Sign::NoSign {
+            self.set_zero();
+        }
+        if !self.is_zero() {
+            self.sign = sign;
+        }
+    }
 }
 
 #[test]
