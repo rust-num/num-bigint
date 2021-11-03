@@ -69,14 +69,20 @@ fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
 fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
     // Least-significant zeros have no effect on the output.
     if let Some(&0) = b.first() {
-        let nz = b.iter().position(|&d| d != 0).unwrap();
-        b = &b[nz..];
-        acc = &mut acc[nz..];
+        if let Some(nz) = b.iter().position(|&d| d != 0) {
+            b = &b[nz..];
+            acc = &mut acc[nz..];
+        } else {
+            return;
+        }
     }
     if let Some(&0) = c.first() {
-        let nz = c.iter().position(|&d| d != 0).unwrap();
-        c = &c[nz..];
-        acc = &mut acc[nz..];
+        if let Some(nz) = c.iter().position(|&d| d != 0) {
+            c = &c[nz..];
+            acc = &mut acc[nz..];
+        } else {
+            return;
+        }
     }
 
     let acc = acc;
@@ -168,7 +174,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 
         // We reuse the same BigUint for all the intermediate multiplies and have to size p
         // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
-        let len = x1.len() + y1.len();
+        let len = x1.len() + y1.len() + 1;
         let mut p = BigUint { data: vec![0; len] };
 
         // p2 = x1 * y1
@@ -344,7 +350,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 }
 
 fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
-    let len = x.len() + y.len();
+    let len = x.len() + y.len() + 1;
     let mut prod = BigUint { data: vec![0; len] };
 
     mac3(&mut prod.data, x, y);
