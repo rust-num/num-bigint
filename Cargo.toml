@@ -28,10 +28,12 @@ default-features = false
 [dependencies.num-integer]
 version = "0.1.39"
 default-features = false
+features = [ "i128" ]
 
 [dependencies.num-traits]
 version = "0.2.4"
 default-features = false
+features = [ "i128" ]
 
 [dependencies.num-iter]
 version = "0.1.37"
@@ -76,12 +78,9 @@ rand = { version = "0.8", features = ["small_rng"] }
 [dev-dependencies.serde_test]
 version = "1.0"
 
-[build-dependencies]
-autocfg = "1.0"
-
 [features]
-default = ["std", "i128", "u64_digit"]
-i128 = ["num-integer/i128", "num-traits/i128"]
+default = ["std", "u64_digit"]
+i128 = []
 std = [
     "num-integer/std",
     "num-traits/std",
