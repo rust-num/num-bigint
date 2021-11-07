@@ -1,5 +1,5 @@
 use crate::BigUint;
-use num_traits::{One, ToPrimitive};
+use num_traits::One;
 
 /// All factorials that fit into a u64
 const SMALL_FACTORIALS: [u64; 21] = [
@@ -56,17 +56,7 @@ const ODD_FACTORIALS: [u64; 25] = [
     147926426347074375, // 24! = 147926426347074375 << 22
 ];
 
-impl BigUint {
-    pub fn factorial(&self) -> BigUint {
-        // usize::MAX! > 2**usize::MAX, so just error w/o crashing the system
-        match self.to_usize() {
-            Option::Some(x) => factorial(x),
-            Option::None => panic!("{} is too large to calculate the factorial", self),
-        }
-    }
-}
-
-fn factorial(x: usize) -> BigUint {
+pub fn factorial(x: usize) -> BigUint {
     if let Option::Some(&x) = SMALL_FACTORIALS.get(x) {
         x.into()
     } else {
@@ -89,7 +79,7 @@ fn odd_factorial(mut x: usize) -> BigUint {
     // This uses a loop instead of recursion, to improve speed & reduce stack
     // space
     let mut result = BigUint::one();
-    while x as usize > ODD_FACTORIALS.len() {
+    while x as usize >= ODD_FACTORIALS.len() {
         let mut i = 3;
         while i <= x {
             result *= i;

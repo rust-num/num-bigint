@@ -955,6 +955,15 @@ impl BigUint {
             self.normalize();
         }
     }
+
+    /// Computes the factorial of the `BigUInt`.
+    pub fn factorial(&self) -> BigUint {
+        // usize::MAX! > 2**usize::MAX, so just error w/o running the system out of memory
+        match self.to_usize() {
+            Option::Some(x) => factorial::factorial(x),
+            Option::None => panic!("{} is too large to calculate the factorial", self),
+        }
+    }
 }
 
 pub(crate) trait IntDigits {
