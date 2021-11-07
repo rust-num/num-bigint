@@ -20,6 +20,7 @@ mod subtraction;
 
 mod bits;
 mod convert;
+mod factorial;
 mod iter;
 mod monty;
 mod power;
