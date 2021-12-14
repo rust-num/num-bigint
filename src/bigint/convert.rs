@@ -460,10 +460,8 @@ where
 {
     let mut carry = true;
     for d in digits {
-        *d = !*d;
-        if carry {
-            *d = d.wrapping_add(1);
-            carry = d.is_zero();
-        }
+        let (val, tmp_carry) = (!*d).overflowing_add(carry as u8);
+        *d = val;
+        carry = tmp_carry;
     }
 }
