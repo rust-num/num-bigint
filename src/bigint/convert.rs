@@ -377,9 +377,10 @@ pub(super) fn from_signed_bytes_be(digits: &[u8]) -> BigInt {
 
     if sign == Sign::Minus {
         // two's-complement the content to retrieve the magnitude
-        let mut digits = Vec::from(digits);
-        twos_complement_be(&mut digits);
-        BigInt::from_biguint(sign, BigUint::from_bytes_be(&*digits))
+        let mut digits = digits.to_vec();
+        digits.reverse();
+        twos_complement_le(&mut digits);
+        BigInt::from_biguint(sign, BigUint::from_bytes_le(&digits))
     } else {
         BigInt::from_biguint(sign, BigUint::from_bytes_be(digits))
     }
@@ -395,9 +396,9 @@ pub(super) fn from_signed_bytes_le(digits: &[u8]) -> BigInt {
 
     if sign == Sign::Minus {
         // two's-complement the content to retrieve the magnitude
-        let mut digits = Vec::from(digits);
+        let mut digits = digits.to_vec();
         twos_complement_le(&mut digits);
-        BigInt::from_biguint(sign, BigUint::from_bytes_le(&*digits))
+        BigInt::from_biguint(sign, BigUint::from_bytes_le(&digits))
     } else {
         BigInt::from_biguint(sign, BigUint::from_bytes_le(digits))
     }
