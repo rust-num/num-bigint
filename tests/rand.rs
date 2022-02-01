@@ -8,7 +8,7 @@ extern crate rand_isaac;
 extern crate rand_xorshift;
 
 mod biguint {
-    use num_bigint::{BigUint, RandBigInt, RandomBits};
+    use crate::num_bigint::{BigUint, RandBigInt, RandomBits};
     use num_traits::Zero;
     use rand::distributions::Uniform;
     use rand::{Rng, SeedableRng};
@@ -222,7 +222,7 @@ mod biguint {
 }
 
 mod bigint {
-    use num_bigint::{BigInt, RandBigInt, RandomBits};
+    use crate::num_bigint::{BigInt, RandBigInt, RandomBits};
     use num_traits::Zero;
     use rand::distributions::Uniform;
     use rand::{Rng, SeedableRng};

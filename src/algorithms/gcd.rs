@@ -2,7 +2,7 @@ use crate::big_digit::{BigDigit, DoubleBigDigit, BITS};
 use crate::bigint::Sign::*;
 use crate::bigint::{BigInt, ToBigInt};
 use crate::biguint::{BigUint, IntDigits};
-use integer::Integer;
+use crate::integer::Integer;
 use num_traits::{One, Signed, Zero};
 use alloc::borrow::Cow;
 use core::ops::Neg;

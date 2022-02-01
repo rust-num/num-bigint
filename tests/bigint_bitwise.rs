@@ -1,7 +1,7 @@
 extern crate num_bigint_dig as num_bigint;
 extern crate num_traits;
 
-use num_bigint::{BigInt, Sign, ToBigInt};
+use crate::num_bigint::{BigInt, Sign, ToBigInt};
 use num_traits::ToPrimitive;
 use std::{i32, i64, u32};
 
@@ -11,7 +11,7 @@ enum ValueVec {
     M(&'static [u32]),
 }
 
-use ValueVec::*;
+use crate::ValueVec::*;
 
 impl ToBigInt for ValueVec {
     fn to_bigint(&self) -> Option<BigInt> {

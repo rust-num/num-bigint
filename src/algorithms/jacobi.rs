@@ -1,4 +1,4 @@
-use integer::Integer;
+use crate::integer::Integer;
 use num_traits::{One, Signed, Zero};
 
 use crate::BigInt;

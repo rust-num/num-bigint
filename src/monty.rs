@@ -4,8 +4,8 @@ use num_traits::{One, Zero};
 use core::ops::Shl;
 use alloc::vec::Vec;
 
-use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
-use biguint::BigUint;
+use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use crate::biguint::BigUint;
 
 struct MontyReducer {
     n0inv: BigDigit,

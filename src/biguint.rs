@@ -61,16 +61,16 @@ fn exp(a: f64) -> f64 {
     libm::exp(a)
 }
 
-use integer::{Integer, Roots};
+use crate::integer::{Integer, Roots};
 use num_traits::float::FloatCore;
 use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
     Unsigned, Zero,
 };
 
-use BigInt;
+use crate::BigInt;
 
-use big_digit::{self, BigDigit};
+use crate::big_digit::{self, BigDigit};
 
 use smallvec::SmallVec;
 
@@ -86,8 +86,8 @@ use crate::algorithms::{div_rem, div_rem_digit, mac_with_carry, mul3, scalar_mul
 use crate::algorithms::{extended_gcd, mod_inverse};
 use crate::traits::{ExtendedGcd, ModInverse};
 
-use ParseBigIntError;
-use UsizePromotion;
+use crate::ParseBigIntError;
+use crate::UsizePromotion;
 
 /// A big unsigned integer type.
 #[derive(Clone, Debug)]

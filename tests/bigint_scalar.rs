@@ -1,14 +1,14 @@
 extern crate num_bigint_dig as num_bigint;
 extern crate num_traits;
 
-use num_bigint::BigInt;
-use num_bigint::Sign::Plus;
+use crate::num_bigint::BigInt;
+use crate::num_bigint::Sign::Plus;
 use num_traits::{Signed, ToPrimitive, Zero};
 
 use std::ops::Neg;
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;
