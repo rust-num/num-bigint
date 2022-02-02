@@ -91,7 +91,6 @@ use UsizePromotion;
 
 /// A big unsigned integer type.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct BigUint {
     pub(crate) data: SmallVec<[BigDigit; VEC_SIZE]>,
 }
@@ -131,6 +130,13 @@ impl Default for BigUint {
     #[inline]
     fn default() -> BigUint {
         Zero::zero()
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for BigUint {
+    fn zeroize(&mut self) {
+        self.data.as_mut().zeroize();
     }
 }
 

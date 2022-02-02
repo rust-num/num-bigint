@@ -128,7 +128,6 @@ impl<'de> serde::Deserialize<'de> for Sign {
 
 /// A big signed integer type.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct BigInt {
     pub(crate) sign: Sign,
     pub(crate) data: BigUint,
@@ -193,6 +192,14 @@ impl Default for BigInt {
     #[inline]
     fn default() -> BigInt {
         Zero::zero()
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for BigInt {
+    fn zeroize(&mut self) {
+        self.sign.zeroize();
+        self.data.zeroize();
     }
 }
 
