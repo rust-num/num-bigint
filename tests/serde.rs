@@ -10,7 +10,7 @@ extern crate num_bigint_dig as num_bigint;
 extern crate num_traits;
 extern crate serde_test;
 
-use num_bigint::{BigInt, BigUint};
+use crate::num_bigint::{BigInt, BigUint};
 use num_traits::{One, Zero};
 use serde_test::{assert_tokens, Token};
 

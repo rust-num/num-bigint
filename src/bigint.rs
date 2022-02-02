@@ -23,7 +23,7 @@ use serde;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-use integer::{Integer, Roots};
+use crate::integer::{Integer, Roots};
 use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, Signed,
     ToPrimitive, Zero,
@@ -32,14 +32,14 @@ use num_traits::{
 use self::Sign::{Minus, NoSign, Plus};
 use super::ParseBigIntError;
 use super::VEC_SIZE;
-use big_digit::{self, BigDigit, DoubleBigDigit};
-use biguint;
-use biguint::to_str_radix_reversed;
-use biguint::{BigUint, IntDigits};
+use crate::big_digit::{self, BigDigit, DoubleBigDigit};
+use crate::biguint;
+use crate::biguint::to_str_radix_reversed;
+use crate::biguint::{BigUint, IntDigits};
 use smallvec::SmallVec;
 
-use IsizePromotion;
-use UsizePromotion;
+use crate::IsizePromotion;
+use crate::UsizePromotion;
 
 use crate::algorithms::{extended_gcd, mod_inverse};
 use crate::biguint::IntoBigUint;

@@ -28,7 +28,7 @@ pub fn mod_inverse(g: Cow<BigUint>, n: Cow<BigUint>) -> Option<BigInt> {
 mod tests {
     use super::*;
 
-    use integer::Integer;
+    use crate::integer::Integer;
     use num_traits::FromPrimitive;
 
     use crate::traits::ModInverse;

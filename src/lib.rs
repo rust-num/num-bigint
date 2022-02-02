@@ -79,52 +79,33 @@
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.15 and greater.
+//! The `num-bigint-dig` crate is tested for rustc 1.56 and greater.
 //!
 //! ## `no_std` compatibility
 //!
-//! This crate is compatible with `no_std` environments from Rust 1.36. Note
-//! however that it still requires the `alloc` crate, so the user should ensure
-//! that they set a `global_allocator`.
+//! This crate is compatible with `no_std` environments.
+//!
+//! Note however that it still requires the `alloc` crate, so the user should
+//! ensure that they set a `global_allocator`.
 //!
 //! To use in no_std environment, add the crate as such in your `Cargo.toml`
 //! file:
 //!
 //! ```toml
 //! [dependencies]
-//! num-bigint = { version = "0.3", default-features=false }
+//! num-bigint-dig = { version = "0.8", default-features=false }
 //! ```
 //!
 //! Every features should be compatible with no_std environment, so feel free to
 //! add features like `prime`, `i128`, etc...
 
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.2")]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
-#[cfg(not(feature = "std"))]
-#[macro_use]
 extern crate alloc;
 
 #[cfg(feature = "std")]
-use std as alloc;
-
-#[cfg(feature = "std")]
-extern crate core;
-
-#[cfg(feature = "rand")]
-extern crate rand;
-#[cfg(all(test, feature = "rand"))]
-extern crate rand_chacha;
-#[cfg(all(test, feature = "rand"))]
-extern crate rand_isaac;
-#[cfg(all(test, feature = "rand"))]
-extern crate rand_xorshift;
-
-#[cfg(feature = "serde")]
-extern crate serde;
-
-#[cfg(feature = "zeroize")]
-extern crate zeroize;
+extern crate std;
 
 #[macro_use]
 extern crate smallvec;
@@ -134,17 +115,10 @@ extern crate smallvec;
 extern crate lazy_static;
 
 extern crate num_integer as integer;
-extern crate num_iter;
-extern crate num_traits;
 
-#[cfg(feature = "prime")]
-extern crate byteorder;
-
-extern crate libm;
-
+use core::fmt;
 #[cfg(feature = "std")]
 use std::error::Error;
-use core::fmt;
 
 #[macro_use]
 mod macros;
@@ -158,7 +132,7 @@ pub mod prime;
 pub mod algorithms;
 pub mod traits;
 
-pub use traits::*;
+pub use crate::traits::*;
 
 #[cfg(feature = "rand")]
 mod bigrand;
@@ -186,7 +160,7 @@ enum BigIntErrorKind {
 
 impl ParseBigIntError {
     fn __description(&self) -> &str {
-        use BigIntErrorKind::*;
+        use crate::BigIntErrorKind::*;
         match self.kind {
             Empty => "cannot parse integer from empty string",
             InvalidDigit => "invalid digit found in string",
@@ -219,18 +193,18 @@ impl Error for ParseBigIntError {
     }
 }
 
-pub use biguint::BigUint;
-pub use biguint::IntoBigUint;
-pub use biguint::ToBigUint;
+pub use crate::biguint::BigUint;
+pub use crate::biguint::IntoBigUint;
+pub use crate::biguint::ToBigUint;
 
-pub use bigint::negate_sign;
-pub use bigint::BigInt;
-pub use bigint::IntoBigInt;
-pub use bigint::Sign;
-pub use bigint::ToBigInt;
+pub use crate::bigint::negate_sign;
+pub use crate::bigint::BigInt;
+pub use crate::bigint::IntoBigInt;
+pub use crate::bigint::Sign;
+pub use crate::bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 #[cfg(feature = "prime")]
 pub use bigrand::RandPrime;

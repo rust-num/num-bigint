@@ -4,7 +4,7 @@ extern crate num_bigint_dig as num_bigint;
 extern crate num_traits;
 extern crate rand;
 
-use num_bigint::RandBigInt;
+use crate::num_bigint::RandBigInt;
 use num_traits::Zero;
 use rand::prelude::*;
 

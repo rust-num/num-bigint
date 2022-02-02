@@ -6,7 +6,7 @@ extern crate num_traits;
 extern crate rand;
 
 mod biguint {
-    use num_bigint::BigUint;
+    use crate::num_bigint::BigUint;
     use num_traits::{One, Pow, Zero};
     use std::{i32, u32};
 
@@ -115,7 +115,7 @@ mod biguint {
             rand::rngs::StdRng::seed_from_u64(4)
         }
 
-        use num_bigint::RandBigInt;
+        use crate::num_bigint::RandBigInt;
         use rand::distributions::Uniform;
         use rand::Rng;
 
@@ -150,7 +150,7 @@ mod biguint {
 }
 
 mod bigint {
-    use num_bigint::BigInt;
+    use crate::num_bigint::BigInt;
     use num_traits::{Pow, Signed};
 
     fn check(x: i64, n: u32) {

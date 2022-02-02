@@ -4,9 +4,9 @@ extern crate num_traits;
 #[cfg(feature = "rand")]
 extern crate rand;
 
-use num_bigint::BigUint;
-use num_bigint::Sign::{Minus, NoSign, Plus};
-use num_bigint::{BigInt, ToBigInt};
+use crate::num_bigint::BigUint;
+use crate::num_bigint::Sign::{Minus, NoSign, Plus};
+use crate::num_bigint::{BigInt, ToBigInt};
 
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::collections::hash_map::RandomState;
@@ -24,7 +24,7 @@ use num_traits::float::FloatCore;
 use num_traits::{FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
-use consts::*;
+use crate::consts::*;
 
 #[macro_use]
 mod macros;

@@ -4,13 +4,13 @@ use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
 use rand::Rng;
 
-use BigInt;
-use BigUint;
-use Sign::*;
+use crate::BigInt;
+use crate::BigUint;
+use crate::Sign::*;
 
-use big_digit::BigDigit;
-use bigint::{into_magnitude, magnitude};
-use integer::Integer;
+use crate::big_digit::BigDigit;
+use crate::bigint::{into_magnitude, magnitude};
+use crate::integer::Integer;
 #[cfg(feature = "prime")]
 use num_iter::range_step;
 use num_traits::Zero;
@@ -183,7 +183,6 @@ pub struct UniformBigInt {
 impl UniformSampler for UniformBigInt {
     type X = BigInt;
 
-    #[inline]
     #[inline]
     fn new<B1, B2>(low_b: B1, high_b: B2) -> Self
     where
