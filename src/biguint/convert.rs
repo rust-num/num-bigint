@@ -4,7 +4,7 @@
 use super::{biguint_from_vec, BigUint, ToBigUint};
 
 use super::addition::add2;
-use super::division::div_rem_digit;
+use super::division::{div_rem_digit, FAST_DIV_WIDE};
 use super::multiplication::mac_with_carry;
 
 use crate::big_digit::{self, BigDigit};
@@ -688,7 +688,13 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
 
     let mut digits = u.clone();
 
-    let (base, power) = get_half_radix_base(radix);
+    // X86 DIV can quickly divide by a full digit, otherwise we choose a divisor
+    // that's suitable for `div_half` to avoid slow `DoubleBigDigit` division.
+    let (base, power) = if FAST_DIV_WIDE {
+        get_radix_base(radix)
+    } else {
+        get_half_radix_base(radix)
+    };
     let radix = radix as BigDigit;
 
     // For very large numbers, the O(n²) loop of repeated `div_rem_digit` dominates the
@@ -696,8 +702,8 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     // The threshold for this was chosen by anecdotal performance measurements to
     // approximate where this starts to make a noticeable difference.
     if digits.data.len() >= 64 {
-        let mut big_base = BigUint::from(base * base);
-        let mut big_power = 2usize;
+        let mut big_base = BigUint::from(base);
+        let mut big_power = 1usize;
 
         // Choose a target base length near √n.
         let target_len = digits.data.len().sqrt();
