@@ -657,7 +657,14 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
 
     let mut digits = u.clone();
 
-    let (base, power) = get_radix_base(radix, big_digit::HALF_BITS);
+    // X86 DIV can quickly divide by a full digit, otherwise we choose a divisor
+    // that's suitable for `div_half` to avoid slow `DoubleBigDigit` division.
+    let bits = if cfg!(use_x86_div) {
+        big_digit::BITS
+    } else {
+        big_digit::HALF_BITS
+    };
+    let (base, power) = get_radix_base(radix, bits);
     let radix = radix as BigDigit;
 
     // For very large numbers, the O(n²) loop of repeated `div_rem_digit` dominates the
@@ -665,8 +672,8 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     // The threshold for this was chosen by anecdotal performance measurements to
     // approximate where this starts to make a noticeable difference.
     if digits.data.len() >= 64 {
-        let mut big_base = BigUint::from(base * base);
-        let mut big_power = 2usize;
+        let mut big_base = BigUint::from(base);
+        let mut big_power = 1usize;
 
         // Choose a target base length near √n.
         let target_len = digits.data.len().sqrt();
