@@ -10,6 +10,7 @@ fn main() {
     if u64_digit {
         autocfg::emit("u64_digit");
     }
+
     let ac = autocfg::new();
     let std = if ac.probe_sysroot_crate("std") {
         "std"
@@ -27,6 +28,10 @@ fn main() {
             let addcarry = format!("{}::arch::{}::_addcarry_{}", std, target_arch, digit);
             if ac.probe_path(&addcarry) {
                 autocfg::emit("use_addcarry");
+            }
+
+            if ac.probe_path(&format!("{}::arch::asm", std)) {
+                autocfg::emit("use_x86_div");
             }
         }
     }

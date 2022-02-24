@@ -18,6 +18,7 @@ use num_traits::{CheckedDiv, One, ToPrimitive, Zero};
 /// This is _not_ true for an arbitrary numerator/denominator.
 ///
 /// (This function also matches what the x86 divide instruction does).
+#[cfg(not(use_x86_div))]
 #[inline]
 fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
     debug_assert!(hi < divisor);
@@ -25,6 +26,44 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
     let lhs = big_digit::to_doublebigdigit(hi, lo);
     let rhs = DoubleBigDigit::from(divisor);
     ((lhs / rhs) as BigDigit, (lhs % rhs) as BigDigit)
+}
+
+/// With Rust 1.59+ for stable `asm!`, x86 and x86_64 can use a real `div` instruction.
+#[cfg(use_x86_div)]
+#[inline]
+fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
+    // This debug assertion covers the potential #DE for divisor==0 or a quotient too large for one
+    // register, otherwise in release mode it will become a target-specific fault like SIGFPE.
+    // This should never occur with the inputs from our few `div_wide` callers.
+    debug_assert!(hi < divisor);
+
+    // SAFETY: The `div` instruction only affects registers, reading the explicit operand as the
+    // divisor, and implicitly reading RDX:RAX or EDX:EAX as the dividend. The result is implicitly
+    // written back to RAX or EAX for the quotient and RDX or EDX for the remainder. No memory is
+    // used, and flags are not preserved.
+    unsafe {
+        let (div, rem);
+
+        #[cfg(u64_digit)]
+        core::arch::asm!(
+            "div {:r}",
+            in(reg) divisor,
+            inout("rdx") hi => rem,
+            inout("rax") lo => div,
+            options(pure, nomem, nostack),
+        );
+
+        #[cfg(not(u64_digit))]
+        core::arch::asm!(
+            "div {:e}",
+            in(reg) divisor,
+            inout("edx") hi => rem,
+            inout("eax") lo => div,
+            options(pure, nomem, nostack),
+        );
+
+        (div, rem)
+    }
 }
 
 /// For small divisors, we can divide without promoting to `DoubleBigDigit` by
@@ -47,7 +86,7 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
 
     let mut rem = 0;
 
-    if b <= big_digit::HALF {
+    if !cfg!(use_x86_div) && b <= big_digit::HALF {
         for d in a.data.iter_mut().rev() {
             let (q, r) = div_half(rem, *d, b);
             *d = q;
@@ -72,7 +111,7 @@ fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
 
     let mut rem = 0;
 
-    if b <= big_digit::HALF {
+    if !cfg!(use_x86_div) && b <= big_digit::HALF {
         for &digit in a.data.iter().rev() {
             let (_, r) = div_half(rem, digit, b);
             rem = r;
@@ -232,7 +271,7 @@ fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
     let mut a0 = 0;
 
     // [b1, b0] are the two most significant digits of the divisor. They never change.
-    let b0 = *b.last().unwrap();
+    let b0 = b[b.len() - 1];
     let b1 = b[b.len() - 2];
 
     let q_len = a.data.len() - b.len() + 1;

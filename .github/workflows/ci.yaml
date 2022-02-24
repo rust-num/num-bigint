@@ -18,6 +18,7 @@ jobs:
           1.36.0, # alloc, rand
           1.40.0, # arbitrary
           1.46.0, # quickcheck
+          1.59.0, # asm!
           stable,
           beta,
           nightly
