@@ -108,7 +108,7 @@ forward_ref_val_binop!(impl BitAnd for BigInt, bitand);
 
 // do not use forward_ref_ref_binop_commutative! for bitand so that we can
 // clone as needed, avoiding over-allocation
-impl<'a, 'b> BitAnd<&'b BigInt> for &'a BigInt {
+impl BitAnd<&BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -130,7 +130,7 @@ impl<'a, 'b> BitAnd<&'b BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> BitAnd<&'a BigInt> for BigInt {
+impl BitAnd<&BigInt> for BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -142,7 +142,7 @@ impl<'a> BitAnd<&'a BigInt> for BigInt {
 
 forward_val_assign!(impl BitAndAssign for BigInt, bitand_assign);
 
-impl<'a> BitAndAssign<&'a BigInt> for BigInt {
+impl BitAndAssign<&BigInt> for BigInt {
     fn bitand_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (NoSign, _) => {}
@@ -247,7 +247,7 @@ forward_ref_val_binop!(impl BitOr for BigInt, bitor);
 
 // do not use forward_ref_ref_binop_commutative! for bitor so that we can
 // clone as needed, avoiding over-allocation
-impl<'a, 'b> BitOr<&'b BigInt> for &'a BigInt {
+impl BitOr<&BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -270,7 +270,7 @@ impl<'a, 'b> BitOr<&'b BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> BitOr<&'a BigInt> for BigInt {
+impl BitOr<&BigInt> for BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -282,7 +282,7 @@ impl<'a> BitOr<&'a BigInt> for BigInt {
 
 forward_val_assign!(impl BitOrAssign for BigInt, bitor_assign);
 
-impl<'a> BitOrAssign<&'a BigInt> for BigInt {
+impl BitOrAssign<&BigInt> for BigInt {
     fn bitor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
@@ -408,7 +408,7 @@ fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
 
 forward_all_binop_to_val_ref_commutative!(impl BitXor for BigInt, bitxor);
 
-impl<'a> BitXor<&'a BigInt> for BigInt {
+impl BitXor<&BigInt> for BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -420,7 +420,7 @@ impl<'a> BitXor<&'a BigInt> for BigInt {
 
 forward_val_assign!(impl BitXorAssign for BigInt, bitxor_assign);
 
-impl<'a> BitXorAssign<&'a BigInt> for BigInt {
+impl BitXorAssign<&BigInt> for BigInt {
     fn bitxor_assign(&mut self, other: &BigInt) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}

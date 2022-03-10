@@ -86,7 +86,7 @@ pub(super) fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
 forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
 forward_val_assign!(impl AddAssign for BigUint, add_assign);
 
-impl<'a> Add<&'a BigUint> for BigUint {
+impl Add<&BigUint> for BigUint {
     type Output = BigUint;
 
     fn add(mut self, other: &BigUint) -> BigUint {
@@ -94,7 +94,7 @@ impl<'a> Add<&'a BigUint> for BigUint {
         self
     }
 }
-impl<'a> AddAssign<&'a BigUint> for BigUint {
+impl AddAssign<&BigUint> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: &BigUint) {
         let self_len = self.data.len();

@@ -6,25 +6,25 @@ use num_traits::{PrimInt, Signed, Zero};
 
 macro_rules! impl_shift {
     (@ref $Shx:ident :: $shx:ident, $ShxAssign:ident :: $shx_assign:ident, $rhs:ty) => {
-        impl<'b> $Shx<&'b $rhs> for BigInt {
+        impl $Shx<&$rhs> for BigInt {
             type Output = BigInt;
 
             #[inline]
-            fn $shx(self, rhs: &'b $rhs) -> BigInt {
+            fn $shx(self, rhs: &$rhs) -> BigInt {
                 $Shx::$shx(self, *rhs)
             }
         }
-        impl<'a, 'b> $Shx<&'b $rhs> for &'a BigInt {
+        impl $Shx<&$rhs> for &BigInt {
             type Output = BigInt;
 
             #[inline]
-            fn $shx(self, rhs: &'b $rhs) -> BigInt {
+            fn $shx(self, rhs: &$rhs) -> BigInt {
                 $Shx::$shx(self, *rhs)
             }
         }
-        impl<'b> $ShxAssign<&'b $rhs> for BigInt {
+        impl $ShxAssign<&$rhs> for BigInt {
             #[inline]
-            fn $shx_assign(&mut self, rhs: &'b $rhs) {
+            fn $shx_assign(&mut self, rhs: &$rhs) {
                 $ShxAssign::$shx_assign(self, *rhs);
             }
         }
@@ -38,7 +38,7 @@ macro_rules! impl_shift {
                 BigInt::from_biguint(self.sign, self.data << rhs)
             }
         }
-        impl<'a> Shl<$rhs> for &'a BigInt {
+        impl Shl<$rhs> for &BigInt {
             type Output = BigInt;
 
             #[inline]
@@ -65,7 +65,7 @@ macro_rules! impl_shift {
                 BigInt::from_biguint(self.sign, data)
             }
         }
-        impl<'a> Shr<$rhs> for &'a BigInt {
+        impl Shr<$rhs> for &BigInt {
             type Output = BigInt;
 
             #[inline]
