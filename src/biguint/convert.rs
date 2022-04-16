@@ -17,7 +17,7 @@ use core::mem;
 use core::str::FromStr;
 use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
-use num_traits::{FromPrimitive, Num, PrimInt, ToPrimitive, Zero};
+use num_traits::{FromPrimitive, Num, One, PrimInt, ToPrimitive, Zero};
 
 /// Find last set bit
 /// fls(0) == 0, fls(u32::MAX) == 32
@@ -571,6 +571,16 @@ impl_to_biguint!(u128, FromPrimitive::from_u128);
 
 impl_to_biguint!(f32, FromPrimitive::from_f32);
 impl_to_biguint!(f64, FromPrimitive::from_f64);
+
+impl From<bool> for BigUint {
+    fn from(x: bool) -> Self {
+        if x {
+            One::one()
+        } else {
+            Zero::zero()
+        }
+    }
+}
 
 // Extract bitwise digits that evenly divide BigDigit
 pub(super) fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
