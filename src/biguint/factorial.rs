@@ -57,7 +57,7 @@ const ODD_FACTORIALS: [u64; 25] = [
 ];
 
 pub fn factorial(x: usize) -> BigUint {
-    if let Option::Some(&x) = SMALL_FACTORIALS.get(x) {
+    if let Some(&x) = SMALL_FACTORIALS.get(x) {
         x.into()
     } else {
         // This uses a neat trick: The number of 2s that are a factor of x! is
