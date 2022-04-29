@@ -1086,6 +1086,18 @@ fn test_lcm() {
 }
 
 #[test]
+fn test_is_multiple_of() {
+    assert!(BigUint::from(0u32).is_multiple_of(&BigUint::from(0u32)));
+    assert!(BigUint::from(6u32).is_multiple_of(&BigUint::from(6u32)));
+    assert!(BigUint::from(6u32).is_multiple_of(&BigUint::from(3u32)));
+    assert!(BigUint::from(6u32).is_multiple_of(&BigUint::from(1u32)));
+
+    assert!(!BigUint::from(42u32).is_multiple_of(&BigUint::from(5u32)));
+    assert!(!BigUint::from(5u32).is_multiple_of(&BigUint::from(3u32)));
+    assert!(!BigUint::from(42u32).is_multiple_of(&BigUint::from(0u32)));
+}
+
+#[test]
 fn test_next_multiple_of() {
     assert_eq!(
         BigUint::from(16u32).next_multiple_of(&BigUint::from(8u32)),
