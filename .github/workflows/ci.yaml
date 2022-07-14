@@ -23,60 +23,45 @@ jobs:
           nightly
         ]
     steps:
-      - name: Rust install
-        uses: dtolnay/rust-toolchain@master
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build
-        run: cargo build
-      - name: Test
-        run: ./ci/test_full.sh
+      - run: cargo build
+      - run: ./ci/test_full.sh
 
   # try a target with `BigDigit = u32`
   i686:
     name: Test (i686)
     runs-on: ubuntu-latest
     steps:
-      - name: System install
-        run: |
+      - run: |
           sudo apt-get update
           sudo apt-get install gcc-multilib
-      - name: Rust install
-        uses: dtolnay/rust-toolchain@master
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable-i686-unknown-linux-gnu
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build
-        run: cargo build
-      - name: Test
-        run: ./ci/test_full.sh
+      - run: cargo build
+      - run: ./ci/test_full.sh
 
   # try a target that doesn't have std at all, but does have alloc
   no_std:
     name: No Std
     runs-on: ubuntu-latest
     steps:
-      - name: Rust install
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
         with:
           target: thumbv6m-none-eabi
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build
-        run: cargo build --target thumbv6m-none-eabi --no-default-features --features "serde rand"
+      - run: cargo build --target thumbv6m-none-eabi --no-default-features --features "serde rand"
 
   fmt:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - name: Rust install
-        uses: dtolnay/rust-toolchain@1.62.0
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.62.0
         with:
           components: rustfmt
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Check formatting
-        run: cargo fmt --all --check
+      - run: cargo fmt --all --check
