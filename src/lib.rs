@@ -277,7 +277,7 @@ mod big_digit {
     }
     #[inline]
     fn get_lo(n: DoubleBigDigit) -> BigDigit {
-        (n & LO_MASK) as BigDigit
+        n as BigDigit
     }
 
     /// Split one `DoubleBigDigit` into two `BigDigit`s.

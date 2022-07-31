@@ -15,24 +15,28 @@ use num_traits::{CheckedMul, FromPrimitive, One, Zero};
 
 #[inline]
 pub(super) fn mac_with_carry(
-    a: BigDigit,
+    a: &mut BigDigit,
     b: BigDigit,
     c: BigDigit,
-    acc: &mut DoubleBigDigit,
-) -> BigDigit {
-    *acc += DoubleBigDigit::from(a);
-    *acc += DoubleBigDigit::from(b) * DoubleBigDigit::from(c);
-    let lo = *acc as BigDigit;
-    *acc >>= big_digit::BITS;
-    lo
+    carry: &mut BigDigit,
+) {
+    let result =
+        DoubleBigDigit::from(*a) +
+        DoubleBigDigit::from(b) * DoubleBigDigit::from(c) +
+        DoubleBigDigit::from(*carry);
+    let (hi, lo) = big_digit::from_doublebigdigit(result);
+    *a = lo;
+    *carry = hi;
 }
 
 #[inline]
-fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
-    *acc += DoubleBigDigit::from(a) * DoubleBigDigit::from(b);
-    let lo = *acc as BigDigit;
-    *acc >>= big_digit::BITS;
-    lo
+pub(super) fn mul_with_carry(a: &mut BigDigit, b: BigDigit, carry: &mut BigDigit) {
+    let result =
+        DoubleBigDigit::from(*a) * DoubleBigDigit::from(b) +
+        DoubleBigDigit::from(*carry);
+    let (hi, lo) = big_digit::from_doublebigdigit(result);
+    *a = lo;
+    *carry = hi;
 }
 
 /// Three argument multiply accumulate:
@@ -46,17 +50,11 @@ fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
     let (a_lo, a_hi) = acc.split_at_mut(b.len());
 
     for (a, &b) in a_lo.iter_mut().zip(b) {
-        *a = mac_with_carry(*a, b, c, &mut carry);
+        mac_with_carry(a, b, c, &mut carry);
     }
 
-    let (carry_hi, carry_lo) = big_digit::from_doublebigdigit(carry);
-
-    let final_carry = if carry_hi == 0 {
-        __add2(a_hi, &[carry_lo])
-    } else {
-        __add2(a_hi, &[carry_hi, carry_lo])
-    };
-    assert_eq!(final_carry, 0, "carry overflow during multiplication!");
+    let final_carry = __add2(a_hi, &[carry]);
+    debug_assert_eq!(final_carry, 0, "carry overflow during multiplication!");
 }
 
 fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
@@ -367,10 +365,10 @@ fn scalar_mul(a: &mut BigUint, b: BigDigit) {
             } else {
                 let mut carry = 0;
                 for a in a.data.iter_mut() {
-                    *a = mul_with_carry(*a, b, &mut carry);
+                    mul_with_carry(a, b, &mut carry);
                 }
                 if carry != 0 {
-                    a.data.push(carry as BigDigit);
+                    a.data.push(carry);
                 }
             }
         }

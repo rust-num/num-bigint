@@ -2,7 +2,7 @@ use super::{biguint_from_vec, BigUint, ToBigUint};
 
 use super::addition::add2;
 use super::division::div_rem_digit;
-use super::multiplication::mac_with_carry;
+use super::multiplication::mul_with_carry;
 
 use crate::big_digit::{self, BigDigit};
 use crate::std_alloc::Vec;
@@ -132,7 +132,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
 
         let mut carry = 0;
         for d in data.iter_mut() {
-            *d = mac_with_carry(0, *d, base, &mut carry);
+            mul_with_carry(d, base, &mut carry);
         }
         debug_assert!(carry == 0);
 
