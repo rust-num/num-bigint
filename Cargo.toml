@@ -17,9 +17,10 @@ edition = "2018"
 [features]
 default = ["std"]
 std = ["num-integer/std", "num-traits/std"]
+icu = ["fixed_decimal"]
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
+features = ["std", "serde", "rand", "quickcheck", "arbitrary", "icu"]
 
 [[bench]]
 name = "bigint"
@@ -67,6 +68,11 @@ default-features = false
 [dependencies.arbitrary]
 optional = true
 version = "1"
+default-features = false
+
+[dependencies.fixed_decimal]
+optional = true
+version = "0.5"
 default-features = false
 
 [build-dependencies]

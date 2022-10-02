@@ -4,6 +4,8 @@ use num_bigint::{BigInt, ToBigInt};
 
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::collections::hash_map::RandomState;
+#[cfg(all(feature = "icu", has_try_from))]
+use std::convert::TryFrom;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::iter::repeat;
 use std::ops::Neg;
@@ -17,6 +19,9 @@ use num_traits::{pow, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
 
 mod consts;
 use crate::consts::*;
+
+#[cfg(all(feature = "icu", has_try_from))]
+use fixed_decimal::FixedDecimal;
 
 #[macro_use]
 mod macros;
@@ -650,6 +655,31 @@ fn test_convert_from_biguint() {
         BigInt::from(BigUint::from_slice(&[1, 2, 3])),
         BigInt::from_slice(Plus, &[1, 2, 3])
     );
+}
+
+#[test]
+#[cfg(all(feature = "icu", has_try_from))]
+fn test_convert_to_fixeddecimal() {
+    assert_eq!(
+        FixedDecimal::try_from(BigInt::zero()).unwrap(),
+        FixedDecimal::from(0)
+    );
+
+    assert_eq!(
+        FixedDecimal::try_from(BigInt::one()).unwrap(),
+        FixedDecimal::from(1)
+    );
+
+    assert_eq!(
+        FixedDecimal::try_from(-BigInt::one()).unwrap(),
+        FixedDecimal::from(-1)
+    );
+
+    let src_digits = "-387585729452378942174981728917891273198237198237123";
+    assert_eq!(
+        FixedDecimal::try_from(BigInt::from_str_radix(src_digits, 10).unwrap()).unwrap(),
+        src_digits.parse::<FixedDecimal>().unwrap()
+    )
 }
 
 #[test]

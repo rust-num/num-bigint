@@ -5,6 +5,8 @@ use num_integer::Integer;
 
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::collections::hash_map::RandomState;
+#[cfg(all(feature = "icu", has_try_from))]
+use std::convert::TryFrom;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::i64;
 use std::iter::repeat;
@@ -17,6 +19,9 @@ use num_traits::{
     pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
     Zero,
 };
+
+#[cfg(all(feature = "icu", has_try_from))]
+use fixed_decimal::FixedDecimal;
 
 mod consts;
 use crate::consts::*;
@@ -769,6 +774,26 @@ fn test_convert_to_bigint() {
         BigUint::new(vec![1, 2, 3]),
         BigInt::from_biguint(Plus, BigUint::new(vec![1, 2, 3])),
     );
+}
+
+#[test]
+#[cfg(all(feature = "icu", has_try_from))]
+fn test_convert_to_fixeddecimal() {
+    assert_eq!(
+        FixedDecimal::try_from(BigUint::zero()).unwrap(),
+        FixedDecimal::from(0)
+    );
+
+    assert_eq!(
+        FixedDecimal::try_from(BigUint::one()).unwrap(),
+        FixedDecimal::from(1)
+    );
+
+    let src_digits = "387585729452378942174981728917891273198237198237123";
+    assert_eq!(
+        FixedDecimal::try_from(BigUint::from_str_radix(src_digits, 10).unwrap()).unwrap(),
+        src_digits.parse::<FixedDecimal>().unwrap()
+    )
 }
 
 #[test]

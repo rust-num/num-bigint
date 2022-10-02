@@ -1,6 +1,8 @@
 use super::Sign::{self, Minus, NoSign, Plus};
 use super::{BigInt, ToBigInt};
 
+#[cfg(all(feature = "icu", has_try_from))]
+use crate::biguint::to_str_radix_reversed;
 use crate::std_alloc::Vec;
 #[cfg(has_try_from)]
 use crate::TryFromBigIntError;
@@ -10,7 +12,10 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 #[cfg(has_try_from)]
 use core::convert::TryFrom;
 use core::str::{self, FromStr};
-use num_traits::{FromPrimitive, Num, ToPrimitive, Zero};
+use num_traits::{FromPrimitive, Num, Signed, ToPrimitive, Zero};
+
+#[cfg(all(feature = "icu", has_try_from))]
+use fixed_decimal::FixedDecimal;
 
 impl FromStr for BigInt {
     type Err = ParseBigIntError;
@@ -366,6 +371,38 @@ impl_to_bigint!(u128, FromPrimitive::from_u128);
 
 impl_to_bigint!(f32, FromPrimitive::from_f32);
 impl_to_bigint!(f64, FromPrimitive::from_f64);
+
+#[cfg(all(feature = "icu", has_try_from))]
+impl TryFrom<&BigInt> for FixedDecimal {
+    type Error = TryFromBigIntError<()>;
+
+    fn try_from(value: &BigInt) -> Result<Self, Self::Error> {
+        let mut v = to_str_radix_reversed(&value.data, 10);
+
+        if value.is_negative() {
+            v.push(b'-');
+        }
+
+        v.reverse();
+        FixedDecimal::try_from(v.as_slice()).map_err(|_| TryFromBigIntError::new(()))
+    }
+}
+
+#[cfg(all(feature = "icu", has_try_from))]
+impl TryFrom<BigInt> for FixedDecimal {
+    type Error = TryFromBigIntError<BigInt>;
+
+    fn try_from(value: BigInt) -> Result<Self, Self::Error> {
+        let mut v = to_str_radix_reversed(&value.data, 10);
+
+        if value.is_negative() {
+            v.push(b'-')
+        }
+
+        v.reverse();
+        FixedDecimal::try_from(v.as_slice()).map_err(|_| TryFromBigIntError::new(value))
+    }
+}
 
 #[inline]
 pub(super) fn from_signed_bytes_be(digits: &[u8]) -> BigInt {

@@ -19,6 +19,9 @@ use num_integer::{Integer, Roots};
 use num_traits::float::FloatCore;
 use num_traits::{FromPrimitive, Num, PrimInt, ToPrimitive, Zero};
 
+#[cfg(all(feature = "icu", has_try_from))]
+use fixed_decimal::FixedDecimal;
+
 /// Find last set bit
 /// fls(0) == 0, fls(u32::MAX) == 32
 fn fls<T: PrimInt>(v: T) -> u8 {
@@ -571,6 +574,28 @@ impl_to_biguint!(u128, FromPrimitive::from_u128);
 
 impl_to_biguint!(f32, FromPrimitive::from_f32);
 impl_to_biguint!(f64, FromPrimitive::from_f64);
+
+#[cfg(all(feature = "icu", has_try_from))]
+impl TryFrom<&BigUint> for FixedDecimal {
+    type Error = TryFromBigIntError<()>;
+
+    fn try_from(value: &BigUint) -> Result<Self, Self::Error> {
+        let mut v = to_str_radix_reversed(value, 10);
+        v.reverse();
+        FixedDecimal::try_from(v.as_slice()).map_err(|_| TryFromBigIntError::new(()))
+    }
+}
+
+#[cfg(all(feature = "icu", has_try_from))]
+impl TryFrom<BigUint> for FixedDecimal {
+    type Error = TryFromBigIntError<BigUint>;
+
+    fn try_from(value: BigUint) -> Result<Self, Self::Error> {
+        let mut v = to_str_radix_reversed(&value, 10);
+        v.reverse();
+        FixedDecimal::try_from(v.as_slice()).map_err(|_| TryFromBigIntError::new(value))
+    }
+}
 
 // Extract bitwise digits that evenly divide BigDigit
 pub(super) fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
