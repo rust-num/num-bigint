@@ -53,7 +53,7 @@ table offers a brief comparison to a few alternatives.
 | Crate            | License        | Min rustc | Implementation |
 | :--------------- | :------------- | :-------- | :------------- |
 | **`num-bigint`** | MIT/Apache-2.0 | 1.31      | pure rust |
-| [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly |
+| [`ramp`]         | Apache-2.0     | nightly   | rust and inline assembly (no longer maintained) |
 | [`rug`]          | LGPL-3.0+      | 1.37      | bundles [GMP] via [`gmp-mpfr-sys`] |
 | [`rust-gmp`]     | MIT            | stable?   | links to [GMP] |
 | [`apint`]        | MIT/Apache-2.0 | 1.26      | pure rust (unfinished) |
