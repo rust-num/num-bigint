@@ -986,7 +986,27 @@ impl IntDigits for BigUint {
         self.data.len()
     }
 }
+impl push for Biguint {
+    fn new() -> Self {
+        Self {
+            data: vec![]
+        }
+    }
 
+    fn push(&mut self, val: T) {
+        let min_index = self.data.last()
+            // get last min value and its index
+            .map(|(_, index)| (&self.data[*index].0, index))
+            // check if it is smaller then the current value
+            .and_then(|(prev_min, min_index)|
+                (prev_min < &val).then(|| *min_index)
+            )
+            // if not smaller or does not exist
+            // set it to the current index
+            .unwrap_or(self.data.len());
+
+        self.data.push((val, min_index));
+    }
 /// Convert a u32 chunk (len is either 1 or 2) to a single u64 digit
 #[inline]
 fn u32_chunk_to_u64(chunk: &[u32]) -> u64 {
