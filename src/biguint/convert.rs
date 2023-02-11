@@ -102,14 +102,20 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     debug_assert!(!v.is_empty() && !radix.is_power_of_two());
     debug_assert!(v.iter().all(|&c| u32::from(c) < radix));
 
-    #[cfg(feature = "std")]
-    let radix_log2 = f64::from(radix).log2();
-    #[cfg(not(feature = "std"))]
-    let radix_log2 = ilog2(radix.next_power_of_two()) as f64;
-
     // Estimate how big the result will be, so we can pre-allocate it.
-    let bits = radix_log2 * v.len() as f64;
-    let big_digits = (bits / big_digit::BITS as f64).ceil();
+    #[cfg(feature = "std")]
+    let big_digits = {
+        let radix_log2 = f64::from(radix).log2();
+        let bits = radix_log2 * v.len() as f64;
+        (bits / big_digit::BITS as f64).ceil()
+    };
+    #[cfg(not(feature = "std"))]
+    let big_digits = {
+        let radix_log2 = ilog2(radix.next_power_of_two()) as usize;
+        let bits = radix_log2 * v.len();
+        (bits / big_digit::BITS as usize) + 1
+    };
+
     let mut data = Vec::with_capacity(big_digits.to_usize().unwrap_or(0));
 
     let (base, power) = get_radix_base(radix, big_digit::BITS);
@@ -657,12 +663,17 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     debug_assert!(!u.is_zero() && !radix.is_power_of_two());
 
     #[cfg(feature = "std")]
-    let radix_log2 = f64::from(radix).log2();
+    let radix_digits = {
+        let radix_log2 = f64::from(radix).log2();
+        ((u.bits() as f64) / radix_log2).ceil()
+    };
     #[cfg(not(feature = "std"))]
-    let radix_log2 = ilog2(radix) as f64;
+    let radix_digits = {
+        let radix_log2 = ilog2(radix) as usize;
+        ((u.bits() as usize) / radix_log2) + 1
+    };
 
     // Estimate how big the result will be, so we can pre-allocate it.
-    let radix_digits = ((u.bits() as f64) / radix_log2).ceil();
     let mut res = Vec::with_capacity(radix_digits.to_usize().unwrap_or(0));
 
     let mut digits = u.clone();
