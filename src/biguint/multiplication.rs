@@ -402,8 +402,8 @@ fn sub_sign(mut a: &[BigDigit], mut b: &[BigDigit]) -> (Sign, BigUint) {
 }
 
 macro_rules! impl_mul {
-    ($(impl<$($a:lifetime),*> Mul<$Other:ty> for $Self:ty;)*) => {$(
-        impl<$($a),*> Mul<$Other> for $Self {
+    ($(impl Mul<$Other:ty> for $Self:ty;)*) => {$(
+        impl Mul<$Other> for $Self {
             type Output = BigUint;
 
             #[inline]
@@ -422,15 +422,15 @@ macro_rules! impl_mul {
     )*}
 }
 impl_mul! {
-    impl<> Mul<BigUint> for BigUint;
-    impl<'b> Mul<&'b BigUint> for BigUint;
-    impl<'a> Mul<BigUint> for &'a BigUint;
-    impl<'a, 'b> Mul<&'b BigUint> for &'a BigUint;
+    impl Mul<BigUint> for BigUint;
+    impl Mul<BigUint> for &BigUint;
+    impl Mul<&BigUint> for BigUint;
+    impl Mul<&BigUint> for &BigUint;
 }
 
 macro_rules! impl_mul_assign {
-    ($(impl<$($a:lifetime),*> MulAssign<$Other:ty> for BigUint;)*) => {$(
-        impl<$($a),*> MulAssign<$Other> for BigUint {
+    ($(impl MulAssign<$Other:ty> for BigUint;)*) => {$(
+        impl MulAssign<$Other> for BigUint {
             #[inline]
             fn mul_assign(&mut self, other: $Other) {
                 match (&*self.data, &*other.data) {
@@ -448,8 +448,8 @@ macro_rules! impl_mul_assign {
     )*}
 }
 impl_mul_assign! {
-    impl<> MulAssign<BigUint> for BigUint;
-    impl<'a> MulAssign<&'a BigUint> for BigUint;
+    impl MulAssign<BigUint> for BigUint;
+    impl MulAssign<&BigUint> for BigUint;
 }
 
 promote_unsigned_scalars!(impl Mul for BigUint, mul);

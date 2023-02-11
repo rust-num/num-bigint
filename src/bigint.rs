@@ -196,7 +196,7 @@ impl Not for BigInt {
     }
 }
 
-impl<'a> Not for &'a BigInt {
+impl Not for &BigInt {
     type Output = BigInt;
 
     fn not(self) -> BigInt {
@@ -342,7 +342,7 @@ impl Neg for BigInt {
     }
 }
 
-impl<'a> Neg for &'a BigInt {
+impl Neg for &BigInt {
     type Output = BigInt;
 
     #[inline]

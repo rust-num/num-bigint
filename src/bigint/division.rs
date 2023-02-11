@@ -10,7 +10,7 @@ use num_traits::{CheckedDiv, ToPrimitive, Zero};
 
 forward_all_binop_to_ref_ref!(impl Div for BigInt, div);
 
-impl<'a, 'b> Div<&'b BigInt> for &'a BigInt {
+impl Div<&BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -20,7 +20,7 @@ impl<'a, 'b> Div<&'b BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> DivAssign<&'a BigInt> for BigInt {
+impl DivAssign<&BigInt> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: &BigInt) {
         *self = &*self / other;
@@ -235,7 +235,7 @@ impl Div<BigInt> for i128 {
 
 forward_all_binop_to_ref_ref!(impl Rem for BigInt, rem);
 
-impl<'a, 'b> Rem<&'b BigInt> for &'a BigInt {
+impl Rem<&BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -251,7 +251,7 @@ impl<'a, 'b> Rem<&'b BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> RemAssign<&'a BigInt> for BigInt {
+impl RemAssign<&BigInt> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: &BigInt) {
         *self = &*self % other;

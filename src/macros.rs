@@ -34,7 +34,7 @@ macro_rules! forward_val_val_binop_commutative {
 
 macro_rules! forward_ref_val_binop {
     (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a> $imp<$res> for &'a $res {
+        impl $imp<$res> for &$res {
             type Output = $res;
 
             #[inline]
@@ -48,7 +48,7 @@ macro_rules! forward_ref_val_binop {
 
 macro_rules! forward_ref_val_binop_commutative {
     (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a> $imp<$res> for &'a $res {
+        impl $imp<$res> for &$res {
             type Output = $res;
 
             #[inline]
@@ -62,7 +62,7 @@ macro_rules! forward_ref_val_binop_commutative {
 
 macro_rules! forward_val_ref_binop {
     (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a> $imp<&'a $res> for $res {
+        impl $imp<&$res> for $res {
             type Output = $res;
 
             #[inline]
@@ -76,7 +76,7 @@ macro_rules! forward_val_ref_binop {
 
 macro_rules! forward_ref_ref_binop {
     (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a, 'b> $imp<&'b $res> for &'a $res {
+        impl $imp<&$res> for &$res {
             type Output = $res;
 
             #[inline]
@@ -90,7 +90,7 @@ macro_rules! forward_ref_ref_binop {
 
 macro_rules! forward_ref_ref_binop_commutative {
     (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a, 'b> $imp<&'b $res> for &'a $res {
+        impl $imp<&$res> for &$res {
             type Output = $res;
 
             #[inline]
@@ -167,7 +167,7 @@ macro_rules! forward_scalar_val_val_binop_to_ref_val {
 
 macro_rules! forward_scalar_ref_ref_binop_to_ref_val {
     (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
-        impl<'a, 'b> $imp<&'b $scalar> for &'a $res {
+        impl $imp<&$scalar> for &$res {
             type Output = $res;
 
             #[inline]
@@ -176,7 +176,7 @@ macro_rules! forward_scalar_ref_ref_binop_to_ref_val {
             }
         }
 
-        impl<'a, 'b> $imp<&'a $res> for &'b $scalar {
+        impl $imp<&$res> for &$scalar {
             type Output = $res;
 
             #[inline]
@@ -189,7 +189,7 @@ macro_rules! forward_scalar_ref_ref_binop_to_ref_val {
 
 macro_rules! forward_scalar_val_ref_binop_to_ref_val {
     (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
-        impl<'a> $imp<&'a $scalar> for $res {
+        impl $imp<&$scalar> for $res {
             type Output = $res;
 
             #[inline]
@@ -198,7 +198,7 @@ macro_rules! forward_scalar_val_ref_binop_to_ref_val {
             }
         }
 
-        impl<'a> $imp<$res> for &'a $scalar {
+        impl $imp<$res> for &$scalar {
             type Output = $res;
 
             #[inline]
@@ -211,7 +211,7 @@ macro_rules! forward_scalar_val_ref_binop_to_ref_val {
 
 macro_rules! forward_scalar_val_ref_binop_to_val_val {
     (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
-        impl<'a> $imp<&'a $scalar> for $res {
+        impl $imp<&$scalar> for $res {
             type Output = $res;
 
             #[inline]
@@ -220,7 +220,7 @@ macro_rules! forward_scalar_val_ref_binop_to_val_val {
             }
         }
 
-        impl<'a> $imp<$res> for &'a $scalar {
+        impl $imp<$res> for &$scalar {
             type Output = $res;
 
             #[inline]
@@ -233,7 +233,7 @@ macro_rules! forward_scalar_val_ref_binop_to_val_val {
 
 macro_rules! forward_scalar_ref_val_binop_to_val_val {
     (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
-        impl<'a> $imp<$scalar> for &'a $res {
+        impl $imp<$scalar> for &$res {
             type Output = $res;
 
             #[inline]
@@ -242,7 +242,7 @@ macro_rules! forward_scalar_ref_val_binop_to_val_val {
             }
         }
 
-        impl<'a> $imp<&'a $res> for $scalar {
+        impl $imp<&$res> for $scalar {
             type Output = $res;
 
             #[inline]
@@ -255,7 +255,7 @@ macro_rules! forward_scalar_ref_val_binop_to_val_val {
 
 macro_rules! forward_scalar_ref_ref_binop_to_val_val {
     (impl $imp:ident<$scalar:ty> for $res:ty, $method:ident) => {
-        impl<'a, 'b> $imp<&'b $scalar> for &'a $res {
+        impl $imp<&$scalar> for &$res {
             type Output = $res;
 
             #[inline]
@@ -264,7 +264,7 @@ macro_rules! forward_scalar_ref_ref_binop_to_val_val {
             }
         }
 
-        impl<'a, 'b> $imp<&'a $res> for &'b $scalar {
+        impl $imp<&$res> for &$scalar {
             type Output = $res;
 
             #[inline]

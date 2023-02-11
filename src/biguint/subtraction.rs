@@ -108,7 +108,7 @@ forward_val_val_binop!(impl Sub for BigUint, sub);
 forward_ref_ref_binop!(impl Sub for BigUint, sub);
 forward_val_assign!(impl SubAssign for BigUint, sub_assign);
 
-impl<'a> Sub<&'a BigUint> for BigUint {
+impl Sub<&BigUint> for BigUint {
     type Output = BigUint;
 
     fn sub(mut self, other: &BigUint) -> BigUint {
@@ -116,14 +116,14 @@ impl<'a> Sub<&'a BigUint> for BigUint {
         self
     }
 }
-impl<'a> SubAssign<&'a BigUint> for BigUint {
-    fn sub_assign(&mut self, other: &'a BigUint) {
+impl SubAssign<&BigUint> for BigUint {
+    fn sub_assign(&mut self, other: &BigUint) {
         sub2(&mut self.data[..], &other.data[..]);
         self.normalize();
     }
 }
 
-impl<'a> Sub<BigUint> for &'a BigUint {
+impl Sub<BigUint> for &BigUint {
     type Output = BigUint;
 
     fn sub(self, mut other: BigUint) -> BigUint {

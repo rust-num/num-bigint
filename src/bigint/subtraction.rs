@@ -29,7 +29,7 @@ macro_rules! bigint_sub {
     };
 }
 
-impl<'a, 'b> Sub<&'b BigInt> for &'a BigInt {
+impl Sub<&BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -45,7 +45,7 @@ impl<'a, 'b> Sub<&'b BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> Sub<BigInt> for &'a BigInt {
+impl Sub<BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -54,7 +54,7 @@ impl<'a> Sub<BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> Sub<&'a BigInt> for BigInt {
+impl Sub<&BigInt> for BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -72,7 +72,7 @@ impl Sub<BigInt> for BigInt {
     }
 }
 
-impl<'a> SubAssign<&'a BigInt> for BigInt {
+impl SubAssign<&BigInt> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: &BigInt) {
         let n = mem::replace(self, BigInt::zero());

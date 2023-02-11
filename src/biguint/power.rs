@@ -6,7 +6,7 @@ use crate::big_digit::{self, BigDigit};
 use num_integer::Integer;
 use num_traits::{One, Pow, ToPrimitive, Zero};
 
-impl<'b> Pow<&'b BigUint> for BigUint {
+impl Pow<&BigUint> for BigUint {
     type Output = BigUint;
 
     #[inline]
@@ -36,7 +36,7 @@ impl Pow<BigUint> for BigUint {
     }
 }
 
-impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
+impl Pow<&BigUint> for &BigUint {
     type Output = BigUint;
 
     #[inline]
@@ -51,7 +51,7 @@ impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
     }
 }
 
-impl<'a> Pow<BigUint> for &'a BigUint {
+impl Pow<BigUint> for &BigUint {
     type Output = BigUint;
 
     #[inline]
@@ -92,7 +92,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'b> Pow<&'b $T> for BigUint {
+        impl Pow<&$T> for BigUint {
             type Output = BigUint;
 
             #[inline]
@@ -101,7 +101,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'a> Pow<$T> for &'a BigUint {
+        impl Pow<$T> for &BigUint {
             type Output = BigUint;
 
             #[inline]
@@ -113,7 +113,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'a, 'b> Pow<&'b $T> for &'a BigUint {
+        impl Pow<&$T> for &BigUint {
             type Output = BigUint;
 
             #[inline]

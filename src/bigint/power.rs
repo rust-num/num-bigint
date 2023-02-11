@@ -31,7 +31,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'b> Pow<&'b $T> for BigInt {
+        impl Pow<&$T> for BigInt {
             type Output = BigInt;
 
             #[inline]
@@ -40,7 +40,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'a> Pow<$T> for &'a BigInt {
+        impl Pow<$T> for &BigInt {
             type Output = BigInt;
 
             #[inline]
@@ -49,7 +49,7 @@ macro_rules! pow_impl {
             }
         }
 
-        impl<'a, 'b> Pow<&'b $T> for &'a BigInt {
+        impl Pow<&$T> for &BigInt {
             type Output = BigInt;
 
             #[inline]

@@ -22,8 +22,8 @@ impl Mul<Sign> for Sign {
 }
 
 macro_rules! impl_mul {
-    ($(impl<$($a:lifetime),*> Mul<$Other:ty> for $Self:ty;)*) => {$(
-        impl<$($a),*> Mul<$Other> for $Self {
+    ($(impl Mul<$Other:ty> for $Self:ty;)*) => {$(
+        impl Mul<$Other> for $Self {
             type Output = BigInt;
 
             #[inline]
@@ -37,15 +37,15 @@ macro_rules! impl_mul {
     )*}
 }
 impl_mul! {
-    impl<> Mul<BigInt> for BigInt;
-    impl<'b> Mul<&'b BigInt> for BigInt;
-    impl<'a> Mul<BigInt> for &'a BigInt;
-    impl<'a, 'b> Mul<&'b BigInt> for &'a BigInt;
+    impl Mul<BigInt> for BigInt;
+    impl Mul<BigInt> for &BigInt;
+    impl Mul<&BigInt> for BigInt;
+    impl Mul<&BigInt> for &BigInt;
 }
 
 macro_rules! impl_mul_assign {
-    ($(impl<$($a:lifetime),*> MulAssign<$Other:ty> for BigInt;)*) => {$(
-        impl<$($a),*> MulAssign<$Other> for BigInt {
+    ($(impl MulAssign<$Other:ty> for BigInt;)*) => {$(
+        impl MulAssign<$Other> for BigInt {
             #[inline]
             fn mul_assign(&mut self, other: $Other) {
                 // automatically match value/ref
@@ -61,8 +61,8 @@ macro_rules! impl_mul_assign {
     )*}
 }
 impl_mul_assign! {
-    impl<> MulAssign<BigInt> for BigInt;
-    impl<'a> MulAssign<&'a BigInt> for BigInt;
+    impl MulAssign<BigInt> for BigInt;
+    impl MulAssign<&BigInt> for BigInt;
 }
 
 promote_all_scalars!(impl Mul for BigInt, mul);

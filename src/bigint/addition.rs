@@ -30,7 +30,7 @@ macro_rules! bigint_add {
     };
 }
 
-impl<'a, 'b> Add<&'b BigInt> for &'a BigInt {
+impl Add<&BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -46,7 +46,7 @@ impl<'a, 'b> Add<&'b BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> Add<BigInt> for &'a BigInt {
+impl Add<BigInt> for &BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -55,7 +55,7 @@ impl<'a> Add<BigInt> for &'a BigInt {
     }
 }
 
-impl<'a> Add<&'a BigInt> for BigInt {
+impl Add<&BigInt> for BigInt {
     type Output = BigInt;
 
     #[inline]
@@ -73,7 +73,7 @@ impl Add<BigInt> for BigInt {
     }
 }
 
-impl<'a> AddAssign<&'a BigInt> for BigInt {
+impl AddAssign<&BigInt> for BigInt {
     #[inline]
     fn add_assign(&mut self, other: &BigInt) {
         let n = mem::replace(self, BigInt::zero());
