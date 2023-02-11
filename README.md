@@ -53,8 +53,8 @@ table offers a brief comparison to a few alternatives.
 | Crate             | License        | Min rustc | Implementation | Features |
 | :---------------  | :------------- | :-------- | :------------- | :------- |
 | **`num-bigint`**  | MIT/Apache-2.0 | 1.31      | pure rust | dynamic width, number theoretical functions |
-| [`rug`]           | LGPL-3.0+      | 1.37      | bundles [GMP] via [`gmp-mpfr-sys`] | all the features of GMP, MPFR, and MPC |
-| [`awint`]         | MIT/Apache-2.0 | 1.61      | pure rust | fixed width, heap or stack, concatenation macros |
+| [`rug`]           | LGPL-3.0+      | 1.65      | bundles [GMP] via [`gmp-mpfr-sys`] | all the features of GMP, MPFR, and MPC |
+| [`awint`]         | MIT/Apache-2.0 | 1.66      | pure rust | fixed width, heap or stack, concatenation macros |
 | [`bnum`]          | MIT/Apache-2.0 | 1.61      | pure rust | fixed width, parity with Rust primitives including floats |
 | [`ibig`]          | MIT/Apache-2.0 | 1.49      | pure rust | dynamic width, number theoretical functions |
 | [`crypto-bigint`] | MIT/Apache-2.0 | 1.57      | pure rust | fixed width, stack only |
