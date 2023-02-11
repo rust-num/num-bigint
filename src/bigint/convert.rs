@@ -10,7 +10,7 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 #[cfg(has_try_from)]
 use core::convert::TryFrom;
 use core::str::{self, FromStr};
-use num_traits::{FromPrimitive, Num, ToPrimitive, Zero};
+use num_traits::{FromPrimitive, Num, One, ToPrimitive, Zero};
 
 impl FromStr for BigInt {
     type Err = ParseBigIntError;
@@ -366,6 +366,16 @@ impl_to_bigint!(u128, FromPrimitive::from_u128);
 
 impl_to_bigint!(f32, FromPrimitive::from_f32);
 impl_to_bigint!(f64, FromPrimitive::from_f64);
+
+impl From<bool> for BigInt {
+    fn from(x: bool) -> Self {
+        if x {
+            One::one()
+        } else {
+            Zero::zero()
+        }
+    }
+}
 
 #[inline]
 pub(super) fn from_signed_bytes_be(digits: &[u8]) -> BigInt {
