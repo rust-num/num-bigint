@@ -5,26 +5,32 @@ use std::io::Write;
 use std::path::Path;
 
 fn main() {
-    let pointer_width = env::var("CARGO_CFG_TARGET_POINTER_WIDTH");
-    let u64_digit = pointer_width.as_ref().map(String::as_str) == Ok("64");
+    let ptr_width = env::var("CARGO_CFG_TARGET_POINTER_WIDTH");
+    let u64_digit = ptr_width
+        .as_ref()
+        .map(|x| x == "64" || x == "128")
+        .unwrap_or(false);
+
     if u64_digit {
         autocfg::emit("u64_digit");
     }
+
     let ac = autocfg::new();
     let std = if ac.probe_sysroot_crate("std") {
         "std"
     } else {
         "core"
     };
+
     if ac.probe_path(&format!("{}::convert::TryFrom", std)) {
         autocfg::emit("has_try_from");
     }
 
-    if let Ok(target_arch) = env::var("CARGO_CFG_TARGET_ARCH") {
-        if target_arch == "x86_64" || target_arch == "x86" {
+    if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
+        if arch == "x86_64" || arch == "x86" {
             let digit = if u64_digit { "u64" } else { "u32" };
 
-            let addcarry = format!("{}::arch::{}::_addcarry_{}", std, target_arch, digit);
+            let addcarry = format!("{}::arch::{}::_addcarry_{}", std, arch, digit);
             if ac.probe_path(&addcarry) {
                 autocfg::emit("use_addcarry");
             }
