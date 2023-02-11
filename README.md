@@ -64,7 +64,7 @@ table offers a brief comparison to a few alternatives.
 [`rug`]: https://crates.io/crates/rug
 [`awint`]: https://crates.io/crates/awint
 [`bnum`]: https://crates.io/crates/bnum
-[`ibig`]: https://github.com/tczajka/ibig-rs
+[`ibig`]: https://crates.io/crates/ibig
 [`crypto-bigint`]: https://crates.io/crates/crypto-bigint
 
 ## License
