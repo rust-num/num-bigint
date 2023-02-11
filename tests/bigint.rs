@@ -1037,6 +1037,18 @@ fn test_lcm() {
 }
 
 #[test]
+fn test_is_multiple_of() {
+    assert!(BigInt::from(0).is_multiple_of(&BigInt::from(0)));
+    assert!(BigInt::from(6).is_multiple_of(&BigInt::from(6)));
+    assert!(BigInt::from(6).is_multiple_of(&BigInt::from(3)));
+    assert!(BigInt::from(6).is_multiple_of(&BigInt::from(1)));
+
+    assert!(!BigInt::from(42).is_multiple_of(&BigInt::from(5)));
+    assert!(!BigInt::from(5).is_multiple_of(&BigInt::from(3)));
+    assert!(!BigInt::from(42).is_multiple_of(&BigInt::from(0)));
+}
+
+#[test]
 fn test_next_multiple_of() {
     assert_eq!(
         BigInt::from(16).next_multiple_of(&BigInt::from(8)),

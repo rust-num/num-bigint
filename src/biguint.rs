@@ -283,6 +283,9 @@ impl Integer for BigUint {
     /// Returns `true` if the number is a multiple of `other`.
     #[inline]
     fn is_multiple_of(&self, other: &BigUint) -> bool {
+        if other.is_zero() {
+            return self.is_zero();
+        }
         (self % other).is_zero()
     }
 
