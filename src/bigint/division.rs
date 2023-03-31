@@ -6,7 +6,7 @@ use crate::{IsizePromotion, UsizePromotion};
 
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, CheckedEuclid, Euclid, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, Euclid, Signed, ToPrimitive, Zero};
 
 forward_all_binop_to_ref_ref!(impl Div for BigInt, div);
 
@@ -469,8 +469,8 @@ impl Euclid for BigInt {
     #[inline]
     fn div_euclid(&self, v: &BigInt) -> BigInt {
         let (q, r) = self.div_rem(v);
-        if r < BigInt::zero() {
-            if *v > BigInt::zero() {
+        if r.is_negative() {
+            if v.is_positive() {
                 q - 1
             } else {
                 q + 1
@@ -483,11 +483,11 @@ impl Euclid for BigInt {
     #[inline]
     fn rem_euclid(&self, v: &BigInt) -> BigInt {
         let r = self % v;
-        if r < BigInt::zero() {
-            if *v < BigInt::zero() {
-                r - v
-            } else {
+        if r.is_negative() {
+            if v.is_positive() {
                 r + v
+            } else {
+                r - v
             }
         } else {
             r
