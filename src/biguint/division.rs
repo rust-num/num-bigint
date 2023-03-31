@@ -10,7 +10,7 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, One, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, Euclid, One, ToPrimitive, Zero};
 
 /// Divide a two digit numerator by a one digit divisor, returns quotient and remainder:
 ///
@@ -616,5 +616,37 @@ impl CheckedDiv for BigUint {
             return None;
         }
         Some(self.div(v))
+    }
+}
+
+impl CheckedEuclid for BigUint {
+    #[inline]
+    fn checked_div_euclid(&self, v: &BigUint) -> Option<BigUint> {
+        if v.is_zero() {
+            return None;
+        }
+        Some(self.div_euclid(v))
+    }
+
+    #[inline]
+    fn checked_rem_euclid(&self, v: &BigUint) -> Option<BigUint> {
+        if v.is_zero() {
+            return None;
+        }
+        Some(self.rem_euclid(v))
+    }
+}
+
+impl Euclid for BigUint {
+    #[inline]
+    fn div_euclid(&self, v: &BigUint) -> BigUint {
+        // trivially same as regular division
+        self / v
+    }
+
+    #[inline]
+    fn rem_euclid(&self, v: &BigUint) -> BigUint {
+        // trivially same as regular remainder
+        self % v
     }
 }

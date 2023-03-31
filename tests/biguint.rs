@@ -14,8 +14,8 @@ use std::{i128, u128};
 use std::{u16, u32, u64, u8, usize};
 
 use num_traits::{
-    pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromBytes, FromPrimitive, Num, One, Pow,
-    ToBytes, ToPrimitive, Zero,
+    pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Euclid, FromBytes, FromPrimitive, Num,
+    One, Pow, ToBytes, ToPrimitive, Zero,
 };
 
 mod consts;
@@ -919,6 +919,40 @@ fn test_div_ceil() {
         } else {
             assert_eq!(a.div_ceil(b), d + 1u32);
         }
+    }
+
+    for elm in MUL_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigUint::from_slice(a_vec);
+        let b = BigUint::from_slice(b_vec);
+        let c = BigUint::from_slice(c_vec);
+
+        if !a.is_zero() {
+            check(&c, &a, &b, &Zero::zero());
+        }
+        if !b.is_zero() {
+            check(&c, &b, &a, &Zero::zero());
+        }
+    }
+
+    for elm in DIV_REM_QUADRUPLES.iter() {
+        let (a_vec, b_vec, c_vec, d_vec) = *elm;
+        let a = BigUint::from_slice(a_vec);
+        let b = BigUint::from_slice(b_vec);
+        let c = BigUint::from_slice(c_vec);
+        let d = BigUint::from_slice(d_vec);
+
+        if !b.is_zero() {
+            check(&a, &b, &c, &d);
+        }
+    }
+}
+
+#[test]
+fn test_div_rem_euclid() {
+    fn check(a: &BigUint, b: &BigUint, d: &BigUint, m: &BigUint) {
+        assert_eq!(a.div_euclid(b), *d);
+        assert_eq!(a.rem_euclid(b), *m);
     }
 
     for elm in MUL_TRIPLES.iter() {
