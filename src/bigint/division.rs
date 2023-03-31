@@ -468,8 +468,8 @@ impl CheckedEuclid for BigInt {
 impl Euclid for BigInt {
     #[inline]
     fn div_euclid(&self, v: &BigInt) -> BigInt {
-        let q = self / v;
-        if self % v < BigInt::zero() {
+        let (q, r) = self.div_rem(v);
+        if r < BigInt::zero() {
             if *v > BigInt::zero() {
                 q - 1
             } else {
