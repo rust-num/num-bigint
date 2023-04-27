@@ -287,19 +287,31 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
                 let digit_bits = (bits - 1) % u64::from(big_digit::BITS) + 1;
                 let bits_want = Ord::min(64 - ret_bits, digit_bits);
 
-                if bits_want != 64 {
-                    ret <<= bits_want;
+                if bits_want != 0 {
+                    if bits_want != 64 {
+                        ret <<= bits_want;
+                    }
+                    // XXX Conversion is useless if already 64-bit.
+                    #[allow(clippy::useless_conversion)]
+                    let d0 = u64::from(*d) >> (digit_bits - bits_want);
+                    ret |= d0;
                 }
-                // XXX Conversion is useless if already 64-bit.
-                #[allow(clippy::useless_conversion)]
-                let d0 = u64::from(*d) >> (digit_bits - bits_want);
-                ret |= d0;
+
+                // Implement round-to-odd: If any lower bits are 1, set LSB to 1
+                // so that rounding again to floating point value using
+                // nearest-ties-to-even is correct.
+                //
+                // See: https://en.wikipedia.org/wiki/Rounding#Rounding_to_prepare_for_shorter_precision
+
+                if digit_bits - bits_want != 0 {
+                    // XXX Conversion is useless if already 64-bit.
+                    #[allow(clippy::useless_conversion)]
+                    let masked = u64::from(*d) << (64 - (digit_bits - bits_want) as u32);
+                    ret |= (masked != 0) as u64;
+                }
+
                 ret_bits += bits_want;
                 bits -= bits_want;
-
-                if ret_bits == 64 {
-                    break;
-                }
             }
 
             ret
