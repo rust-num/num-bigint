@@ -8,7 +8,7 @@
 
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
-use num_traits::{Num, One, Signed, Zero};
+use num_traits::{Num, One, Signed, ToPrimitive, Zero};
 use quickcheck::{Gen, QuickCheck, TestResult};
 use quickcheck_macros::quickcheck;
 
@@ -356,4 +356,21 @@ fn quickcheck_modpow() {
     }
 
     qc.quickcheck(test_modpow as fn(i128, u128, i128) -> TestResult);
+}
+
+#[test]
+fn quickcheck_to_float_equals_i128_cast() {
+    let gen = Gen::new(usize::max_value());
+    let mut qc = QuickCheck::new().gen(gen).tests(1_000_000);
+
+    fn to_f32_equals_i128_cast(value: i128) -> bool {
+        BigInt::from(value).to_f32() == Some(value as f32)
+    }
+
+    fn to_f64_equals_i128_cast(value: i128) -> bool {
+        BigInt::from(value).to_f64() == Some(value as f64)
+    }
+
+    qc.quickcheck(to_f32_equals_i128_cast as fn(i128) -> bool);
+    qc.quickcheck(to_f64_equals_i128_cast as fn(i128) -> bool);
 }
