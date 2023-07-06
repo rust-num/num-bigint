@@ -1874,3 +1874,42 @@ fn test_set_bit() {
     x.set_bit(1, false);
     assert_eq!(x, BigUint::zero());
 }
+
+#[test]
+fn test_true_division() {
+    let n1: BigUint = "123456678890123345567789".parse().unwrap();
+    let n2: BigUint = "12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = 10000000270550.242f64;
+    assert_eq!(f, true_div);
+
+    let n1: BigUint = "123456678890123345567789".parse::<BigUint>().unwrap() << 15;
+    let n2: BigUint = "12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = 3.2768000886539034e+17f64;
+    assert_eq!(f, true_div);
+
+    let n1: BigUint = "123456678890123345567789".parse::<BigUint>().unwrap() << 3030;
+    let n2: BigUint = "12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = f64::INFINITY;
+    assert_eq!(f, true_div);
+
+    let n2: BigUint = "123456678890123345567789".parse().unwrap();
+    let n1: BigUint = "12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = 9.999999729449765e-14f64;
+    assert_eq!(f, true_div);
+
+    let n2: BigUint = "12345667889012334556778900000000".parse().unwrap();
+    let n1: BigUint = "12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = 9.999999729449765e-22f64;
+    assert_eq!(f, true_div);
+
+    let n1: BigUint = "12345667889012334556778900000000".parse().unwrap();
+    let n2: BigUint = "12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = 1.0000000270550242e+21f64;
+    assert_eq!(f, true_div);
+}

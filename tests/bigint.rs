@@ -1416,3 +1416,18 @@ fn test_set_bit() {
     x.set_bit(0, false);
     assert_eq!(x, BigInt::from_biguint(Minus, BigUint::one() << 200));
 }
+
+#[test]
+fn test_true_division() {
+    let n1: BigInt = "123456678890123345567789".parse().unwrap();
+    let n2: BigInt = "-12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = -10000000270550.242f64;
+    assert_eq!(f, true_div);
+
+    let n2: BigInt = "-123456678890123345567789".parse().unwrap();
+    let n1: BigInt = "-12345667555".parse().unwrap();
+    let f = n1.true_div(&n2);
+    let true_div = 9.999999729449765e-14f64;
+    assert_eq!(f, true_div);
+}
