@@ -82,5 +82,14 @@ fi
 case "${STD_FEATURES[*]}" in
   *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml ;;&
   *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
-  *quickcheck*) cargo test --manifest-path ci/big_quickcheck/Cargo.toml ;;&
+  *quickcheck*) (
+      cd ci/big_quickcheck
+      # quote and proc-macro2 updated to 2021 edition after these versions
+      check_version 1.56.0 || (
+        cargo generate-lockfile
+        cargo update -p quote --precise 1.0.30
+        cargo update -p proc-macro2 --precise 1.0.65
+      )
+      cargo test
+    ) ;;&
 esac
