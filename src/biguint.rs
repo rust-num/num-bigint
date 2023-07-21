@@ -959,6 +959,30 @@ impl BigUint {
     }
 }
 
+impl num_traits::FromBytes for BigUint {
+    type Bytes = [u8];
+
+    fn from_be_bytes(bytes: &Self::Bytes) -> Self {
+        Self::from_bytes_be(bytes)
+    }
+
+    fn from_le_bytes(bytes: &Self::Bytes) -> Self {
+        Self::from_bytes_le(bytes)
+    }
+}
+
+impl num_traits::ToBytes for BigUint {
+    type Bytes = Vec<u8>;
+
+    fn to_be_bytes(&self) -> Self::Bytes {
+        self.to_bytes_be()
+    }
+
+    fn to_le_bytes(&self) -> Self::Bytes {
+        self.to_bytes_le()
+    }
+}
+
 pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
     fn digits_mut(&mut self) -> &mut Vec<BigDigit>;

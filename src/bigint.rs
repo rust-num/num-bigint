@@ -1097,6 +1097,30 @@ impl BigInt {
     }
 }
 
+impl num_traits::FromBytes for BigInt {
+    type Bytes = [u8];
+
+    fn from_be_bytes(bytes: &Self::Bytes) -> Self {
+        Self::from_signed_bytes_be(bytes)
+    }
+
+    fn from_le_bytes(bytes: &Self::Bytes) -> Self {
+        Self::from_signed_bytes_le(bytes)
+    }
+}
+
+impl num_traits::ToBytes for BigInt {
+    type Bytes = Vec<u8>;
+
+    fn to_be_bytes(&self) -> Self::Bytes {
+        self.to_signed_bytes_be()
+    }
+
+    fn to_le_bytes(&self) -> Self::Bytes {
+        self.to_signed_bytes_le()
+    }
+}
+
 #[test]
 fn test_from_biguint() {
     fn check(inp_s: Sign, inp_n: usize, ans_s: Sign, ans_n: usize) {
