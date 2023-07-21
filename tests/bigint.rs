@@ -13,7 +13,9 @@ use std::{i16, i32, i64, i8, isize};
 use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
-use num_traits::{pow, FromPrimitive, Num, One, Pow, Signed, ToPrimitive, Zero};
+use num_traits::{
+    pow, FromBytes, FromPrimitive, Num, One, Pow, Signed, ToBytes, ToPrimitive, Zero,
+};
 
 mod consts;
 use crate::consts::*;
@@ -94,12 +96,9 @@ fn test_to_bytes_le() {
 #[test]
 fn test_to_signed_bytes_le() {
     fn check(s: &str, result: Vec<u8>) {
-        assert_eq!(
-            BigInt::parse_bytes(s.as_bytes(), 10)
-                .unwrap()
-                .to_signed_bytes_le(),
-            result
-        );
+        let b = BigInt::parse_bytes(s.as_bytes(), 10).unwrap();
+        assert_eq!(b.to_signed_bytes_le(), result);
+        assert_eq!(<BigInt as ToBytes>::to_le_bytes(&b), result);
     }
 
     check("0", vec![0]);
@@ -115,10 +114,9 @@ fn test_to_signed_bytes_le() {
 #[test]
 fn test_from_signed_bytes_le() {
     fn check(s: &[u8], result: &str) {
-        assert_eq!(
-            BigInt::from_signed_bytes_le(s),
-            BigInt::parse_bytes(result.as_bytes(), 10).unwrap()
-        );
+        let b = BigInt::parse_bytes(result.as_bytes(), 10).unwrap();
+        assert_eq!(BigInt::from_signed_bytes_le(s), b);
+        assert_eq!(<BigInt as FromBytes>::from_le_bytes(s), b);
     }
 
     check(&[], "0");
@@ -136,12 +134,9 @@ fn test_from_signed_bytes_le() {
 #[test]
 fn test_to_signed_bytes_be() {
     fn check(s: &str, result: Vec<u8>) {
-        assert_eq!(
-            BigInt::parse_bytes(s.as_bytes(), 10)
-                .unwrap()
-                .to_signed_bytes_be(),
-            result
-        );
+        let b = BigInt::parse_bytes(s.as_bytes(), 10).unwrap();
+        assert_eq!(b.to_signed_bytes_be(), result);
+        assert_eq!(<BigInt as ToBytes>::to_be_bytes(&b), result);
     }
 
     check("0", vec![0]);
@@ -157,10 +152,9 @@ fn test_to_signed_bytes_be() {
 #[test]
 fn test_from_signed_bytes_be() {
     fn check(s: &[u8], result: &str) {
-        assert_eq!(
-            BigInt::from_signed_bytes_be(s),
-            BigInt::parse_bytes(result.as_bytes(), 10).unwrap()
-        );
+        let b = BigInt::parse_bytes(result.as_bytes(), 10).unwrap();
+        assert_eq!(BigInt::from_signed_bytes_be(s), b);
+        assert_eq!(<BigInt as FromBytes>::from_be_bytes(s), b);
     }
 
     check(&[], "0");

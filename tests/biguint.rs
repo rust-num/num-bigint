@@ -14,8 +14,8 @@ use std::{i128, u128};
 use std::{u16, u32, u64, u8, usize};
 
 use num_traits::{
-    pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
-    Zero,
+    pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromBytes, FromPrimitive, Num, One, Pow,
+    ToBytes, ToPrimitive, Zero,
 };
 
 mod consts;
@@ -27,10 +27,9 @@ mod macros;
 #[test]
 fn test_from_bytes_be() {
     fn check(s: &str, result: &str) {
-        assert_eq!(
-            BigUint::from_bytes_be(s.as_bytes()),
-            BigUint::parse_bytes(result.as_bytes(), 10).unwrap()
-        );
+        let b = BigUint::parse_bytes(result.as_bytes(), 10).unwrap();
+        assert_eq!(BigUint::from_bytes_be(s.as_bytes()), b);
+        assert_eq!(<BigUint as FromBytes>::from_be_bytes(s.as_bytes()), b);
     }
     check("A", "65");
     check("AA", "16705");
@@ -44,6 +43,7 @@ fn test_to_bytes_be() {
     fn check(s: &str, result: &str) {
         let b = BigUint::parse_bytes(result.as_bytes(), 10).unwrap();
         assert_eq!(b.to_bytes_be(), s.as_bytes());
+        assert_eq!(<BigUint as ToBytes>::to_be_bytes(&b), s.as_bytes());
     }
     check("A", "65");
     check("AA", "16705");
@@ -60,10 +60,9 @@ fn test_to_bytes_be() {
 #[test]
 fn test_from_bytes_le() {
     fn check(s: &str, result: &str) {
-        assert_eq!(
-            BigUint::from_bytes_le(s.as_bytes()),
-            BigUint::parse_bytes(result.as_bytes(), 10).unwrap()
-        );
+        let b = BigUint::parse_bytes(result.as_bytes(), 10).unwrap();
+        assert_eq!(BigUint::from_bytes_le(s.as_bytes()), b);
+        assert_eq!(<BigUint as FromBytes>::from_le_bytes(s.as_bytes()), b);
     }
     check("A", "65");
     check("AA", "16705");
@@ -77,6 +76,7 @@ fn test_to_bytes_le() {
     fn check(s: &str, result: &str) {
         let b = BigUint::parse_bytes(result.as_bytes(), 10).unwrap();
         assert_eq!(b.to_bytes_le(), s.as_bytes());
+        assert_eq!(<BigUint as ToBytes>::to_le_bytes(&b), s.as_bytes());
     }
     check("A", "65");
     check("AA", "16705");
