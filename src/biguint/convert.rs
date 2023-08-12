@@ -1,3 +1,6 @@
+// This uses stdlib features higher than the MSRV
+#![allow(clippy::manual_range_contains)] // 1.35
+
 use super::{biguint_from_vec, BigUint, ToBigUint};
 
 use super::addition::add2;
