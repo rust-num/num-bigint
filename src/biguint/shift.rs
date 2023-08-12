@@ -35,7 +35,7 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
 
     if shift > 0 {
         let mut carry = 0;
-        let carry_shift = big_digit::BITS as u8 - shift;
+        let carry_shift = big_digit::BITS - shift;
         for elem in data[digits..].iter_mut() {
             let new_carry = *elem >> carry_shift;
             *elem = (*elem << shift) | carry;
@@ -79,7 +79,7 @@ fn biguint_shr2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
 
     if shift > 0 {
         let mut borrow = 0;
-        let borrow_shift = big_digit::BITS as u8 - shift;
+        let borrow_shift = big_digit::BITS - shift;
         for elem in data.iter_mut().rev() {
             let new_borrow = *elem << borrow_shift;
             *elem = (*elem >> shift) | borrow;
