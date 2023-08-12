@@ -589,7 +589,7 @@ impl BigUint {
         } else {
             let mut v = bytes.to_vec();
             v.reverse();
-            BigUint::from_bytes_le(&*v)
+            BigUint::from_bytes_le(&v)
         }
     }
 
