@@ -16,22 +16,22 @@ use num_traits::{ToPrimitive, Zero};
 ///
 /// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 pub trait RandBigInt {
-    /// Generate a random `BigUint` of the given bit size.
+    /// Generate a random [`BigUint`] of the given bit size.
     fn gen_biguint(&mut self, bit_size: u64) -> BigUint;
 
-    /// Generate a random BigInt of the given bit size.
+    /// Generate a random [ BigInt`] of the given bit size.
     fn gen_bigint(&mut self, bit_size: u64) -> BigInt;
 
-    /// Generate a random `BigUint` less than the given bound. Fails
+    /// Generate a random [`BigUint`] less than the given bound. Fails
     /// when the bound is zero.
     fn gen_biguint_below(&mut self, bound: &BigUint) -> BigUint;
 
-    /// Generate a random `BigUint` within the given range. The lower
+    /// Generate a random [`BigUint`] within the given range. The lower
     /// bound is inclusive; the upper bound is exclusive. Fails when
     /// the upper bound is not greater than the lower bound.
     fn gen_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint;
 
-    /// Generate a random `BigInt` within the given range. The lower
+    /// Generate a random [`BigInt`] within the given range. The lower
     /// bound is inclusive; the upper bound is exclusive. Fails when
     /// the upper bound is not greater than the lower bound.
     fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
@@ -141,7 +141,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
     }
 }
 
-/// The back-end implementing rand's `UniformSampler` for `BigUint`.
+/// The back-end implementing rand's [`UniformSampler`] for [`BigUint`].
 #[derive(Clone, Debug)]
 pub struct UniformBigUint {
     base: BigUint,
@@ -197,7 +197,7 @@ impl SampleUniform for BigUint {
     type Sampler = UniformBigUint;
 }
 
-/// The back-end implementing rand's `UniformSampler` for `BigInt`.
+/// The back-end implementing rand's [`UniformSampler`] for [`BigInt`].
 #[derive(Clone, Debug)]
 pub struct UniformBigInt {
     base: BigInt,
@@ -253,7 +253,7 @@ impl SampleUniform for BigInt {
     type Sampler = UniformBigInt;
 }
 
-/// A random distribution for `BigUint` and `BigInt` values of a particular bit size.
+/// A random distribution for [`BigUint`] and [`BigInt`] values of a particular bit size.
 ///
 /// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 #[derive(Clone, Copy, Debug)]

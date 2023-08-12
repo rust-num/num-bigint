@@ -8,10 +8,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! A Big integer (signed version: `BigInt`, unsigned version: `BigUint`).
+//! Big Integer Types for Rust
 //!
-//! A `BigUint` is represented as a vector of `BigDigit`s.
-//! A `BigInt` is a combination of `BigUint` and `Sign`.
+//! * A [`BigUint`] is unsigned and represented as a vector of digits.
+//! * A [`BigInt`] is signed and is a combination of [`BigUint`] and [`Sign`].
 //!
 //! Common numerical operations are overloaded, so we can treat them
 //! the same way we treat other numbers.
@@ -201,9 +201,6 @@ impl<T> TryFromBigIntError<T> {
 
     /// Extract the original value, if available. The value will be available
     /// if the type before conversion was either [`BigInt`] or [`BigUint`].
-    ///
-    /// [`BigInt`]: struct.BigInt.html
-    /// [`BigUint`]: struct.BigUint.html
     pub fn into_original(self) -> T {
         self.original
     }
@@ -239,26 +236,26 @@ pub use crate::bigint::ToBigInt;
 pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
-    /// A `BigDigit` is a `BigUint`'s composing element.
+    /// A [`BigDigit`] is a [`BigUint`]'s composing element.
     #[cfg(not(u64_digit))]
     pub(crate) type BigDigit = u32;
     #[cfg(u64_digit)]
     pub(crate) type BigDigit = u64;
 
-    /// A `DoubleBigDigit` is the internal type used to do the computations.  Its
-    /// size is the double of the size of `BigDigit`.
+    /// A [`DoubleBigDigit`] is the internal type used to do the computations.  Its
+    /// size is the double of the size of [`BigDigit`].
     #[cfg(not(u64_digit))]
     pub(crate) type DoubleBigDigit = u64;
     #[cfg(u64_digit)]
     pub(crate) type DoubleBigDigit = u128;
 
-    /// A `SignedDoubleBigDigit` is the signed version of `DoubleBigDigit`.
+    /// A [`SignedDoubleBigDigit`] is the signed version of [`DoubleBigDigit`].
     #[cfg(not(u64_digit))]
     pub(crate) type SignedDoubleBigDigit = i64;
     #[cfg(u64_digit)]
     pub(crate) type SignedDoubleBigDigit = i128;
 
-    // `DoubleBigDigit` size dependent
+    // [`DoubleBigDigit`] size dependent
     #[cfg(not(u64_digit))]
     pub(crate) const BITS: u8 = 32;
     #[cfg(u64_digit)]
@@ -279,13 +276,13 @@ mod big_digit {
         (n & LO_MASK) as BigDigit
     }
 
-    /// Split one `DoubleBigDigit` into two `BigDigit`s.
+    /// Split one [`DoubleBigDigit`] into two [`BigDigit`]s.
     #[inline]
     pub(crate) fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
         (get_hi(n), get_lo(n))
     }
 
-    /// Join two `BigDigit`s into one `DoubleBigDigit`
+    /// Join two [`BigDigit`]s into one [`DoubleBigDigit`].
     #[inline]
     pub(crate) fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
         DoubleBigDigit::from(lo) | (DoubleBigDigit::from(hi) << BITS)
