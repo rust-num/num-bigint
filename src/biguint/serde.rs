@@ -2,9 +2,20 @@ use super::{biguint_from_vec, BigUint};
 
 use crate::std_alloc::Vec;
 
-use core::fmt;
+use core::{cmp, fmt, mem};
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+// `cautious` is based on the function of the same name in `serde`, but specialized to `u32`:
+// https://github.com/dtolnay/serde/blob/399ef081ecc36d2f165ff1f6debdcbf6a1dc7efb/serde/src/private/size_hint.rs#L11-L22
+fn cautious(hint: Option<usize>) -> usize {
+    const MAX_PREALLOC_BYTES: usize = 1024 * 1024;
+
+    cmp::min(
+        hint.unwrap_or(0),
+        MAX_PREALLOC_BYTES / mem::size_of::<u32>(),
+    )
+}
 
 impl Serialize for BigUint {
     #[cfg(not(u64_digit))]
@@ -70,7 +81,7 @@ impl<'de> Visitor<'de> for U32Visitor {
     where
         S: SeqAccess<'de>,
     {
-        let len = seq.size_hint().unwrap_or(0);
+        let len = cautious(seq.size_hint());
         let mut data = Vec::with_capacity(len);
 
         while let Some(value) = seq.next_element::<u32>()? {
@@ -88,7 +99,7 @@ impl<'de> Visitor<'de> for U32Visitor {
         use crate::big_digit::BigDigit;
         use num_integer::Integer;
 
-        let u32_len = seq.size_hint().unwrap_or(0);
+        let u32_len = cautious(seq.size_hint());
         let len = Integer::div_ceil(&u32_len, &2);
         let mut data = Vec::with_capacity(len);
 
