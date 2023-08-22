@@ -899,7 +899,7 @@ fn test_div_ceil() {
 #[test]
 fn test_div_rem_euclid() {
     fn check_sub(a: &BigInt, b: &BigInt, ans_d: &BigInt, ans_m: &BigInt) {
-        eprintln!("{a} {b} {ans_d} {ans_m}");
+        eprintln!("{} {} {} {}", a, b, ans_d, ans_m);
         assert_eq!(a.div_euclid(b), *ans_d);
         assert_eq!(a.rem_euclid(b), *ans_m);
         assert!(*ans_m >= BigInt::zero());
