@@ -78,8 +78,8 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
         z.data = z.data[n..].to_vec();
     } else {
         {
-            let (mut first, second) = z.data.split_at_mut(n);
-            sub_vv(&mut first, &second, &m.data);
+            let (first, second) = z.data.split_at_mut(n);
+            sub_vv(first, second, &m.data);
         }
         z.data = z.data[..n].to_vec();
     }

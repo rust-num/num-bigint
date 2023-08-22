@@ -120,7 +120,7 @@ mod bigint {
             let even_m = m << 1u8;
             let even_modpow = b.modpow(e, m);
             assert!(even_modpow.abs() < even_m.abs());
-            assert_eq!(&even_modpow.mod_floor(&m), r);
+            assert_eq!(&even_modpow.mod_floor(m), r);
 
             // the sign of the result follows the modulus like `mod_floor`, not `rem`
             assert_eq!(b.modpow(&BigInt::one(), m), b.mod_floor(m));

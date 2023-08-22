@@ -187,7 +187,7 @@ fn test_signed_bytes_le_round_trip() {
 
 #[test]
 fn test_cmp() {
-    let vs: [&[u32]; 4] = [&[2 as u32], &[1, 1], &[2, 1], &[1, 1, 1]];
+    let vs: [&[u32]; 4] = [&[2_u32], &[1, 1], &[2, 1], &[1, 1, 1]];
     let mut nums = Vec::new();
     for s in vs.iter().rev() {
         nums.push(BigInt::from_slice(Minus, *s));
