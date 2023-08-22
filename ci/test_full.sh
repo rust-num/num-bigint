@@ -80,7 +80,15 @@ if rustc --version | grep -q nightly; then
 fi
 
 case "${STD_FEATURES[*]}" in
-  *serde*) cargo test --manifest-path ci/big_serde/Cargo.toml ;;&
+  *serde*) (
+      cd ci/big_serde
+      # serde_test updated to 2021 edition after this version
+      check_version 1.56.0 || (
+        cargo generate-lockfile
+        cargo update -p serde_test --precise 1.0.175
+      )
+      cargo test
+    ) ;;&
   *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
   *quickcheck*) (
       cd ci/big_quickcheck
