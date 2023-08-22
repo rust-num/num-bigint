@@ -646,6 +646,13 @@ fn test_convert_f32() {
         b <<= 1;
     }
 
+    // test correct ties-to-even rounding
+    let weird: i128 = (1i128 << 100) + (1i128 << (100 - f32::MANTISSA_DIGITS));
+    assert_ne!(weird as f32, (weird + 1) as f32);
+
+    assert_eq!(BigInt::from(weird).to_f32(), Some(weird as f32));
+    assert_eq!(BigInt::from(weird + 1).to_f32(), Some((weird + 1) as f32));
+
     // rounding
     assert_eq!(BigUint::from_f32(-1.0), None);
     assert_eq!(BigUint::from_f32(-0.99999), Some(BigUint::zero()));
@@ -721,6 +728,13 @@ fn test_convert_f64() {
         f *= 2.0;
         b <<= 1;
     }
+
+    // test correct ties-to-even rounding
+    let weird: i128 = (1i128 << 100) + (1i128 << (100 - f64::MANTISSA_DIGITS));
+    assert_ne!(weird as f64, (weird + 1) as f64);
+
+    assert_eq!(BigInt::from(weird).to_f64(), Some(weird as f64));
+    assert_eq!(BigInt::from(weird + 1).to_f64(), Some((weird + 1) as f64));
 
     // rounding
     assert_eq!(BigUint::from_f64(-1.0), None);
