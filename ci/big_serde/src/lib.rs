@@ -12,7 +12,9 @@
 
 use num_bigint::{BigInt, BigUint};
 use num_traits::{One, Zero};
-use serde_test::{assert_tokens, Token};
+use serde::{de::DeserializeOwned, Serialize};
+use serde_test::{assert_de_tokens, assert_ser_tokens, assert_tokens, Token};
+use std::{fmt::Debug, panic::catch_unwind};
 
 #[test]
 fn biguint_zero() {
@@ -127,4 +129,35 @@ fn big_digits() {
         tokens[1] = Token::I8(-1);
         assert_tokens(&-n, &tokens);
     }
+}
+
+#[test]
+fn bad_size_hint_int() {
+    bad_size_hint::<BigInt>(&[Token::Tuple { len: 2 }, Token::I8(1)], &[Token::TupleEnd]);
+}
+
+#[test]
+fn bad_size_hint_uint() {
+    bad_size_hint::<BigUint>(&[], &[]);
+}
+
+fn bad_size_hint<T: Debug + DeserializeOwned + One + PartialEq + Serialize>(
+    prefix: &[Token],
+    suffix: &[Token],
+) {
+    let mut tokens = [
+        prefix,
+        &[Token::Seq { len: Some(1) }, Token::U32(1), Token::SeqEnd],
+        suffix,
+    ]
+    .concat();
+
+    assert_tokens(&T::one(), &tokens);
+
+    tokens[prefix.len()] = Token::Seq {
+        len: Some(usize::max_value()),
+    };
+
+    catch_unwind(|| assert_ser_tokens(&T::one(), &tokens)).unwrap_err();
+    assert_de_tokens(&T::one(), &tokens);
 }

@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 num-traits = "0.2.11"
+serde = "1.0"
 serde_test = "1.0"
 
 [dependencies.num-bigint]

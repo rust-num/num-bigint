@@ -1,3 +1,21 @@
+# Release 0.4.4 (2023-08-22)
+
+- [Implemented `From<bool>` for `BigInt` and `BigUint`.][239]
+- [Implemented `num_traits::Euclid` and `CheckedEuclid` for `BigInt` and `BigUint`.][245]
+- [Implemented ties-to-even for `BigInt` and `BigUint::to_f32` and `to_f64`.][271]
+- [Implemented `num_traits::FromBytes` and `ToBytes` for `BigInt` and `BigUint`.][276]
+- Limited pre-allocation from serde size hints against potential OOM.
+- Miscellaneous other code cleanups and maintenance tasks.
+
+**Contributors**: @AaronKutch, @archseer, @cuviper, @dramforever, @icecream17,
+@icedrocket, @janmarthedal, @jaybosamiya, @OliveIsAWord, @PatrickNorton,
+@smoelius, @waywardmonkeys
+
+[239]: https://github.com/rust-num/num-bigint/pull/239
+[245]: https://github.com/rust-num/num-bigint/pull/245
+[271]: https://github.com/rust-num/num-bigint/pull/271
+[276]: https://github.com/rust-num/num-bigint/pull/276
+
 # Release 0.4.3 (2021-11-02)
 
 - [GHSA-v935-pqmr-g8v9]: [Fix unexpected panics in multiplication.][228]
