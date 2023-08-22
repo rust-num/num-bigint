@@ -14,7 +14,7 @@ use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
 use num_traits::{
-    pow, FromBytes, FromPrimitive, Num, One, Pow, Signed, ToBytes, ToPrimitive, Zero,
+    pow, Euclid, FromBytes, FromPrimitive, Num, One, Pow, Signed, ToBytes, ToPrimitive, Zero,
 };
 
 mod consts;
@@ -866,6 +866,58 @@ fn test_div_ceil() {
             check_sub(a, &b.neg(), &d.neg());
             check_sub(&a.neg(), b, &d.neg());
             check_sub(&a.neg(), &b.neg(), &(d + 1));
+        }
+    }
+
+    for elm in MUL_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+
+        if !a.is_zero() {
+            check(&c, &a, &b, &Zero::zero());
+        }
+        if !b.is_zero() {
+            check(&c, &b, &a, &Zero::zero());
+        }
+    }
+
+    for elm in DIV_REM_QUADRUPLES.iter() {
+        let (a_vec, b_vec, c_vec, d_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+        let d = BigInt::from_slice(Plus, d_vec);
+
+        if !b.is_zero() {
+            check(&a, &b, &c, &d);
+        }
+    }
+}
+
+#[test]
+fn test_div_rem_euclid() {
+    fn check_sub(a: &BigInt, b: &BigInt, ans_d: &BigInt, ans_m: &BigInt) {
+        eprintln!("{} {} {} {}", a, b, ans_d, ans_m);
+        assert_eq!(a.div_euclid(b), *ans_d);
+        assert_eq!(a.rem_euclid(b), *ans_m);
+        assert!(*ans_m >= BigInt::zero());
+        assert!(*ans_m < b.abs());
+    }
+
+    fn check(a: &BigInt, b: &BigInt, d: &BigInt, m: &BigInt) {
+        if m.is_zero() {
+            check_sub(a, b, d, m);
+            check_sub(a, &b.neg(), &d.neg(), m);
+            check_sub(&a.neg(), b, &d.neg(), m);
+            check_sub(&a.neg(), &b.neg(), d, m);
+        } else {
+            let one: BigInt = One::one();
+            check_sub(a, b, d, m);
+            check_sub(a, &b.neg(), &d.neg(), m);
+            check_sub(&a.neg(), b, &(d + &one).neg(), &(b - m));
+            check_sub(&a.neg(), &b.neg(), &(d + &one), &(b.abs() - m));
         }
     }
 
