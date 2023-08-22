@@ -24,7 +24,7 @@ impl FromStr for BigInt {
 impl Num for BigInt {
     type FromStrRadixErr = ParseBigIntError;
 
-    /// Creates and initializes a BigInt.
+    /// Creates and initializes a [`BigInt`].
     #[inline]
     fn from_str_radix(mut s: &str, radix: u32) -> Result<BigInt, ParseBigIntError> {
         let sign = if s.starts_with('-') {

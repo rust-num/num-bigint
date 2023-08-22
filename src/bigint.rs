@@ -36,7 +36,7 @@ mod arbitrary;
 #[cfg(feature = "serde")]
 mod serde;
 
-/// A Sign is a `BigInt`'s composing element.
+/// A `Sign` is a [`BigInt`]'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
 pub enum Sign {
     Minus,
@@ -47,7 +47,7 @@ pub enum Sign {
 impl Neg for Sign {
     type Output = Sign;
 
-    /// Negate Sign value.
+    /// Negate `Sign` value.
     #[inline]
     fn neg(self) -> Sign {
         match self {
@@ -292,7 +292,7 @@ trait UnsignedAbs {
     type Unsigned;
 
     /// A convenience method for getting the absolute value of a signed primitive as unsigned
-    /// See also `unsigned_abs`: https://github.com/rust-lang/rust/issues/74913
+    /// See also `unsigned_abs`: <https://github.com/rust-lang/rust/issues/74913>
     fn uabs(self) -> Self::Unsigned;
 
     fn checked_uabs(self) -> CheckedUnsignedAbs<Self::Unsigned>;
@@ -558,16 +558,16 @@ impl IntDigits for BigInt {
     }
 }
 
-/// A generic trait for converting a value to a `BigInt`. This may return
+/// A generic trait for converting a value to a [`BigInt`]. This may return
 /// `None` when converting from `f32` or `f64`, and will always succeed
-/// when converting from any integer or unsigned primitive, or `BigUint`.
+/// when converting from any integer or unsigned primitive, or [`BigUint`].
 pub trait ToBigInt {
-    /// Converts the value of `self` to a `BigInt`.
+    /// Converts the value of `self` to a [`BigInt`].
     fn to_bigint(&self) -> Option<BigInt>;
 }
 
 impl BigInt {
-    /// Creates and initializes a BigInt.
+    /// Creates and initializes a [`BigInt`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
@@ -575,7 +575,7 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::new(digits))
     }
 
-    /// Creates and initializes a `BigInt`.
+    /// Creates and initializes a [`BigInt`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
@@ -589,7 +589,7 @@ impl BigInt {
         BigInt { sign, data }
     }
 
-    /// Creates and initializes a `BigInt`.
+    /// Creates and initializes a [`BigInt`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
@@ -597,7 +597,7 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::from_slice(slice))
     }
 
-    /// Reinitializes a `BigInt`.
+    /// Reinitializes a [`BigInt`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
@@ -610,7 +610,7 @@ impl BigInt {
         }
     }
 
-    /// Creates and initializes a `BigInt`.
+    /// Creates and initializes a [`BigInt`].
     ///
     /// The bytes are in big-endian byte order.
     ///
@@ -633,7 +633,7 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::from_bytes_be(bytes))
     }
 
-    /// Creates and initializes a `BigInt`.
+    /// Creates and initializes a [`BigInt`].
     ///
     /// The bytes are in little-endian byte order.
     #[inline]
@@ -641,7 +641,7 @@ impl BigInt {
         BigInt::from_biguint(sign, BigUint::from_bytes_le(bytes))
     }
 
-    /// Creates and initializes a `BigInt` from an array of bytes in
+    /// Creates and initializes a [`BigInt`] from an array of bytes in
     /// two's complement binary representation.
     ///
     /// The digits are in big-endian base 2<sup>8</sup>.
@@ -650,7 +650,7 @@ impl BigInt {
         convert::from_signed_bytes_be(digits)
     }
 
-    /// Creates and initializes a `BigInt` from an array of bytes in two's complement.
+    /// Creates and initializes a [`BigInt`] from an array of bytes in two's complement.
     ///
     /// The digits are in little-endian base 2<sup>8</sup>.
     #[inline]
@@ -658,7 +658,7 @@ impl BigInt {
         convert::from_signed_bytes_le(digits)
     }
 
-    /// Creates and initializes a `BigInt`.
+    /// Creates and initializes a [`BigInt`].
     ///
     /// # Examples
     ///
@@ -675,7 +675,7 @@ impl BigInt {
         BigInt::from_str_radix(s, radix).ok()
     }
 
-    /// Creates and initializes a `BigInt`. Each u8 of the input slice is
+    /// Creates and initializes a [`BigInt`]. Each `u8` of the input slice is
     /// interpreted as one digit of the number
     /// and must therefore be less than `radix`.
     ///
@@ -696,7 +696,7 @@ impl BigInt {
         Some(BigInt::from_biguint(sign, u))
     }
 
-    /// Creates and initializes a `BigInt`. Each u8 of the input slice is
+    /// Creates and initializes a [`BigInt`]. Each `u8` of the input slice is
     /// interpreted as one digit of the number
     /// and must therefore be less than `radix`.
     ///
@@ -717,7 +717,7 @@ impl BigInt {
         Some(BigInt::from_biguint(sign, u))
     }
 
-    /// Returns the sign and the byte representation of the `BigInt` in big-endian byte order.
+    /// Returns the sign and the byte representation of the [`BigInt`] in big-endian byte order.
     ///
     /// # Examples
     ///
@@ -732,7 +732,7 @@ impl BigInt {
         (self.sign, self.data.to_bytes_be())
     }
 
-    /// Returns the sign and the byte representation of the `BigInt` in little-endian byte order.
+    /// Returns the sign and the byte representation of the [`BigInt`] in little-endian byte order.
     ///
     /// # Examples
     ///
@@ -747,7 +747,7 @@ impl BigInt {
         (self.sign, self.data.to_bytes_le())
     }
 
-    /// Returns the sign and the `u32` digits representation of the `BigInt` ordered least
+    /// Returns the sign and the `u32` digits representation of the [`BigInt`] ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -766,7 +766,7 @@ impl BigInt {
         (self.sign, self.data.to_u32_digits())
     }
 
-    /// Returns the sign and the `u64` digits representation of the `BigInt` ordered least
+    /// Returns the sign and the `u64` digits representation of the [`BigInt`] ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -786,7 +786,7 @@ impl BigInt {
         (self.sign, self.data.to_u64_digits())
     }
 
-    /// Returns an iterator of `u32` digits representation of the `BigInt` ordered least
+    /// Returns an iterator of `u32` digits representation of the [`BigInt`] ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -805,7 +805,7 @@ impl BigInt {
         self.data.iter_u32_digits()
     }
 
-    /// Returns an iterator of `u64` digits representation of the `BigInt` ordered least
+    /// Returns an iterator of `u64` digits representation of the [`BigInt`] ordered least
     /// significant digit first.
     ///
     /// # Examples
@@ -825,7 +825,7 @@ impl BigInt {
         self.data.iter_u64_digits()
     }
 
-    /// Returns the two's-complement byte representation of the `BigInt` in big-endian byte order.
+    /// Returns the two's-complement byte representation of the [`BigInt`] in big-endian byte order.
     ///
     /// # Examples
     ///
@@ -840,7 +840,7 @@ impl BigInt {
         convert::to_signed_bytes_be(self)
     }
 
-    /// Returns the two's-complement byte representation of the `BigInt` in little-endian byte order.
+    /// Returns the two's-complement byte representation of the [`BigInt`] in little-endian byte order.
     ///
     /// # Examples
     ///
@@ -880,7 +880,7 @@ impl BigInt {
 
     /// Returns the integer in the requested base in big-endian digit order.
     /// The output is not given in a human readable alphabet but as a zero
-    /// based u8 number.
+    /// based `u8` number.
     /// `radix` must be in the range `2...256`.
     ///
     /// # Examples
@@ -899,7 +899,7 @@ impl BigInt {
 
     /// Returns the integer in the requested base in little-endian digit order.
     /// The output is not given in a human readable alphabet but as a zero
-    /// based u8 number.
+    /// based `u8` number.
     /// `radix` must be in the range `2...256`.
     ///
     /// # Examples
@@ -916,7 +916,7 @@ impl BigInt {
         (self.sign, self.data.to_radix_le(radix))
     }
 
-    /// Returns the sign of the `BigInt` as a `Sign`.
+    /// Returns the sign of the [`BigInt`] as a [`Sign`].
     ///
     /// # Examples
     ///
@@ -933,7 +933,7 @@ impl BigInt {
         self.sign
     }
 
-    /// Returns the magnitude of the `BigInt` as a `BigUint`.
+    /// Returns the magnitude of the [`BigInt`] as a [`BigUint`].
     ///
     /// # Examples
     ///
@@ -950,8 +950,8 @@ impl BigInt {
         &self.data
     }
 
-    /// Convert this `BigInt` into its `Sign` and `BigUint` magnitude,
-    /// the reverse of `BigInt::from_biguint`.
+    /// Convert this [`BigInt`] into its [`Sign`] and [`BigUint`] magnitude,
+    /// the reverse of [`BigInt::from_biguint()`].
     ///
     /// # Examples
     ///
@@ -968,14 +968,14 @@ impl BigInt {
         (self.sign, self.data)
     }
 
-    /// Determines the fewest bits necessary to express the `BigInt`,
+    /// Determines the fewest bits necessary to express the [`BigInt`],
     /// not including the sign.
     #[inline]
     pub fn bits(&self) -> u64 {
         self.data.bits()
     }
 
-    /// Converts this `BigInt` into a `BigUint`, if it's not negative.
+    /// Converts this [`BigInt`] into a [`BigUint`], if it's not negative.
     #[inline]
     pub fn to_biguint(&self) -> Option<BigUint> {
         match self.sign {
@@ -1026,19 +1026,19 @@ impl BigInt {
     }
 
     /// Returns the truncated principal square root of `self` --
-    /// see [Roots::sqrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.sqrt).
+    /// see [`num_integer::Roots::sqrt()`].
     pub fn sqrt(&self) -> Self {
         Roots::sqrt(self)
     }
 
     /// Returns the truncated principal cube root of `self` --
-    /// see [Roots::cbrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.cbrt).
+    /// see [`num_integer::Roots::cbrt()`].
     pub fn cbrt(&self) -> Self {
         Roots::cbrt(self)
     }
 
     /// Returns the truncated principal `n`th root of `self` --
-    /// See [Roots::nth_root](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#tymethod.nth_root).
+    /// See [`num_integer::Roots::nth_root()`].
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
