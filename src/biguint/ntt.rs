@@ -598,7 +598,7 @@ fn conv<const P: u64>(x: &mut [u64], y: &mut [u64], buf: &mut [u64]) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-use core::cmp::max;
+use core::cmp::{min, max};
 use crate::big_digit::BigDigit;
 
 const P1: u64 = 10237243632176332801; // Max NTT length = 2^24 * 3^20 * 5^2 = 1462463376025190400
@@ -617,10 +617,65 @@ const P1_R_MOD_P3: u64 = Arith::<P3>::mmulmod(Arith::<P3>::R2, P1);
 const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
-#[cfg(u64_digit)]
 #[allow(clippy::many_single_char_names)]
-pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    let min_len = acc.len();
+fn mac3_ntt_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
+    let min_len = b.len() + c.len();
+    let len_max_1 = plan_ntt::<P1>(min_len).0;
+    let len_max_2 = plan_ntt::<P2>(min_len).0;
+    let len_max = max(len_max_1, len_max_2);
+    let mut x = vec![0u64; len_max_1];
+    let mut y = vec![0u64; len_max_2];
+    let mut r = vec![0u64; len_max];
+    let mut s = vec![0u64; len_max];
+
+    /* convolution with modulo P1 */
+    for i in 0..b.len() { x[i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
+    for i in 0..c.len() { r[i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
+    r[c.len()..len_max_1].fill(0u64);
+    conv::<P1>(&mut x, &mut r[..len_max_1], &mut s[..len_max_1]);
+
+    /* convolution with modulo P2 */
+    for i in 0..b.len() { y[i] = if b[i] >= P2 { b[i] - P2 } else { b[i] }; }
+    for i in 0..c.len() { r[i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
+    r[c.len()..len_max_2].fill(0u64);
+    conv::<P2>(&mut y, &mut r[..len_max_2], &mut s[..len_max_2]);
+
+    /* merge the results in {x, y} into r (process carry along the way) */
+    let mask = (1u64 << bits) - 1;
+    let mut carry: u128 = 0;
+    let (mut j, mut p) = (0usize, 0u64);
+    for i in 0..min_len {
+        /* extract the convolution result */
+        let (a, b) = (x[i], y[i]);
+        let bma = Arith::<P2>::submod(b, a);
+        let u = Arith::<P2>::mmulmod(bma, P1INV_R_MOD_P2);
+        let v = a as u128 + P1 as u128 * u as u128 + carry;
+        carry = v >> bits;
+
+        /* write to r */
+        let out = (v as u64) & mask;
+        r[j] = (r[j] & ((1u64 << p) - 1)) | (out << p);
+        p += bits;
+        if p >= 64 {
+            (j, p) = (j+1, p-64);
+            r[j] = out >> (bits - p);
+        }
+    }
+
+    /* add r to acc */
+    let mut carry: u64 = 0;
+    for i in 0..min(acc.len(), j+1) {
+        let w = r[i];
+        let (v, overflow1) = acc[i].overflowing_add(w);
+        let (v, overflow2) = v.overflowing_add(carry);
+        acc[i] = v;
+        carry = if overflow1 || overflow2 { 1 } else { 0 };
+    }
+}
+
+#[allow(clippy::many_single_char_names)]
+fn mac3_ntt_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
+    let min_len = b.len() + c.len();
     let len_max_1 = plan_ntt::<P1>(min_len).0;
     let len_max_2 = plan_ntt::<P2>(min_len).0;
     let len_max_3 = plan_ntt::<P3>(min_len).0;
@@ -628,30 +683,30 @@ pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     let mut x = vec![0u64; len_max_1];
     let mut y = vec![0u64; len_max_2];
     let mut z = vec![0u64; len_max_3];
-    let mut u = vec![0u64; len_max];
-    let mut v = vec![0u64; len_max];
+    let mut r = vec![0u64; len_max];
+    let mut s = vec![0u64; len_max];
 
     /* convolution with modulo P1 */
     for i in 0..b.len() { x[i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
-    for i in 0..c.len() { u[i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
-    u[c.len()..len_max_1].fill(0u64);
-    conv::<P1>(&mut x, &mut u[..len_max_1], &mut v[..len_max_1]);
+    for i in 0..c.len() { r[i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
+    r[c.len()..len_max_1].fill(0u64);
+    conv::<P1>(&mut x, &mut r[..len_max_1], &mut s[..len_max_1]);
 
     /* convolution with modulo P2 */
     for i in 0..b.len() { y[i] = if b[i] >= P2 { b[i] - P2 } else { b[i] }; }
-    for i in 0..c.len() { u[i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
-    u[c.len()..len_max_2].fill(0u64);
-    conv::<P2>(&mut y, &mut u[..len_max_2], &mut v[..len_max_2]);
+    for i in 0..c.len() { r[i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
+    r[c.len()..len_max_2].fill(0u64);
+    conv::<P2>(&mut y, &mut r[..len_max_2], &mut s[..len_max_2]);
 
     /* convolution with modulo P3 */
     for i in 0..b.len() { z[i] = if b[i] >= P3 { b[i] - P3 } else { b[i] }; }
-    for i in 0..c.len() { u[i] = if c[i] >= P3 { c[i] - P3 } else { c[i] }; }
-    u[c.len()..len_max_3].fill(0u64);
-    conv::<P3>(&mut z, &mut u[..len_max_3], &mut v[..len_max_3]);
+    for i in 0..c.len() { r[i] = if c[i] >= P3 { c[i] - P3 } else { c[i] }; }
+    r[c.len()..len_max_3].fill(0u64);
+    conv::<P3>(&mut z, &mut r[..len_max_3], &mut s[..len_max_3]);
 
-    /* merge the result in {x, y, z} into acc (process carry along the way) */
+    /* merge the results in {x, y, z} into acc (process carry along the way) */
     let mut carry: u128 = 0;
-    for i in 0..min_len-1 {
+    for i in 0..min_len {
         let (a, b, c) = (x[i], y[i], z[i]);
         // We need to solve the following system of linear congruences:
         //     x === a mod P1,
@@ -685,9 +740,52 @@ pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         acc[i] = v;
         carry = out_1 as u128 + ((out_2 as u128) << 64) + if overflow { 1 } else { 0 };
     }
-    acc[min_len-1] += carry as u64;
+    let mut carry = carry as u64;
+    for i in min_len..acc.len() {
+        let (v, overflow) = acc[i].overflowing_add(carry);
+        acc[i] = v;
+        carry = if overflow { 1 } else { 0 };
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#[cfg(u64_digit)]
+#[allow(clippy::many_single_char_names)]
+pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+    let max_cnt = max(b.len(), c.len()) as u64;
+    let mut bits = 0u64;
+    while 1u64 << (2*bits) < max_cnt { bits += 1; }
+    bits = 63 - bits;
+    if bits >= 44 {
+        /* can pack more effective bits per u64 with two primes than with three primes */
+        fn pack_into(src: &[u64], dst: &mut [u64], bits: u64) -> usize {
+            let (mut j, mut p) = (0usize, 0u64);
+            for i in 0..src.len() {
+                let mut k = 0;
+                while k < 64 {
+                    let bits_this_time = min(64 - k, bits - p);
+                    dst[j] = (dst[j] & ((1u64 << p) - 1)) | (((src[i] >> k) & ((1u64 << bits_this_time) - 1)) << p);
+                    k += bits_this_time;
+                    p += bits_this_time;
+                    if p == bits { (j, p) = (j+1, 0); }
+                }
+            }
+            if p == 0 { j } else { j+1 }
+        }
+        let mut b2 = vec![0u64; ((64 * b.len() as u64 + bits - 1) / bits) as usize];
+        let mut c2 = vec![0u64; ((64 * c.len() as u64 + bits - 1) / bits) as usize];
+        let b2_len = pack_into(b, &mut b2, bits);
+        let c2_len = pack_into(c, &mut c2, bits);
+        mac3_ntt_two_primes(acc, &b2[..b2_len], &c2[..c2_len], bits);
+    } else {
+        /* can pack at most 21 effective bits per u64, which is worse than
+           64/3 = 21.3333.. effective bits per u64 achieved with three primes */
+        mac3_ntt_three_primes(acc, b, c);
+    }
 }
 
 #[cfg(not(u64_digit))]
 pub fn mac3_ntt(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
+    unimplemented!("Please enable u64_digit option until we implement u32 support");
 }
