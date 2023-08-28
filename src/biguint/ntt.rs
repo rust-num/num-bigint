@@ -752,7 +752,39 @@ fn mac3_ntt_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
 
 #[cfg(u64_digit)]
 #[allow(clippy::many_single_char_names)]
-pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+pub fn mac3_ntt(acc: &mut [BigDigit], bb: &[BigDigit], cc: &[BigDigit], split_unbalanced: bool) {
+    let (b, c) = if bb.len() < cc.len() { (bb, cc) } else { (cc, bb) };
+    if split_unbalanced && b.len() * 2 <= c.len() {
+        /* special handling for unbalanced multiplication:
+           we reduce it to about `c.len()/b.len()` balanced multiplications */
+        let mut i = 0usize;
+        let mut carry = 0u64;
+        while i < c.len() {
+            let j = min(i + b.len(), c.len());
+            let k = j + b.len();
+            let tmp = acc[k];
+            acc[k] = 0;
+            mac3_ntt(&mut acc[i..k+1], b, &c[i..j], false);
+            let mut l = j;
+            while carry > 0 && l < k {
+                let (v, overflow) = acc[l].overflowing_add(carry);
+                acc[l] = v;
+                carry = if overflow { 1 } else { 0 };
+                l += 1;
+            }
+            i = j;
+            carry += tmp;
+        }
+        i += b.len();
+        while i < acc.len() {
+            let (v, overflow) = acc[i].overflowing_add(carry);
+            acc[i] = v;
+            carry = if overflow { 1 } else { 0 };
+            i += 1;
+        }
+        return;
+    }
+
     let max_cnt = max(b.len(), c.len()) as u64;
     let mut bits = 0u64;
     while 1u64 << (2*bits) < max_cnt { bits += 1; }
