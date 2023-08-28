@@ -585,8 +585,10 @@ fn plan_ntt<const P: u64>(min_len: usize) -> (usize, usize) {
                 if cost < len_max_cost { (len_max, len_max_cost) = (len, cost); }
             }
             len35 *= 3;
+            if len35 >= min_len { break; }
         }
         len5 *= 5;
+        if len5 >= min_len { break; }
     }
     (len_max, len_max_cost)
 }
