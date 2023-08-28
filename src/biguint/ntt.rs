@@ -1,3 +1,10 @@
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::cast_lossless)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::many_single_char_names)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::similar_names)]
+
 mod arith {
     // Extended Euclid algorithm:
     //   (g, x, y) is a solution to ax + by = g, where g = gcd(a, b)
@@ -162,7 +169,7 @@ impl<const P: u64> Arith<P> {
             p /= 2;
             pow = Self::mmulmod(pow, pow);
         }
-        cur as u64
+        cur
     }
     // Computes a + b mod P, output range [0, P)
     pub const fn addmod(a: u64, b: u64) -> u64 {
@@ -454,7 +461,7 @@ impl<const P: u64, const INV: bool> NttKernelImpl<P, 6, INV> {
                 *dst.wrapping_add(2*s) = Arith::<P>::mmulmod(w2p, Arith::<P>::addmod64(Arith::<P>::submod(a, b), lbmc));
                 *dst.wrapping_add(4*s) = Arith::<P>::mmulmod(w4p, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
                 let mlepf = Arith::<P>::mmulmod(P.wrapping_sub(Self::U6), Arith::<P>::addmod64(e, f));
-                *dst.wrapping_add(1*s) = Arith::<P>::mmulmod(w1p, Arith::<P>::submod(Arith::<P>::submod(d, f), mlepf));
+                *dst.wrapping_add(s) = Arith::<P>::mmulmod(w1p, Arith::<P>::submod(Arith::<P>::submod(d, f), mlepf));
                 *dst.wrapping_add(3*s) = Arith::<P>::mmulmod(w3p, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
                 *dst.wrapping_add(5*s) = Arith::<P>::mmulmod(w5p, Arith::<P>::addmod64(Arith::<P>::addmod64(d, mlepf), e));
                 src = src.wrapping_add(1);
@@ -562,9 +569,9 @@ fn plan_ntt<const P: u64>(min_len: usize) -> (usize, usize) {
     assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
     let (mut len_max, mut len_max_cost) = (0usize, usize::MAX);
     let mut len5 = 1;
-    for _ in 0..Arith::<P>::FACTOR_FIVE+1 {
+    for _ in 0..=Arith::<P>::FACTOR_FIVE {
         let mut len35 = len5;
-        for _ in 0..Arith::<P>::FACTOR_THREE+1 {
+        for _ in 0..=Arith::<P>::FACTOR_THREE {
             let mut len = len35;
             let mut i = 0;
             while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
@@ -589,7 +596,7 @@ fn plan_ntt<const P: u64>(min_len: usize) -> (usize, usize) {
 // The output is saved in the slice `x`.
 // The three slices must have the same length which divides `Arith::<P>::MAX_NTT_LEN`.
 fn conv<const P: u64>(x: &mut [u64], y: &mut [u64], buf: &mut [u64]) {
-    assert!(x.len() > 0 && x.len() == y.len() && y.len() == buf.len());
+    assert!(!x.is_empty() && x.len() == y.len() && y.len() == buf.len());
     ntt_stockham::<P, false>(x, buf);
     ntt_stockham::<P, false>(y, buf);
     for i in 0..x.len() { x[i] = Arith::<P>::mmulmod(x[i], y[i]); }
@@ -601,9 +608,9 @@ fn conv<const P: u64>(x: &mut [u64], y: &mut [u64], buf: &mut [u64]) {
 use core::cmp::{min, max};
 use crate::big_digit::BigDigit;
 
-const P1: u64 = 10237243632176332801; // Max NTT length = 2^24 * 3^20 * 5^2 = 1462463376025190400
-const P2: u64 = 13649658176235110401; // Max NTT length = 2^26 * 3^19 * 5^2 = 1949951168033587200
-const P3: u64 = 14259017916245606401; // Max NTT length = 2^22 * 3^21 * 5^2 = 1096847532018892800
+const P1: u64 = 10_237_243_632_176_332_801; // Max NTT length = 2^24 * 3^20 * 5^2 = 1_462_463_376_025_190_400
+const P2: u64 = 13_649_658_176_235_110_401; // Max NTT length = 2^26 * 3^19 * 5^2 = 1_949_951_168_033_587_200
+const P3: u64 = 14_259_017_916_245_606_401; // Max NTT length = 2^22 * 3^21 * 5^2 = 1_096_847_532_018_892_800
 
 const P1INV_R_MOD_P2: u64 = Arith::<P2>::mmulmod(Arith::<P2>::R2, arith::invmod(P1, P2));
 const P1P2INV_R_MOD_P3: u64 = Arith::<P3>::mmulmod(
@@ -617,8 +624,7 @@ const P1_R_MOD_P3: u64 = Arith::<P3>::mmulmod(Arith::<P3>::R2, P1);
 const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
-#[allow(clippy::many_single_char_names)]
-fn mac3_ntt_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
+fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     let min_len = b.len() + c.len();
     let len_max_1 = plan_ntt::<P1>(min_len).0;
     let len_max_2 = plan_ntt::<P2>(min_len).0;
@@ -669,12 +675,11 @@ fn mac3_ntt_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         let (v, overflow1) = acc[i].overflowing_add(w);
         let (v, overflow2) = v.overflowing_add(carry);
         acc[i] = v;
-        carry = if overflow1 || overflow2 { 1 } else { 0 };
+        carry = u64::from(overflow1 || overflow2);
     }
 }
 
-#[allow(clippy::many_single_char_names)]
-fn mac3_ntt_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
+fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let min_len = b.len() + c.len();
     let len_max_1 = plan_ntt::<P1>(min_len).0;
     let len_max_2 = plan_ntt::<P2>(min_len).0;
@@ -738,18 +743,17 @@ fn mac3_ntt_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
 
         let (v, overflow) = acc[i].overflowing_add(out_0);
         acc[i] = v;
-        carry = out_1 as u128 + ((out_2 as u128) << 64) + if overflow { 1 } else { 0 };
+        carry = out_1 as u128 + ((out_2 as u128) << 64) + u128::from(overflow);
     }
     let mut carry = carry as u64;
     for i in min_len..acc.len() {
         let (v, overflow) = acc[i].overflowing_add(carry);
         acc[i] = v;
-        carry = if overflow { 1 } else { 0 };
+        carry = u64::from(overflow);
     }
 }
 
-#[allow(clippy::many_single_char_names)]
-fn mac3_ntt_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool) {
+fn mac3_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool) {
     let (b, c) = if bb.len() < cc.len() { (bb, cc) } else { (cc, bb) };
     if split_unbalanced && b.len() * 2 <= c.len() {
         /* special handling for unbalanced multiplication:
@@ -761,12 +765,12 @@ fn mac3_ntt_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool)
             let k = j + b.len();
             let tmp = acc[k];
             acc[k] = 0;
-            mac3_ntt_u64(&mut acc[i..k+1], b, &c[i..j], false);
+            mac3_u64(&mut acc[i..=k], b, &c[i..j], false);
             let mut l = j;
             while carry > 0 && l < k {
                 let (v, overflow) = acc[l].overflowing_add(carry);
                 acc[l] = v;
-                carry = if overflow { 1 } else { 0 };
+                carry = u64::from(overflow);
                 l += 1;
             }
             i = j;
@@ -776,7 +780,7 @@ fn mac3_ntt_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool)
         while i < acc.len() {
             let (v, overflow) = acc[i].overflowing_add(carry);
             acc[i] = v;
-            carry = if overflow { 1 } else { 0 };
+            carry = u64::from(overflow);
             i += 1;
         }
         return;
@@ -806,23 +810,23 @@ fn mac3_ntt_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool)
         let mut c2 = vec![0u64; ((64 * c.len() as u64 + bits - 1) / bits) as usize];
         let b2_len = pack_into(b, &mut b2, bits);
         let c2_len = pack_into(c, &mut c2, bits);
-        mac3_ntt_two_primes(acc, &b2[..b2_len], &c2[..c2_len], bits);
+        mac3_two_primes(acc, &b2[..b2_len], &c2[..c2_len], bits);
     } else {
         /* can pack at most 21 effective bits per u64, which is worse than
            64/3 = 21.3333.. effective bits per u64 achieved with three primes */
-        mac3_ntt_three_primes(acc, b, c);
+        mac3_three_primes(acc, b, c);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(u64_digit)]
-pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    mac3_ntt_u64(acc, b, c, true);
+pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+    mac3_u64(acc, b, c, true);
 }
 
 #[cfg(not(u64_digit))]
-pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     fn bigdigit_to_u64(src: &[BigDigit]) -> crate::biguint::Vec::<u64> {
         let mut out = vec![0u64; (src.len() + 1) / 2];
         for i in 0..src.len()/2 {
@@ -847,6 +851,6 @@ pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     let mut acc_u64 = bigdigit_to_u64(acc);
     let b_u64 = bigdigit_to_u64(b);
     let c_u64 = bigdigit_to_u64(c);
-    mac3_ntt_u64(&mut acc_u64, &b_u64, &c_u64, true);
+    mac3_u64(&mut acc_u64, &b_u64, &c_u64, true);
     u64_to_bigdigit(&acc_u64, acc);
 }
