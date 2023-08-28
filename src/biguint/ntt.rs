@@ -748,11 +748,8 @@ fn mac3_ntt_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(u64_digit)]
 #[allow(clippy::many_single_char_names)]
-pub fn mac3_ntt(acc: &mut [BigDigit], bb: &[BigDigit], cc: &[BigDigit], split_unbalanced: bool) {
+fn mac3_ntt_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool) {
     let (b, c) = if bb.len() < cc.len() { (bb, cc) } else { (cc, bb) };
     if split_unbalanced && b.len() * 2 <= c.len() {
         /* special handling for unbalanced multiplication:
@@ -764,7 +761,7 @@ pub fn mac3_ntt(acc: &mut [BigDigit], bb: &[BigDigit], cc: &[BigDigit], split_un
             let k = j + b.len();
             let tmp = acc[k];
             acc[k] = 0;
-            mac3_ntt(&mut acc[i..k+1], b, &c[i..j], false);
+            mac3_ntt_u64(&mut acc[i..k+1], b, &c[i..j], false);
             let mut l = j;
             while carry > 0 && l < k {
                 let (v, overflow) = acc[l].overflowing_add(carry);
@@ -817,7 +814,39 @@ pub fn mac3_ntt(acc: &mut [BigDigit], bb: &[BigDigit], cc: &[BigDigit], split_un
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+#[cfg(u64_digit)]
+pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+    mac3_ntt_u64(acc, b, c, true);
+}
+
 #[cfg(not(u64_digit))]
-pub fn mac3_ntt(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
-    unimplemented!("Please enable u64_digit option until we implement u32 support");
+pub fn mac3_ntt(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
+    fn bigdigit_to_u64(src: &[BigDigit]) -> crate::biguint::Vec::<u64> {
+        let mut out = vec![0u64; (src.len() + 1) / 2];
+        for i in 0..src.len()/2 {
+            out[i] = (src[2*i] as u64) | ((src[2*i+1] as u64) << 32);
+        }
+        if src.len() % 2 == 1 {
+            out[src.len()/2] = src[src.len()-1] as u64;
+        }
+        out
+    }
+    fn u64_to_bigdigit(src: &[u64], dst: &mut [BigDigit]) {
+        for i in 0..dst.len()/2 {
+            dst[2*i] = src[i] as BigDigit;
+            dst[2*i+1] = (src[i] >> 32) as BigDigit;
+        }
+        if dst.len() % 2 == 1 {
+            dst[dst.len()-1] = src[src.len()-1] as BigDigit;
+        }
+    }
+
+    /* convert to u64 => process => convert back to BigDigit (u32) */
+    let mut acc_u64 = bigdigit_to_u64(acc);
+    let b_u64 = bigdigit_to_u64(b);
+    let c_u64 = bigdigit_to_u64(c);
+    mac3_ntt_u64(&mut acc_u64, &b_u64, &c_u64, true);
+    u64_to_bigdigit(&acc_u64, acc);
 }

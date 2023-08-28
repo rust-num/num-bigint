@@ -355,7 +355,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // modulo a prime. Since the result may exceed the prime, we use three
         // distinct primes and combine the results using the Chinese Remainder
         // Theroem (CRT).
-        ntt::mac3_ntt(acc, b, c, true);
+        ntt::mac3_ntt(acc, b, c);
     }
 }
 
