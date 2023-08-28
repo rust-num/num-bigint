@@ -755,9 +755,12 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     }
 }
 
-fn mac3_u64(acc: &mut [u64], bb: &[u64], cc: &[u64], split_unbalanced: bool) {
-    let (b, c) = if bb.len() < cc.len() { (bb, cc) } else { (cc, bb) };
-    if split_unbalanced && b.len() * 2 <= c.len() {
+fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64], split_unbalanced: bool) {
+    let (b, c) = if b.len() < c.len() { (b, c) } else { (c, b) };
+    let naive_cost = plan_ntt::<P1>(b.len() + c.len()).1 * 3;
+    let split_cost = plan_ntt::<P1>(b.len() + b.len()).1 * (2 * c.len() / b.len() + 1)
+        + if c.len() % b.len() > 0 { plan_ntt::<P1>(b.len() + (c.len() % b.len())).1 * 3 } else { 0 };
+    if split_unbalanced && split_cost < naive_cost {
         /* special handling for unbalanced multiplication:
            we reduce it to about `c.len()/b.len()` balanced multiplications */
         let mut i = 0usize;
