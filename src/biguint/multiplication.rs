@@ -219,7 +219,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
             }
             NoSign => (),
         }
-    } else if x.len() <= 512 {
+    } else if x.len() <= if cfg!(u64_digit) { 512 } else { 2048 } {
         // Toom-3 multiplication:
         //
         // Toom-3 is like Karatsuba above, but dividing the inputs into three parts.
