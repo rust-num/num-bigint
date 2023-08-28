@@ -352,7 +352,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // Number-theoretic transform (NTT) multiplication:
         //
         // NTT multiplies two integers by computing the convolution of the arrays
-        // modulo a prime. Since the result may exceed the prime, we use three
+        // modulo a prime. Since the result may exceed the prime, we use two or three
         // distinct primes and combine the results using the Chinese Remainder
         // Theroem (CRT).
         ntt::mac3(acc, b, c);
