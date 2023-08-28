@@ -791,11 +791,27 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64], split_unbalanced: bool) {
         return;
     }
 
+    // We have two choices:
+    //     1. NTT with two primes.
+    //     2. NTT with three primes.
+    // Obviously we want to do only two passes for efficiency, not three.
+    // However, the number of bits per u64 we can pack for NTT
+    // depends on the length of the arrays being multiplied (convolved).
+    // If the arrays are too long, the resulting values may exceed the
+    // modulus range P1 * P2, which leads to incorrect results.
+    // Hence, we compute the number of bits required by the length of NTT,
+    // and use it to determine whether to use two-prime or three-prime.
+    // Since we can pack 64 bits per u64 in three-prime NTT, the effective
+    // number of bits in three-prime NTT is 64/3 = 21.3333..., which means
+    // two-prime NTT can only do better when at least 43 bits per u64 can
+    // be packed into each u64.
+    // Finally note that there should be no issues with overflow since
+    //     2^126 * 64 / 43 < 1.3 * 10^38 < P1 * P2.
     let max_cnt = max(b.len(), c.len()) as u64;
     let mut bits = 0u64;
     while 1u64 << (2*bits) < max_cnt { bits += 1; }
     bits = 63 - bits;
-    if bits >= 44 {
+    if bits >= 43 {
         /* can pack more effective bits per u64 with two primes than with three primes */
         fn pack_into(src: &[u64], dst: &mut [u64], bits: u64) -> usize {
             let (mut j, mut p) = (0usize, 0u64);
