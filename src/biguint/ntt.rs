@@ -755,12 +755,12 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     }
 }
 
-fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64], split_unbalanced: bool) {
+fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let (b, c) = if b.len() < c.len() { (b, c) } else { (c, b) };
     let naive_cost = plan_ntt::<P1>(b.len() + c.len()).1 * 3;
-    let split_cost = plan_ntt::<P1>(b.len() + b.len()).1 * (2 * c.len() / b.len() + 1)
+    let split_cost = plan_ntt::<P1>(b.len() + b.len()).1 * 3 * (c.len() / b.len())
         + if c.len() % b.len() > 0 { plan_ntt::<P1>(b.len() + (c.len() % b.len())).1 * 3 } else { 0 };
-    if split_unbalanced && split_cost < naive_cost {
+    if b.len() >= 128 && split_cost < naive_cost {
         /* special handling for unbalanced multiplication:
            we reduce it to about `c.len()/b.len()` balanced multiplications */
         let mut i = 0usize;
@@ -770,7 +770,7 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64], split_unbalanced: bool) {
             let k = j + b.len();
             let tmp = acc[k];
             acc[k] = 0;
-            mac3_u64(&mut acc[i..=k], b, &c[i..j], false);
+            mac3_u64(&mut acc[i..=k], b, &c[i..j]);
             let mut l = j;
             while carry > 0 && l < k {
                 let (v, overflow) = acc[l].overflowing_add(carry);
@@ -843,7 +843,7 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64], split_unbalanced: bool) {
 
 #[cfg(u64_digit)]
 pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    mac3_u64(acc, b, c, true);
+    mac3_u64(acc, b, c);
 }
 
 #[cfg(not(u64_digit))]
@@ -872,6 +872,6 @@ pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     let mut acc_u64 = bigdigit_to_u64(acc);
     let b_u64 = bigdigit_to_u64(b);
     let c_u64 = bigdigit_to_u64(c);
-    mac3_u64(&mut acc_u64, &b_u64, &c_u64, true);
+    mac3_u64(&mut acc_u64, &b_u64, &c_u64);
     u64_to_bigdigit(&acc_u64, acc);
 }
