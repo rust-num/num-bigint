@@ -708,7 +708,7 @@ const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
 fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
-    assert!(bits < 64);
+    assert!(bits < 63);
 
     let min_len = b.len() + c.len();
     let plan_1 = NttPlan::build::<P1>(min_len);
@@ -750,10 +750,10 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         p += bits;
         if p >= 64 {
             /* flush s to the output buffer */
-            let (w, overflow1) = acc[j].overflowing_add(s);
-            let (w, overflow2) = w.overflowing_add(carry_acc);
+            s += carry_acc;
+            let (w, overflow) = acc[j].overflowing_add(s);
             acc[j] = w;
-            carry_acc = u64::from(overflow1 || overflow2);
+            carry_acc = u64::from(overflow);
 
             /* roll-over */
             (j, p) = (j+1, p-64);
