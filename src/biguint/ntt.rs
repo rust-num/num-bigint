@@ -5,6 +5,8 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::similar_names)]
 
+use crate::biguint::Vec;
+
 mod arith {
     // Extended Euclid algorithm:
     //   (g, x, y) is a solution to ax + by = g, where g = gcd(a, b)
@@ -125,14 +127,18 @@ impl<const P: u64> Arith<P> {
         }
         cur as u64
     }
-    // Multiplication with Montgomery reduction:
-    //   a * b * R^-1 mod P
-    pub const fn mmulmod(a: u64, b: u64) -> u64 {
-        let x = a as u128 * b as u128;
+    // Montgomery reduction:
+    //   x * R^-1 mod P
+    pub const fn mreduce(x: u128) -> u64 {
         let m = (x as u64).wrapping_mul(Self::PINV);
         let y = ((m as u128 * P as u128) >> 64) as u64;
         let (out, overflow) = ((x >> 64) as u64).overflowing_sub(y);
         if overflow { out.wrapping_add(P) } else { out }
+    }
+    // Multiplication with Montgomery reduction:
+    //   a * b * R^-1 mod P
+    pub const fn mmulmod(a: u64, b: u64) -> u64 {
+        Self::mreduce(a as u128 * b as u128)
     }
     pub const fn mmulmod_cond<const INV: bool>(a: u64, b: u64) -> u64 {
         if INV { Self::mmulmod(a, b) } else { b }
@@ -141,21 +147,17 @@ impl<const P: u64> Arith<P> {
     //   a * b * R^-1 + c mod P
     pub const fn mmuladdmod(a: u64, b: u64, c: u64) -> u64 {
         let x = a as u128 * b as u128;
+        let lo = x as u64;
         let hi = Self::addmod((x >> 64) as u64, c);
-        let m = (x as u64).wrapping_mul(Self::PINV);
-        let y = ((m as u128 * P as u128) >> 64) as u64;
-        let (out, overflow) = hi.overflowing_sub(y);
-        if overflow { out.wrapping_add(P) } else { out }
+        Self::mreduce(lo as u128 | ((hi as u128) << 64))
     }
     // Fused-multiply-sub with Montgomery reduction:
     //   a * b * R^-1 - c mod P
     pub const fn mmulsubmod(a: u64, b: u64, c: u64) -> u64 {
         let x = a as u128 * b as u128;
+        let lo = x as u64;
         let hi = Self::submod((x >> 64) as u64, c);
-        let m = (x as u64).wrapping_mul(Self::PINV);
-        let y = ((m as u128 * P as u128) >> 64) as u64;
-        let (out, overflow) = hi.overflowing_sub(y);
-        if overflow { out.wrapping_add(P) } else { out }
+        Self::mreduce(lo as u128 | ((hi as u128) << 64))
     }
     // Computes base^exponent mod P with Montgomery reduction
     pub const fn mpowmod(base: u64, exponent: u64) -> u64 {
@@ -191,9 +193,105 @@ impl<const P: u64> Arith<P> {
     }
 }
 
-struct NttKernelImpl<const P: u64, const RADIX: usize, const INV: bool>;
-impl<const P: u64, const RADIX: usize, const INV: bool> NttKernelImpl<P, RADIX, INV> {
+struct NttPlan {
+    pub n: usize,       // n == g*m
+    pub g: usize,       // g <= NttPlan::GMAX
+    pub m: usize,       // m divides Arith::<P>::MAX_NTT_LEN
+    pub cost: usize,
+    pub last_radix: usize,
+    pub s_list: Vec<(usize, usize)>,
+}
+impl NttPlan {
+    pub const GMAX: usize = 6;
+    pub fn build<const P: u64>(min_len: usize) -> NttPlan {
+        assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
+        let (mut len_max, mut len_max_cost) = (0usize, usize::MAX);
+        let mut len5 = 10;
+        for _ in 0..Arith::<P>::FACTOR_FIVE+1 {
+            let mut len35 = len5;
+            for _ in 0..Arith::<P>::FACTOR_THREE+1 {
+                let mut len = len35;
+                let mut i = 0;
+                while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
+                if len >= min_len && len < len_max_cost {
+                    let (mut tmp, mut cost) = (len, 0);
+                    while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len); }
+                    while tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len + len/5); }
+                    while tmp % 4 == 0 { (tmp, cost) = (tmp/4, cost + len); }
+                    while tmp % 3 == 0 { (tmp, cost) = (tmp/3, cost + len); }
+                    while tmp % 2 == 0 { (tmp, cost) = (tmp/2, cost + len); }
+                    if cost < len_max_cost { (len_max, len_max_cost) = (len, cost); }
+                }
+                len35 *= 3;
+            }
+            len5 *= 5;
+        }
+        let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
+        let mut tmp = len_max;
+        while tmp % 6 == 0 { tmp /= 6; cnt6 += 1; }
+        while tmp % 5 == 0 { tmp /= 5; cnt5 += 1; }
+        while tmp % 4 == 0 { tmp /= 4; cnt4 += 1; }
+        while tmp % 3 == 0 { tmp /= 3; cnt3 += 1; }
+        while tmp % 2 == 0 { tmp /= 2; cnt2 += 1; }
+        let mut g = 1;
+        while 5*g <= Self::GMAX && cnt5 > 0 { g *= 5; cnt5 -= 1; }
+        while 9*g <= Self::GMAX && cnt3 >= 2 { g *= 9; cnt3 -= 2; }
+        while 8*g <= Self::GMAX && cnt4 > 0 && cnt2 > 0 { g *= 8; cnt4 -= 1; cnt2 -= 1; }
+        while 6*g <= Self::GMAX && cnt6 > 0 { g *= 6; cnt6 -= 1; }
+        while 4*g <= Self::GMAX && cnt4 > 0 { g *= 4; cnt4 -= 1; }
+        while 3*g <= Self::GMAX && cnt3 > 0 { g *= 3; cnt3 -= 1; }
+        while 2*g <= Self::GMAX && cnt2 > 0 { g *= 2; cnt2 -= 1; }
+        while cnt6 > 0 && cnt2 > 0 { cnt6 -= 1; cnt2 -= 1; cnt4 += 1; cnt3 += 1; }
+        let s_list = {
+            let mut out = vec![];
+            let mut tmp = len_max;
+            for _ in 0..cnt2 { out.push((tmp, 2)); tmp /= 2; }
+            for _ in 0..cnt3 { out.push((tmp, 3)); tmp /= 3; }
+            for _ in 0..cnt4 { out.push((tmp, 4)); tmp /= 4; }
+            for _ in 0..cnt5 { out.push((tmp, 5)); tmp /= 5; }
+            for _ in 0..cnt6 { out.push((tmp, 6)); tmp /= 6; }
+            out
+        };
+        NttPlan {
+            n: len_max,
+            g: g,
+            m: len_max / g,
+            cost: len_max_cost,
+            last_radix: s_list.last().unwrap_or(&(1, 1)).1,
+            s_list: s_list,
+        }
+    }
+}
+
+fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, buf: *mut u64, c: u64, mult: u64) {
+    unsafe {
+        for i in 0..n {
+            *buf.wrapping_add(i) = Arith::<P>::mmulmod(*x.wrapping_add(i), mult);
+        }
+        for i in 0..n {
+            let mut v1: u128 = 0;
+            for j in 0..=i {
+                let (w, overflow) = v1.overflowing_add(*buf.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
+                v1 = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
+            }
+            let mut v2: u128 = 0;
+            for j in i+1..n {
+                let (w, overflow) = v2.overflowing_add(*buf.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
+                v2 = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
+            }
+            if v1 >= (P as u128) << 64 { v1 = v1.wrapping_sub((P as u128) << 64); }
+            if v2 >= (P as u128) << 64 { v2 = v2.wrapping_sub((P as u128) << 64); }
+            let u1 = Arith::<P>::mreduce(v1);
+            let u2 = Arith::<P>::mreduce(v2);
+            *x.wrapping_add(i) = Arith::<P>::mmuladdmod(c, u2, u1);
+        }
+    }
+}
+
+struct NttKernelImpl<const P: u64, const INV: bool>;
+impl<const P: u64, const INV: bool> NttKernelImpl<P, INV> {
     pub const ROOTR: u64 = Arith::<P>::mpowmod(Arith::<P>::ROOTR, if INV { Arith::<P>::MAX_NTT_LEN - 1 } else { 1 });
+    pub const U2: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/2); // U2 == P - Arith::<P>::R
     pub const U3: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/3);
     pub const U4: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/4);
     pub const U5: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/5);
@@ -217,392 +315,374 @@ impl<const P: u64, const RADIX: usize, const INV: bool> NttKernelImpl<P, RADIX, 
         (c51, c52, c53, c54, c55)
     }
 }
-
-impl<const P: u64, const INV: bool> NttKernelImpl<P, 2, INV> {
-    unsafe fn apply<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64]) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        let mut src = x.as_ptr();
-        let mut dst = y.as_mut_ptr();
-        let omega1 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/n as u64);
-        let (n1, n1s) = (n/2, n/2*s);
-        let mut w1p = Arith::<P>::R;
-        for _ in 0..n1 {
-            for _ in 0..s {
-                let a = *src.wrapping_add(0);
-                let b = *src.wrapping_add(n1s);
-                *dst.wrapping_add(0) = Arith::<P>::addmod(a, b);
-                *dst.wrapping_add(s) = Arith::<P>::mmulmod(w1p, Arith::<P>::submod(a, b));
-                src = src.wrapping_add(1);
-                dst = dst.wrapping_add(1);
-            }
-            dst = dst.wrapping_add(s);
-            w1p = Arith::<P>::mmulmod(w1p, omega1);
-        }
-        (n/2, s*2, !eo, y, x)
+const fn ntt2_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+    w1p: u64,
+    a: u64, mut b: u64) -> (u64, u64) {
+    if !INV && TWIDDLE {
+        b = Arith::<P>::mmulmod(w1p, b);
     }
-    unsafe fn apply_last<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64], mult: u64) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        assert_eq!(n, 2);
-        let mut src = x.as_ptr();
-        let mut dst = if eo { y.as_mut_ptr() } else { x.as_mut_ptr() };
-        for _ in 0..s {
-            let a = *src.wrapping_add(0);
-            let b = *src.wrapping_add(s);
-            *dst.wrapping_add(0) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(a, b));
-            *dst.wrapping_add(s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(a, b));
-            src = src.wrapping_add(1);
-            dst = dst.wrapping_add(1);
-        }
-        if eo { (n/2, s*2, !eo, y, x) } else { (n/2, s*2, eo, x, y) }
+    let out0 = Arith::<P>::addmod(a, b);
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(a, b));
+    (out0, out1)
+}
+const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    w1p: u64,
+    a: u64, b: u64) -> (u64, u64) {
+    match (INV, TWIDDLE) {
+        (_, false) => ntt2_kernel_core::<P, INV, false, false>(w1p, a, b),
+        (false, true) => ntt2_kernel_core::<P, INV, true, false>(w1p, a, b),
+        (true, true) => ntt2_kernel_core::<P, INV, true, true>(w1p, a, b)
     }
 }
-
-impl<const P: u64, const INV: bool> NttKernelImpl<P, 3, INV> {
-    unsafe fn apply<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64]) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        let mut src = x.as_ptr();
-        let mut dst = y.as_mut_ptr();
-        let omega1 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/n as u64);
-        let (n1, n1s) = (n/3, n/3*s);
-        let (mut w1p, mut w2p) = (Arith::<P>::R, Arith::<P>::R);
-        for _ in 0..n1 {
-            for _ in 0..s {
-                let a = *src.wrapping_add(0);
-                let b = *src.wrapping_add(n1s);
-                let c = *src.wrapping_add(2*n1s);
-                let kbmc = Arith::<P>::mmulmod(Self::U3, Arith::<P>::submod(b, c));
-                *dst.wrapping_add(0) = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-                *dst.wrapping_add(s) = Arith::<P>::mmulmod(w1p, Arith::<P>::addmod64(Arith::<P>::submod(a, c), kbmc));
-                *dst.wrapping_add(2*s) = Arith::<P>::mmulmod(w2p, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
-                src = src.wrapping_add(1);
-                dst = dst.wrapping_add(1);
-            }
-            dst = dst.wrapping_add(2*s);
-            w1p = Arith::<P>::mmulmod(w1p, omega1);
-            w2p = Arith::<P>::mmulmod(w1p, w1p);
-        }
-        (n/3, s*3, !eo, y, x)
-    }
-    unsafe fn apply_last<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64], mult: u64) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        assert_eq!(n, 3);
-        let mut src = x.as_ptr();
-        let mut dst = if eo { y.as_mut_ptr() } else { x.as_mut_ptr() };
-        for _ in 0..s {
-            let a = *src.wrapping_add(0);
-            let b = *src.wrapping_add(s);
-            let c = *src.wrapping_add(2*s);
-            let kbmc = Arith::<P>::mmulmod(Self::U3, Arith::<P>::submod(b, c));
-            *dst.wrapping_add(0) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(a, Arith::<P>::addmodopt::<INV>(b, c)));
-            *dst.wrapping_add(s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(Arith::<P>::submod(a, c), kbmc));
-            *dst.wrapping_add(2*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
-            src = src.wrapping_add(1);
-            dst = dst.wrapping_add(1);
-        }
-        if eo { (n/3, s*3, !eo, y, x) } else { (n/3, s*3, eo, x, y) }
-    }
-}
-
-impl<const P: u64, const INV: bool> NttKernelImpl<P, 4, INV> {
-    unsafe fn apply<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64]) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        let mut src = x.as_ptr();
-        let mut dst = y.as_mut_ptr();
-        let omega1 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/n as u64);
-        let (n1, n1s) = (n/4, n/4*s);
-        let (mut w1p, mut w2p, mut w3p) = (Arith::<P>::R, Arith::<P>::R, P.wrapping_sub(Self::U4));
-        for _ in 0..n1 {
-            for _ in 0..s {
-                let a = *src.wrapping_add(0);
-                let b = *src.wrapping_add(n1s);
-                let c = *src.wrapping_add(2*n1s);
-                let d = *src.wrapping_add(3*n1s);
-                let apc = Arith::<P>::addmod(a, c);
-                let amc = Arith::<P>::mmulmod(w1p, Arith::<P>::submod(a, c));
-                let bpd = Arith::<P>::addmod(b, d);
-                let bmd = Arith::<P>::submod(b, d);
-                let jbmd = Arith::<P>::mmulmod(w3p, bmd);
-                *dst.wrapping_add(0) = Arith::<P>::addmod(apc, bpd);
-                *dst.wrapping_add(s) = Arith::<P>::submod(amc, jbmd);
-                *dst.wrapping_add(2*s) = Arith::<P>::mmulmod(w2p, Arith::<P>::submod(apc,  bpd));
-                *dst.wrapping_add(3*s) = Arith::<P>::mmulmod(w2p, Arith::<P>::addmod64(amc, jbmd));
-                src = src.wrapping_add(1);
-                dst = dst.wrapping_add(1);
-            }
-            dst = dst.wrapping_add(3*s);
-            w1p = Arith::<P>::mmulmod(w1p, omega1);
-            w2p = Arith::<P>::mmulmod(w1p, w1p);
-            w3p = Arith::<P>::mmulmod(w3p, omega1);
-        }
-        (n/4, s*4, !eo, y, x)
-    }
-    unsafe fn apply_last<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64], mult: u64) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        assert_eq!(n, 4);
-        let mut src = x.as_ptr();
-        let mut dst = if eo { y.as_mut_ptr() } else { x.as_mut_ptr() };
-        for _ in 0..s {
-            let a = *src.wrapping_add(0);
-            let b = *src.wrapping_add(s);
-            let c = *src.wrapping_add(2*s);
-            let d = *src.wrapping_add(3*s);
-            let apc = Arith::<P>::addmod(a, c);
-            let amc = Arith::<P>::submod(a, c);
-            let bpd = Arith::<P>::addmod(b, d);
-            let bmd = Arith::<P>::submod(b, d);
-            let jbmd = Arith::<P>::mmulmod(bmd, P.wrapping_sub(Self::U4));
-            *dst.wrapping_add(0) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(apc, bpd));
-            *dst.wrapping_add(s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(amc, jbmd));
-            *dst.wrapping_add(2*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(apc,  bpd));
-            *dst.wrapping_add(3*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(amc, jbmd));
-            src = src.wrapping_add(1);
-            dst = dst.wrapping_add(1);
-        }
-        if eo { (n/4, s*4, !eo, y, x) } else { (n/4, s*4, eo, x, y) }
-    }
-}
-
-impl<const P: u64, const INV: bool> NttKernelImpl<P, 5, INV> {
-    unsafe fn apply<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64]) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        let mut src = x.as_ptr();
-        let mut dst = y.as_mut_ptr();
-        let omega1 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/n as u64);
-        let (n1, n1s) = (n/5, n/5*s);
-        let (mut w1p, mut w2p, mut w3p, mut w4p) = (Arith::<P>::R, Arith::<P>::RNEG, Arith::<P>::RNEG, Arith::<P>::R);
-        for _ in 0..n1 {
-            for _ in 0..s {
-                let a = *src.wrapping_add(0);
-                let b = *src.wrapping_add(n1s);
-                let c = *src.wrapping_add(2*n1s);
-                let d = *src.wrapping_add(3*n1s);
-                let e = *src.wrapping_add(4*n1s);
-                let t1 = Arith::<P>::addmod(b, e);
-                let t2 = Arith::<P>::addmod(c, d);
-                let t3 = Arith::<P>::submod(b, e);
-                let t4= Arith::<P>::submod(d, c);
-                let t5 = Arith::<P>::addmod(t1, t2);
-                let t6 = Arith::<P>::submod(t1, t2);
-                let t7 = Arith::<P>::addmod64(t3, t4);
-                let m1 = Arith::<P>::addmod(a, t5);
-                let m2 = Arith::<P>::mmulsubmod(P.wrapping_sub(Self::C51), t5, m1);
-                let m3 = Arith::<P>::mmulmod(Self::C52, t6);
-                let m4 = Arith::<P>::mmulmod(Self::C53, t7);
-                let m5 = Arith::<P>::mmulsubmod(Self::C54, t4, m4);
-                let m6 = Arith::<P>::mmulsubmod(P.wrapping_sub(Self::C55), t3, m4);
-                let s2 = Arith::<P>::submod(m3, m2);
-                let s4 = Arith::<P>::addmod64(m2, m3);
-                *dst.wrapping_add(0) = m1;
-                *dst.wrapping_add(s) = Arith::<P>::mmulmod(w1p, Arith::<P>::submod(s2, m5));
-                *dst.wrapping_add(2*s) = Arith::<P>::mmulmod(w2p, Arith::<P>::addmod64(s4, m6));
-                *dst.wrapping_add(3*s) = Arith::<P>::mmulmod(w3p, Arith::<P>::submod(s4, m6));
-                *dst.wrapping_add(4*s) = Arith::<P>::mmulmod(w4p, Arith::<P>::addmod64(s2, m5));
-                src = src.wrapping_add(1);
-                dst = dst.wrapping_add(1);
-            }
-            dst = dst.wrapping_add(4*s);
-            w1p = Arith::<P>::mmulmod(w1p, omega1);
-            w2p = Arith::<P>::mmulmod(w1p, P.wrapping_sub(w1p));
-            w3p = Arith::<P>::mmulmod(w1p, w2p);
-            w4p = Arith::<P>::mmulmod(w2p, w2p);
-        }
-        (n/5, s*5, !eo, y, x)
-    }
-    unsafe fn apply_last<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64], mult: u64) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        assert_eq!(n, 5);
-        let mut src = x.as_ptr();
-        let mut dst = if eo { y.as_mut_ptr() } else { x.as_mut_ptr() };
-        for _ in 0..s {
-            let a = *src.wrapping_add(0);
-            let b = *src.wrapping_add(s);
-            let c = *src.wrapping_add(2*s);
-            let d = *src.wrapping_add(3*s);
-            let e = *src.wrapping_add(4*s);
-            let t1 = Arith::<P>::addmod(b, e);
-            let t2 = Arith::<P>::addmod(c, d);
-            let t3 = Arith::<P>::submod(b, e);
-            let t4= Arith::<P>::submod(d, c);
-            let t5 = Arith::<P>::addmod(t1, t2);
-            let t6 = Arith::<P>::submod(t1, t2);
-            let t7 = Arith::<P>::addmod64(t3, t4);
-            let m1 = Arith::<P>::addmod(a, t5);
-            let m2 = Arith::<P>::mmuladdmod(Self::C51, t5, m1);
-            let m3 = Arith::<P>::mmulmod(Self::C52, t6);
-            let m4 = Arith::<P>::mmulmod(Self::C53, t7);
-            let m5 = Arith::<P>::mmulsubmod(Self::C54, t4, m4);
-            let m6 = Arith::<P>::mmulsubmod(P.wrapping_sub(Self::C55), t3, m4);
-            let s2 = Arith::<P>::addmod(m2, m3);
-            let s4 = Arith::<P>::submod(m2, m3);
-            *dst.wrapping_add(0) = Arith::<P>::mmulmod_cond::<INV>(mult, m1);
-            *dst.wrapping_add(s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(s2, m5));
-            *dst.wrapping_add(2*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(s4, m6));
-            *dst.wrapping_add(3*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(s4, m6));
-            *dst.wrapping_add(4*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(s2, m5));
-            src = src.wrapping_add(1);
-            dst = dst.wrapping_add(1);
-        }
-        if eo { (n/5, s*5, !eo, y, x) } else { (n/5, s*5, eo, x, y) }
-    }
-}
-
-impl<const P: u64, const INV: bool> NttKernelImpl<P, 6, INV> {
-    unsafe fn apply<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64]) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        let mut src = x.as_ptr();
-        let mut dst = y.as_mut_ptr();
-        let omega1 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/n as u64);
-        let (n1, n1s) = (n/6, n/6*s);
-        let (mut w1p, mut w2p, mut w3p, mut w4p, mut w5p) = (Arith::<P>::R, Arith::<P>::R, Arith::<P>::R, Arith::<P>::R, Arith::<P>::R);
-        for _ in 0..n1 {
-            for _ in 0..s {
-                let mut a = *src.wrapping_add(0);
-                let mut b = *src.wrapping_add(n1s);
-                let mut c = *src.wrapping_add(2*n1s);
-                let mut d = *src.wrapping_add(3*n1s);
-                let mut e = *src.wrapping_add(4*n1s);
-                let mut f = *src.wrapping_add(5*n1s);
-                (a, d) = (Arith::<P>::addmod(a, d), Arith::<P>::submod(a, d));
-                (b, e) = (Arith::<P>::addmod(b, e), Arith::<P>::submod(b, e));
-                (c, f) = (Arith::<P>::addmod(c, f), Arith::<P>::submod(c, f));
-                let lbmc = Arith::<P>::mmulmod(Self::U6, Arith::<P>::submod(b, c));
-                *dst.wrapping_add(0) = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-                *dst.wrapping_add(2*s) = Arith::<P>::mmulmod(w2p, Arith::<P>::addmod64(Arith::<P>::submod(a, b), lbmc));
-                *dst.wrapping_add(4*s) = Arith::<P>::mmulmod(w4p, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
-                let mlepf = Arith::<P>::mmulmod(P.wrapping_sub(Self::U6), Arith::<P>::addmod64(e, f));
-                *dst.wrapping_add(s) = Arith::<P>::mmulmod(w1p, Arith::<P>::submod(Arith::<P>::submod(d, f), mlepf));
-                *dst.wrapping_add(3*s) = Arith::<P>::mmulmod(w3p, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
-                *dst.wrapping_add(5*s) = Arith::<P>::mmulmod(w5p, Arith::<P>::addmod64(Arith::<P>::addmod64(d, mlepf), e));
-                src = src.wrapping_add(1);
-                dst = dst.wrapping_add(1);
-            }
-            dst = dst.wrapping_add(5*s);
-            w1p = Arith::<P>::mmulmod(w1p, omega1);
-            w2p = Arith::<P>::mmulmod(w1p, w1p);
-            w3p = Arith::<P>::mmulmod(w1p, w2p);
-            w4p = Arith::<P>::mmulmod(w2p, w2p);
-            w5p = Arith::<P>::mmulmod(w2p, w3p);
-        }
-        (n/6, s*6, !eo, y, x)
-    }
-    unsafe fn apply_last<'a>(n: usize, s: usize, eo: bool, x: &'a mut [u64], y: &'a mut [u64], mult: u64) -> (usize, usize, bool, &'a mut [u64], &'a mut [u64]) {
-        assert_eq!(n, 6);
-        let mut src = x.as_ptr();
-        let mut dst = if eo { y.as_mut_ptr() } else { x.as_mut_ptr() };
-        for _ in 0..s {
-            let mut a = *src.wrapping_add(0);
-            let mut b = *src.wrapping_add(s);
-            let mut c = *src.wrapping_add(2*s);
-            let mut d = *src.wrapping_add(3*s);
-            let mut e = *src.wrapping_add(4*s);
-            let mut f = *src.wrapping_add(5*s);
-            (a, d) = (Arith::<P>::addmod(a, d), Arith::<P>::submod(a, d));
-            (b, e) = (Arith::<P>::addmod(b, e), Arith::<P>::submod(b, e));
-            (c, f) = (Arith::<P>::addmod(c, f), Arith::<P>::submod(c, f));
-            let lbmc = Arith::<P>::mmulmod(Self::U6, Arith::<P>::submod(b, c));
-            *dst.wrapping_add(0) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(a, Arith::<P>::addmodopt::<INV>(b, c)));
-            *dst.wrapping_add(2*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(Arith::<P>::submod(a, b), lbmc));
-            *dst.wrapping_add(4*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
-            let lepf = Arith::<P>::mmulmod(Self::U6, Arith::<P>::addmod64(e, f));
-            *dst.wrapping_add(s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(Arith::<P>::submod(d, f), lepf));
-            *dst.wrapping_add(3*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
-            *dst.wrapping_add(5*s) = Arith::<P>::mmulmod_cond::<INV>(mult, Arith::<P>::addmodopt::<INV>(Arith::<P>::submod(d, lepf), e));
-            src = src.wrapping_add(1);
-            dst = dst.wrapping_add(1);
-        }
-        if eo { (n/6, s*6, !eo, y, x) } else { (n/6, s*6, eo, x, y) }
-    }
-}
-
-fn ntt_stockham<const P: u64, const INV: bool>(input: &mut [u64], buf: &mut [u64]) {
-    let (mut n, mut s, mut eo, mut x, mut y) = (input.len(), 1, false, input, buf);
-    assert!(Arith::<P>::MAX_NTT_LEN % n as u64 == 0);
-    let inv_p2 = Arith::<P>::mmulmod(Arith::<P>::R3, Arith::<P>::submod(0, (P-1)/n as u64));
-    if n == 1 {
-        x[0] = Arith::<P>::mmulmod_cond::<INV>(inv_p2, x[0]);
-        return;
-    }
-    let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
-    let mut tmp = n;
-    while tmp % 6 == 0 { tmp /= 6; cnt6 += 1; }
-    while tmp % 5 == 0 { tmp /= 5; cnt5 += 1; }
-    while tmp % 4 == 0 { tmp /= 4; cnt4 += 1; }
-    while tmp % 3 == 0 { tmp /= 3; cnt3 += 1; }
-    while tmp % 2 == 0 { tmp /= 2; cnt2 += 1; }
-    while cnt6 > 0 && cnt2 > 0 { cnt6 -= 1; cnt2 -= 1; cnt4 += 1; cnt3 += 1; }
+fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
     unsafe {
-        while cnt2 > 0 {
-            (n, s, eo, x, y) = if n > 2 {
-                NttKernelImpl::<P, 2, INV>::apply(n, s, eo, x, y)
-            } else {
-                NttKernelImpl::<P, 2, INV>::apply_last(n, s, eo, x, y, inv_p2)
-            };
-            cnt2 -= 1;
+        let w1p = if TWIDDLE { *ptf } else { 0 };
+        for _ in 0..s1 {
+            (*px, *px.wrapping_add(s1)) =
+                ntt2_kernel::<P, INV, TWIDDLE>(w1p,
+                    *px, *px.wrapping_add(s1));
+            px = px.wrapping_add(1);
         }
-        while cnt3 > 0 {
-            (n, s, eo, x, y) = if n > 3 {
-                NttKernelImpl::<P, 3, INV>::apply(n, s, eo, x, y)
-            } else {
-                NttKernelImpl::<P, 3, INV>::apply_last(n, s, eo, x, y, inv_p2)
-            };
-            cnt3 -= 1;
+    }
+    (px.wrapping_add(s1), ptf.wrapping_add(1))
+}
+const fn ntt3_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+    w1p: u64, w2p: u64,
+    a: u64, mut b: u64, mut c: u64) -> (u64, u64, u64) {
+    if !INV && TWIDDLE {
+        b = Arith::<P>::mmulmod(w1p, b);
+        c = Arith::<P>::mmulmod(w2p, c);
+    }
+    let kbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U3, Arith::<P>::submod(b, c));
+    let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(a, c), kbmc));
+    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
+    (out0, out1, out2)
+}
+const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    w1p: u64, w2p: u64,
+    a: u64, b: u64, c: u64) -> (u64, u64, u64) {
+    match (INV, TWIDDLE) {
+        (_, false) => ntt3_kernel_core::<P, INV, false, false>(w1p, w2p, a, b, c),
+        (false, true) => ntt3_kernel_core::<P, INV, true, false>(w1p, w2p, a, b, c),
+        (true, true) => ntt3_kernel_core::<P, INV, true, true>(w1p, w2p, a, b, c)
+    }
+}
+fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
+    unsafe {
+        let (w1p, w2p) = if TWIDDLE {
+            let w1p = *ptf;
+            let w2p = Arith::<P>::mmulmod(w1p, w1p);
+            (w1p, w2p)
+        } else {
+            (0, 0)
+        };
+        for _ in 0..s1 {
+            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1)) =
+                ntt3_kernel::<P, INV, TWIDDLE>(w1p, w2p,
+                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1));
+            px = px.wrapping_add(1);
         }
-        while cnt4 > 0 {
-            (n, s, eo, x, y) = if n > 4 {
-                NttKernelImpl::<P, 4, INV>::apply(n, s, eo, x, y)
-            } else {
-                NttKernelImpl::<P, 4, INV>::apply_last(n, s, eo, x, y, inv_p2)
-            };
-            cnt4 -= 1;
+    }
+    (px.wrapping_add(2*s1), ptf.wrapping_add(1))
+}
+const fn ntt4_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+    w1p: u64, w2p: u64, w3p: u64,
+    a: u64, mut b: u64, mut c: u64, mut d: u64) -> (u64, u64, u64, u64) {
+    if !INV && TWIDDLE {
+        b = Arith::<P>::mmulmod(w1p, b);
+        c = Arith::<P>::mmulmod(w2p, c);
+        d = Arith::<P>::mmulmod(w3p, d);
+    }
+    let apc = Arith::<P>::addmod(a, c);
+    let amc = Arith::<P>::submod(a, c);
+    let bpd = Arith::<P>::addmod(b, d);
+    let bmd = Arith::<P>::submod(b, d);
+    let jbmd = Arith::<P>::mmulmod(bmd, P.wrapping_sub(NttKernelImpl::<P, INV>::U4));
+    let out0 = Arith::<P>::addmod(apc, bpd);
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(amc, jbmd));
+    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(apc,  bpd));
+    let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::addmodopt::<INV_TWIDDLE>(amc, jbmd));
+    (out0, out1, out2, out3)
+}
+const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    w1p: u64, w2p: u64, w3p: u64,
+    a: u64, b: u64, c: u64, d: u64) -> (u64, u64, u64, u64) {
+    match (INV, TWIDDLE) {
+        (_, false) => ntt4_kernel_core::<P, INV, false, false>(w1p, w2p, w3p, a, b, c, d),
+        (false, true) => ntt4_kernel_core::<P, INV, true, false>(w1p, w2p, w3p, a, b, c, d),
+        (true, true) => ntt4_kernel_core::<P, INV, true, true>(w1p, w2p, w3p, a, b, c, d)
+    }
+}
+fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
+    unsafe {
+        let (w1p, w2p, w3p) = if TWIDDLE {
+            let w1p = *ptf;
+            let w2p = Arith::<P>::mmulmod(w1p, w1p);
+            let w3p = Arith::<P>::mmulmod(w1p, w2p);
+            (w1p, w2p, w3p)
+        } else {
+            (0, 0, 0)
+        };
+        for _ in 0..s1 {
+            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
+            *px.wrapping_add(3*s1)) =
+                ntt4_kernel::<P, INV, TWIDDLE>(w1p, w2p, w3p,
+                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
+                    *px.wrapping_add(3*s1));
+            px = px.wrapping_add(1);
         }
-        while cnt5 > 0 {
-            (n, s, eo, x, y) = if n > 5 {
-                NttKernelImpl::<P, 5, INV>::apply(n, s, eo, x, y)
-            } else {
-                NttKernelImpl::<P, 5, INV>::apply_last(n, s, eo, x, y, inv_p2)
-            };
-            cnt5 -= 1;
+    }
+    (px.wrapping_add(3*s1), ptf.wrapping_add(1))
+}
+const fn ntt5_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+    w1p: u64, w2p: u64, w3p: u64, w4p: u64,
+    a: u64, mut b: u64, mut c: u64, mut d: u64, mut e: u64) -> (u64, u64, u64, u64, u64) {
+    if !INV && TWIDDLE {
+        b = Arith::<P>::mmulmod(w1p, b);
+        c = Arith::<P>::mmulmod(w2p, c);
+        d = Arith::<P>::mmulmod(w3p, d);
+        e = Arith::<P>::mmulmod(w4p, e);
+    }
+    let t1 = Arith::<P>::addmod(b, e);
+    let t2 = Arith::<P>::addmod(c, d);
+    let t3 = Arith::<P>::submod(b, e);
+    let t4= Arith::<P>::submod(d, c);
+    let t5 = Arith::<P>::addmod(t1, t2);
+    let t6 = Arith::<P>::submod(t1, t2);
+    let t7 = Arith::<P>::addmod64(t3, t4);
+    let m1 = Arith::<P>::addmod(a, t5);
+    let m2 = Arith::<P>::mmulsubmod(P.wrapping_sub(NttKernelImpl::<P, INV>::C51), t5, m1);
+    let m3 = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::C52, t6);
+    let m4 = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::C53, t7);
+    let m5 = Arith::<P>::mmulsubmod(NttKernelImpl::<P, INV>::C54, t4, m4);
+    let m6 = Arith::<P>::mmulsubmod(P.wrapping_sub(NttKernelImpl::<P, INV>::C55), t3, m4);
+    let s2 = Arith::<P>::submod(m3, m2);
+    let s4 = Arith::<P>::addmod(m2, m3);
+    let out0 = m1;
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(s2, m5));
+    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(0, Arith::<P>::addmod(s4, m6)));
+    let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::submod(m6, s4));
+    let out4 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w4p, Arith::<P>::addmodopt::<INV_TWIDDLE>(s2, m5));
+    (out0, out1, out2, out3, out4)
+}
+const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    w1p: u64, w2p: u64, w3p: u64, w4p: u64,
+    a: u64, b: u64, c: u64, d: u64, e: u64) -> (u64, u64, u64, u64, u64) {
+    match (INV, TWIDDLE) {
+        (_, false) => ntt5_kernel_core::<P, INV, false, false>(w1p, w2p, w3p, w4p, a, b, c, d, e),
+        (false, true) => ntt5_kernel_core::<P, INV, true, false>(w1p, w2p, w3p, w4p, a, b, c, d, e),
+        (true, true) => ntt5_kernel_core::<P, INV, true, true>(w1p, w2p, w3p, w4p, a, b, c, d, e)
+    }
+}
+fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
+    unsafe {
+        let (w1p, w2p, w3p, w4p) = if TWIDDLE {
+            let w1p = *ptf;
+            let w2p = Arith::<P>::mmulmod(w1p, w1p);
+            let w3p = Arith::<P>::mmulmod(w1p, w2p);
+            let w4p = Arith::<P>::mmulmod(w2p, w2p);
+            (w1p, w2p, w3p, w4p)
+        } else {
+            (0, 0, 0, 0)
+        };
+        for _ in 0..s1 {
+            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
+            *px.wrapping_add(3*s1), *px.wrapping_add(4*s1)) =
+                ntt5_kernel::<P, INV, TWIDDLE>(w1p, w2p, w3p, w4p,
+                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
+                    *px.wrapping_add(3*s1), *px.wrapping_add(4*s1));
+            px = px.wrapping_add(1);
         }
-        while cnt6 > 0 {
-            (n, s, eo, x, y) = if n > 6 {
-                NttKernelImpl::<P, 6, INV>::apply(n, s, eo, x, y)
-            } else {
-                NttKernelImpl::<P, 6, INV>::apply_last(n, s, eo, x, y, inv_p2)
-            };
-            cnt6 -= 1;
+    }
+    (px.wrapping_add(4*s1), ptf.wrapping_add(1))
+}
+const fn ntt6_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+    w1p: u64, w2p: u64, w3p: u64, w4p: u64, w5p: u64,
+    mut a: u64, mut b: u64, mut c: u64, mut d: u64, mut e: u64, mut f: u64) -> (u64, u64, u64, u64, u64, u64) {
+    if !INV && TWIDDLE {
+        b = Arith::<P>::mmulmod(w1p, b);
+        c = Arith::<P>::mmulmod(w2p, c);
+        d = Arith::<P>::mmulmod(w3p, d);
+        e = Arith::<P>::mmulmod(w4p, e);
+        f = Arith::<P>::mmulmod(w5p, f);
+    }
+    (a, d) = (Arith::<P>::addmod(a, d), Arith::<P>::submod(a, d));
+    (b, e) = (Arith::<P>::addmod(b, e), Arith::<P>::submod(b, e));
+    (c, f) = (Arith::<P>::addmod(c, f), Arith::<P>::submod(c, f));
+    let lbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::submod(b, c));
+    let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
+    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(a, b), lbmc));
+    let out4 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w4p, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
+    let lepf = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::addmod64(e, f));
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(d, f), lepf));
+    let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
+    let out5 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w5p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(d, lepf), e));
+    (out0, out1, out2, out3, out4, out5)
+}
+const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    w1p: u64, w2p: u64, w3p: u64, w4p: u64, w5p: u64,
+    a: u64, b: u64, c: u64, d: u64, e: u64, f: u64) -> (u64, u64, u64, u64, u64, u64) {
+    match (INV, TWIDDLE) {
+        (_, false) => ntt6_kernel_core::<P, INV, false, false>(w1p, w2p, w3p, w4p, w5p, a, b, c, d, e, f),
+        (false, true) => ntt6_kernel_core::<P, INV, true, false>(w1p, w2p, w3p, w4p, w5p, a, b, c, d, e, f),
+        (true, true) => ntt6_kernel_core::<P, INV, true, true>(w1p, w2p, w3p, w4p, w5p, a, b, c, d, e, f)
+    }
+}
+fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+    s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
+    unsafe {
+        let (w1p, w2p, w3p, w4p, w5p) = if TWIDDLE {
+            let w1p = *ptf;
+            let w2p = Arith::<P>::mmulmod(w1p, w1p);
+            let w3p = Arith::<P>::mmulmod(w1p, w2p);
+            let w4p = Arith::<P>::mmulmod(w2p, w2p);
+            let w5p = Arith::<P>::mmulmod(w2p, w3p);
+            (w1p, w2p, w3p, w4p, w5p)
+        } else {
+            (0, 0, 0, 0, 0)
+        };
+        for _ in 0..s1 {
+            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
+            *px.wrapping_add(3*s1), *px.wrapping_add(4*s1), *px.wrapping_add(5*s1)) =
+                ntt6_kernel::<P, INV, TWIDDLE>(w1p, w2p, w3p, w4p, w5p,
+                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
+                    *px.wrapping_add(3*s1), *px.wrapping_add(4*s1), *px.wrapping_add(5*s1));
+            px = px.wrapping_add(1);
+        }
+    }
+    (px.wrapping_add(5*s1), ptf.wrapping_add(1))
+}
+
+fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_list: &[Vec<u64>]) {
+    let mut i_list = vec![];
+    for i in 0..plan.s_list.len() { i_list.push(i); }
+    if INV { i_list.reverse(); }
+    for i in i_list {
+        let (s, radix) = plan.s_list[i];
+        let s1 = s/radix;
+        let mut px = x.as_mut_ptr();
+        let px_end = x.as_mut_ptr().wrapping_add(plan.n);
+        let mut ptf = tf_list[i].as_ptr();
+        match radix {
+            2 => {
+                (px, ptf) = ntt2_single_block::<P, INV, false>(s1, px, ptf);
+                while px < px_end {
+                    (px, ptf) = ntt2_single_block::<P, INV, true>(s1, px, ptf);
+                }
+            },
+            3 => {
+                (px, ptf) = ntt3_single_block::<P, INV, false>(s1, px, ptf);
+                while px < px_end {
+                    (px, ptf) = ntt3_single_block::<P, INV, true>(s1, px, ptf);
+                }
+            },
+            4 => {
+                (px, ptf) = ntt4_single_block::<P, INV, false>(s1, px, ptf);
+                while px < px_end {
+                    (px, ptf) = ntt4_single_block::<P, INV, true>(s1, px, ptf);
+                }
+            },
+            5 => {
+                (px, ptf) = ntt5_single_block::<P, INV, false>(s1, px, ptf);
+                while px < px_end {
+                    (px, ptf) = ntt5_single_block::<P, INV, true>(s1, px, ptf);
+                }
+            },
+            6 => {
+                (px, ptf) = ntt6_single_block::<P, INV, false>(s1, px, ptf);
+                while px < px_end {
+                    (px, ptf) = ntt6_single_block::<P, INV, true>(s1, px, ptf);
+                }
+            },
+            _ => { unreachable!() }
         }
     }
 }
 
-fn plan_ntt<const P: u64>(min_len: usize) -> (usize, usize) {
-    assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
-    let (mut len_max, mut len_max_cost) = (0usize, usize::MAX);
-    let mut len5 = 1;
-    for _ in 0..=Arith::<P>::FACTOR_FIVE {
-        let mut len35 = len5;
-        for _ in 0..=Arith::<P>::FACTOR_THREE {
-            let mut len = len35;
-            let mut i = 0;
-            while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
-            if len >= min_len && len < len_max_cost {
-                let (mut tmp, mut cost) = (len, 0);
-                while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len); }
-                while tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len + len/5); }
-                while tmp % 4 == 0 { (tmp, cost) = (tmp/4, cost + len); }
-                while tmp % 3 == 0 { (tmp, cost) = (tmp/3, cost + len); }
-                while tmp % 2 == 0 { (tmp, cost) = (tmp/2, cost + len); }
-                if cost < len_max_cost { (len_max, len_max_cost) = (len, cost); }
-            }
-            len35 *= 3;
-            if len35 >= min_len { break; }
+fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)]) -> Vec<u64> {
+    let mut len = 1;
+    for &(_, radix) in s_list { len *= radix; }
+    len /= s_list.last().unwrap().1;
+    let mut tf = vec![Arith::<P>::R; len];
+    let r = s_list.last().unwrap_or(&(1, 1)).1;
+    let mut p = 1;
+    for i in (1..s_list.len()).rev() {
+        let radix = s_list[i-1].1;
+        let w = Arith::<P>::mpowmod(NttKernelImpl::<P, INV>::ROOTR, Arith::<P>::MAX_NTT_LEN/(p as u64 * radix as u64 * r as u64));
+        for j in p..radix*p {
+            tf[j] = Arith::<P>::mmulmod(w, tf[j - p]);
         }
-        len5 *= 5;
-        if len5 >= min_len { break; }
+        p *= radix;
     }
-    (len_max, len_max_cost)
+    tf
 }
 
 // Performs (cyclic) integer convolution modulo P using NTT.
 // Modifies the three buffers in-place.
 // The output is saved in the slice `x`.
-// The three slices must have the same length which divides `Arith::<P>::MAX_NTT_LEN`.
-fn conv<const P: u64>(x: &mut [u64], y: &mut [u64], buf: &mut [u64]) {
-    assert!(!x.is_empty() && x.len() == y.len() && y.len() == buf.len());
-    ntt_stockham::<P, false>(x, buf);
-    ntt_stockham::<P, false>(y, buf);
-    for i in 0..x.len() { x[i] = Arith::<P>::mmulmod(x[i], y[i]); }
-    ntt_stockham::<P, true>(x, buf);
+// The three slices must have the same length. For maximum performance,
+// the length should contain as many factors of 6 as possible.
+fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u64) {
+    assert!(!x.is_empty() && x.len() == y.len());
+
+    let (_n, g, m) = (plan.n, plan.g, plan.m);
+    let last_radix = plan.last_radix;
+
+    /* build twiddle factors */
+    let mut tf_list = vec![vec![Arith::<P>::R; 1]; 1];
+    for i in 1..plan.s_list.len() {
+        tf_list.push(compute_twiddle_factors::<P, false>(&plan.s_list[0..=i]));
+    }
+
+    /* dif fft */
+    ntt_dif_dit::<P, false>(&plan, x, &tf_list);
+    ntt_dif_dit::<P, false>(&plan, y, &tf_list);
+
+    /* naive or Karatsuba multiplication */
+    let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, Arith::<P>::submod(0, (P-1)/m as u64));
+    mult = Arith::<P>::mmulmod(Arith::<P>::mmulmod(Arith::<P>::R2, mult), len_inv);
+    let mut i = 0;
+    let (mut ii, mut ii_mod_last_radix) = (0, 0);
+    let mut buf = vec![0u64; g];
+    let tf = tf_list.last().unwrap();
+    let mut tf_current = tf[0];
+    let tf_mult = match plan.last_radix {
+        2 => NttKernelImpl::<P, false>::U2,
+        3 => NttKernelImpl::<P, false>::U3,
+        4 => NttKernelImpl::<P, false>::U4,
+        5 => NttKernelImpl::<P, false>::U5,
+        6 => NttKernelImpl::<P, false>::U6,
+        _ => Arith::<P>::R
+    };
+    while i < plan.n {
+        if ii_mod_last_radix == 0 {
+            tf_current = tf[ii];
+        } else {
+            tf_current = Arith::<P>::mmulmod(tf_current, tf_mult);
+        }
+
+        /* we multiply the inverse of the length here to save time */
+        conv_base::<P>(g, x.as_mut_ptr().wrapping_add(i), y.as_mut_ptr().wrapping_add(i),
+            buf.as_mut_ptr(), tf_current, mult);
+        i += g;
+        ii_mod_last_radix += 1;
+        if ii_mod_last_radix == last_radix {
+            ii += 1;
+            ii_mod_last_radix = 0;
+        }
+    }
+
+    /* dit fft */
+    let mut tf_list = vec![vec![Arith::<P>::R; 1]; 1];
+    for i in 1..plan.s_list.len() {
+        tf_list.push(compute_twiddle_factors::<P, true>(&plan.s_list[0..=i]));
+    }
+    ntt_dif_dit::<P, true>(&plan, x, &tf_list);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -614,6 +694,7 @@ const P1: u64 = 10_237_243_632_176_332_801; // Max NTT length = 2^24 * 3^20 * 5^
 const P2: u64 = 13_649_658_176_235_110_401; // Max NTT length = 2^26 * 3^19 * 5^2 = 1_949_951_168_033_587_200
 const P3: u64 = 14_259_017_916_245_606_401; // Max NTT length = 2^22 * 3^21 * 5^2 = 1_096_847_532_018_892_800
 
+const P1P2: u128 = P1 as u128 * P2 as u128;
 const P1INV_R_MOD_P2: u64 = Arith::<P2>::mmulmod(Arith::<P2>::R2, arith::invmod(P1, P2));
 const P1P2INV_R_MOD_P3: u64 = Arith::<P3>::mmulmod(
     Arith::<P3>::R3,
@@ -627,26 +708,28 @@ const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
 fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
+    assert!(bits < 64);
+
     let min_len = b.len() + c.len();
-    let len_max_1 = plan_ntt::<P1>(min_len).0;
-    let len_max_2 = plan_ntt::<P2>(min_len).0;
+    let plan_1 = NttPlan::build::<P1>(min_len);
+    let plan_2 = NttPlan::build::<P2>(min_len);
+    let len_max_1 = plan_1.n;
+    let len_max_2 = plan_2.n;
     let len_max = max(len_max_1, len_max_2);
     let mut x = vec![0u64; len_max_1];
     let mut y = vec![0u64; len_max_2];
     let mut r = vec![0u64; len_max];
-    let mut s = vec![0u64; len_max];
 
     /* convolution with modulo P1 */
-    for i in 0..b.len() { x[i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
-    for i in 0..c.len() { r[i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
-    r[c.len()..len_max_1].fill(0u64);
-    conv::<P1>(&mut x, &mut r[..len_max_1], &mut s[..len_max_1]);
+    x[0..b.len()].clone_from_slice(b);
+    r[0..c.len()].clone_from_slice(c);
+    conv::<P1>(&plan_1, &mut x, &mut r[..len_max_1], arith::invmod(P2, P1));
 
     /* convolution with modulo P2 */
-    for i in 0..b.len() { y[i] = if b[i] >= P2 { b[i] - P2 } else { b[i] }; }
-    for i in 0..c.len() { r[i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
+    y[0..b.len()].clone_from_slice(b);
+    r[0..c.len()].clone_from_slice(c);
     r[c.len()..len_max_2].fill(0u64);
-    conv::<P2>(&mut y, &mut r[..len_max_2], &mut s[..len_max_2]);
+    conv::<P2>(&plan_2, &mut y, &mut r[..len_max_2], arith::invmod(P1, P2));
 
     /* merge the results in {x, y} into r (process carry along the way) */
     let mask = (1u64 << bits) - 1;
@@ -655,9 +738,8 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     for i in 0..min_len {
         /* extract the convolution result */
         let (a, b) = (x[i], y[i]);
-        let bma = Arith::<P2>::submod(b, a);
-        let u = Arith::<P2>::mmulmod(bma, P1INV_R_MOD_P2);
-        let v = a as u128 + P1 as u128 * u as u128 + carry;
+        let mut v = a as u128 * P2 as u128 + b as u128 * P1 as u128 + carry;
+        if v >= P1P2 { v = v.wrapping_sub(P1P2); }
         carry = v >> bits;
 
         /* write to r */
@@ -683,33 +765,35 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
 
 fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let min_len = b.len() + c.len();
-    let len_max_1 = plan_ntt::<P1>(min_len).0;
-    let len_max_2 = plan_ntt::<P2>(min_len).0;
-    let len_max_3 = plan_ntt::<P3>(min_len).0;
+    let plan_1 = NttPlan::build::<P1>(min_len);
+    let plan_2 = NttPlan::build::<P2>(min_len);
+    let plan_3 = NttPlan::build::<P3>(min_len);
+    let len_max_1 = plan_1.n;
+    let len_max_2 = plan_2.n;
+    let len_max_3 = plan_3.n;
     let len_max = max(len_max_1, max(len_max_2, len_max_3));
     let mut x = vec![0u64; len_max_1];
     let mut y = vec![0u64; len_max_2];
     let mut z = vec![0u64; len_max_3];
     let mut r = vec![0u64; len_max];
-    let mut s = vec![0u64; len_max];
 
     /* convolution with modulo P1 */
     for i in 0..b.len() { x[i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
     for i in 0..c.len() { r[i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
     r[c.len()..len_max_1].fill(0u64);
-    conv::<P1>(&mut x, &mut r[..len_max_1], &mut s[..len_max_1]);
+    conv::<P1>(&plan_1, &mut x, &mut r[..len_max_1], 1);
 
     /* convolution with modulo P2 */
     for i in 0..b.len() { y[i] = if b[i] >= P2 { b[i] - P2 } else { b[i] }; }
     for i in 0..c.len() { r[i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
     r[c.len()..len_max_2].fill(0u64);
-    conv::<P2>(&mut y, &mut r[..len_max_2], &mut s[..len_max_2]);
+    conv::<P2>(&plan_2, &mut y, &mut r[..len_max_2], 1);
 
     /* convolution with modulo P3 */
     for i in 0..b.len() { z[i] = if b[i] >= P3 { b[i] - P3 } else { b[i] }; }
     for i in 0..c.len() { r[i] = if c[i] >= P3 { c[i] - P3 } else { c[i] }; }
     r[c.len()..len_max_3].fill(0u64);
-    conv::<P3>(&mut z, &mut r[..len_max_3], &mut s[..len_max_3]);
+    conv::<P3>(&plan_3, &mut z, &mut r[..len_max_3], 1);
 
     /* merge the results in {x, y, z} into acc (process carry along the way) */
     let mut carry: u128 = 0;
@@ -757,9 +841,9 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
 
 fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let (b, c) = if b.len() < c.len() { (b, c) } else { (c, b) };
-    let naive_cost = plan_ntt::<P1>(b.len() + c.len()).1 * 3;
-    let split_cost = plan_ntt::<P1>(b.len() + b.len()).1 * 3 * (c.len() / b.len())
-        + if c.len() % b.len() > 0 { plan_ntt::<P1>(b.len() + (c.len() % b.len())).1 * 3 } else { 0 };
+    let naive_cost = NttPlan::build::<P1>(b.len() + c.len()).cost * 3;
+    let split_cost = NttPlan::build::<P1>(b.len() + b.len()).cost * 3 * (c.len() / b.len())
+        + if c.len() % b.len() > 0 { NttPlan::build::<P1>(b.len() + (c.len() % b.len())).cost * 3 } else { 0 };
     if b.len() >= 128 && split_cost < naive_cost {
         /* special handling for unbalanced multiplication:
            we reduce it to about `c.len()/b.len()` balanced multiplications */
@@ -848,7 +932,7 @@ pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
 
 #[cfg(not(u64_digit))]
 pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    fn bigdigit_to_u64(src: &[BigDigit]) -> crate::biguint::Vec::<u64> {
+    fn bigdigit_to_u64(src: &[BigDigit]) -> Vec<u64> {
         let mut out = vec![0u64; (src.len() + 1) / 2];
         for i in 0..src.len()/2 {
             out[i] = (src[2*i] as u64) | ((src[2*i+1] as u64) << 32);
