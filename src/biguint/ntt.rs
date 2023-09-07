@@ -735,6 +735,8 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     let mask = (1u64 << bits) - 1;
     let mut carry: u128 = 0;
     let (mut j, mut p) = (0usize, 0u64);
+    let mut s: u64 = 0;
+    let mut carry_acc: u64 = 0;
     for i in 0..min_len {
         /* extract the convolution result */
         let (a, b) = (x[i], y[i]);
@@ -742,24 +744,30 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         if v >= P1P2 { v = v.wrapping_sub(P1P2); }
         carry = v >> bits;
 
-        /* write to r */
+        /* write to s */
         let out = (v as u64) & mask;
-        r[j] = (r[j] & ((1u64 << p) - 1)) | (out << p);
+        s = (s & ((1u64 << p) - 1)) | (out << p);
         p += bits;
         if p >= 64 {
+            /* flush s to the output buffer */
+            let (w, overflow1) = acc[j].overflowing_add(s);
+            let (w, overflow2) = w.overflowing_add(carry_acc);
+            acc[j] = w;
+            carry_acc = u64::from(overflow1 || overflow2);
+
+            /* roll-over */
             (j, p) = (j+1, p-64);
-            r[j] = out >> (bits - p);
+            s = out >> (bits - p);
         }
     }
 
-    /* add r to acc */
-    let mut carry: u64 = 0;
-    for i in 0..min(acc.len(), j+1) {
-        let w = r[i];
-        let (v, overflow1) = acc[i].overflowing_add(w);
-        let (v, overflow2) = v.overflowing_add(carry);
-        acc[i] = v;
-        carry = u64::from(overflow1 || overflow2);
+    /* process remaining carries */
+    carry_acc += s;
+    while j < acc.len() {
+        let (w, overflow) = acc[j].overflowing_add(carry_acc);
+        acc[j] = w;
+        carry_acc = u64::from(overflow);
+        j += 1;
     }
 }
 
@@ -866,7 +874,7 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
             carry += tmp;
         }
         i += b.len();
-        while i < acc.len() {
+        while carry > 0 && i < acc.len() {
             let (v, overflow) = acc[i].overflowing_add(carry);
             acc[i] = v;
             carry = u64::from(overflow);
