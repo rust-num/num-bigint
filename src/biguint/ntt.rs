@@ -269,21 +269,19 @@ fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, buf: *mut u64, c:
             *buf.wrapping_add(i) = Arith::<P>::mmulmod(*x.wrapping_add(i), mult);
         }
         for i in 0..n {
-            let mut v1: u128 = 0;
-            for j in 0..=i {
-                let (w, overflow) = v1.overflowing_add(*buf.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
-                v1 = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
-            }
-            let mut v2: u128 = 0;
+            let mut v: u128 = 0;
             for j in i+1..n {
-                let (w, overflow) = v2.overflowing_add(*buf.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
-                v2 = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
+                let (w, overflow) = v.overflowing_add(*buf.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
+                v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
             }
-            if v1 >= (P as u128) << 64 { v1 = v1.wrapping_sub((P as u128) << 64); }
-            if v2 >= (P as u128) << 64 { v2 = v2.wrapping_sub((P as u128) << 64); }
-            let u1 = Arith::<P>::mreduce(v1);
-            let u2 = Arith::<P>::mreduce(v2);
-            *x.wrapping_add(i) = Arith::<P>::mmuladdmod(c, u2, u1);
+            if v >= (P as u128) << 64 { v = v.wrapping_sub((P as u128) << 64); }
+            v = c as u128 * Arith::<P>::mreduce(v) as u128;
+            for j in 0..=i {
+                let (w, overflow) = v.overflowing_add(*buf.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
+                v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
+            }
+            if v >= (P as u128) << 64 { v = v.wrapping_sub((P as u128) << 64); }
+            *x.wrapping_add(i) = Arith::<P>::mreduce(v);
         }
     }
 }
