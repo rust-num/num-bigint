@@ -447,7 +447,7 @@ const fn ntt5_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     let t1 = Arith::<P>::addmod(b, e);
     let t2 = Arith::<P>::addmod(c, d);
     let t3 = Arith::<P>::submod(b, e);
-    let t4= Arith::<P>::submod(d, c);
+    let t4 = Arith::<P>::submod(d, c);
     let t5 = Arith::<P>::addmod(t1, t2);
     let t6 = Arith::<P>::submod(t1, t2);
     let t7 = Arith::<P>::addmod64(t3, t4);
@@ -903,18 +903,29 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     if bits >= 43 {
         /* can pack more effective bits per u64 with two primes than with three primes */
         fn pack_into(src: &[u64], dst: &mut [u64], bits: u64) -> usize {
-            let (mut j, mut p) = (0usize, 0u64);
-            for i in 0..src.len() {
+            let mut p = 0u64;
+            let mut pdst = dst.as_mut_ptr();
+            let mut x = 0u64;
+            let mask = (1u64 << bits).wrapping_sub(1);
+            for v in src {
                 let mut k = 0;
                 while k < 64 {
-                    let bits_this_time = min(64 - k, bits - p);
-                    dst[j] = (dst[j] & ((1u64 << p) - 1)) | (((src[i] >> k) & ((1u64 << bits_this_time) - 1)) << p);
-                    k += bits_this_time;
-                    p += bits_this_time;
-                    if p == bits { (j, p) = (j+1, 0); }
+                    x |= (v >> k) << p;
+                    let q = 64 - k;
+                    if p + q >= bits {
+                        unsafe { *pdst = x & mask; }
+                        x = 0;
+                        (pdst, k, p) = (pdst.wrapping_add(1), k + bits - p, 0);
+                    } else {
+                        p += q;
+                        break;
+                    }
                 }
             }
-            if p == 0 { j } else { j+1 }
+            unsafe {
+                if p > 0 { *pdst = x & mask; pdst = pdst.wrapping_add(1); }
+                pdst.offset_from(dst.as_mut_ptr()) as usize
+            }
         }
         let mut b2 = vec![0u64; ((64 * b.len() as u64 + bits - 1) / bits) as usize];
         let mut c2 = vec![0u64; ((64 * c.len() as u64 + bits - 1) / bits) as usize];
