@@ -555,16 +555,16 @@ fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     (px.wrapping_add(5*s1), ptf.wrapping_add(1))
 }
 
-fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_list: &[Vec<u64>]) {
+fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_list: &[u64]) {
     let mut i_list = vec![];
     for i in 0..plan.s_list.len() { i_list.push(i); }
     if INV { i_list.reverse(); }
+    let mut ptf = tf_list.as_ptr();
     for i in i_list {
         let (s, radix) = plan.s_list[i];
         let s1 = s/radix;
         let mut px = x.as_mut_ptr();
         let px_end = x.as_mut_ptr().wrapping_add(plan.n);
-        let mut ptf = tf_list[i].as_ptr();
         match radix {
             2 => {
                 (px, ptf) = ntt2_single_block::<P, INV, false>(s1, px, ptf);
@@ -601,22 +601,22 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
     }
 }
 
-fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)]) -> Vec<u64> {
+fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)], out: &mut [u64]) -> usize {
     let mut len = 1;
     for &(_, radix) in s_list { len *= radix; }
     len /= s_list.last().unwrap().1;
-    let mut tf = vec![Arith::<P>::R; len];
     let r = s_list.last().unwrap_or(&(1, 1)).1;
     let mut p = 1;
+    out[0] = Arith::<P>::R;
     for i in (1..s_list.len()).rev() {
         let radix = s_list[i-1].1;
         let w = Arith::<P>::mpowmod(NttKernelImpl::<P, INV>::ROOTR, Arith::<P>::MAX_NTT_LEN/(p as u64 * radix as u64 * r as u64));
         for j in p..radix*p {
-            tf[j] = Arith::<P>::mmulmod(w, tf[j - p]);
+            out[j] = Arith::<P>::mmulmod(w, out[j - p]);
         }
         p *= radix;
     }
-    tf
+    len
 }
 
 // Performs (cyclic) integer convolution modulo P using NTT.
@@ -630,10 +630,23 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
     let (_n, g, m) = (plan.n, plan.g, plan.m);
     let last_radix = plan.last_radix;
 
+    /* compute the total space needed for twiddle factors */
+    let tf_all_count = (|| -> usize {
+        let (mut radix_cumul, mut out) = (1, 0);
+        for &(_, radix) in plan.s_list.iter() {
+            out += radix_cumul;
+            radix_cumul *= radix;
+        }
+        core::cmp::max(out, 1)
+    })();
+
     /* build twiddle factors */
-    let mut tf_list = vec![vec![Arith::<P>::R; 1]; 1];
+    let mut tf_list = vec![0u64; tf_all_count];
+    tf_list[0] = Arith::<P>::R;
+    let mut tf_last_start = core::cmp::min(tf_all_count - 1, 1);
     for i in 1..plan.s_list.len() {
-        tf_list.push(compute_twiddle_factors::<P, false>(&plan.s_list[0..=i]));
+        let x = compute_twiddle_factors::<P, false>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
+        if i + 1 < plan.s_list.len() { tf_last_start += x; }
     }
 
     /* dif fft */
@@ -646,7 +659,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
     let mut i = 0;
     let (mut ii, mut ii_mod_last_radix) = (0, 0);
     let mut buf = vec![0u64; g];
-    let tf = tf_list.last().unwrap();
+    let tf = &tf_list[tf_last_start..];
     let mut tf_current = tf[0];
     let tf_mult = match plan.last_radix {
         2 => NttKernelImpl::<P, false>::U2,
@@ -675,10 +688,11 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
     }
 
     /* dit fft */
-    let mut tf_list = vec![vec![Arith::<P>::R; 1]; 1];
-    for i in 1..plan.s_list.len() {
-        tf_list.push(compute_twiddle_factors::<P, true>(&plan.s_list[0..=i]));
+    let mut tf_last_start = 0;
+    for i in (1..plan.s_list.len()).rev() {
+        tf_last_start += compute_twiddle_factors::<P, true>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
     }
+    tf_list[tf_last_start] = Arith::<P>::R;
     ntt_dif_dit::<P, true>(&plan, x, &tf_list);
 }
 
