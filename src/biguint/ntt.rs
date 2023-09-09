@@ -701,11 +701,11 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
 use core::cmp::{min, max};
 use crate::big_digit::BigDigit;
 
-const P1: u64 = 10_237_243_632_176_332_801; // Max NTT length = 2^24 * 3^20 * 5^2 = 1_462_463_376_025_190_400
-const P2: u64 = 13_649_658_176_235_110_401; // Max NTT length = 2^26 * 3^19 * 5^2 = 1_949_951_168_033_587_200
-const P3: u64 = 14_259_017_916_245_606_401; // Max NTT length = 2^22 * 3^21 * 5^2 = 1_096_847_532_018_892_800
+const P1: u64 = 14_259_017_916_245_606_401; // Max NTT length = 2^22 * 3^21 * 5^2 = 1_096_847_532_018_892_800
+const P2: u64 = 17_984_575_660_032_000_001; // Max NTT length = 2^19 * 3^17 * 5^6 = 1_057_916_215_296_000_000
+const P3: u64 = 17_995_154_822_184_960_001; // Max NTT length = 2^17 * 3^22 * 5^4 = 2_570_736_403_169_280_000
 
-const P1P2: u128 = P1 as u128 * P2 as u128;
+const P2P3: u128 = P2 as u128 * P3 as u128;
 const P1INV_R_MOD_P2: u64 = Arith::<P2>::mmulmod(Arith::<P2>::R2, arith::invmod(P1, P2));
 const P1P2INV_R_MOD_P3: u64 = Arith::<P3>::mmulmod(
     Arith::<P3>::R3,
@@ -722,25 +722,23 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     assert!(bits < 63);
 
     let min_len = b.len() + c.len();
-    let plan_1 = NttPlan::build::<P1>(min_len);
-    let plan_2 = NttPlan::build::<P2>(min_len);
-    let len_max_1 = plan_1.n;
-    let len_max_2 = plan_2.n;
-    let len_max = max(len_max_1, len_max_2);
-    let mut x = vec![0u64; len_max_1];
-    let mut y = vec![0u64; len_max_2];
+    let plan_x = NttPlan::build::<P2>(min_len);
+    let plan_y = NttPlan::build::<P3>(min_len);
+    let len_max = max(plan_x.n, plan_y.n);
+    let mut x = vec![0u64; plan_x.n];
+    let mut y = vec![0u64; plan_y.n];
     let mut r = vec![0u64; len_max];
 
-    /* convolution with modulo P1 */
+    /* convolution with modulo P2 */
     x[0..b.len()].clone_from_slice(b);
     r[0..c.len()].clone_from_slice(c);
-    conv::<P1>(&plan_1, &mut x, &mut r[..len_max_1], arith::invmod(P2, P1));
+    conv::<P2>(&plan_x, &mut x, &mut r[..plan_x.n], arith::invmod(P3, P2));
 
-    /* convolution with modulo P2 */
+    /* convolution with modulo P3 */
     y[0..b.len()].clone_from_slice(b);
     r[0..c.len()].clone_from_slice(c);
-    r[c.len()..len_max_2].fill(0u64);
-    conv::<P2>(&plan_2, &mut y, &mut r[..len_max_2], arith::invmod(P1, P2));
+    r[c.len()..plan_y.n].fill(0u64);
+    conv::<P3>(&plan_y, &mut y, &mut r[..plan_y.n], Arith::<P3>::submod(0, arith::invmod(P2, P3)));
 
     /* merge the results in {x, y} into r (process carry along the way) */
     let mask = (1u64 << bits) - 1;
@@ -751,8 +749,8 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     for i in 0..min_len {
         /* extract the convolution result */
         let (a, b) = (x[i], y[i]);
-        let mut v = a as u128 * P2 as u128 + b as u128 * P1 as u128 + carry;
-        if v >= P1P2 { v = v.wrapping_sub(P1P2); }
+        let (mut v, overflow) = (a as u128 * P3 as u128 + carry).overflowing_sub(b as u128 * P2 as u128);
+        if overflow { v = v.wrapping_add(P2P3); }
         carry = v >> bits;
 
         /* write to s */
@@ -784,35 +782,32 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
 
 fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let min_len = b.len() + c.len();
-    let plan_1 = NttPlan::build::<P1>(min_len);
-    let plan_2 = NttPlan::build::<P2>(min_len);
-    let plan_3 = NttPlan::build::<P3>(min_len);
-    let len_max_1 = plan_1.n;
-    let len_max_2 = plan_2.n;
-    let len_max_3 = plan_3.n;
-    let len_max = max(len_max_1, max(len_max_2, len_max_3));
-    let mut x = vec![0u64; len_max_1];
-    let mut y = vec![0u64; len_max_2];
-    let mut z = vec![0u64; len_max_3];
+    let plan_x = NttPlan::build::<P1>(min_len);
+    let plan_y = NttPlan::build::<P2>(min_len);
+    let plan_z = NttPlan::build::<P3>(min_len);
+    let len_max = max(plan_x.n, max(plan_y.n, plan_z.n));
+    let mut x = vec![0u64; plan_x.n];
+    let mut y = vec![0u64; plan_y.n];
+    let mut z = vec![0u64; plan_z.n];
     let mut r = vec![0u64; len_max];
 
     /* convolution with modulo P1 */
     for i in 0..b.len() { x[i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
     for i in 0..c.len() { r[i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
-    r[c.len()..len_max_1].fill(0u64);
-    conv::<P1>(&plan_1, &mut x, &mut r[..len_max_1], 1);
+    r[c.len()..plan_x.n].fill(0u64);
+    conv::<P1>(&plan_x, &mut x, &mut r[..plan_x.n], 1);
 
     /* convolution with modulo P2 */
     for i in 0..b.len() { y[i] = if b[i] >= P2 { b[i] - P2 } else { b[i] }; }
     for i in 0..c.len() { r[i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
-    r[c.len()..len_max_2].fill(0u64);
-    conv::<P2>(&plan_2, &mut y, &mut r[..len_max_2], 1);
+    r[c.len()..plan_y.n].fill(0u64);
+    conv::<P2>(&plan_y, &mut y, &mut r[..plan_y.n], 1);
 
     /* convolution with modulo P3 */
     for i in 0..b.len() { z[i] = if b[i] >= P3 { b[i] - P3 } else { b[i] }; }
     for i in 0..c.len() { r[i] = if c[i] >= P3 { c[i] - P3 } else { c[i] }; }
-    r[c.len()..len_max_3].fill(0u64);
-    conv::<P3>(&plan_3, &mut z, &mut r[..len_max_3], 1);
+    r[c.len()..plan_z.n].fill(0u64);
+    conv::<P3>(&plan_z, &mut z, &mut r[..plan_z.n], 1);
 
     /* merge the results in {x, y, z} into acc (process carry along the way) */
     let mut carry: u128 = 0;
@@ -901,19 +896,28 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     // However, the number of bits per u64 we can pack for NTT
     // depends on the length of the arrays being multiplied (convolved).
     // If the arrays are too long, the resulting values may exceed the
-    // modulus range P1 * P2, which leads to incorrect results.
+    // modulus range P2 * P3, which leads to incorrect results.
     // Hence, we compute the number of bits required by the length of NTT,
     // and use it to determine whether to use two-prime or three-prime.
     // Since we can pack 64 bits per u64 in three-prime NTT, the effective
     // number of bits in three-prime NTT is 64/3 = 21.3333..., which means
     // two-prime NTT can only do better when at least 43 bits per u64 can
     // be packed into each u64.
-    // Finally note that there should be no issues with overflow since
-    //     2^126 * 64 / 43 < 1.3 * 10^38 < P1 * P2.
+    const fn compute_bits(l: u64) -> u64 {
+        let total_bits = l * 64;
+        let (mut lo, mut hi) = (42, 62);
+        while lo < hi {
+            let mid = (lo + hi + 1) / 2;
+            let single_digit_max_val = (1u64 << mid) - 1;
+            let l_corrected = (total_bits + mid - 1) / mid;
+            let (lhs, overflow) = (single_digit_max_val as u128 * single_digit_max_val as u128).overflowing_mul(l_corrected as u128);
+            if !overflow && lhs < P2 as u128 * P3 as u128 { lo = mid; }
+            else { hi = mid - 1; }
+        }
+        lo
+    }
     let max_cnt = max(b.len(), c.len()) as u64;
-    let mut bits = 0u64;
-    while 1u64 << (2*bits) < max_cnt { bits += 1; }
-    bits = 63 - bits;
+    let bits = compute_bits(max_cnt);
     if bits >= 43 {
         /* can pack more effective bits per u64 with two primes than with three primes */
         fn pack_into(src: &[u64], dst: &mut [u64], bits: u64) -> usize {
