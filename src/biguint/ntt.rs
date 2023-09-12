@@ -173,6 +173,22 @@ impl<const P: u64> Arith<P> {
         }
         cur
     }
+    // Computes c as u128 * mreduce(v) as u128,
+    //   using d: u64 = mmulmod(P-1, c).
+    // It is caller's responsibility to ensure that d is correct.
+    // Note that d can be computed by calling mreducelo(c).
+    pub const fn mmulmod_noreduce(v: u128, c: u64, d: u64) -> u128 {
+        let a: u128 = c as u128 * (v >> 64);
+        let b: u128 = d as u128 * (v as u64 as u128);
+        let (w, overflow) = a.overflowing_sub(b);
+        if overflow { w.wrapping_add((P as u128) << 64) } else { w }
+    }
+    // Computes submod(0, mreduce(x as u128)) fast.
+    pub const fn mreducelo(x: u64) -> u64 {
+        let m = x.wrapping_mul(Self::PINV);
+        let y = ((m as u128 * P as u128) >> 64) as u64;
+        y
+    }
     // Computes a + b mod P, output range [0, P)
     pub const fn addmod(a: u64, b: u64) -> u64 {
         Self::submod(a, P.wrapping_sub(b))
@@ -262,9 +278,9 @@ impl NttPlan {
         }
     }
 }
-
-fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64, mult: u64) {
+fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64, mult: u64, mult2: u64) {
     unsafe {
+        let c2 = Arith::<P>::mreducelo(c);
         let out = x.wrapping_sub(n);
         for i in 0..n {
             let mut v: u128 = 0;
@@ -272,12 +288,12 @@ fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64, mult: u64
                 let (w, overflow) = v.overflowing_add(*x.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
                 v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
             }
-            v = c as u128 * Arith::<P>::mreduce(v) as u128;
+            v = Arith::<P>::mmulmod_noreduce(v, c, c2);
             for j in 0..=i {
                 let (w, overflow) = v.overflowing_add(*x.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
                 v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
             }
-            *out.wrapping_add(i) = Arith::<P>::mmulmod(Arith::<P>::mreduce(v), mult);
+            *out.wrapping_add(i) = Arith::<P>::mreduce(Arith::<P>::mmulmod_noreduce(v, mult, mult2));
         }
     }
 }
@@ -653,6 +669,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
     /* naive or Karatsuba multiplication */
     let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, Arith::<P>::submod(0, (P-1)/m as u64));
     mult = Arith::<P>::mmulmod(Arith::<P>::mmulmod(Arith::<P>::R2, mult), len_inv);
+    let mult2 = Arith::<P>::mreducelo(mult);
     let mut i = g;
     let (mut ii, mut ii_mod_last_radix) = (0, 0);
     let tf = &tf_list[tf_last_start..];
@@ -674,7 +691,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
 
         /* we multiply the inverse of the length here to save time */
         conv_base::<P>(g, x.as_mut_ptr().wrapping_add(i), y.as_mut_ptr().wrapping_add(i),
-            tf_current, mult);
+            tf_current, mult, mult2);
         i += g;
         ii_mod_last_radix += 1;
         if ii_mod_last_radix == last_radix {
