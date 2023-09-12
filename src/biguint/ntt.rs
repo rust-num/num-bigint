@@ -277,7 +277,6 @@ fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64, mult: u64
                 let (w, overflow) = v.overflowing_add(*x.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
                 v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
             }
-            if v >= (P as u128) << 64 { v = v.wrapping_sub((P as u128) << 64); }
             *out.wrapping_add(i) = Arith::<P>::mmulmod(Arith::<P>::mreduce(v), mult);
         }
     }
