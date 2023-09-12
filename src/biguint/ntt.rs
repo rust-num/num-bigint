@@ -366,7 +366,7 @@ const fn ntt3_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     }
     let kbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U3, Arith::<P>::submod(b, c));
     let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(a, c), kbmc));
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(a, Arith::<P>::submod(c, kbmc)));
     let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
     (out0, out1, out2)
 }
@@ -526,12 +526,12 @@ const fn ntt6_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     (c, f) = (Arith::<P>::addmod(c, f), Arith::<P>::submod(c, f));
     let lbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::submod(b, c));
     let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(a, b), lbmc));
+    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(a, Arith::<P>::submod(b, lbmc)));
     let out4 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w4p, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
     let lepf = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::addmod64(e, f));
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(d, f), lepf));
+    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(d, Arith::<P>::submod(f, lepf)));
     let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
-    let out5 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w5p, Arith::<P>::addmodopt::<INV_TWIDDLE>(Arith::<P>::submod(d, lepf), e));
+    let out5 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w5p, Arith::<P>::submod(d, Arith::<P>::submod(lepf, e)));
     (out0, out1, out2, out3, out4, out5)
 }
 const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
