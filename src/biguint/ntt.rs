@@ -206,7 +206,7 @@ impl NttPlan {
     pub fn build<const P: u64>(min_len: usize) -> NttPlan {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
         let (mut len_max, mut len_max_cost) = (0usize, usize::MAX);
-        let mut len5 = 10;
+        let mut len5 = 1;
         for _ in 0..Arith::<P>::FACTOR_FIVE+1 {
             let mut len35 = len5;
             for _ in 0..Arith::<P>::FACTOR_THREE+1 {
