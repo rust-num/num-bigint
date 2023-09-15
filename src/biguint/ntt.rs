@@ -231,8 +231,10 @@ impl NttPlan {
                 while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
                 if len >= min_len && len < len_max_cost {
                     let (mut tmp, mut cost) = (len, 0);
-                    while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len); }
-                    while tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len + len/5); }
+                    if tmp % 6 == 0 && tmp % 5 != 0 { (tmp, cost) = (tmp/6, cost + len*93/100); }
+                    while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len + len*5/100); }
+                    if tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len*95/100); }
+                    while tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len + len*22/100); }
                     while tmp % 4 == 0 { (tmp, cost) = (tmp/4, cost + len); }
                     while tmp % 3 == 0 { (tmp, cost) = (tmp/3, cost + len); }
                     while tmp % 2 == 0 { (tmp, cost) = (tmp/2, cost + len); }
