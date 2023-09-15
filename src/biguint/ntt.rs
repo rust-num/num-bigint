@@ -280,22 +280,22 @@ impl NttPlan {
         }
     }
 }
-fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64, mult: u64, mult2: u64) {
+fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64) {
     unsafe {
         let c2 = Arith::<P>::mreducelo(c);
         let out = x.wrapping_sub(n);
         for i in 0..n {
             let mut v: u128 = 0;
             for j in i+1..n {
-                let (w, overflow) = v.overflowing_add(*x.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
-                v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
+                let (w, overflow) = v.overflowing_sub(*x.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
+                v = if overflow { w.wrapping_add((P as u128) << 64) } else { w };
             }
             v = Arith::<P>::mmulmod_noreduce(v, c, c2);
             for j in 0..=i {
-                let (w, overflow) = v.overflowing_add(*x.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
-                v = if overflow { w.wrapping_sub((P as u128) << 64) } else { w };
+                let (w, overflow) = v.overflowing_sub(*x.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
+                v = if overflow { w.wrapping_add((P as u128) << 64) } else { w };
             }
-            *out.wrapping_add(i) = Arith::<P>::mreduce(Arith::<P>::mmulmod_noreduce(v, mult, mult2));
+            *out.wrapping_add(i) = Arith::<P>::mreduce(v);
         }
     }
 }
@@ -639,11 +639,19 @@ fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usiz
 // The output is saved in the slice `x`.
 // The three slices must have the same length. For maximum performance,
 // the length should contain as many factors of 6 as possible.
-fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u64) {
+fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64], ylen: usize, mut mult: u64) {
     assert!(!x.is_empty() && x.len() == y.len());
 
     let (_n, g, m) = (plan.n, plan.g, plan.m);
     let last_radix = plan.last_radix;
+
+    /* multiply by a constant in advance */
+    let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, Arith::<P>::submod(0, (P-1)/m as u64));
+    mult = Arith::<P>::mmulmod(Arith::<P>::mmulmod(Arith::<P>::R2, mult), len_inv);
+    mult = Arith::<P>::submod(0, mult);
+    for v in if xlen < ylen { &mut x[g..g+xlen] } else { &mut y[g..g+ylen] } {
+        *v = Arith::<P>::mmulmod(*v, mult);
+    }
 
     /* compute the total space needed for twiddle factors */
     let tf_all_count = (|| -> usize {
@@ -669,9 +677,6 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
     ntt_dif_dit::<P, false>(&plan, &mut y[g..], &tf_list);
 
     /* naive or Karatsuba multiplication */
-    let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, Arith::<P>::submod(0, (P-1)/m as u64));
-    mult = Arith::<P>::mmulmod(Arith::<P>::mmulmod(Arith::<P>::R2, mult), len_inv);
-    let mult2 = Arith::<P>::mreducelo(mult);
     let mut i = g;
     let (mut ii, mut ii_mod_last_radix) = (0, 0);
     let tf = &tf_list[tf_last_start..];
@@ -693,7 +698,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], y: &mut [u64], mut mult: u6
 
         /* we multiply the inverse of the length here to save time */
         conv_base::<P>(g, x.as_mut_ptr().wrapping_add(i), y.as_mut_ptr().wrapping_add(i),
-            tf_current, mult, mult2);
+            tf_current);
         i += g;
         ii_mod_last_radix += 1;
         if ii_mod_last_radix == last_radix {
@@ -747,13 +752,13 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     /* convolution with modulo P2 */
     x[plan_x.g..plan_x.g+b.len()].clone_from_slice(b);
     r[plan_x.g..plan_x.g+c.len()].clone_from_slice(c);
-    conv::<P2>(&plan_x, &mut x, &mut r[..plan_x.g+plan_x.n], arith::invmod(P3, P2));
+    conv::<P2>(&plan_x, &mut x, b.len(), &mut r[..plan_x.g+plan_x.n], c.len(), arith::invmod(P3, P2));
 
     /* convolution with modulo P3 */
     y[plan_y.g..plan_y.g+b.len()].clone_from_slice(b);
     r[plan_y.g..plan_y.g+c.len()].clone_from_slice(c);
     (&mut r[plan_y.g..])[c.len()..plan_y.n].fill(0u64);
-    conv::<P3>(&plan_y, &mut y, &mut r[..plan_y.g+plan_y.n], Arith::<P3>::submod(0, arith::invmod(P2, P3)));
+    conv::<P3>(&plan_y, &mut y, b.len(), &mut r[..plan_y.g+plan_y.n], c.len(), Arith::<P3>::submod(0, arith::invmod(P2, P3)));
 
     /* merge the results in {x, y} into r (process carry along the way) */
     let mask = (1u64 << bits) - 1;
@@ -809,19 +814,19 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     /* convolution with modulo P1 */
     for i in 0..b.len() { x[plan_x.g + i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
     for i in 0..c.len() { r[plan_x.g + i] = if c[i] >= P1 { c[i] - P1 } else { c[i] }; }
-    conv::<P1>(&plan_x, &mut x, &mut r[..plan_x.g+plan_x.n], 1);
+    conv::<P1>(&plan_x, &mut x, b.len(), &mut r[..plan_x.g+plan_x.n], c.len(), 1);
 
     /* convolution with modulo P2 */
     for i in 0..b.len() { y[plan_y.g + i] = if b[i] >= P2 { b[i] - P2 } else { b[i] }; }
     for i in 0..c.len() { r[plan_y.g + i] = if c[i] >= P2 { c[i] - P2 } else { c[i] }; }
     (&mut r[plan_y.g..])[c.len()..plan_y.n].fill(0u64);
-    conv::<P2>(&plan_y, &mut y, &mut r[..plan_y.g+plan_y.n], 1);
+    conv::<P2>(&plan_y, &mut y, b.len(), &mut r[..plan_y.g+plan_y.n], c.len(), 1);
 
     /* convolution with modulo P3 */
     for i in 0..b.len() { z[plan_z.g + i] = if b[i] >= P3 { b[i] - P3 } else { b[i] }; }
     for i in 0..c.len() { r[plan_z.g + i] = if c[i] >= P3 { c[i] - P3 } else { c[i] }; }
     (&mut r[plan_z.g..])[c.len()..plan_z.n].fill(0u64);
-    conv::<P3>(&plan_z, &mut z, &mut r[..plan_z.g+plan_z.n], 1);
+    conv::<P3>(&plan_z, &mut z, b.len(), &mut r[..plan_z.g+plan_z.n], c.len(), 1);
 
     /* merge the results in {x, y, z} into acc (process carry along the way) */
     let mut carry: u128 = 0;
