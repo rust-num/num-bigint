@@ -140,8 +140,12 @@ impl<const P: u64> Arith<P> {
     pub const fn mmulmod(a: u64, b: u64) -> u64 {
         Self::mreduce(a as u128 * b as u128)
     }
-    pub const fn mmulmod_cond<const INV: bool>(a: u64, b: u64) -> u64 {
-        if INV { Self::mmulmod(a, b) } else { b }
+    // Multiplication with Montgomery reduction:
+    //   a * b * R^-1 mod P
+    // This function only applies the multiplication when INV && TWIDDLE,
+    //   otherwise it just returns b.
+    pub const fn mmulmod_invtw<const INV: bool, const TWIDDLE: bool>(a: u64, b: u64) -> u64 {
+        if INV && TWIDDLE { Self::mmulmod(a, b) } else { b }
     }
     // Fused-multiply-add with Montgomery reduction:
     //   a * b * R^-1 + c mod P
@@ -198,9 +202,9 @@ impl<const P: u64> Arith<P> {
         let (out, overflow) = a.overflowing_add(b);
         if overflow { out.wrapping_sub(P) } else { out }
     }
-    // Computes a + b mod P, selects addmod64 or addmod depending on INV
-    pub const fn addmodopt<const INV: bool>(a: u64, b: u64) -> u64 {
-        if INV { Self::addmod64(a, b) } else { Self::addmod(a, b) }
+    // Computes a + b mod P, selects addmod64 or addmod depending on INV && TWIDDLE
+    pub const fn addmodopt_invtw<const INV: bool, const TWIDDLE: bool>(a: u64, b: u64) -> u64 {
+        if INV && TWIDDLE { Self::addmod64(a, b) } else { Self::addmod(a, b) }
     }
     // Computes a - b mod P, output range [0, P)
     pub const fn submod(a: u64, b: u64) -> u64 {
@@ -327,24 +331,15 @@ impl<const P: u64, const INV: bool> NttKernelImpl<P, INV> {
         (c51, c52, c53, c54, c55)
     }
 }
-const fn ntt2_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1p: u64,
     a: u64, mut b: u64) -> (u64, u64) {
     if !INV && TWIDDLE {
         b = Arith::<P>::mmulmod(w1p, b);
     }
     let out0 = Arith::<P>::addmod(a, b);
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(a, b));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(a, b));
     (out0, out1)
-}
-const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
-    w1p: u64,
-    a: u64, b: u64) -> (u64, u64) {
-    match (INV, TWIDDLE) {
-        (_, false) => ntt2_kernel_core::<P, INV, false, false>(w1p, a, b),
-        (false, true) => ntt2_kernel_core::<P, INV, true, false>(w1p, a, b),
-        (true, true) => ntt2_kernel_core::<P, INV, true, true>(w1p, a, b)
-    }
 }
 fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
@@ -359,7 +354,7 @@ fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     }
     (px.wrapping_add(s1), ptf.wrapping_add(1))
 }
-const fn ntt3_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1p: u64, w2p: u64,
     a: u64, mut b: u64, mut c: u64) -> (u64, u64, u64) {
     if !INV && TWIDDLE {
@@ -368,18 +363,9 @@ const fn ntt3_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     }
     let kbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U3, Arith::<P>::submod(b, c));
     let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(a, Arith::<P>::submod(c, kbmc)));
-    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(a, Arith::<P>::submod(c, kbmc)));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
     (out0, out1, out2)
-}
-const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
-    w1p: u64, w2p: u64,
-    a: u64, b: u64, c: u64) -> (u64, u64, u64) {
-    match (INV, TWIDDLE) {
-        (_, false) => ntt3_kernel_core::<P, INV, false, false>(w1p, w2p, a, b, c),
-        (false, true) => ntt3_kernel_core::<P, INV, true, false>(w1p, w2p, a, b, c),
-        (true, true) => ntt3_kernel_core::<P, INV, true, true>(w1p, w2p, a, b, c)
-    }
 }
 fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
@@ -400,7 +386,7 @@ fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     }
     (px.wrapping_add(2*s1), ptf.wrapping_add(1))
 }
-const fn ntt4_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1p: u64, w2p: u64, w3p: u64,
     a: u64, mut b: u64, mut c: u64, mut d: u64) -> (u64, u64, u64, u64) {
     if !INV && TWIDDLE {
@@ -414,19 +400,10 @@ const fn ntt4_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     let bmd = Arith::<P>::submod(b, d);
     let jbmd = Arith::<P>::mmulmod(bmd, P.wrapping_sub(NttKernelImpl::<P, INV>::U4));
     let out0 = Arith::<P>::addmod(apc, bpd);
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(amc, jbmd));
-    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(apc,  bpd));
-    let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::addmodopt::<INV_TWIDDLE>(amc, jbmd));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(amc, jbmd));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(apc,  bpd));
+    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(amc, jbmd));
     (out0, out1, out2, out3)
-}
-const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
-    w1p: u64, w2p: u64, w3p: u64,
-    a: u64, b: u64, c: u64, d: u64) -> (u64, u64, u64, u64) {
-    match (INV, TWIDDLE) {
-        (_, false) => ntt4_kernel_core::<P, INV, false, false>(w1p, w2p, w3p, a, b, c, d),
-        (false, true) => ntt4_kernel_core::<P, INV, true, false>(w1p, w2p, w3p, a, b, c, d),
-        (true, true) => ntt4_kernel_core::<P, INV, true, true>(w1p, w2p, w3p, a, b, c, d)
-    }
 }
 fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
@@ -450,7 +427,7 @@ fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     }
     (px.wrapping_add(3*s1), ptf.wrapping_add(1))
 }
-const fn ntt5_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1p: u64, w2p: u64, w3p: u64, w4p: u64,
     a: u64, mut b: u64, mut c: u64, mut d: u64, mut e: u64) -> (u64, u64, u64, u64, u64) {
     if !INV && TWIDDLE {
@@ -475,20 +452,11 @@ const fn ntt5_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     let s2 = Arith::<P>::submod(m3, m2);
     let s4 = Arith::<P>::addmod(m2, m3);
     let out0 = m1;
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(s2, m5));
-    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(0, Arith::<P>::addmod(s4, m6)));
-    let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::submod(m6, s4));
-    let out4 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w4p, Arith::<P>::addmodopt::<INV_TWIDDLE>(s2, m5));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(s2, m5));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(0, Arith::<P>::addmod(s4, m6)));
+    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::submod(m6, s4));
+    let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w4p, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s2, m5));
     (out0, out1, out2, out3, out4)
-}
-const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
-    w1p: u64, w2p: u64, w3p: u64, w4p: u64,
-    a: u64, b: u64, c: u64, d: u64, e: u64) -> (u64, u64, u64, u64, u64) {
-    match (INV, TWIDDLE) {
-        (_, false) => ntt5_kernel_core::<P, INV, false, false>(w1p, w2p, w3p, w4p, a, b, c, d, e),
-        (false, true) => ntt5_kernel_core::<P, INV, true, false>(w1p, w2p, w3p, w4p, a, b, c, d, e),
-        (true, true) => ntt5_kernel_core::<P, INV, true, true>(w1p, w2p, w3p, w4p, a, b, c, d, e)
-    }
 }
 fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
@@ -513,7 +481,7 @@ fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     }
     (px.wrapping_add(4*s1), ptf.wrapping_add(1))
 }
-const fn ntt6_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, const INV_TWIDDLE: bool>(
+const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1p: u64, w2p: u64, w3p: u64, w4p: u64, w5p: u64,
     mut a: u64, mut b: u64, mut c: u64, mut d: u64, mut e: u64, mut f: u64) -> (u64, u64, u64, u64, u64, u64) {
     if !INV && TWIDDLE {
@@ -528,22 +496,13 @@ const fn ntt6_kernel_core<const P: u64, const INV: bool, const TWIDDLE: bool, co
     (c, f) = (Arith::<P>::addmod(c, f), Arith::<P>::submod(c, f));
     let lbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::submod(b, c));
     let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-    let out2 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w2p, Arith::<P>::submod(a, Arith::<P>::submod(b, lbmc)));
-    let out4 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w4p, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(a, Arith::<P>::submod(b, lbmc)));
+    let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w4p, Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc));
     let lepf = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::addmod64(e, f));
-    let out1 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w1p, Arith::<P>::submod(d, Arith::<P>::submod(f, lepf)));
-    let out3 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w3p, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
-    let out5 = Arith::<P>::mmulmod_cond::<INV_TWIDDLE>(w5p, Arith::<P>::submod(d, Arith::<P>::submod(lepf, e)));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(d, Arith::<P>::submod(f, lepf)));
+    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::submod(d, Arith::<P>::submod(e, f)));
+    let out5 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w5p, Arith::<P>::submod(d, Arith::<P>::submod(lepf, e)));
     (out0, out1, out2, out3, out4, out5)
-}
-const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
-    w1p: u64, w2p: u64, w3p: u64, w4p: u64, w5p: u64,
-    a: u64, b: u64, c: u64, d: u64, e: u64, f: u64) -> (u64, u64, u64, u64, u64, u64) {
-    match (INV, TWIDDLE) {
-        (_, false) => ntt6_kernel_core::<P, INV, false, false>(w1p, w2p, w3p, w4p, w5p, a, b, c, d, e, f),
-        (false, true) => ntt6_kernel_core::<P, INV, true, false>(w1p, w2p, w3p, w4p, w5p, a, b, c, d, e, f),
-        (true, true) => ntt6_kernel_core::<P, INV, true, true>(w1p, w2p, w3p, w4p, w5p, a, b, c, d, e, f)
-    }
 }
 fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
