@@ -99,7 +99,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
     //   number of operations, but uses more temporary allocations.
     //
     // The thresholds are somewhat arbitrary, chosen by evaluating the results
-    // of `cargo bench --bench bigint multiply`.
+    // of `cargo bench --bench bigint multiply --features rand`.
 
     if x.len() <= 32 {
         // Long multiplication:
