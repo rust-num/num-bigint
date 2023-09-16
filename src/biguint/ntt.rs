@@ -398,11 +398,11 @@ const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let amc = Arith::<P>::submod(a, c);
     let bpd = Arith::<P>::addmod(b, d);
     let bmd = Arith::<P>::submod(b, d);
-    let jbmd = Arith::<P>::mmulmod(bmd, P.wrapping_sub(NttKernelImpl::<P, INV>::U4));
+    let jbmd = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U4, bmd);
     let out0 = Arith::<P>::addmod(apc, bpd);
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(amc, jbmd));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(amc, jbmd));
     let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(apc,  bpd));
-    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(amc, jbmd));
+    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::submod(amc, jbmd));
     (out0, out1, out2, out3)
 }
 fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
@@ -449,13 +449,13 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let m4 = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::C53, t7);
     let m5 = Arith::<P>::mmulsubmod(NttKernelImpl::<P, INV>::C54, t4, m4);
     let m6 = Arith::<P>::mmulsubmod(P.wrapping_sub(NttKernelImpl::<P, INV>::C55), t3, m4);
-    let s2 = Arith::<P>::submod(m3, m2);
-    let s4 = Arith::<P>::addmod(m2, m3);
+    let s1 = Arith::<P>::submod(m3, m2);
+    let s2 = Arith::<P>::addmod(m2, m3);
     let out0 = m1;
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(s2, m5));
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(0, Arith::<P>::addmod(s4, m6)));
-    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::submod(m6, s4));
-    let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w4p, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s2, m5));
+    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1p, Arith::<P>::submod(s1, m5));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2p, Arith::<P>::submod(0, Arith::<P>::addmod(s2, m6)));
+    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3p, Arith::<P>::submod(m6, s2));
+    let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w4p, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s1, m5));
     (out0, out1, out2, out3, out4)
 }
 fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
