@@ -771,7 +771,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
 
         /* write to s */
         let out = (v as u64) & mask;
-        s = (s & ((1u64 << p) - 1)) | (out << p);
+        s |= out << p;
         p += bits;
         if p >= 64 {
             /* flush s to the output buffer */
