@@ -934,6 +934,7 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let max_cnt = max(b.len(), c.len()) as u64;
     let bits = compute_bits(max_cnt);
     if bits >= 43 {
+        /* can pack more effective bits per u64 with two primes than with three primes */
         mac3_two_primes(acc, b, c, bits);
     } else {
         /* can pack at most 21 effective bits per u64, which is worse than
