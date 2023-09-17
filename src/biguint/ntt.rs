@@ -775,10 +775,10 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         p += bits;
         if p >= 64 {
             /* flush s to the output buffer */
-            s += carry_acc;
-            let (w, overflow) = acc[j].overflowing_add(s);
+            let (w, overflow1) = s.overflowing_add(carry_acc);
+            let (w, overflow2) = acc[j].overflowing_add(w);
             acc[j] = w;
-            carry_acc = u64::from(overflow);
+            carry_acc = u64::from(overflow1 || overflow2);
 
             /* roll-over */
             (j, p) = (j+1, p-64);
