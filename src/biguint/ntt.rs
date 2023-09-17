@@ -715,24 +715,46 @@ const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     assert!(bits < 63);
 
-    let min_len = b.len() + c.len();
+    let b_len = ((64 * b.len() as u64 + bits - 1) / bits) as usize;
+    let c_len = ((64 * c.len() as u64 + bits - 1) / bits) as usize;
+    let min_len = b_len + c_len;
     let plan_x = NttPlan::build::<P2>(min_len);
     let plan_y = NttPlan::build::<P3>(min_len);
-    let len_max = max(plan_x.g + plan_x.n, plan_y.g + plan_y.n);
+
+    fn pack_into(src: &[u64], dst1: &mut [u64], dst2: &mut [u64], bits: u64) {
+        let mut p = 0u64;
+        let mut pdst1 = dst1.as_mut_ptr();
+        let mut pdst2 = dst2.as_mut_ptr();
+        let mut x = 0u64;
+        let mask = (1u64 << bits).wrapping_sub(1);
+        for v in src {
+            let mut k = 0;
+            while k < 64 {
+                x |= (v >> k) << p;
+                let q = 64 - k;
+                if p + q >= bits {
+                    unsafe { let out = x & mask; (*pdst1, *pdst2) = (out, out); }
+                    x = 0;
+                    (pdst1, pdst2, k, p) = (pdst1.wrapping_add(1), pdst2.wrapping_add(1), k + bits - p, 0);
+                } else {
+                    p += q;
+                    break;
+                }
+            }
+        }
+        unsafe {
+            if p > 0 { let out = x & mask; (*pdst1, *pdst2) = (out, out); }
+        }
+    }
+
     let mut x = vec![0u64; plan_x.g + plan_x.n];
     let mut y = vec![0u64; plan_y.g + plan_y.n];
-    let mut r = vec![0u64; len_max];
-
-    /* convolution with modulo P2 */
-    x[plan_x.g..plan_x.g+b.len()].clone_from_slice(b);
-    r[plan_x.g..plan_x.g+c.len()].clone_from_slice(c);
-    conv::<P2>(&plan_x, &mut x, b.len(), &mut r[..plan_x.g+plan_x.n], c.len(), arith::invmod(P3, P2));
-
-    /* convolution with modulo P3 */
-    y[plan_y.g..plan_y.g+b.len()].clone_from_slice(b);
-    r[plan_y.g..plan_y.g+c.len()].clone_from_slice(c);
-    (&mut r[plan_y.g..])[c.len()..plan_y.n].fill(0u64);
-    conv::<P3>(&plan_y, &mut y, b.len(), &mut r[..plan_y.g+plan_y.n], c.len(), Arith::<P3>::submod(0, arith::invmod(P2, P3)));
+    let mut r = vec![0u64; plan_x.g + plan_x.n];
+    let mut s = vec![0u64; plan_y.g + plan_y.n];
+    pack_into(b, &mut x[plan_x.g..], &mut y[plan_y.g..], bits);
+    pack_into(c, &mut r[plan_x.g..], &mut s[plan_y.g..], bits);
+    conv::<P2>(&plan_x, &mut x, b_len, &mut r[..plan_x.g+plan_x.n], c_len, arith::invmod(P3, P2));
+    conv::<P3>(&plan_y, &mut y, b_len, &mut s[..plan_y.g+plan_y.n], c_len, Arith::<P3>::submod(0, arith::invmod(P2, P3)));
 
     /* merge the results in {x, y} into r (process carry along the way) */
     let mask = (1u64 << bits) - 1;
@@ -912,37 +934,7 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let max_cnt = max(b.len(), c.len()) as u64;
     let bits = compute_bits(max_cnt);
     if bits >= 43 {
-        /* can pack more effective bits per u64 with two primes than with three primes */
-        fn pack_into(src: &[u64], dst: &mut [u64], bits: u64) -> usize {
-            let mut p = 0u64;
-            let mut pdst = dst.as_mut_ptr();
-            let mut x = 0u64;
-            let mask = (1u64 << bits).wrapping_sub(1);
-            for v in src {
-                let mut k = 0;
-                while k < 64 {
-                    x |= (v >> k) << p;
-                    let q = 64 - k;
-                    if p + q >= bits {
-                        unsafe { *pdst = x & mask; }
-                        x = 0;
-                        (pdst, k, p) = (pdst.wrapping_add(1), k + bits - p, 0);
-                    } else {
-                        p += q;
-                        break;
-                    }
-                }
-            }
-            unsafe {
-                if p > 0 { *pdst = x & mask; pdst = pdst.wrapping_add(1); }
-                pdst.offset_from(dst.as_mut_ptr()) as usize
-            }
-        }
-        let mut b2 = vec![0u64; ((64 * b.len() as u64 + bits - 1) / bits) as usize];
-        let mut c2 = vec![0u64; ((64 * c.len() as u64 + bits - 1) / bits) as usize];
-        let b2_len = pack_into(b, &mut b2, bits);
-        let c2_len = pack_into(c, &mut c2, bits);
-        mac3_two_primes(acc, &b2[..b2_len], &c2[..c2_len], bits);
+        mac3_two_primes(acc, b, c, bits);
     } else {
         /* can pack at most 21 effective bits per u64, which is worse than
            64/3 = 21.3333.. effective bits per u64 achieved with three primes */
