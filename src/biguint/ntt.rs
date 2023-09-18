@@ -51,7 +51,6 @@ impl<const P: u64> Arith<P> {
     pub const R: u64 = ((1u128 << 64) % P as u128) as u64; // 2^64 mod P
     pub const R2: u64 = ((Self::R as u128 * Self::R as u128) % P as u128) as u64; // R^2 mod P
     pub const R3: u64 = ((Self::R2 as u128 * Self::R as u128) % P as u128) as u64; // R^3 mod P
-    pub const RNEG: u64 = P.wrapping_sub(Self::R); // -2^64 mod P
     pub const PINV: u64 = arith::invmod(P, 0); // P^-1 mod 2^64
     pub const ROOT: u64 = Self::ntt_root(); // MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN
     pub const ROOTR: u64 = Self::mulmod_naive(Self::ROOT, Self::R); // ROOT * R mod P
@@ -147,14 +146,6 @@ impl<const P: u64> Arith<P> {
     pub const fn mmulmod_invtw<const INV: bool, const TWIDDLE: bool>(a: u64, b: u64) -> u64 {
         if INV && TWIDDLE { Self::mmulmod(a, b) } else { b }
     }
-    // Fused-multiply-add with Montgomery reduction:
-    //   a * b * R^-1 + c mod P
-    pub const fn mmuladdmod(a: u64, b: u64, c: u64) -> u64 {
-        let x = a as u128 * b as u128;
-        let lo = x as u64;
-        let hi = Self::addmod((x >> 64) as u64, c);
-        Self::mreduce(lo as u128 | ((hi as u128) << 64))
-    }
     // Fused-multiply-sub with Montgomery reduction:
     //   a * b * R^-1 - c mod P
     pub const fn mmulsubmod(a: u64, b: u64, c: u64) -> u64 {
@@ -222,7 +213,6 @@ struct NttPlan {
     pub s_list: Vec<(usize, usize)>,
 }
 impl NttPlan {
-    pub const GMAX: usize = 8;
     pub fn build<const P: u64>(min_len: usize) -> NttPlan {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
         let (mut len_max, mut len_max_cost, mut g) = (usize::MAX, usize::MAX, 1);
