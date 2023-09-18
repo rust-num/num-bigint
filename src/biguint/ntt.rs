@@ -225,33 +225,49 @@ impl NttPlan {
     pub const GMAX: usize = 8;
     pub fn build<const P: u64>(min_len: usize) -> NttPlan {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
-        let (mut len_max, mut len_max_cost) = (usize::MAX, usize::MAX);
+        let (mut len_max, mut len_max_cost, mut g) = (usize::MAX, usize::MAX, 1);
         let mut len7 = 1;
         for _ in 0..2 {
             let mut len5 = len7;
             for _ in 0..Arith::<P>::FACTOR_FIVE+1 {
                 let mut len3 = len5;
-                for _ in 0..Arith::<P>::FACTOR_THREE+1 {
+                for j in 0..Arith::<P>::FACTOR_THREE+1 {
                     let mut len = len3;
                     let mut i = 0;
                     while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
                     if len >= min_len && len < len_max_cost {
                         let (mut tmp, mut cost) = (len, 0);
+                        let mut g_base_new = 1;
                         if len % 7 == 0 {
                             (tmp, cost) = (tmp/7, cost + len*115/100);
+                            g_base_new = 7;
                         } else if len % 5 == 0 {
                             (tmp, cost) = (tmp/5, cost + len*89/100);
-                        } else if len % 8 == 0 {
+                            g_base_new = 5;
+                        } else if i >= j + 3 {
                             (tmp, cost) = (tmp/8, cost + len*130/100);
+                            g_base_new = 8;
+                        } else if i >= j + 2 {
+                            (tmp, cost) = (tmp/4, cost + len*87/100);
+                            g_base_new = 4;
+                        } else if i == 0 && j >= 1 {
+                            (tmp, cost) = (tmp/3, cost + len*86/100);
+                            g_base_new = 3;
+                        } else if j == 0 && i >= 1 {
+                            (tmp, cost) = (tmp/2, cost + len*86/100);
+                            g_base_new = 2;
                         } else if len % 6 == 0 {
                             (tmp, cost) = (tmp/6, cost + len*91/100);
+                            g_base_new = 6;
                         }
-                        while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len + len*6/100); }
-                        while tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len + len*28/100); }
+                        let (mut b6, mut b2) = (false, false);
+                        while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len + len*6/100); b6 = true; }
+                        while tmp % 5 == 0 { (tmp, cost) = (tmp/5, cost + len + len*31/100); }
                         while tmp % 4 == 0 { (tmp, cost) = (tmp/4, cost + len); }
                         while tmp % 3 == 0 { (tmp, cost) = (tmp/3, cost + len); }
-                        while tmp % 2 == 0 { (tmp, cost) = (tmp/2, cost + len); }
-                        if cost < len_max_cost { (len_max, len_max_cost) = (len, cost); }
+                        while tmp % 2 == 0 { (tmp, cost) = (tmp/2, cost + len); b2 = true; }
+                        if b6 && b2 { cost -= len*6/100; }
+                        if cost < len_max_cost { (len_max, len_max_cost, g) = (len, cost, g_base_new); }
                     }
                     len3 *= 3;
                     if len3 >= 2*min_len { break; }
@@ -262,22 +278,12 @@ impl NttPlan {
             len7 *= 7;
         }
         let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
-        let mut tmp = len_max;
+        let mut tmp = len_max/g;
         while tmp % 6 == 0 { tmp /= 6; cnt6 += 1; }
         while tmp % 5 == 0 { tmp /= 5; cnt5 += 1; }
         while tmp % 4 == 0 { tmp /= 4; cnt4 += 1; }
         while tmp % 3 == 0 { tmp /= 3; cnt3 += 1; }
         while tmp % 2 == 0 { tmp /= 2; cnt2 += 1; }
-        let mut g = 1;
-        while 7*g <= Self::GMAX && len_max % 7 == 0 { g *= 7; }
-        while 5*g <= Self::GMAX && cnt5 > 0 { g *= 5; cnt5 -= 1; }
-        while 9*g <= Self::GMAX && cnt3 >= 2 { g *= 9; cnt3 -= 2; }
-        while 8*g <= Self::GMAX && cnt4 >= 2 { g *= 8; cnt4 -= 2; cnt2 += 1; if cnt2 >= 2 { cnt4 += 1; cnt2 -= 2; } }
-        while 8*g <= Self::GMAX && cnt4 > 0 && cnt2 > 0 { g *= 8; cnt4 -= 1; cnt2 -= 1; }
-        while 6*g <= Self::GMAX && cnt6 > 0 { g *= 6; cnt6 -= 1; }
-        while 4*g <= Self::GMAX && cnt4 > 0 { g *= 4; cnt4 -= 1; }
-        while 3*g <= Self::GMAX && cnt3 > 0 { g *= 3; cnt3 -= 1; }
-        while 2*g <= Self::GMAX && cnt2 > 0 { g *= 2; cnt2 -= 1; }
         while cnt6 > 0 && cnt2 > 0 { cnt6 -= 1; cnt2 -= 1; cnt4 += 1; cnt3 += 1; }
         let s_list = {
             let mut out = vec![];
