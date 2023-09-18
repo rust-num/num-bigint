@@ -76,15 +76,9 @@ impl<const P: u64> Arith<P> {
         ans
     }
     const fn ntt_root() -> u64 {
-        let mut p = 1;
+        let mut p = 2;
         'outer: loop {
             /* ensure p is prime */
-            p += 1;
-            let mut i = 2;
-            while i * i <= p {
-                if p % i == 0 { continue 'outer; }
-                i += 1;
-            }
             let root = Self::powmod_naive(p, P/Self::MAX_NTT_LEN);
             let mut j = 0;
             while j <= Self::FACTOR_TWO {
@@ -97,6 +91,7 @@ impl<const P: u64> Arith<P> {
                         let p5 = Self::powmod_naive(5, l as u64);
                         let exponent = p2 * p3 * p5;
                         if exponent < Self::MAX_NTT_LEN && Self::powmod_naive(root, exponent) == 1 {
+                            p += 1;
                             continue 'outer;
                         }
                         l += 1;
