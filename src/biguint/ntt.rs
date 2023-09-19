@@ -11,22 +11,14 @@ mod arith {
     // Extended Euclid algorithm:
     //   (g, x, y) is a solution to ax + by = g, where g = gcd(a, b)
     pub const fn egcd(mut a: i128, mut b: i128) -> (i128, i128, i128) {
-        if a < 0 { a = -a; }
-        if b < 0 { b = -b; }
-        assert!(a > 0 || b > 0);
+        assert!(a > 0 && b > 0);
         let mut c = [1, 0, 0, 1]; // treat as a row-major 2x2 matrix
+        if a > b { (a, b) = (b, a); c = [0, 1, 1, 0]; }
         let (g, x, y) = loop {
             if a == 0 { break (b, 0, 1); }
-            if b == 0 { break (a, 1, 0); }
-            if a < b {
-                let (q, r) = (b/a, b%a);
-                b = r;
-                c = [c[0], c[1] - q*c[0], c[2], c[3] - q*c[2]];
-            } else {
-                let (q, r) = (a/b, a%b);
-                a = r;
-                c = [c[0] - q*c[1], c[1], c[2] - q*c[3], c[3]];
-            }
+            let (q, r) = (b/a, b%a);
+            (a, b) = (r, a);
+            c = [c[1] - q*c[0], c[0], c[3] - q*c[2], c[2]];
         };
         (g, c[0]*x + c[1]*y, c[2]*x + c[3]*y)
     }
