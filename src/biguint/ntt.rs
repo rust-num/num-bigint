@@ -176,7 +176,7 @@ impl<const P: u64> Arith<P> {
 
 struct NttPlan {
     pub n: usize,   // n == g*m
-    pub g: usize,   // g <= NttPlan::GMAX
+    pub g: usize,   // g: size of the base case
     pub m: usize,   // m divides Arith::<P>::MAX_NTT_LEN
     pub cost: usize,
     pub last_radix: usize,
