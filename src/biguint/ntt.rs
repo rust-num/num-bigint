@@ -11,16 +11,15 @@ use crate::biguint::Vec;
 mod arith {
     // Extended Euclid algorithm:
     //   (g, x, y) is a solution to ax + by = g, where g = gcd(a, b)
-    pub const fn egcd(mut a: i128, mut b: i128) -> (i128, i128, i128) {
+    const fn egcd(mut a: i128, mut b: i128) -> (i128, i128, i128) {
         assert!(a > 0 && b > 0);
         let mut c = if a > b { (a, b) = (b, a); [0, 1, 1, 0] } else { [1, 0, 0, 1] }; // treat as a row-major 2x2 matrix
-        let (g, x, y) = loop {
-            if a == 0 { break (b, 0, 1); }
+        loop {
+            if a == 0 { break (b, c[1], c[3]) }
             let (q, r) = (b/a, b%a);
             (a, b) = (r, a);
             c = [c[1] - q*c[0], c[0], c[3] - q*c[2], c[2]];
-        };
-        (g, c[0]*x + c[1]*y, c[2]*x + c[3]*y)
+        }
     }
     // Modular inverse: a^-1 mod modulus
     //   (m == 0 means m == 2^64)
@@ -36,32 +35,30 @@ mod arith {
 
 struct Arith<const P: u64> {}
 impl<const P: u64> Arith<P> {
-    pub const FACTOR_TWO: usize = (P-1).trailing_zeros() as usize;
-    pub const FACTOR_THREE: usize = Self::factor_three();
-    pub const FACTOR_FIVE: usize = Self::factor_five();
+    pub const FACTOR_TWO: u32 = (P-1).trailing_zeros();
+    pub const FACTOR_THREE: u32 = Self::factor_three();
+    pub const FACTOR_FIVE: u32 = Self::factor_five();
     pub const MAX_NTT_LEN: u64 = Self::max_ntt_len();
     pub const R: u64 = ((1u128 << 64) % P as u128) as u64; // 2^64 mod P
     pub const R2: u64 = ((Self::R as u128 * Self::R as u128) % P as u128) as u64; // R^2 mod P
     pub const R3: u64 = ((Self::R2 as u128 * Self::R as u128) % P as u128) as u64; // R^3 mod P
     pub const PINV: u64 = arith::invmod(P, 0); // P^-1 mod 2^64
     pub const ROOT: u64 = Self::ntt_root(); // MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN
-    pub const ROOTR: u64 = Self::mulmod_naive(Self::ROOT, Self::R); // ROOT * R mod P
-    const fn factor_three() -> usize {
+    pub const ROOTR: u64 = ((Self::ROOT as u128 * Self::R as u128) % P as u128) as u64; // ROOT * R mod P
+    const fn factor_three() -> u32 {
         let mut tmp = P-1;
         let mut ans = 0;
         while tmp % 3 == 0 { tmp /= 3; ans += 1; }
         ans
     }
-    const fn factor_five() -> usize {
+    const fn factor_five() -> u32 {
         let mut tmp = P-1;
         let mut ans = 0;
         while tmp % 5 == 0 { tmp /= 5; ans += 1; }
         ans
     }
     const fn max_ntt_len() -> u64 {
-        let ans = Self::powmod_naive(2, Self::FACTOR_TWO as u64) *
-            Self::powmod_naive(3, Self::FACTOR_THREE as u64) *
-            Self::powmod_naive(5, Self::FACTOR_FIVE as u64);
+        let ans = 2u64.pow(Self::FACTOR_TWO) * 3u64.pow(Self::FACTOR_THREE) * 5u64.pow(Self::FACTOR_FIVE);
         assert!(ans % 4050 == 0);
         ans
     }
@@ -76,10 +73,7 @@ impl<const P: u64> Arith<P> {
                 while k <= Self::FACTOR_THREE {
                     let mut l = 0;
                     while l <= Self::FACTOR_FIVE {
-                        let p2 = Self::powmod_naive(2, j as u64);
-                        let p3 = Self::powmod_naive(3, k as u64);
-                        let p5 = Self::powmod_naive(5, l as u64);
-                        let exponent = p2 * p3 * p5;
+                        let exponent = 2u64.pow(j) * 3u64.pow(k) * 5u64.pow(l);
                         if exponent < Self::MAX_NTT_LEN && Self::powmod_naive(root, exponent) == 1 {
                             p += 1;
                             continue 'outer;
@@ -92,10 +86,6 @@ impl<const P: u64> Arith<P> {
             }
             break root
         }
-    }
-    // Computes a * b mod P
-    const fn mulmod_naive(a: u64, b: u64) -> u64 {
-        ((a as u128 * b as u128) % P as u128) as u64
     }
     // Computes base^exponent mod P
     const fn powmod_naive(base: u64, exponent: u64) -> u64 {
@@ -189,9 +179,9 @@ impl<const P: u64> Arith<P> {
 }
 
 struct NttPlan {
-    pub n: usize,       // n == g*m
-    pub g: usize,       // g <= NttPlan::GMAX
-    pub m: usize,       // m divides Arith::<P>::MAX_NTT_LEN
+    pub n: usize,   // n == g*m
+    pub g: usize,   // g <= NttPlan::GMAX
+    pub m: usize,   // m divides Arith::<P>::MAX_NTT_LEN
     pub cost: usize,
     pub last_radix: usize,
     pub s_list: Vec<(usize, usize)>,
@@ -200,15 +190,13 @@ impl NttPlan {
     pub fn build<const P: u64>(min_len: usize) -> Self {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
         let (mut len_max, mut len_max_cost, mut g) = (usize::MAX, usize::MAX, 1);
-        let mut len7 = 1;
-        for _ in 0..2 {
-            let mut len5 = len7;
-            for _ in 0..=Arith::<P>::FACTOR_FIVE {
-                let mut len3 = len5;
-                for j in 0..=Arith::<P>::FACTOR_THREE {
-                    let mut len = len3;
-                    let mut i = 0;
-                    while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
+        for m7 in 0..=1 {
+            for m5 in 0..=Arith::<P>::FACTOR_FIVE {
+                for m3 in 0..=Arith::<P>::FACTOR_THREE {
+                    let len = 7u64.pow(m7) * 5u64.pow(m5) * 3u64.pow(m3);
+                    if len >= 2 * min_len as u64 { continue; }
+                    let (mut len, mut m2) = (len as usize, 0);
+                    while len < min_len && m2 < Arith::<P>::FACTOR_TWO { len *= 2; m2 += 1; }
                     if len >= min_len && len < len_max_cost {
                         let (mut tmp, mut cost) = (len, 0);
                         let mut g_new = 1;
@@ -216,13 +204,13 @@ impl NttPlan {
                             (g_new, tmp, cost) = (7, tmp/7, cost + len*115/100);
                         } else if len % 5 == 0 {
                             (g_new, tmp, cost) = (5, tmp/5, cost + len*89/100);
-                        } else if i >= j + 3 {
+                        } else if m2 >= m3 + 3 {
                             (g_new, tmp, cost) = (8, tmp/8, cost + len*130/100);
-                        } else if i >= j + 2 {
+                        } else if m2 >= m3 + 2 {
                             (g_new, tmp, cost) = (4, tmp/4, cost + len*87/100);
-                        } else if i == 0 && j >= 1 {
+                        } else if m2 == 0 && m3 >= 1 {
                             (g_new, tmp, cost) = (3, tmp/3, cost + len*86/100);
-                        } else if j == 0 && i >= 1 {
+                        } else if m3 == 0 && m2 >= 1 {
                             (g_new, tmp, cost) = (2, tmp/2, cost + len*86/100);
                         } else if len % 6 == 0 {
                             (g_new, tmp, cost) = (6, tmp/6, cost + len*91/100);
@@ -236,13 +224,8 @@ impl NttPlan {
                         if b6 && b2 { cost -= len*6/100; }
                         if cost < len_max_cost { (len_max, len_max_cost, g) = (len, cost, g_new); }
                     }
-                    len3 *= 3;
-                    if len3 >= 2*min_len { break; }
                 }
-                len5 *= 5;
-                if len5 >= 2*min_len { break; }
             }
-            len7 *= 7;
         }
         let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
         let mut tmp = len_max/g;
@@ -593,9 +576,8 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     let last_radix = plan.last_radix;
 
     /* multiply by a constant in advance */
-    let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, Arith::<P>::submod(0, (P-1)/m as u64));
+    let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, (P-1)/m as u64);
     mult = Arith::<P>::mmulmod(Arith::<P>::mmulmod(Arith::<P>::R2, mult), len_inv);
-    mult = Arith::<P>::submod(0, mult);
     for v in if xlen < ylen { &mut x[g..g+xlen] } else { &mut y[g..g+ylen] } {
         *v = Arith::<P>::mmulmod(*v, mult);
     }
