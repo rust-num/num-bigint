@@ -577,20 +577,16 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     }
 
     /* compute the total space needed for twiddle factors */
-    let tf_all_count = {
-        let (mut radix_cumul, mut out) = (1, 0);
-        for &(_, radix) in &plan.s_list {
-            out += radix_cumul;
-            radix_cumul *= radix;
-        }
-        core::cmp::max(out, 1)
-    };
+    let (mut radix_cumul, mut tf_all_count) = (1, 2); // 2 extra slots
+    for &(_, radix) in &plan.s_list {
+        tf_all_count += radix_cumul;
+        radix_cumul *= radix;
+    }
 
     /* build twiddle factors */
     let mut tf_list = vec![0u64; tf_all_count];
-    tf_list[0] = Arith::<P>::R;
-    let mut tf_last_start = core::cmp::min(tf_all_count - 1, 1);
-    for i in 1..plan.s_list.len() {
+    let mut tf_last_start = 0;
+    for i in 0..plan.s_list.len() {
         let x = compute_twiddle_factors::<P, false>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
         if i + 1 < plan.s_list.len() { tf_last_start += x; }
     }
@@ -601,9 +597,8 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
 
     /* naive multiplication */
     let mut i = g;
-    let (mut ii, mut ii_mod_last_radix) = (0, 0);
-    let tf = &tf_list[tf_last_start..];
-    let mut tf_current = tf[0];
+    let (mut ii, mut ii_mod_last_radix) = (tf_last_start, 0);
+    let mut tf_current = Arith::<P>::R;
     let tf_mult = match plan.last_radix {
         2 => NttKernelImpl::<P, false>::U2,
         3 => NttKernelImpl::<P, false>::U3,
@@ -613,9 +608,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
         _ => Arith::<P>::R
     };
     while i < g + plan.n {
-        if ii_mod_last_radix == 0 {
-            tf_current = tf[ii];
-        } else {
+        if ii_mod_last_radix > 0 {
             tf_current = Arith::<P>::mmulmod(tf_current, tf_mult);
         }
         conv_base::<P>(g, x.as_mut_ptr().wrapping_add(i), y.as_mut_ptr().wrapping_add(i),
@@ -625,15 +618,15 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
         if ii_mod_last_radix == last_radix {
             ii += 1;
             ii_mod_last_radix = 0;
+            tf_current = tf_list[ii];
         }
     }
 
     /* dit fft */
     let mut tf_last_start = 0;
-    for i in (1..plan.s_list.len()).rev() {
+    for i in (0..plan.s_list.len()).rev() {
         tf_last_start += compute_twiddle_factors::<P, true>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
     }
-    tf_list[tf_last_start] = Arith::<P>::R;
     ntt_dif_dit::<P, true>(plan, x, &tf_list);
 }
 
