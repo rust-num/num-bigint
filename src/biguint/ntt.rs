@@ -59,11 +59,9 @@ impl<const P: u64> Arith<P> {
         ans
     }
     const fn max_ntt_len() -> u64 {
-        let mut ans = 1u64 << Self::FACTOR_TWO;
-        let mut i = 0;
-        while i < Self::FACTOR_THREE { ans *= 3; i += 1; }
-        let mut i = 0;
-        while i < Self::FACTOR_FIVE { ans *= 5; i += 1; }
+        let ans = Self::powmod_naive(2, Self::FACTOR_TWO as u64) *
+            Self::powmod_naive(3, Self::FACTOR_THREE as u64) *
+            Self::powmod_naive(5, Self::FACTOR_FIVE as u64);
         assert!(ans % 4050 == 0);
         ans
     }
@@ -214,28 +212,28 @@ impl NttPlan {
                     while len < min_len && i < Arith::<P>::FACTOR_TWO { len *= 2; i += 1; }
                     if len >= min_len && len < len_max_cost {
                         let (mut tmp, mut cost) = (len, 0);
-                        let mut g_base_new = 1;
+                        let mut g_new = 1;
                         if len % 7 == 0 {
                             (tmp, cost) = (tmp/7, cost + len*115/100);
-                            g_base_new = 7;
+                            g_new = 7;
                         } else if len % 5 == 0 {
                             (tmp, cost) = (tmp/5, cost + len*89/100);
-                            g_base_new = 5;
+                            g_new = 5;
                         } else if i >= j + 3 {
                             (tmp, cost) = (tmp/8, cost + len*130/100);
-                            g_base_new = 8;
+                            g_new = 8;
                         } else if i >= j + 2 {
                             (tmp, cost) = (tmp/4, cost + len*87/100);
-                            g_base_new = 4;
+                            g_new = 4;
                         } else if i == 0 && j >= 1 {
                             (tmp, cost) = (tmp/3, cost + len*86/100);
-                            g_base_new = 3;
+                            g_new = 3;
                         } else if j == 0 && i >= 1 {
                             (tmp, cost) = (tmp/2, cost + len*86/100);
-                            g_base_new = 2;
+                            g_new = 2;
                         } else if len % 6 == 0 {
                             (tmp, cost) = (tmp/6, cost + len*91/100);
-                            g_base_new = 6;
+                            g_new = 6;
                         }
                         let (mut b6, mut b2) = (false, false);
                         while tmp % 6 == 0 { (tmp, cost) = (tmp/6, cost + len + len*6/100); b6 = true; }
@@ -244,7 +242,7 @@ impl NttPlan {
                         while tmp % 3 == 0 { (tmp, cost) = (tmp/3, cost + len); }
                         while tmp % 2 == 0 { (tmp, cost) = (tmp/2, cost + len); b2 = true; }
                         if b6 && b2 { cost -= len*6/100; }
-                        if cost < len_max_cost { (len_max, len_max_cost, g) = (len, cost, g_base_new); }
+                        if cost < len_max_cost { (len_max, len_max_cost, g) = (len, cost, g_new); }
                     }
                     len3 *= 3;
                     if len3 >= 2*min_len { break; }
