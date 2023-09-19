@@ -40,11 +40,11 @@ impl<const P: u64> Arith<P> {
     pub const FACTOR_FIVE: u32 = Self::factor_five();
     pub const MAX_NTT_LEN: u64 = Self::max_ntt_len();
     pub const R: u64 = ((1u128 << 64) % P as u128) as u64; // 2^64 mod P
-    pub const R2: u64 = ((Self::R as u128 * Self::R as u128) % P as u128) as u64; // R^2 mod P
-    pub const R3: u64 = ((Self::R2 as u128 * Self::R as u128) % P as u128) as u64; // R^3 mod P
+    pub const R2: u64 = (Self::R as u128 * Self::R as u128 % P as u128) as u64; // R^2 mod P
+    pub const R3: u64 = (Self::R2 as u128 * Self::R as u128 % P as u128) as u64; // R^3 mod P
     pub const PINV: u64 = arith::invmod(P, 0); // P^-1 mod 2^64
     pub const ROOT: u64 = Self::ntt_root(); // MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN
-    pub const ROOTR: u64 = ((Self::ROOT as u128 * Self::R as u128) % P as u128) as u64; // ROOT * R mod P
+    pub const ROOTR: u64 = (Self::ROOT as u128 * Self::R as u128 % P as u128) as u64; // ROOT * R mod P
     const fn factor_three() -> u32 {
         let mut tmp = P-1;
         let mut ans = 0;
@@ -545,9 +545,6 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
 }
 
 fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)], out: &mut [u64]) -> usize {
-    let mut len = 1;
-    for &(_, radix) in s_list { len *= radix; }
-    len /= s_list.last().unwrap().1;
     let r = s_list.last().unwrap_or(&(1, 1)).1;
     let mut p = 1;
     out[0] = Arith::<P>::R;
@@ -559,7 +556,7 @@ fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usiz
         }
         p *= radix;
     }
-    len
+    p
 }
 
 // Performs (cyclic) integer convolution modulo P using NTT.
@@ -651,13 +648,7 @@ const P3: u64 = 17_995_154_822_184_960_001; // Max NTT length = 2^17 * 3^22 * 5^
 
 const P2P3: u128 = P2 as u128 * P3 as u128;
 const P1INV_R_MOD_P2: u64 = Arith::<P2>::mmulmod(Arith::<P2>::R2, arith::invmod(P1, P2));
-const P1P2INV_R_MOD_P3: u64 = Arith::<P3>::mmulmod(
-    Arith::<P3>::R3,
-    Arith::<P3>::mmulmod(
-        arith::invmod(P1, P3),
-        arith::invmod(P2, P3)
-    )
-);
+const P1P2INV_R_MOD_P3: u64 = Arith::<P3>::mmulmod(Arith::<P3>::R2, arith::invmod((P1 as u128 * P2 as u128 % P3 as u128) as u64, P3));
 const P1_R_MOD_P3: u64 = Arith::<P3>::mmulmod(Arith::<P3>::R2, P1);
 const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
@@ -750,11 +741,10 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let plan_x = NttPlan::build::<P1>(min_len);
     let plan_y = NttPlan::build::<P2>(min_len);
     let plan_z = NttPlan::build::<P3>(min_len);
-    let len_max = max(plan_x.g + plan_x.n, max(plan_y.g + plan_y.n, plan_z.g + plan_z.n));
     let mut x = vec![0u64; plan_x.g + plan_x.n];
     let mut y = vec![0u64; plan_y.g + plan_y.n];
     let mut z = vec![0u64; plan_z.g + plan_z.n];
-    let mut r = vec![0u64; len_max];
+    let mut r = vec![0u64; max(x.len(), max(y.len(), z.len()))];
 
     /* convolution with modulo P1 */
     for i in 0..b.len() { x[plan_x.g + i] = if b[i] >= P1 { b[i] - P1 } else { b[i] }; }
