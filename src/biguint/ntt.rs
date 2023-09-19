@@ -486,7 +486,7 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
     let mut ptf = tf_list.as_ptr();
     for i in i_list {
         let (s, radix) = plan.s_list[i];
-        let s1 = s/radix;
+        let s1 = s / radix;
         unsafe {
             let mut px = x.as_mut_ptr();
             let px_end = px.add(plan.n);
@@ -633,14 +633,14 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         let mut pdst1 = dst1.as_mut_ptr();
         let mut pdst2 = dst2.as_mut_ptr();
         let mut x = 0u64;
-        let mask = (1u64 << bits).wrapping_sub(1);
+        let mask = (1u64 << bits) - 1;
         for v in src {
             let mut k = 0;
             while k < 64 {
                 x |= (v >> k) << p;
                 let q = 64 - k;
                 if p + q >= bits {
-                    unsafe { let out = x & mask; (*pdst1, *pdst2) = (out, out); }
+                    unsafe { let out = x & mask; *pdst1 = out; *pdst2 = out; }
                     x = 0;
                     (pdst1, pdst2, k, p) = (pdst1.wrapping_add(1), pdst2.wrapping_add(1), k + bits - p, 0);
                 } else {
@@ -650,7 +650,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
             }
         }
         unsafe {
-            if p > 0 { let out = x & mask; (*pdst1, *pdst2) = (out, out); }
+            if p > 0 { let out = x & mask; *pdst1 = out; *pdst2 = out; }
         }
     }
 
@@ -760,12 +760,10 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
         let out_0 = out_01 as u64;
         let out_12 = P1P2_HI as u128 * vcmv as u128 + (out_01 >> 64) +
             if overflow { 1u128 << 64 } else { 0 };
-        let out_1 = out_12 as u64;
-        let out_2 = (out_12 >> 64) as u64;
 
         let (v, overflow) = acc[i].overflowing_add(out_0);
         acc[i] = v;
-        carry = out_1 as u128 + ((out_2 as u128) << 64) + u128::from(overflow);
+        carry = out_12 + u128::from(overflow);
     }
     propagate_carry(&mut acc[min_len..], carry as u64);
 }
@@ -864,8 +862,6 @@ pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
 
     /* convert to u64 => process => convert back to BigDigit (u32) */
     let mut acc_u64 = bigdigit_to_u64(acc);
-    let b_u64 = bigdigit_to_u64(b);
-    let c_u64 = bigdigit_to_u64(c);
-    mac3_u64(&mut acc_u64, &b_u64, &c_u64);
+    mac3_u64(&mut acc_u64, &bigdigit_to_u64(b), &bigdigit_to_u64(c));
     u64_to_bigdigit(&acc_u64, acc);
 }
