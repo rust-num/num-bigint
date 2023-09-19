@@ -653,6 +653,17 @@ const P1_R_MOD_P3: u64 = Arith::<P3>::mmulmod(Arith::<P3>::R2, P1);
 const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
+// Propagates carry from the beginning to the end of acc,
+//   and returns the resulting carry if it is nonzero.
+fn propagate_carry(acc: &mut [u64], mut carry: u64) -> u64 {
+    for x in acc {
+        let (v, overflow) = x.overflowing_add(carry);
+        (*x, carry) = (v, u64::from(overflow));
+        if !overflow { break; }
+    }
+    carry
+}
+
 fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     fn pack_into(src: &[u64], dst1: &mut [u64], dst2: &mut [u64], bits: u64) {
         let mut p = 0u64;
@@ -725,15 +736,9 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
             s = out >> (bits - p);
         }
     }
-
-    /* process remaining carries */
-    carry_acc += s;
-    while j < acc.len() {
-        let (w, overflow) = acc[j].overflowing_add(carry_acc);
-        acc[j] = w;
-        carry_acc = u64::from(overflow);
-        j += 1;
-    }
+    // Process remaining carries. The addition carry_acc + s should not overflow
+    //   since s is underfilled and carry_acc is always 0 or 1.
+    propagate_carry(&mut acc[j..], carry_acc + s);
 }
 
 fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
@@ -799,12 +804,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
         acc[i] = v;
         carry = out_1 as u128 + ((out_2 as u128) << 64) + u128::from(overflow);
     }
-    let mut carry = carry as u64;
-    for i in min_len..acc.len() {
-        let (v, overflow) = acc[i].overflowing_add(carry);
-        acc[i] = v;
-        carry = u64::from(overflow);
-    }
+    propagate_carry(&mut acc[min_len..], carry as u64);
 }
 
 fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
@@ -837,23 +837,10 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
             let tmp = acc[k];
             acc[k] = 0;
             mac3_u64(&mut acc[i..=k], b, &c[i..j]);
-            let mut l = j;
-            while carry > 0 && l < k {
-                let (v, overflow) = acc[l].overflowing_add(carry);
-                acc[l] = v;
-                carry = u64::from(overflow);
-                l += 1;
-            }
+            (acc[k], carry) = (tmp, acc[k] + propagate_carry(&mut acc[j..k], carry));
             i = j;
-            carry += tmp;
         }
-        i += b.len();
-        while carry > 0 && i < acc.len() {
-            let (v, overflow) = acc[i].overflowing_add(carry);
-            acc[i] = v;
-            carry = u64::from(overflow);
-            i += 1;
-        }
+        propagate_carry(&mut acc[i + b.len()..], carry);
         return;
     }
 
