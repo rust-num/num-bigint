@@ -65,7 +65,6 @@ impl<const P: u64> Arith<P> {
     const fn ntt_root() -> u64 {
         let mut p = 2;
         'outer: loop {
-            /* ensure p is prime */
             let root = Self::powmod_naive(p, P/Self::MAX_NTT_LEN);
             let mut j = 0;
             while j <= Self::FACTOR_TWO {
@@ -565,10 +564,9 @@ fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usiz
 }
 
 // Performs (cyclic) integer convolution modulo P using NTT.
-// Modifies the three buffers in-place.
+// Modifies the input buffers in-place.
 // The output is saved in the slice `x`.
-// The three slices must have the same length. For maximum performance,
-// the length should contain as many factors of 6 as possible.
+// The input slices must have the same length.
 fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64], ylen: usize, mut mult: u64) {
     assert!(!x.is_empty() && x.len() == y.len());
 
@@ -605,7 +603,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     ntt_dif_dit::<P, false>(plan, &mut x[g..], &tf_list);
     ntt_dif_dit::<P, false>(plan, &mut y[g..], &tf_list);
 
-    /* naive or Karatsuba multiplication */
+    /* naive multiplication */
     let mut i = g;
     let (mut ii, mut ii_mod_last_radix) = (0, 0);
     let tf = &tf_list[tf_last_start..];
@@ -624,8 +622,6 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
         } else {
             tf_current = Arith::<P>::mmulmod(tf_current, tf_mult);
         }
-
-        /* we multiply the inverse of the length here to save time */
         conv_base::<P>(g, x.as_mut_ptr().wrapping_add(i), y.as_mut_ptr().wrapping_add(i),
             tf_current);
         i += g;
