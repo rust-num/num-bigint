@@ -277,7 +277,6 @@ fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64) {
 struct NttKernelImpl<const P: u64, const INV: bool>;
 impl<const P: u64, const INV: bool> NttKernelImpl<P, INV> {
     pub const ROOTR: u64 = Arith::<P>::mpowmod(Arith::<P>::ROOTR, if INV { Arith::<P>::MAX_NTT_LEN - 1 } else { 1 });
-    pub const U2: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/2); // U2 == P - Arith::<P>::R
     pub const U3: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/3);
     pub const U4: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/4);
     pub const U5: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/5);
@@ -507,7 +506,7 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
         let (s, radix) = plan.s_list[i];
         let s1 = s/radix;
         let mut px = x.as_mut_ptr();
-        let px_end = x.as_mut_ptr().wrapping_add(plan.n);
+        let px_end = px.wrapping_add(plan.n);
         match radix {
             2 => {
                 (px, ptf) = ntt2_single_block::<P, INV, false>(s1, px, ptf);
@@ -566,8 +565,7 @@ fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usiz
 fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64], ylen: usize, mut mult: u64) {
     assert!(!x.is_empty() && x.len() == y.len());
 
-    let (_n, g, m) = (plan.n, plan.g, plan.m);
-    let last_radix = plan.last_radix;
+    let (_n, g, m, last_radix) = (plan.n, plan.g, plan.m, plan.last_radix);
 
     /* multiply by a constant in advance */
     let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, (P-1)/m as u64);
@@ -599,14 +597,8 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     let mut i = g;
     let (mut ii, mut ii_mod_last_radix) = (tf_last_start, 0);
     let mut tf_current = Arith::<P>::R;
-    let tf_mult = match plan.last_radix {
-        2 => NttKernelImpl::<P, false>::U2,
-        3 => NttKernelImpl::<P, false>::U3,
-        4 => NttKernelImpl::<P, false>::U4,
-        5 => NttKernelImpl::<P, false>::U5,
-        6 => NttKernelImpl::<P, false>::U6,
-        _ => Arith::<P>::R
-    };
+    let tf_mult = Arith::<P>::mpowmod(NttKernelImpl::<P, false>::ROOTR,
+        Arith::<P>::MAX_NTT_LEN/last_radix as u64);
     while i < g + plan.n {
         if ii_mod_last_radix > 0 {
             tf_current = Arith::<P>::mmulmod(tf_current, tf_mult);
