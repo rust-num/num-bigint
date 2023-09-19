@@ -193,7 +193,7 @@ impl NttPlan {
             for m5 in 0..=Arith::<P>::FACTOR_FIVE {
                 for m3 in 0..=Arith::<P>::FACTOR_THREE {
                     let len = 7u64.pow(m7) * 5u64.pow(m5) * 3u64.pow(m3);
-                    if len >= 2 * min_len as u64 { continue; }
+                    if len >= 2 * min_len as u64 { break; }
                     let (mut len, mut m2) = (len as usize, 0);
                     while len < min_len && m2 < Arith::<P>::FACTOR_TWO { len *= 2; m2 += 1; }
                     if len >= min_len && len < len_max_cost {
