@@ -807,7 +807,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     }
 }
 
-fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {    
+fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     const fn compute_bits(l: u64) -> u64 {
         let total_bits = l * 64;
         let (mut lo, mut hi) = (42, 62);
@@ -823,9 +823,9 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     }
 
     let (b, c) = if b.len() < c.len() { (b, c) } else { (c, b) };
-    let naive_cost = NttPlan::build::<P1>(b.len() + c.len()).cost * 3;
-    let split_cost = NttPlan::build::<P1>(b.len() + b.len()).cost * 3 * (c.len() / b.len())
-        + if c.len() % b.len() > 0 { NttPlan::build::<P1>(b.len() + (c.len() % b.len())).cost * 3 } else { 0 };
+    let naive_cost = NttPlan::build::<P1>(b.len() + c.len()).cost;
+    let split_cost = NttPlan::build::<P1>(b.len() + b.len()).cost * (c.len() / b.len()) +
+        if c.len() % b.len() > 0 { NttPlan::build::<P1>(b.len() + (c.len() % b.len())).cost } else { 0 };
     if b.len() >= 128 && split_cost < naive_cost {
         /* special handling for unbalanced multiplication:
            we reduce it to about `c.len()/b.len()` balanced multiplications */
