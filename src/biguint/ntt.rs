@@ -41,19 +41,16 @@ impl<const P: u64> Arith<P> {
     pub const MAX_NTT_LEN: u64 = Self::max_ntt_len();
     pub const R: u64 = ((1u128 << 64) % P as u128) as u64; // 2^64 mod P
     pub const R2: u64 = (Self::R as u128 * Self::R as u128 % P as u128) as u64; // R^2 mod P
-    pub const R3: u64 = (Self::R2 as u128 * Self::R as u128 % P as u128) as u64; // R^3 mod P
+    pub const R4: u64 = Self::mpowmod(Self::R2, 3); // R^4 mod P
     pub const PINV: u64 = arith::invmod(P, 0); // P^-1 mod 2^64
-    pub const ROOT: u64 = Self::ntt_root(); // MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN
-    pub const ROOTR: u64 = (Self::ROOT as u128 * Self::R as u128 % P as u128) as u64; // ROOT * R mod P
+    pub const ROOTR: u64 = Self::ntt_root_r(); // ROOT * R mod P (ROOT: MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN)
     const fn factor_three() -> u32 {
-        let mut tmp = P-1;
-        let mut ans = 0;
+        let (mut tmp, mut ans) = (P-1, 0);
         while tmp % 3 == 0 { tmp /= 3; ans += 1; }
         ans
     }
     const fn factor_five() -> u32 {
-        let mut tmp = P-1;
-        let mut ans = 0;
+        let (mut tmp, mut ans) = (P-1, 0);
         while tmp % 5 == 0 { tmp /= 5; ans += 1; }
         ans
     }
@@ -62,7 +59,7 @@ impl<const P: u64> Arith<P> {
         assert!(ans % 4050 == 0);
         ans
     }
-    const fn ntt_root() -> u64 {
+    const fn ntt_root_r() -> u64 {
         let mut p = 2;
         'outer: loop {
             let root = Self::powmod_naive(p, P/Self::MAX_NTT_LEN);
@@ -83,7 +80,7 @@ impl<const P: u64> Arith<P> {
                 }
                 j += 1;
             }
-            break root
+            break Self::mmulmod(Self::R2, root)
         }
     }
     // Computes base^exponent mod P
@@ -227,7 +224,7 @@ impl NttPlan {
             }
         }
         let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
-        let mut tmp = len_max/g;
+        let mut tmp = len_max / g;
         while tmp % 6 == 0 { tmp /= 6; cnt6 += 1; }
         while tmp % 5 == 0 { tmp /= 5; cnt5 += 1; }
         while tmp % 4 == 0 { tmp /= 4; cnt4 += 1; }
@@ -310,18 +307,14 @@ const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1, Arith::<P>::submod(a, b));
     (out0, out1)
 }
-fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+unsafe fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    unsafe {
-        let w1 = if TWIDDLE { *ptf } else { 0 };
-        for _ in 0..s1 {
-            (*px, *px.wrapping_add(s1)) =
-                ntt2_kernel::<P, INV, TWIDDLE>(w1,
-                    *px, *px.wrapping_add(s1));
-            px = px.wrapping_add(1);
-        }
+    let w1 = if TWIDDLE { *ptf } else { 0 };
+    for _ in 0..s1 {
+        (*px, *px.add(s1)) = ntt2_kernel::<P, INV, TWIDDLE>(w1, *px, *px.add(s1));
+        px = px.add(1);
     }
-    (px.wrapping_add(s1), ptf.wrapping_add(1))
+    (px.add(s1), ptf.add(1))
 }
 const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64, w2: u64,
@@ -336,24 +329,21 @@ const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2, Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc));
     (out0, out1, out2)
 }
-fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+unsafe fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    unsafe {
-        let (w1, w2) = if TWIDDLE {
-            let w1 = *ptf;
-            let w2 = Arith::<P>::mmulmod(w1, w1);
-            (w1, w2)
-        } else {
-            (0, 0)
-        };
-        for _ in 0..s1 {
-            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1)) =
-                ntt3_kernel::<P, INV, TWIDDLE>(w1, w2,
-                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1));
-            px = px.wrapping_add(1);
-        }
+    let (w1, w2) = if TWIDDLE {
+        let w1 = *ptf;
+        let w2 = Arith::<P>::mmulmod(w1, w1);
+        (w1, w2)
+    } else {
+        (0, 0)
+    };
+    for _ in 0..s1 {
+        (*px, *px.add(s1), *px.add(2*s1)) =
+            ntt3_kernel::<P, INV, TWIDDLE>(w1, w2, *px, *px.add(s1), *px.add(2*s1));
+        px = px.add(1);
     }
-    (px.wrapping_add(2*s1), ptf.wrapping_add(1))
+    (px.add(2*s1), ptf.add(1))
 }
 const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64, w2: u64, w3: u64,
@@ -374,27 +364,23 @@ const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3, Arith::<P>::submod(amc, jbmd));
     (out0, out1, out2, out3)
 }
-fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+unsafe fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    unsafe {
-        let (w1, w2, w3) = if TWIDDLE {
-            let w1 = *ptf;
-            let w2 = Arith::<P>::mmulmod(w1, w1);
-            let w3 = Arith::<P>::mmulmod(w1, w2);
-            (w1, w2, w3)
-        } else {
-            (0, 0, 0)
-        };
-        for _ in 0..s1 {
-            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
-            *px.wrapping_add(3*s1)) =
-                ntt4_kernel::<P, INV, TWIDDLE>(w1, w2, w3,
-                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
-                    *px.wrapping_add(3*s1));
-            px = px.wrapping_add(1);
-        }
+    let (w1, w2, w3) = if TWIDDLE {
+        let w1 = *ptf;
+        let w2 = Arith::<P>::mmulmod(w1, w1);
+        let w3 = Arith::<P>::mmulmod(w1, w2);
+        (w1, w2, w3)
+    } else {
+        (0, 0, 0)
+    };
+    for _ in 0..s1 {
+        (*px, *px.add(s1), *px.add(2*s1), *px.add(3*s1)) =
+            ntt4_kernel::<P, INV, TWIDDLE>(w1, w2, w3,
+                *px, *px.add(s1), *px.add(2*s1), *px.add(3*s1));
+        px = px.add(1);
     }
-    (px.wrapping_add(3*s1), ptf.wrapping_add(1))
+    (px.add(3*s1), ptf.add(1))
 }
 const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64, w2: u64, w3: u64, w4: u64,
@@ -427,28 +413,26 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w4, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s1, m5));
     (out0, out1, out2, out3, out4)
 }
-fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+unsafe fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    unsafe {
-        let (w1, w2, w3, w4) = if TWIDDLE {
-            let w1 = *ptf;
-            let w2 = Arith::<P>::mmulmod(w1, w1);
-            let w3 = Arith::<P>::mmulmod(w1, w2);
-            let w4 = Arith::<P>::mmulmod(w2, w2);
-            (w1, w2, w3, w4)
-        } else {
-            (0, 0, 0, 0)
-        };
-        for _ in 0..s1 {
-            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
-            *px.wrapping_add(3*s1), *px.wrapping_add(4*s1)) =
-                ntt5_kernel::<P, INV, TWIDDLE>(w1, w2, w3, w4,
-                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
-                    *px.wrapping_add(3*s1), *px.wrapping_add(4*s1));
-            px = px.wrapping_add(1);
-        }
+    let (w1, w2, w3, w4) = if TWIDDLE {
+        let w1 = *ptf;
+        let w2 = Arith::<P>::mmulmod(w1, w1);
+        let w3 = Arith::<P>::mmulmod(w1, w2);
+        let w4 = Arith::<P>::mmulmod(w2, w2);
+        (w1, w2, w3, w4)
+    } else {
+        (0, 0, 0, 0)
+    };
+    for _ in 0..s1 {
+        (*px, *px.add(s1), *px.add(2*s1),
+        *px.add(3*s1), *px.add(4*s1)) =
+            ntt5_kernel::<P, INV, TWIDDLE>(w1, w2, w3, w4,
+                *px, *px.add(s1), *px.add(2*s1),
+                *px.add(3*s1), *px.add(4*s1));
+        px = px.add(1);
     }
-    (px.wrapping_add(4*s1), ptf.wrapping_add(1))
+    (px.add(4*s1), ptf.add(1))
 }
 const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64, w2: u64, w3: u64, w4: u64, w5: u64,
@@ -473,29 +457,27 @@ const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out5 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w5, Arith::<P>::submod(d, Arith::<P>::submod(lepf, e)));
     (out0, out1, out2, out3, out4, out5)
 }
-fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
+unsafe fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    unsafe {
-        let (w1, w2, w3, w4, w5) = if TWIDDLE {
-            let w1 = *ptf;
-            let w2 = Arith::<P>::mmulmod(w1, w1);
-            let w3 = Arith::<P>::mmulmod(w1, w2);
-            let w4 = Arith::<P>::mmulmod(w2, w2);
-            let w5 = Arith::<P>::mmulmod(w2, w3);
-            (w1, w2, w3, w4, w5)
-        } else {
-            (0, 0, 0, 0, 0)
-        };
-        for _ in 0..s1 {
-            (*px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
-            *px.wrapping_add(3*s1), *px.wrapping_add(4*s1), *px.wrapping_add(5*s1)) =
-                ntt6_kernel::<P, INV, TWIDDLE>(w1, w2, w3, w4, w5,
-                    *px, *px.wrapping_add(s1), *px.wrapping_add(2*s1),
-                    *px.wrapping_add(3*s1), *px.wrapping_add(4*s1), *px.wrapping_add(5*s1));
-            px = px.wrapping_add(1);
-        }
+    let (w1, w2, w3, w4, w5) = if TWIDDLE {
+        let w1 = *ptf;
+        let w2 = Arith::<P>::mmulmod(w1, w1);
+        let w3 = Arith::<P>::mmulmod(w1, w2);
+        let w4 = Arith::<P>::mmulmod(w2, w2);
+        let w5 = Arith::<P>::mmulmod(w2, w3);
+        (w1, w2, w3, w4, w5)
+    } else {
+        (0, 0, 0, 0, 0)
+    };
+    for _ in 0..s1 {
+        (*px, *px.add(s1), *px.add(2*s1),
+        *px.add(3*s1), *px.add(4*s1), *px.add(5*s1)) =
+            ntt6_kernel::<P, INV, TWIDDLE>(w1, w2, w3, w4, w5,
+                *px, *px.add(s1), *px.add(2*s1),
+                *px.add(3*s1), *px.add(4*s1), *px.add(5*s1));
+        px = px.add(1);
     }
-    (px.wrapping_add(5*s1), ptf.wrapping_add(1))
+    (px.add(5*s1), ptf.add(1))
 }
 
 fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_list: &[u64]) {
@@ -505,45 +487,47 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
     for i in i_list {
         let (s, radix) = plan.s_list[i];
         let s1 = s/radix;
-        let mut px = x.as_mut_ptr();
-        let px_end = px.wrapping_add(plan.n);
-        match radix {
-            2 => {
-                (px, ptf) = ntt2_single_block::<P, INV, false>(s1, px, ptf);
-                while px < px_end {
-                    (px, ptf) = ntt2_single_block::<P, INV, true>(s1, px, ptf);
-                }
-            },
-            3 => {
-                (px, ptf) = ntt3_single_block::<P, INV, false>(s1, px, ptf);
-                while px < px_end {
-                    (px, ptf) = ntt3_single_block::<P, INV, true>(s1, px, ptf);
-                }
-            },
-            4 => {
-                (px, ptf) = ntt4_single_block::<P, INV, false>(s1, px, ptf);
-                while px < px_end {
-                    (px, ptf) = ntt4_single_block::<P, INV, true>(s1, px, ptf);
-                }
-            },
-            5 => {
-                (px, ptf) = ntt5_single_block::<P, INV, false>(s1, px, ptf);
-                while px < px_end {
-                    (px, ptf) = ntt5_single_block::<P, INV, true>(s1, px, ptf);
-                }
-            },
-            6 => {
-                (px, ptf) = ntt6_single_block::<P, INV, false>(s1, px, ptf);
-                while px < px_end {
-                    (px, ptf) = ntt6_single_block::<P, INV, true>(s1, px, ptf);
-                }
-            },
-            _ => { unreachable!() }
+        unsafe {
+            let mut px = x.as_mut_ptr();
+            let px_end = px.add(plan.n);
+            match radix {
+                2 => {
+                    (px, ptf) = ntt2_single_block::<P, INV, false>(s1, px, ptf);
+                    while px < px_end {
+                        (px, ptf) = ntt2_single_block::<P, INV, true>(s1, px, ptf);
+                    }
+                },
+                3 => {
+                    (px, ptf) = ntt3_single_block::<P, INV, false>(s1, px, ptf);
+                    while px < px_end {
+                        (px, ptf) = ntt3_single_block::<P, INV, true>(s1, px, ptf);
+                    }
+                },
+                4 => {
+                    (px, ptf) = ntt4_single_block::<P, INV, false>(s1, px, ptf);
+                    while px < px_end {
+                        (px, ptf) = ntt4_single_block::<P, INV, true>(s1, px, ptf);
+                    }
+                },
+                5 => {
+                    (px, ptf) = ntt5_single_block::<P, INV, false>(s1, px, ptf);
+                    while px < px_end {
+                        (px, ptf) = ntt5_single_block::<P, INV, true>(s1, px, ptf);
+                    }
+                },
+                6 => {
+                    (px, ptf) = ntt6_single_block::<P, INV, false>(s1, px, ptf);
+                    while px < px_end {
+                        (px, ptf) = ntt6_single_block::<P, INV, true>(s1, px, ptf);
+                    }
+                },
+                _ => { unreachable!() }
+            }
         }
     }
 }
 
-fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)], out: &mut [u64]) -> usize {
+fn calc_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)], out: &mut [u64]) -> usize {
     let r = s_list.last().unwrap_or(&(1, 1)).1;
     let mut p = 1;
     out[0] = Arith::<P>::R;
@@ -564,12 +548,10 @@ fn compute_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usiz
 // The input slices must have the same length.
 fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64], ylen: usize, mut mult: u64) {
     assert!(!x.is_empty() && x.len() == y.len());
-
-    let (_n, g, m, last_radix) = (plan.n, plan.g, plan.m, plan.last_radix);
+    let (_n, g, m, last_radix) = (plan.n, plan.g, plan.m, plan.last_radix as u64);
 
     /* multiply by a constant in advance */
-    let len_inv = Arith::<P>::mmulmod(Arith::<P>::R3, (P-1)/m as u64);
-    mult = Arith::<P>::mmulmod(Arith::<P>::mmulmod(Arith::<P>::R2, mult), len_inv);
+    mult = Arith::<P>::mmulmod(Arith::<P>::R4, Arith::<P>::mmulmod(mult, (P-1)/m as u64));
     for v in if xlen < ylen { &mut x[g..g+xlen] } else { &mut y[g..g+ylen] } {
         *v = Arith::<P>::mmulmod(*v, mult);
     }
@@ -585,7 +567,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     let mut tf_list = vec![0u64; tf_all_count];
     let mut tf_last_start = 0;
     for i in 0..plan.s_list.len() {
-        let x = compute_twiddle_factors::<P, false>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
+        let x = calc_twiddle_factors::<P, false>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
         if i + 1 < plan.s_list.len() { tf_last_start += x; }
     }
 
@@ -594,30 +576,26 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     ntt_dif_dit::<P, false>(plan, &mut y[g..], &tf_list);
 
     /* naive multiplication */
-    let mut i = g;
-    let (mut ii, mut ii_mod_last_radix) = (tf_last_start, 0);
+    let (mut i, mut ii, mut ii_mod_last_radix) = (g, tf_last_start, 0);
     let mut tf_current = Arith::<P>::R;
-    let tf_mult = Arith::<P>::mpowmod(NttKernelImpl::<P, false>::ROOTR,
-        Arith::<P>::MAX_NTT_LEN/last_radix as u64);
+    let tf_mult = Arith::<P>::mpowmod(NttKernelImpl::<P, false>::ROOTR, Arith::<P>::MAX_NTT_LEN/last_radix);
     while i < g + plan.n {
-        if ii_mod_last_radix > 0 {
-            tf_current = Arith::<P>::mmulmod(tf_current, tf_mult);
-        }
-        conv_base::<P>(g, x.as_mut_ptr().wrapping_add(i), y.as_mut_ptr().wrapping_add(i),
-            tf_current);
+        conv_base::<P>(g, (&mut x[i..]).as_mut_ptr(), (&mut y[i..]).as_mut_ptr(), tf_current);
         i += g;
         ii_mod_last_radix += 1;
         if ii_mod_last_radix == last_radix {
             ii += 1;
             ii_mod_last_radix = 0;
             tf_current = tf_list[ii];
+        } else {
+            tf_current = Arith::<P>::mmulmod(tf_current, tf_mult);
         }
     }
 
     /* dit fft */
     let mut tf_last_start = 0;
     for i in (0..plan.s_list.len()).rev() {
-        tf_last_start += compute_twiddle_factors::<P, true>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
+        tf_last_start += calc_twiddle_factors::<P, true>(&plan.s_list[0..=i], &mut tf_list[tf_last_start..]);
     }
     ntt_dif_dit::<P, true>(plan, x, &tf_list);
 }
@@ -717,7 +695,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
             carry_acc = u64::from(overflow1 || overflow2);
 
             /* roll-over */
-            (j, p) = (j+1, p-64);
+            (j, p) = (j + 1, p - 64);
             s = out >> (bits - p);
         }
     }
@@ -800,7 +778,7 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
             let mid = (lo + hi + 1) / 2;
             let single_digit_max_val = (1u64 << mid) - 1;
             let l_corrected = (total_bits + mid - 1) / mid;
-            let (lhs, overflow) = (single_digit_max_val as u128 * single_digit_max_val as u128).overflowing_mul(l_corrected as u128);
+            let (lhs, overflow) = (single_digit_max_val as u128).pow(2).overflowing_mul(l_corrected as u128);
             if !overflow && lhs < P2 as u128 * P3 as u128 { lo = mid; }
             else { hi = mid - 1; }
         }
