@@ -254,19 +254,19 @@ impl NttPlan {
 fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64) {
     unsafe {
         let c2 = Arith::<P>::mreducelo(c);
-        let out = x.wrapping_sub(n);
+        let out = x.sub(n);
         for i in 0..n {
             let mut v: u128 = 0;
             for j in i+1..n {
-                let (w, overflow) = v.overflowing_sub(*x.wrapping_add(j) as u128 * *y.wrapping_add(i+n-j) as u128);
+                let (w, overflow) = v.overflowing_sub(*x.add(j) as u128 * *y.add(i+n-j) as u128);
                 v = if overflow { w.wrapping_add((P as u128) << 64) } else { w };
             }
             v = Arith::<P>::mmulmod_noreduce(v, c, c2);
             for j in 0..=i {
-                let (w, overflow) = v.overflowing_sub(*x.wrapping_add(j) as u128 * *y.wrapping_add(i-j) as u128);
+                let (w, overflow) = v.overflowing_sub(*x.add(j) as u128 * *y.add(i-j) as u128);
                 v = if overflow { w.wrapping_add((P as u128) << 64) } else { w };
             }
-            *out.wrapping_add(i) = Arith::<P>::mreduce(v);
+            *out.add(i) = Arith::<P>::mreduce(v);
         }
     }
 }
@@ -642,7 +642,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
                 if p + q >= bits {
                     unsafe { let out = x & mask; *pdst1 = out; *pdst2 = out; }
                     x = 0;
-                    (pdst1, pdst2, k, p) = (pdst1.wrapping_add(1), pdst2.wrapping_add(1), k + bits - p, 0);
+                    unsafe { (pdst1, pdst2, k, p) = (pdst1.add(1), pdst2.add(1), k + bits - p, 0); }
                 } else {
                     p += q;
                     break;
