@@ -515,12 +515,11 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
 }
 
 fn calc_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)], out: &mut [u64]) -> usize {
-    let r = s_list.last().unwrap_or(&(1, 1)).1;
     let mut p = 1;
     out[0] = Arith::<P>::R;
     for i in (1..s_list.len()).rev() {
         let radix = s_list[i-1].1;
-        let w = Arith::<P>::mpowmod(NttKernelImpl::<P, INV>::ROOTR, Arith::<P>::MAX_NTT_LEN/(p as u64 * radix as u64 * r as u64));
+        let w = Arith::<P>::mpowmod(NttKernelImpl::<P, INV>::ROOTR, Arith::<P>::MAX_NTT_LEN/(p * radix * s_list.last().unwrap().1) as u64);
         for j in p..radix*p {
             out[j] = Arith::<P>::mmulmod(w, out[j - p]);
         }
