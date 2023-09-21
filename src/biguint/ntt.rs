@@ -37,11 +37,10 @@ struct Arith<const P: u64> {}
 impl<const P: u64> Arith<P> {
     const R: u64 = ((1u128 << 64) % P as u128) as u64; // 2^64 mod P
     const R2: u64 = (Self::R as u128 * Self::R as u128 % P as u128) as u64; // R^2 mod P
-    const R4: u64 = Self::mpowmod(Self::R2, 3); // R^4 mod P
     const PINV: u64 = arith::invmod(P, 0); // P^-1 mod 2^64
     const MAX_NTT_LEN: u64 = 2u64.pow(Self::factors(2)) * 3u64.pow(Self::factors(3)) * 5u64.pow(Self::factors(5));
     const ROOTR: u64 = {
-        // ROOT * R mod P (ROOT: MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN)
+        // ROOT * R mod P (ROOT: MAX_NTT_LEN divides MultiplicativeOrder[ROOT, P])
         assert!(Self::MAX_NTT_LEN % 4050 == 0);
         let mut p = Self::R;
         loop {
@@ -233,23 +232,23 @@ fn conv_base<const P: u64>(n: usize, x: *mut u64, y: *mut u64, c: u64) {
 
 struct NttKernelImpl<const P: u64, const INV: bool>;
 impl<const P: u64, const INV: bool> NttKernelImpl<P, INV> {
-    pub const ROOTR: u64 = Arith::<P>::mpowmod(Arith::<P>::ROOTR, if INV { Arith::<P>::MAX_NTT_LEN - 1 } else { 1 });
-    pub const U3: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/3);
-    pub const U4: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/4);
-    pub const U5: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/5);
-    pub const U6: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/6);
-    pub const C51: u64 = Self::c5().0;
-    pub const C52: u64 = Self::c5().1;
-    pub const C53: u64 = Self::c5().2;
-    pub const C54: u64 = Self::c5().3;
-    pub const C55: u64 = Self::c5().4;
+    const ROOTR: u64 = Arith::<P>::mpowmod(Arith::<P>::ROOTR, if INV { Arith::<P>::MAX_NTT_LEN - 1 } else { 1 });
+    const U3: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/3);
+    const U4: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/4);
+    const U5: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/5);
+    const U6: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN/6);
+    const C51: u64 = Self::c5().0;
+    const C52: u64 = Self::c5().1;
+    const C53: u64 = Self::c5().2;
+    const C54: u64 = Self::c5().3;
+    const C55: u64 = Self::c5().4;
     const fn c5() -> (u64, u64, u64, u64, u64) {
         let w = Self::U5;
         let w2 = Arith::<P>::mpowmod(w, 2);
         let w4 = Arith::<P>::mpowmod(w, 4);
         let inv2 = Arith::<P>::mmulmod(Arith::<P>::R2, arith::invmod(2, P)); 
         let inv4 = Arith::<P>::mmulmod(Arith::<P>::R2, arith::invmod(4, P));
-        let c51 = Arith::<P>::submod(Arith::<P>::submod(0, Arith::<P>::R), inv4); // (-1) + (-1) * 4^-1 mod P
+        let c51 = Arith::<P>::addmod(Arith::<P>::R, inv4); // 1 + 4^-1 mod P
         let c52 = Arith::<P>::addmod(Arith::<P>::mmulmod(inv2, Arith::<P>::addmod(w, w4)), inv4); // 4^-1 * (2*w + 2*w^4 + 1) mod P
         let c53 = Arith::<P>::mmulmod(inv2, Arith::<P>::submod(w, w4)); // 2^-1 * (w - w^4) mod P
         let c54 = Arith::<P>::addmod(Arith::<P>::addmod(w, w2), inv2); // 2^-1 * (2*w + 2*w^2 + 1) mod P
@@ -359,7 +358,7 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let t6 = Arith::<P>::submod(t1, t2);
     let t7 = Arith::<P>::addmod64(t3, t4);
     let m1 = Arith::<P>::addmod(a, t5);
-    let m2 = Arith::<P>::mmulsubmod(P.wrapping_sub(NttKernelImpl::<P, INV>::C51), t5, m1);
+    let m2 = Arith::<P>::mmulsubmod(NttKernelImpl::<P, INV>::C51, t5, m1);
     let m3 = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::C52, t6);
     let m4 = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::C53, t7);
     let m5 = Arith::<P>::mmulsubmod(NttKernelImpl::<P, INV>::C54, t4, m4);
@@ -510,7 +509,7 @@ fn conv<const P: u64>(plan: &NttPlan, x: &mut [u64], xlen: usize, y: &mut [u64],
     let (_n, g, m, last_radix) = (plan.n, plan.g, plan.m, plan.last_radix as u64);
 
     /* multiply by a constant in advance */
-    mult = Arith::<P>::mmulmod(Arith::<P>::R4, Arith::<P>::mmulmod(mult, (P-1)/m as u64));
+    mult = Arith::<P>::mmulmod(Arith::<P>::mpowmod(Arith::<P>::R2, 3), Arith::<P>::mmulmod(mult, (P-1)/m as u64));
     for v in if xlen < ylen { &mut x[g..g+xlen] } else { &mut y[g..g+ylen] } {
         *v = Arith::<P>::mmulmod(*v, mult);
     }
