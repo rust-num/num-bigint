@@ -43,27 +43,14 @@ impl<const P: u64> Arith<P> {
     const ROOTR: u64 = {
         // ROOT * R mod P (ROOT: MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN)
         assert!(Self::MAX_NTT_LEN % 4050 == 0);
-        let mut p = 2;
-        'outer: loop {
-            let root = Self::powmod_naive(p, P/Self::MAX_NTT_LEN);
-            let mut j = 0;
-            while j <= Self::factors(2) {
-                let mut k = 0;
-                while k <= Self::factors(3) {
-                    let mut l = 0;
-                    while l <= Self::factors(5) {
-                        let exponent = 2u64.pow(j) * 3u64.pow(k) * 5u64.pow(l);
-                        if exponent < Self::MAX_NTT_LEN && Self::powmod_naive(root, exponent) == 1 {
-                            p += 1;
-                            continue 'outer;
-                        }
-                        l += 1;
-                    }
-                    k += 1;
-                }
-                j += 1;
+        let mut p = Self::R;
+        loop {
+            if Self::mpowmod(p, P/2) != Self::R &&
+                Self::mpowmod(p, P/3) != Self::R &&
+                Self::mpowmod(p, P/5) != Self::R {
+                break Self::mpowmod(p, P/Self::MAX_NTT_LEN);
             }
-            break Self::mmulmod(Self::R2, root)
+            p = Self::addmod(p, Self::R);
         }
     };
     // Counts the number of `divisor` factors in P-1.
@@ -71,19 +58,6 @@ impl<const P: u64> Arith<P> {
         let (mut tmp, mut ans) = (P-1, 0);
         while tmp % divisor == 0 { tmp /= divisor; ans += 1; }
         ans
-    }
-    // Computes base^exponent mod P
-    const fn powmod_naive(base: u64, mut exponent: u64) -> u64 {
-        let mut cur = 1;
-        let mut pow = base as u128;
-        while exponent > 0 {
-            if exponent % 2 > 0 {
-                cur = (cur * pow) % P as u128;
-            }
-            exponent /= 2;
-            pow = (pow * pow) % P as u128;
-        }
-        cur as u64
     }
     // Montgomery reduction:
     //   x * R^-1 mod P
@@ -114,15 +88,14 @@ impl<const P: u64> Arith<P> {
         Self::mreduce(lo as u128 | ((hi as u128) << 64))
     }
     // Computes base^exponent mod P with Montgomery reduction
-    const fn mpowmod(base: u64, mut exponent: u64) -> u64 {
+    const fn mpowmod(mut base: u64, mut exponent: u64) -> u64 {
         let mut cur = Self::R;
-        let mut pow = base;
         while exponent > 0 {
             if exponent % 2 > 0 {
-                cur = Self::mmulmod(cur, pow);
+                cur = Self::mmulmod(cur, base);
             }
             exponent /= 2;
-            pow = Self::mmulmod(pow, pow);
+            base = Self::mmulmod(base, base);
         }
         cur
     }
@@ -515,12 +488,11 @@ fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], tf_
 }
 
 fn calc_twiddle_factors<const P: u64, const INV: bool>(s_list: &[(usize, usize)], out: &mut [u64]) -> usize {
-    let r = s_list.last().unwrap_or(&(1, 1)).1;
     let mut p = 1;
     out[0] = Arith::<P>::R;
     for i in (1..s_list.len()).rev() {
         let radix = s_list[i-1].1;
-        let w = Arith::<P>::mpowmod(NttKernelImpl::<P, INV>::ROOTR, Arith::<P>::MAX_NTT_LEN/(p as u64 * radix as u64 * r as u64));
+        let w = Arith::<P>::mpowmod(NttKernelImpl::<P, INV>::ROOTR, Arith::<P>::MAX_NTT_LEN/(p * radix * s_list.last().unwrap().1) as u64);
         for j in p..radix*p {
             out[j] = Arith::<P>::mmulmod(w, out[j - p]);
         }
