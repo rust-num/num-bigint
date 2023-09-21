@@ -290,13 +290,8 @@ const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
 }
 unsafe fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    let (w1, w2) = if TWIDDLE {
-        let w1 = *ptf;
-        let w2 = Arith::<P>::mmulmod(w1, w1);
-        (w1, w2)
-    } else {
-        (0, 0)
-    };
+    let w1 = if TWIDDLE { *ptf } else { 0 };
+    let w2 = Arith::<P>::mmulmod(w1, w1);
     for _ in 0..s1 {
         (*px, *px.add(s1), *px.add(2*s1)) =
             ntt3_kernel::<P, INV, TWIDDLE>(w1, w2, *px, *px.add(s1), *px.add(2*s1));
@@ -319,20 +314,15 @@ const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let jbmd = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U4, bmd);
     let out0 = Arith::<P>::addmod(apc, bpd);
     let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(amc, jbmd));
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2, Arith::<P>::submod(apc,  bpd));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2, Arith::<P>::submod(apc, bpd));
     let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3, Arith::<P>::submod(amc, jbmd));
     (out0, out1, out2, out3)
 }
 unsafe fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    let (w1, w2, w3) = if TWIDDLE {
-        let w1 = *ptf;
-        let w2 = Arith::<P>::mmulmod(w1, w1);
-        let w3 = Arith::<P>::mmulmod(w1, w2);
-        (w1, w2, w3)
-    } else {
-        (0, 0, 0)
-    };
+    let w1 = if TWIDDLE { *ptf } else { 0 };
+    let w2 = Arith::<P>::mmulmod(w1, w1);
+    let w3 = Arith::<P>::mmulmod(w1, w2);
     for _ in 0..s1 {
         (*px, *px.add(s1), *px.add(2*s1), *px.add(3*s1)) =
             ntt4_kernel::<P, INV, TWIDDLE>(w1, w2, w3,
@@ -374,15 +364,10 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
 }
 unsafe fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    let (w1, w2, w3, w4) = if TWIDDLE {
-        let w1 = *ptf;
-        let w2 = Arith::<P>::mmulmod(w1, w1);
-        let w3 = Arith::<P>::mmulmod(w1, w2);
-        let w4 = Arith::<P>::mmulmod(w2, w2);
-        (w1, w2, w3, w4)
-    } else {
-        (0, 0, 0, 0)
-    };
+    let w1 = if TWIDDLE { *ptf } else { 0 };
+    let w2 = Arith::<P>::mmulmod(w1, w1);
+    let w3 = Arith::<P>::mmulmod(w1, w2);
+    let w4 = Arith::<P>::mmulmod(w2, w2);
     for _ in 0..s1 {
         (*px, *px.add(s1), *px.add(2*s1),
         *px.add(3*s1), *px.add(4*s1)) =
@@ -418,16 +403,11 @@ const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
 }
 unsafe fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(
     s1: usize, mut px: *mut u64, ptf: *const u64) -> (*mut u64, *const u64) {
-    let (w1, w2, w3, w4, w5) = if TWIDDLE {
-        let w1 = *ptf;
-        let w2 = Arith::<P>::mmulmod(w1, w1);
-        let w3 = Arith::<P>::mmulmod(w1, w2);
-        let w4 = Arith::<P>::mmulmod(w2, w2);
-        let w5 = Arith::<P>::mmulmod(w2, w3);
-        (w1, w2, w3, w4, w5)
-    } else {
-        (0, 0, 0, 0, 0)
-    };
+    let w1 = if TWIDDLE { *ptf } else { 0 };
+    let w2 = Arith::<P>::mmulmod(w1, w1);
+    let w3 = Arith::<P>::mmulmod(w1, w2);
+    let w4 = Arith::<P>::mmulmod(w2, w2);
+    let w5 = Arith::<P>::mmulmod(w2, w3);
     for _ in 0..s1 {
         (*px, *px.add(s1), *px.add(2*s1),
         *px.add(3*s1), *px.add(4*s1), *px.add(5*s1)) =
