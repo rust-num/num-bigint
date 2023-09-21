@@ -114,15 +114,14 @@ impl<const P: u64> Arith<P> {
         Self::mreduce(lo as u128 | ((hi as u128) << 64))
     }
     // Computes base^exponent mod P with Montgomery reduction
-    const fn mpowmod(base: u64, mut exponent: u64) -> u64 {
+    const fn mpowmod(mut base: u64, mut exponent: u64) -> u64 {
         let mut cur = Self::R;
-        let mut pow = base;
         while exponent > 0 {
             if exponent % 2 > 0 {
-                cur = Self::mmulmod(cur, pow);
+                cur = Self::mmulmod(cur, base);
             }
             exponent /= 2;
-            pow = Self::mmulmod(pow, pow);
+            base = Self::mmulmod(base, base);
         }
         cur
     }
