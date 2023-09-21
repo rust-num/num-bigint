@@ -43,27 +43,14 @@ impl<const P: u64> Arith<P> {
     const ROOTR: u64 = {
         // ROOT * R mod P (ROOT: MultiplicativeOrder[ROOT, P] == MAX_NTT_LEN)
         assert!(Self::MAX_NTT_LEN % 4050 == 0);
-        let mut p = 2;
-        'outer: loop {
-            let root = Self::powmod_naive(p, P/Self::MAX_NTT_LEN);
-            let mut j = 0;
-            while j <= Self::factors(2) {
-                let mut k = 0;
-                while k <= Self::factors(3) {
-                    let mut l = 0;
-                    while l <= Self::factors(5) {
-                        let exponent = 2u64.pow(j) * 3u64.pow(k) * 5u64.pow(l);
-                        if exponent < Self::MAX_NTT_LEN && Self::powmod_naive(root, exponent) == 1 {
-                            p += 1;
-                            continue 'outer;
-                        }
-                        l += 1;
-                    }
-                    k += 1;
-                }
-                j += 1;
+        let mut p = Self::R;
+        loop {
+            if Self::mpowmod(p, P/2) != Self::R &&
+                Self::mpowmod(p, P/3) != Self::R &&
+                Self::mpowmod(p, P/5) != Self::R {
+                break Self::mpowmod(p, P/Self::MAX_NTT_LEN);
             }
-            break Self::mmulmod(Self::R2, root)
+            p = Self::addmod(p, Self::R);
         }
     };
     // Counts the number of `divisor` factors in P-1.
@@ -71,19 +58,6 @@ impl<const P: u64> Arith<P> {
         let (mut tmp, mut ans) = (P-1, 0);
         while tmp % divisor == 0 { tmp /= divisor; ans += 1; }
         ans
-    }
-    // Computes base^exponent mod P
-    const fn powmod_naive(base: u64, mut exponent: u64) -> u64 {
-        let mut cur = 1;
-        let mut pow = base as u128;
-        while exponent > 0 {
-            if exponent % 2 > 0 {
-                cur = (cur * pow) % P as u128;
-            }
-            exponent /= 2;
-            pow = (pow * pow) % P as u128;
-        }
-        cur as u64
     }
     // Montgomery reduction:
     //   x * R^-1 mod P
