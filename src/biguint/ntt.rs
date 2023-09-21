@@ -367,7 +367,7 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let s2 = Arith::<P>::addmod(m2, m3);
     let out0 = m1;
     let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1, Arith::<P>::submod(s1, m5));
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2, Arith::<P>::submod(0, Arith::<P>::addmod(s2, m6)));
+    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2, Arith::<P>::submod(Arith::<P>::submod(0, s2), m6));
     let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3, Arith::<P>::submod(m6, s2));
     let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w4, Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s1, m5));
     (out0, out1, out2, out3, out4)
