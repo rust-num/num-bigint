@@ -159,9 +159,11 @@ impl NttPlan {
                             (g_new, tmp, cost) = (7, tmp/7, cost + len*115/100);
                         } else if len % 5 == 0 {
                             (g_new, tmp, cost) = (5, tmp/5, cost + len*89/100);
-                        } else if m2 >= m3 + 3 {
+                        } else if m3 >= m2 + 2 {
+                            (g_new, tmp, cost) = (9, tmp/9, cost + len*180/100);
+                        } else if m2 >= m3 + 3 && (m2 - m3) % 2 == 1 {
                             (g_new, tmp, cost) = (8, tmp/8, cost + len*130/100);
-                        } else if m2 >= m3 + 2 {
+                        } else if m2 >= m3 + 2 && m3 == 0 {
                             (g_new, tmp, cost) = (4, tmp/4, cost + len*87/100);
                         } else if m2 == 0 && m3 >= 1 {
                             (g_new, tmp, cost) = (3, tmp/3, cost + len*86/100);
