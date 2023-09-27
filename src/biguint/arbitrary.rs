@@ -1,9 +1,9 @@
 use super::{biguint_from_vec, BigUint};
 
 use crate::big_digit::BigDigit;
-#[cfg(feature = "quickcheck")]
-use crate::std_alloc::Box;
 use crate::std_alloc::Vec;
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::{Box, Cow};
 
 #[cfg(feature = "quickcheck")]
 impl quickcheck::Arbitrary for BigUint {
@@ -14,7 +14,13 @@ impl quickcheck::Arbitrary for BigUint {
 
     fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         // Use shrinker from Vec
-        Box::new(self.data.shrink().map(biguint_from_vec))
+        Box::new(
+            match &self.data {
+                Cow::Owned(v) => v.shrink(),
+                Cow::Borrowed(v) => v.to_vec().shrink(),
+            }
+            .map(biguint_from_vec),
+        )
     }
 }
 
