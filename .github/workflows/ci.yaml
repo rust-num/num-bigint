@@ -23,7 +23,7 @@ jobs:
           nightly
         ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
@@ -38,7 +38,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install gcc-multilib
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable-i686-unknown-linux-gnu
@@ -50,7 +50,7 @@ jobs:
     name: No Std
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           target: thumbv6m-none-eabi
@@ -60,7 +60,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.62.0
         with:
           components: rustfmt
