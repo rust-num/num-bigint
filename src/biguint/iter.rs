@@ -156,7 +156,7 @@ impl Iterator for U32Digits<'_> {
 #[cfg(not(u64_digit))]
 impl DoubleEndedIterator for U32Digits<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.it.next_back().copied()
+        self.it.next_back().cloned()
     }
 }
 
