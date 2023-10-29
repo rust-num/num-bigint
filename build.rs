@@ -34,6 +34,10 @@ fn main() {
             if ac.probe_path(&addcarry) {
                 autocfg::emit("use_addcarry");
             }
+
+            if ac.probe_path(&format!("{}::arch::asm", std)) {
+                autocfg::emit("use_x86_div");
+            }
         }
     }
 
