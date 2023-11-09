@@ -877,6 +877,86 @@ impl BigUint {
         power::modpow(self, exponent, modulus)
     }
 
+    /// Returns the modular multiplicative inverse if it exists, otherwise `None`.
+    ///
+    /// This solves for `x` in the interval `[0, modulus)` such that `self * x ≡ 1 (mod modulus)`.
+    /// The solution exists if and only if `gcd(self, modulus) == 1`.
+    ///
+    /// ```
+    /// use num_bigint::BigUint;
+    /// use num_traits::{One, Zero};
+    ///
+    /// let m = BigUint::from(383_u32);
+    ///
+    /// // Trivial cases
+    /// assert_eq!(BigUint::zero().modinv(&m), None);
+    /// assert_eq!(BigUint::one().modinv(&m), Some(BigUint::one()));
+    /// let neg1 = &m - 1u32;
+    /// assert_eq!(neg1.modinv(&m), Some(neg1));
+    ///
+    /// let a = BigUint::from(271_u32);
+    /// let x = a.modinv(&m).unwrap();
+    /// assert_eq!(x, BigUint::from(106_u32));
+    /// assert_eq!(x.modinv(&m).unwrap(), a);
+    /// assert!((a * x % m).is_one());
+    /// ```
+    pub fn modinv(&self, modulus: &Self) -> Option<Self> {
+        // Based on the inverse pseudocode listed here:
+        // https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Modular_integers
+        // TODO: consider Binary or Lehmer's GCD algorithms for optimization.
+
+        assert!(
+            !modulus.is_zero(),
+            "attempt to calculate with zero modulus!"
+        );
+        if modulus.is_one() {
+            return Some(Self::zero());
+        }
+
+        let mut r0; // = modulus.clone();
+        let mut r1 = self % modulus;
+        let mut t0; // = Self::zero();
+        let mut t1; // = Self::one();
+
+        // Lift and simplify the first iteration to avoid some initial allocations.
+        if r1.is_zero() {
+            return None;
+        } else if r1.is_one() {
+            return Some(r1);
+        } else {
+            let (q, r2) = modulus.div_rem(&r1);
+            if r2.is_zero() {
+                return None;
+            }
+            r0 = r1;
+            r1 = r2;
+            t0 = Self::one();
+            t1 = modulus - q;
+        }
+
+        while !r1.is_zero() {
+            let (q, r2) = r0.div_rem(&r1);
+            r0 = r1;
+            r1 = r2;
+
+            // let t2 = (t0 - q * t1) % modulus;
+            let qt1 = q * &t1 % modulus;
+            let t2 = if t0 < qt1 {
+                t0 + (modulus - qt1)
+            } else {
+                t0 - qt1
+            };
+            t0 = t1;
+            t1 = t2;
+        }
+
+        if r0.is_one() {
+            Some(t0)
+        } else {
+            None
+        }
+    }
+
     /// Returns the truncated principal square root of `self` --
     /// see [Roots::sqrt](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#method.sqrt)
     pub fn sqrt(&self) -> Self {
