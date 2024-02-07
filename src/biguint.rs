@@ -1,5 +1,5 @@
 use crate::big_digit::{self, BigDigit};
-use crate::std_alloc::{String, Vec};
+use crate::std_alloc::{Cow, String, Vec};
 
 use core::cmp;
 use core::cmp::Ordering;
@@ -36,7 +36,7 @@ pub use self::iter::{U32Digits, U64Digits};
 
 /// A big unsigned integer type.
 pub struct BigUint {
-    data: Vec<BigDigit>,
+    data: Cow<'static, [BigDigit]>,
 }
 
 // Note: derived `Clone` doesn't specialize `clone_from`,
@@ -146,12 +146,19 @@ impl fmt::Octal for BigUint {
 impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
-        BigUint { data: Vec::new() }
+        BigUint {
+            data: Cow::Borrowed(&[]),
+        }
     }
 
     #[inline]
     fn set_zero(&mut self) {
-        self.data.clear();
+        match &mut self.data {
+            Cow::Borrowed(s) => {
+                *s = &[];
+            }
+            Cow::Owned(v) => v.clear(),
+        }
     }
 
     #[inline]
@@ -163,13 +170,22 @@ impl Zero for BigUint {
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint { data: vec![1] }
+        BigUint {
+            data: Cow::Borrowed(&[1]),
+        }
     }
 
     #[inline]
     fn set_one(&mut self) {
-        self.data.clear();
-        self.data.push(1);
+        match &mut self.data {
+            Cow::Borrowed(s) => {
+                *s = &[1];
+            }
+            Cow::Owned(v) => {
+                v.clear();
+                v.push(1);
+            }
+        }
     }
 
     #[inline]
@@ -515,7 +531,10 @@ pub trait ToBigUint {
 /// The digits are in little-endian base matching `BigDigit`.
 #[inline]
 pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
-    BigUint { data: digits }.normalized()
+    BigUint {
+        data: Cow::Owned(digits),
+    }
+    .normalized()
 }
 
 impl BigUint {
@@ -553,13 +572,15 @@ impl BigUint {
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
-        self.data.clear();
+        let mut data = Vec::new();
 
         #[cfg(not(u64_digit))]
-        self.data.extend_from_slice(slice);
+        data.extend_from_slice(slice);
 
         #[cfg(u64_digit)]
-        self.data.extend(slice.chunks(2).map(u32_chunk_to_u64));
+        data.extend(slice.chunks(2).map(u32_chunk_to_u64));
+
+        self.data = Cow::Owned(data);
 
         self.normalize();
     }
@@ -755,7 +776,10 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn iter_u32_digits(&self) -> U32Digits<'_> {
-        U32Digits::new(self.data.as_slice())
+        U32Digits::new(match &self.data {
+            Cow::Borrowed(v) => v,
+            Cow::Owned(v) => v.as_slice(),
+        })
     }
 
     /// Returns an iterator of `u64` digits representation of the [`BigUint`] ordered least
@@ -774,7 +798,10 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
-        U64Digits::new(self.data.as_slice())
+        U64Digits::new(match &self.data {
+            Cow::Borrowed(v) => v,
+            Cow::Owned(v) => v.as_slice(),
+        })
     }
 
     /// Returns the integer formatted as a string in the given radix.
@@ -851,10 +878,15 @@ impl BigUint {
     fn normalize(&mut self) {
         if let Some(&0) = self.data.last() {
             let len = self.data.iter().rposition(|&d| d != 0).map_or(0, |i| i + 1);
-            self.data.truncate(len);
+            self.data.to_mut().truncate(len);
         }
-        if self.data.len() < self.data.capacity() / 4 {
-            self.data.shrink_to_fit();
+        match &mut self.data {
+            Cow::Owned(v) => {
+                if v.len() < v.capacity() / 4 {
+                    v.shrink_to_fit();
+                }
+            }
+            _ => {}
         }
     }
 
@@ -948,11 +980,11 @@ impl BigUint {
         if value {
             if digit_index >= self.data.len() {
                 let new_len = digit_index.saturating_add(1);
-                self.data.resize(new_len, 0);
+                self.data.to_mut().resize(new_len, 0);
             }
-            self.data[digit_index] |= bit_mask;
+            self.data.to_mut()[digit_index] |= bit_mask;
         } else if digit_index < self.data.len() {
-            self.data[digit_index] &= !bit_mask;
+            self.data.to_mut()[digit_index] &= !bit_mask;
             // the top bit may have been cleared, so normalize
             self.normalize();
         }
@@ -998,7 +1030,7 @@ impl IntDigits for BigUint {
     }
     #[inline]
     fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
-        &mut self.data
+        self.data.to_mut()
     }
     #[inline]
     fn normalize(&mut self) {
@@ -1006,7 +1038,10 @@ impl IntDigits for BigUint {
     }
     #[inline]
     fn capacity(&self) -> usize {
-        self.data.capacity()
+        match &self.data {
+            Cow::Borrowed(v) => v.len(),
+            Cow::Owned(v) => v.capacity(),
+        }
     }
     #[inline]
     fn len(&self) -> usize {
