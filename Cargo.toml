@@ -12,7 +12,7 @@ version = "0.4.4"
 readme = "README.md"
 build = "build.rs"
 exclude = ["/ci/*", "/.github/*"]
-edition = "2018"
+edition = "2021"
 rust-version = "1.60"
 
 [features]
