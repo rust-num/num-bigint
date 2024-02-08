@@ -22,10 +22,6 @@ fn main() {
         "core"
     };
 
-    if ac.probe_path(&format!("{}::convert::TryFrom", std)) {
-        autocfg::emit("has_try_from");
-    }
-
     if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
         if arch == "x86_64" || arch == "x86" {
             let digit = if u64_digit { "u64" } else { "u32" };

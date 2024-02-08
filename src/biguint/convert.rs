@@ -10,11 +10,9 @@ use super::multiplication::mac_with_carry;
 use crate::big_digit::{self, BigDigit};
 use crate::std_alloc::Vec;
 use crate::ParseBigIntError;
-#[cfg(has_try_from)]
 use crate::TryFromBigIntError;
 
 use core::cmp::Ordering::{Equal, Greater, Less};
-#[cfg(has_try_from)]
 use core::convert::TryFrom;
 use core::mem;
 use core::str::FromStr;
@@ -396,7 +394,6 @@ impl ToPrimitive for BigUint {
 
 macro_rules! impl_try_from_biguint {
     ($T:ty, $to_ty:path) => {
-        #[cfg(has_try_from)]
         impl TryFrom<&BigUint> for $T {
             type Error = TryFromBigIntError<()>;
 
@@ -406,7 +403,6 @@ macro_rules! impl_try_from_biguint {
             }
         }
 
-        #[cfg(has_try_from)]
         impl TryFrom<BigUint> for $T {
             type Error = TryFromBigIntError<BigUint>;
 
@@ -539,7 +535,6 @@ impl_biguint_from_uint!(usize);
 
 macro_rules! impl_biguint_try_from_int {
     ($T:ty, $from_ty:path) => {
-        #[cfg(has_try_from)]
         impl TryFrom<$T> for BigUint {
             type Error = TryFromBigIntError<()>;
 
