@@ -15,21 +15,9 @@ fn main() {
         autocfg::emit("u64_digit");
     }
 
-    let ac = autocfg::new();
-    let std = if ac.probe_sysroot_crate("std") {
-        "std"
-    } else {
-        "core"
-    };
-
     if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
         if arch == "x86_64" || arch == "x86" {
-            let digit = if u64_digit { "u64" } else { "u32" };
-
-            let addcarry = format!("{}::arch::{}::_addcarry_{}", std, arch, digit);
-            if ac.probe_path(&addcarry) {
-                autocfg::emit("use_addcarry");
-            }
+            autocfg::emit("use_addcarry");
         }
     }
 
