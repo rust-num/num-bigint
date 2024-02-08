@@ -81,7 +81,7 @@
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.31 and greater.
+//! The `num-bigint` crate is tested for rustc 1.60 and greater.
 
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.4")]
 #![warn(rust_2018_idioms)]
