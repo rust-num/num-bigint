@@ -73,6 +73,3 @@ default-features = false
 optional = true
 version = "1"
 default-features = false
-
-[build-dependencies]
-autocfg = "1"

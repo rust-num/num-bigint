@@ -12,16 +12,16 @@ fn main() {
         .unwrap_or(false);
 
     if u64_digit {
-        autocfg::emit("u64_digit");
+        println!("cargo:rustc-cfg=u64_digit");
     }
 
     if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
         if arch == "x86_64" || arch == "x86" {
-            autocfg::emit("use_addcarry");
+            println!("cargo:rustc-cfg=use_addcarry");
         }
     }
 
-    autocfg::rerun_path("build.rs");
+    println!("cargo:rerun-if-changed=build.rs");
 
     write_radix_bases().unwrap();
 }
