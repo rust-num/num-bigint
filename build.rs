@@ -38,7 +38,7 @@ fn main() {
 fn write_radix_bases() -> Result<(), Box<dyn Error>> {
     let out_dir = env::var("OUT_DIR")?;
     let dest_path = Path::new(&out_dir).join("radix_bases.rs");
-    let mut f = File::create(&dest_path)?;
+    let mut f = File::create(dest_path)?;
 
     for &bits in &[16, 32, 64] {
         let max = if bits < 64 {
