@@ -774,8 +774,8 @@ pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
 
 #[cfg(not(u64_digit))]
 pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    fn bigdigit_to_u64(src: &[BigDigit]) -> Vec<u64> {
-        let mut out = vec![0u64; (src.len() + 1) / 2];
+    fn bigdigit_to_u64(src: &[BigDigit], is_acc: bool) -> Vec<u64> {
+        let mut out = vec![0u64; (src.len() + 1) / 2 + is_acc as usize];
         for i in 0..src.len()/2 {
             out[i] = (src[2*i] as u64) | ((src[2*i+1] as u64) << 32);
         }
@@ -795,7 +795,7 @@ pub fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
     }
 
     /* convert to u64 => process => convert back to BigDigit (u32) */
-    let mut acc_u64 = bigdigit_to_u64(acc);
-    mac3_u64(&mut acc_u64, &bigdigit_to_u64(b), &bigdigit_to_u64(c));
+    let mut acc_u64 = bigdigit_to_u64(acc, true);
+    mac3_u64(&mut acc_u64, &bigdigit_to_u64(b, false), &bigdigit_to_u64(c, false));
     u64_to_bigdigit(&acc_u64, acc);
 }
