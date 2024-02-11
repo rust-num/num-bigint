@@ -4,11 +4,11 @@ use crate::std_alloc::{String, Vec};
 use core::cmp;
 use core::cmp::Ordering;
 use core::default::Default;
-use core::fmt;
+use core::fmt::{self, Write};
 use core::hash;
 use core::mem;
 use core::str;
-use core::{u32, u64, u8};
+use core::{f64, u32, u64, u8};
 
 use num_integer::{Integer, Roots};
 use num_traits::{Num, One, Pow, ToPrimitive, Unsigned, Zero};
@@ -141,6 +141,129 @@ impl fmt::Octal for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0o", &self.to_str_radix(8))
     }
+}
+
+// When we bump the MSRV to >= 1.42, we can add a fast-path where this fits into a u64.
+
+impl fmt::LowerExp for BigUint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // The max digits that can fit into a f64, which ensures
+        // that printing won't have rounding errors.
+        const MAX_FLOAT_DIGITS: usize = 14;
+        if f.precision().filter(|x| x < &MAX_FLOAT_DIGITS).is_some() {
+            let as_f64 = self.to_f64().unwrap();
+            if as_f64.is_finite() {
+                fmt::LowerExp::fmt(&as_f64, f)
+            } else {
+                fmt_exp_slow(self, f, false, true)
+            }
+        } else {
+            fmt_exp_slow(self, f, false, true)
+        }
+    }
+}
+
+impl fmt::UpperExp for BigUint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // The max digits that can fit into a f64, minus 1 to ensure there
+        // aren't any rounding errors.
+        const MAX_FLOAT_DIGITS: u32 = f64::DIGITS - 1;
+        if f.precision()
+            .filter(|&x| x < (MAX_FLOAT_DIGITS as usize))
+            .is_some()
+        {
+            let as_f64 = self.to_f64().unwrap();
+            if as_f64.is_finite() {
+                fmt::UpperExp::fmt(&as_f64, f)
+            } else {
+                fmt_exp_slow(self, f, true, true)
+            }
+        } else {
+            fmt_exp_slow(self, f, true, true)
+        }
+    }
+}
+
+pub(crate) fn fmt_exp_slow(
+    x: &BigUint,
+    f: &mut fmt::Formatter<'_>,
+    upper: bool,
+    is_nonneg: bool,
+) -> fmt::Result {
+    let precision = f.precision().unwrap_or(16);
+    let mut digits = to_str_radix_reversed(x, 10);
+    let digit_count = digits.len();
+    let end_carry = round_at(&mut digits, digit_count.saturating_sub(precision));
+    let mut buffer = String::with_capacity(precision + 5);
+    debug_assert!(
+        digits.len() > 1,
+        "Values with fewer digits should use direct formatting"
+    );
+    let mut iter = digits.iter().rev();
+    if end_carry {
+        buffer.push_str("1.");
+    } else {
+        buffer.push(*iter.next().unwrap() as char);
+        buffer.push('.');
+    }
+    for &ch in iter.take(precision) {
+        buffer.push(ch as char);
+    }
+    // Add trailing zeroes when explicit precision given
+    if f.precision().is_some() {
+        for _ in 0..precision.saturating_sub(digits.len() - 1) {
+            buffer.push('0');
+        }
+    }
+    buffer.push(if upper { 'E' } else { 'e' });
+    let exponent = if end_carry {
+        digit_count
+    } else {
+        digit_count - 1
+    };
+    write!(buffer, "{}", exponent)?;
+    // pad_integral seems a little weird, but it does do the right thing, and
+    // the equivalent that f32 and f64 use is internal-only.
+    f.pad_integral(is_nonneg, "", &buffer)
+}
+
+fn round_at(chars: &mut [u8], last: usize) -> bool {
+    if last == 0 {
+        return false;
+    }
+    let mut carry = char_rounds_up(chars[last - 1]);
+    for digit in &mut chars[last..] {
+        if !carry {
+            return false;
+        } else {
+            carry = increment_digit(digit);
+        }
+    }
+    carry
+}
+
+fn char_rounds_up(ch: u8) -> bool {
+    match ch {
+        b'0'..=b'4' => false,
+        b'5'..=b'9' => true,
+        _ => unreachable!("{} is not a decimal digit", ch),
+    }
+}
+
+fn increment_digit(ch: &mut u8) -> bool {
+    *ch = match *ch {
+        b'0' => b'1',
+        b'1' => b'2',
+        b'2' => b'3',
+        b'3' => b'4',
+        b'5' => b'6',
+        b'6' => b'7',
+        b'7' => b'8',
+        b'8' => b'9',
+        b'9' => b'0',
+        _ => unreachable!("{} is not a decimal digit", ch),
+    };
+    *ch == b'0'
 }
 
 impl Zero for BigUint {
