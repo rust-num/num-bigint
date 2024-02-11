@@ -24,6 +24,7 @@ mod iter;
 mod monty;
 mod power;
 mod shift;
+mod truncate;
 
 #[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
 mod arbitrary;
@@ -33,6 +34,7 @@ mod serde;
 
 pub(crate) use self::convert::to_str_radix_reversed;
 pub use self::iter::{U32Digits, U64Digits};
+pub use truncate::TruncateFrom;
 
 /// A big unsigned integer type.
 pub struct BigUint {
