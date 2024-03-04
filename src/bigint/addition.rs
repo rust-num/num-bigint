@@ -1,6 +1,7 @@
 use super::CheckedUnsignedAbs::{Negative, Positive};
 use super::Sign::{Minus, NoSign, Plus};
 use super::{BigInt, UnsignedAbs};
+use std::borrow::Cow;
 
 use crate::{IsizePromotion, UsizePromotion};
 
@@ -11,23 +12,30 @@ use core::ops::{Add, AddAssign};
 use num_traits::{CheckedAdd, Zero};
 
 // We want to forward to BigUint::add, but it's not clear how that will go until
-// we compare both sign and magnitude.  So we duplicate this body for every
+// we compare both sign and magnitude.  So we call this function for every
 // val/ref combination, deferring that decision to BigUint's own forwarding.
-macro_rules! bigint_add {
-    ($a:expr, $a_owned:expr, $a_data:expr, $b:expr, $b_owned:expr, $b_data:expr) => {
-        match ($a.sign, $b.sign) {
-            (_, NoSign) => $a_owned,
-            (NoSign, _) => $b_owned,
-            // same sign => keep the sign with the sum of magnitudes
-            (Plus, Plus) | (Minus, Minus) => BigInt::from_biguint($a.sign, $a_data + $b_data),
-            // opposite signs => keep the sign of the larger with the difference of magnitudes
-            (Plus, Minus) | (Minus, Plus) => match $a.data.cmp(&$b.data) {
-                Less => BigInt::from_biguint($b.sign, $b_data - $a_data),
-                Greater => BigInt::from_biguint($a.sign, $a_data - $b_data),
-                Equal => Zero::zero(),
-            },
+fn generic_add(a: Cow<'_, BigInt>, b: Cow<'_, BigInt>) -> BigInt {
+
+    match (a.sign, b.sign) {
+        (_, NoSign) => match a {
+            Cow::Borrowed(a) => a.clone(),
+            Cow::Owned(a) => a,
+        },
+        (NoSign, _) => match b {
+            Cow::Borrowed(b) => b.clone(),
+            Cow::Owned(b) => b,
+        },
+        // same sign => keep the sign with the sum of magnitudes
+        (Plus, Plus) | (Minus, Minus) => {
+            BigInt::from_biguint(a.sign, &a.data + &b.data)
         }
-    };
+        // opposite signs => keep the sign of the larger with the difference of magnitudes
+        (Plus, Minus) | (Minus, Plus) => match &a.data.cmp(&b.data) {
+            Less => BigInt::from_biguint(b.sign, &b.data - &a.data),
+            Greater => BigInt::from_biguint(a.sign, &a.data - &b.data),
+            Equal => Zero::zero(),
+        },
+    }
 }
 
 impl Add<&BigInt> for &BigInt {
@@ -35,14 +43,7 @@ impl Add<&BigInt> for &BigInt {
 
     #[inline]
     fn add(self, other: &BigInt) -> BigInt {
-        bigint_add!(
-            self,
-            self.clone(),
-            &self.data,
-            other,
-            other.clone(),
-            &other.data
-        )
+        generic_add(Cow::Borrowed(self), Cow::Borrowed(other))
     }
 }
 
@@ -51,7 +52,7 @@ impl Add<BigInt> for &BigInt {
 
     #[inline]
     fn add(self, other: BigInt) -> BigInt {
-        bigint_add!(self, self.clone(), &self.data, other, other, other.data)
+        generic_add(Cow::Borrowed(self), Cow::Owned(other))
     }
 }
 
@@ -60,7 +61,7 @@ impl Add<&BigInt> for BigInt {
 
     #[inline]
     fn add(self, other: &BigInt) -> BigInt {
-        bigint_add!(self, self, self.data, other, other.clone(), &other.data)
+        generic_add(Cow::Owned(self), Cow::Borrowed(other))
     }
 }
 
@@ -69,7 +70,7 @@ impl Add<BigInt> for BigInt {
 
     #[inline]
     fn add(self, other: BigInt) -> BigInt {
-        bigint_add!(self, self, self.data, other, other, other.data)
+        generic_add(Cow::Owned(self), Cow::Owned(other))
     }
 }
 
