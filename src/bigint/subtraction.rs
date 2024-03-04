@@ -1,7 +1,7 @@
 use super::CheckedUnsignedAbs::{Negative, Positive};
 use super::Sign::{Minus, NoSign, Plus};
 use super::{BigInt, UnsignedAbs};
-use std::borrow::Cow;
+use crate::std_alloc::Cow;
 
 use crate::{IsizePromotion, UsizePromotion};
 
