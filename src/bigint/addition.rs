@@ -14,8 +14,7 @@ use num_traits::{CheckedAdd, Zero};
 // We want to forward to BigUint::add, but it's not clear how that will go until
 // we compare both sign and magnitude.  So we call this function for every
 // val/ref combination, deferring that decision to BigUint's own forwarding.
-fn generic_add(a: Cow<'_, BigInt>, b: Cow<'_, BigInt>) -> BigInt {
-
+fn bigint_add(a: Cow<'_, BigInt>, b: Cow<'_, BigInt>) -> BigInt {
     match (a.sign, b.sign) {
         (_, NoSign) => match a {
             Cow::Borrowed(a) => a.clone(),
@@ -26,9 +25,7 @@ fn generic_add(a: Cow<'_, BigInt>, b: Cow<'_, BigInt>) -> BigInt {
             Cow::Owned(b) => b,
         },
         // same sign => keep the sign with the sum of magnitudes
-        (Plus, Plus) | (Minus, Minus) => {
-            BigInt::from_biguint(a.sign, &a.data + &b.data)
-        }
+        (Plus, Plus) | (Minus, Minus) => BigInt::from_biguint(a.sign, &a.data + &b.data),
         // opposite signs => keep the sign of the larger with the difference of magnitudes
         (Plus, Minus) | (Minus, Plus) => match &a.data.cmp(&b.data) {
             Less => BigInt::from_biguint(b.sign, &b.data - &a.data),
@@ -43,7 +40,7 @@ impl Add<&BigInt> for &BigInt {
 
     #[inline]
     fn add(self, other: &BigInt) -> BigInt {
-        generic_add(Cow::Borrowed(self), Cow::Borrowed(other))
+        bigint_add(Cow::Borrowed(self), Cow::Borrowed(other))
     }
 }
 
@@ -52,7 +49,7 @@ impl Add<BigInt> for &BigInt {
 
     #[inline]
     fn add(self, other: BigInt) -> BigInt {
-        generic_add(Cow::Borrowed(self), Cow::Owned(other))
+        bigint_add(Cow::Borrowed(self), Cow::Owned(other))
     }
 }
 
@@ -61,7 +58,7 @@ impl Add<&BigInt> for BigInt {
 
     #[inline]
     fn add(self, other: &BigInt) -> BigInt {
-        generic_add(Cow::Owned(self), Cow::Borrowed(other))
+        bigint_add(Cow::Owned(self), Cow::Borrowed(other))
     }
 }
 
@@ -70,7 +67,7 @@ impl Add<BigInt> for BigInt {
 
     #[inline]
     fn add(self, other: BigInt) -> BigInt {
-        generic_add(Cow::Owned(self), Cow::Owned(other))
+        bigint_add(Cow::Owned(self), Cow::Owned(other))
     }
 }
 

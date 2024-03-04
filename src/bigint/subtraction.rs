@@ -13,7 +13,7 @@ use num_traits::{CheckedSub, Zero};
 // We want to forward to BigUint::sub, but it's not clear how that will go until
 // we compare both sign and magnitude.  So we call this function for every
 // val/ref combination, deferring that decision to BigUint's own forwarding.
-fn generic_sub(a: Cow<'_, BigInt>, b: Cow<'_, BigInt>) -> BigInt {
+fn bigint_sub(a: Cow<'_, BigInt>, b: Cow<'_, BigInt>) -> BigInt {
     match (a.sign, b.sign) {
         (_, NoSign) => match a {
             Cow::Borrowed(a) => a.clone(),
@@ -39,7 +39,7 @@ impl Sub<&BigInt> for &BigInt {
 
     #[inline]
     fn sub(self, other: &BigInt) -> BigInt {
-        generic_sub(Cow::Borrowed(self), Cow::Borrowed(other))
+        bigint_sub(Cow::Borrowed(self), Cow::Borrowed(other))
     }
 }
 
@@ -48,7 +48,7 @@ impl Sub<BigInt> for &BigInt {
 
     #[inline]
     fn sub(self, other: BigInt) -> BigInt {
-        generic_sub(Cow::Borrowed(self), Cow::Owned(other))
+        bigint_sub(Cow::Borrowed(self), Cow::Owned(other))
     }
 }
 
@@ -57,7 +57,7 @@ impl Sub<&BigInt> for BigInt {
 
     #[inline]
     fn sub(self, other: &BigInt) -> BigInt {
-        generic_sub(Cow::Owned(self), Cow::Borrowed(other))
+        bigint_sub(Cow::Owned(self), Cow::Borrowed(other))
     }
 }
 
@@ -66,7 +66,7 @@ impl Sub<BigInt> for BigInt {
 
     #[inline]
     fn sub(self, other: BigInt) -> BigInt {
-        generic_sub(Cow::Owned(self), Cow::Owned(other))
+        bigint_sub(Cow::Owned(self), Cow::Owned(other))
     }
 }
 
