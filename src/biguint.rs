@@ -906,10 +906,7 @@ impl BigUint {
     /// Returns the number of least-significant bits that are ones.
     pub fn trailing_ones(&self) -> u64 {
         if let Some(i) = self.data.iter().position(|&digit| !digit != 0) {
-            // XXX u64::trailing_ones() introduced in Rust 1.46,
-            // but we need to be compatible further back.
-            // Thanks to cuviper for this workaround.
-            let ones: u64 = (!self.data[i]).trailing_zeros().into();
+            let ones: u64 = self.data[i].trailing_ones().into();
             i as u64 * u64::from(big_digit::BITS) + ones
         } else {
             self.data.len() as u64 * u64::from(big_digit::BITS)

@@ -81,7 +81,7 @@
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.31 and greater.
+//! The `num-bigint` crate is tested for rustc 1.60 and greater.
 
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.4")]
 #![warn(rust_2018_idioms)]
@@ -183,13 +183,11 @@ impl Error for ParseBigIntError {
 }
 
 /// The error type returned when a checked conversion regarding big integer fails.
-#[cfg(has_try_from)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TryFromBigIntError<T> {
     original: T,
 }
 
-#[cfg(has_try_from)]
 impl<T> TryFromBigIntError<T> {
     fn new(original: T) -> Self {
         TryFromBigIntError { original }
@@ -206,7 +204,7 @@ impl<T> TryFromBigIntError<T> {
     }
 }
 
-#[cfg(all(feature = "std", has_try_from))]
+#[cfg(feature = "std")]
 impl<T> std::error::Error for TryFromBigIntError<T>
 where
     T: fmt::Debug,
@@ -216,7 +214,6 @@ where
     }
 }
 
-#[cfg(has_try_from)]
 impl<T> fmt::Display for TryFromBigIntError<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.__description().fmt(f)

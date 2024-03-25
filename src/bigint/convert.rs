@@ -2,12 +2,10 @@ use super::Sign::{self, Minus, NoSign, Plus};
 use super::{BigInt, ToBigInt};
 
 use crate::std_alloc::Vec;
-#[cfg(has_try_from)]
 use crate::TryFromBigIntError;
 use crate::{BigUint, ParseBigIntError, ToBigUint};
 
 use core::cmp::Ordering::{Equal, Greater, Less};
-#[cfg(has_try_from)]
 use core::convert::TryFrom;
 use core::str::{self, FromStr};
 use num_traits::{FromPrimitive, Num, One, ToPrimitive, Zero};
@@ -109,7 +107,6 @@ impl ToPrimitive for BigInt {
 
 macro_rules! impl_try_from_bigint {
     ($T:ty, $to_ty:path) => {
-        #[cfg(has_try_from)]
         impl TryFrom<&BigInt> for $T {
             type Error = TryFromBigIntError<()>;
 
@@ -119,7 +116,6 @@ macro_rules! impl_try_from_bigint {
             }
         }
 
-        #[cfg(has_try_from)]
         impl TryFrom<BigInt> for $T {
             type Error = TryFromBigIntError<BigInt>;
 
@@ -313,7 +309,6 @@ impl ToBigUint for BigInt {
     }
 }
 
-#[cfg(has_try_from)]
 impl TryFrom<&BigInt> for BigUint {
     type Error = TryFromBigIntError<()>;
 
@@ -325,7 +320,6 @@ impl TryFrom<&BigInt> for BigUint {
     }
 }
 
-#[cfg(has_try_from)]
 impl TryFrom<BigInt> for BigUint {
     type Error = TryFromBigIntError<BigInt>;
 

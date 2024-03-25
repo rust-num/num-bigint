@@ -3,7 +3,7 @@
 set -e
 
 CRATE=num-bigint
-MSRV=1.31
+MSRV=1.60
 
 get_rust_version() {
   local array=($(rustc --version));
@@ -27,18 +27,15 @@ if ! check_version $MSRV ; then
   exit 1
 fi
 
-STD_FEATURES=(serde)
-check_version 1.36 && STD_FEATURES+=(rand)
-check_version 1.36 && NO_STD_FEATURES=(serde rand)
-check_version 1.40 && STD_FEATURES+=(arbitrary)
-check_version 1.46 && STD_FEATURES+=(quickcheck)
+STD_FEATURES=(arbitrary quickcheck rand serde)
+NO_STD_FEATURES=(serde rand)
 echo "Testing supported features: ${STD_FEATURES[*]}"
 if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"
 fi
 
-# arbitrary 1.0.1 added const-generic arrays, which requires Rust 1.51
-check_version 1.51.0 || cargo update -p arbitrary --precise 1.0.0
+# arbitrary 1.1.4 started using array::from_fn
+check_version 1.63.0 || cargo update -p arbitrary --precise 1.1.3
 
 set -x
 
@@ -82,22 +79,11 @@ fi
 case "${STD_FEATURES[*]}" in
   *serde*) (
       cd ci/big_serde
-      # serde_test updated to 2021 edition after this version
-      check_version 1.56.0 || (
-        cargo generate-lockfile
-        cargo update -p serde_test --precise 1.0.175
-      )
       cargo test
     ) ;;&
   *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
   *quickcheck*) (
       cd ci/big_quickcheck
-      # quote and proc-macro2 updated to 2021 edition after these versions
-      check_version 1.56.0 || (
-        cargo generate-lockfile
-        cargo update -p quote --precise 1.0.30
-        cargo update -p proc-macro2 --precise 1.0.65
-      )
       cargo test
     ) ;;&
 esac

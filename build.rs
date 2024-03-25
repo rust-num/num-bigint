@@ -12,32 +12,16 @@ fn main() {
         .unwrap_or(false);
 
     if u64_digit {
-        autocfg::emit("u64_digit");
-    }
-
-    let ac = autocfg::new();
-    let std = if ac.probe_sysroot_crate("std") {
-        "std"
-    } else {
-        "core"
-    };
-
-    if ac.probe_path(&format!("{}::convert::TryFrom", std)) {
-        autocfg::emit("has_try_from");
+        println!("cargo:rustc-cfg=u64_digit");
     }
 
     if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
         if arch == "x86_64" || arch == "x86" {
-            let digit = if u64_digit { "u64" } else { "u32" };
-
-            let addcarry = format!("{}::arch::{}::_addcarry_{}", std, arch, digit);
-            if ac.probe_path(&addcarry) {
-                autocfg::emit("use_addcarry");
-            }
+            println!("cargo:rustc-cfg=use_addcarry");
         }
     }
 
-    autocfg::rerun_path("build.rs");
+    println!("cargo:rerun-if-changed=build.rs");
 
     write_radix_bases().unwrap();
 }
@@ -54,7 +38,7 @@ fn main() {
 fn write_radix_bases() -> Result<(), Box<dyn Error>> {
     let out_dir = env::var("OUT_DIR")?;
     let dest_path = Path::new(&out_dir).join("radix_bases.rs");
-    let mut f = File::create(&dest_path)?;
+    let mut f = File::create(dest_path)?;
 
     for &bits in &[16, 32, 64] {
         let max = if bits < 64 {
