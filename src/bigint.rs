@@ -1025,6 +1025,64 @@ impl BigInt {
         power::modpow(self, exponent, modulus)
     }
 
+    /// Returns the modular multiplicative inverse if it exists, otherwise `None`.
+    ///
+    /// This solves for `x` such that `self * x ≡ 1 (mod modulus)`.
+    /// Note that this rounds like `mod_floor`, not like the `%` operator,
+    /// which makes a difference when given a negative `self` or `modulus`.
+    /// The solution will be in the interval `[0, modulus)` for `modulus > 0`,
+    /// or in the interval `(modulus, 0]` for `modulus < 0`,
+    /// and it exists if and only if `gcd(self, modulus) == 1`.
+    ///
+    /// ```
+    /// use num_bigint::BigInt;
+    /// use num_integer::Integer;
+    /// use num_traits::{One, Zero};
+    ///
+    /// let m = BigInt::from(383);
+    ///
+    /// // Trivial cases
+    /// assert_eq!(BigInt::zero().modinv(&m), None);
+    /// assert_eq!(BigInt::one().modinv(&m), Some(BigInt::one()));
+    /// let neg1 = &m - 1u32;
+    /// assert_eq!(neg1.modinv(&m), Some(neg1));
+    ///
+    /// // Positive self and modulus
+    /// let a = BigInt::from(271);
+    /// let x = a.modinv(&m).unwrap();
+    /// assert_eq!(x, BigInt::from(106));
+    /// assert_eq!(x.modinv(&m).unwrap(), a);
+    /// assert_eq!((&a * x).mod_floor(&m), BigInt::one());
+    ///
+    /// // Negative self and positive modulus
+    /// let b = -&a;
+    /// let x = b.modinv(&m).unwrap();
+    /// assert_eq!(x, BigInt::from(277));
+    /// assert_eq!((&b * x).mod_floor(&m), BigInt::one());
+    ///
+    /// // Positive self and negative modulus
+    /// let n = -&m;
+    /// let x = a.modinv(&n).unwrap();
+    /// assert_eq!(x, BigInt::from(-277));
+    /// assert_eq!((&a * x).mod_floor(&n), &n + 1);
+    ///
+    /// // Negative self and modulus
+    /// let x = b.modinv(&n).unwrap();
+    /// assert_eq!(x, BigInt::from(-106));
+    /// assert_eq!((&b * x).mod_floor(&n), &n + 1);
+    /// ```
+    pub fn modinv(&self, modulus: &Self) -> Option<Self> {
+        let result = self.data.modinv(&modulus.data)?;
+        // The sign of the result follows the modulus, like `mod_floor`.
+        let (sign, mag) = match (self.is_negative(), modulus.is_negative()) {
+            (false, false) => (Plus, result),
+            (true, false) => (Plus, &modulus.data - result),
+            (false, true) => (Minus, &modulus.data - result),
+            (true, true) => (Minus, result),
+        };
+        Some(BigInt::from_biguint(sign, mag))
+    }
+
     /// Returns the truncated principal square root of `self` --
     /// see [`num_integer::Roots::sqrt()`].
     pub fn sqrt(&self) -> Self {

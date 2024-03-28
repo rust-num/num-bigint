@@ -359,6 +359,63 @@ fn quickcheck_modpow() {
 }
 
 #[test]
+fn quickcheck_modinv() {
+    let gen = Gen::new(usize::max_value());
+    let mut qc = QuickCheck::new().gen(gen);
+
+    fn test_modinv(value: i128, modulus: i128) -> TestResult {
+        if modulus.is_zero() {
+            TestResult::discard()
+        } else {
+            let value = BigInt::from(value);
+            let modulus = BigInt::from(modulus);
+            match (value.modinv(&modulus), value.gcd(&modulus).is_one()) {
+                (None, false) => TestResult::passed(),
+                (None, true) => {
+                    eprintln!("{}.modinv({}) -> None, expected Some(_)", value, modulus);
+                    TestResult::failed()
+                }
+                (Some(inverse), false) => {
+                    eprintln!(
+                        "{}.modinv({}) -> Some({}), expected None",
+                        value, modulus, inverse
+                    );
+                    TestResult::failed()
+                }
+                (Some(inverse), true) => {
+                    // The inverse should either be in [0,m) or (m,0]
+                    let zero = BigInt::zero();
+                    if (modulus.is_positive() && !(zero <= inverse && inverse < modulus))
+                        || (modulus.is_negative() && !(modulus < inverse && inverse <= zero))
+                    {
+                        eprintln!(
+                            "{}.modinv({}) -> Some({}) is out of range",
+                            value, modulus, inverse
+                        );
+                        return TestResult::failed();
+                    }
+
+                    // We don't know the expected inverse, but we can verify the product ≡ 1
+                    let product = (&value * &inverse).mod_floor(&modulus);
+                    let mod_one = BigInt::one().mod_floor(&modulus);
+                    if product != mod_one {
+                        eprintln!("{}.modinv({}) -> Some({})", value, modulus, inverse);
+                        eprintln!(
+                            "{} * {} ≡ {}, expected {}",
+                            value, inverse, product, mod_one
+                        );
+                        return TestResult::failed();
+                    }
+                    TestResult::passed()
+                }
+            }
+        }
+    }
+
+    qc.quickcheck(test_modinv as fn(i128, i128) -> TestResult);
+}
+
+#[test]
 fn quickcheck_to_float_equals_i128_cast() {
     let gen = Gen::new(usize::max_value());
     let mut qc = QuickCheck::new().gen(gen).tests(1_000_000);
