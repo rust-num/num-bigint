@@ -25,8 +25,8 @@
 //!
 //! // Calculate large fibonacci numbers.
 //! fn fib(n: usize) -> BigUint {
-//!     let mut f0: BigUint = Zero::zero();
-//!     let mut f1: BigUint = One::one();
+//!     let mut f0: BigUint = Zero::zero(); // `0` with inferred type (`BigUint` in this case)
+//!     let mut f1: BigUint = One::one(); // `1` with inferred type
 //!     for _ in 0..n {
 //!         let f2 = f0 + &f1;
 //!         f0 = f1;
