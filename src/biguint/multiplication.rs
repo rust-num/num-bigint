@@ -13,6 +13,8 @@ use core::iter::Product;
 use core::ops::{Mul, MulAssign};
 use num_traits::{CheckedMul, FromPrimitive, One, Zero};
 
+use super::ntt;
+
 #[inline]
 pub(super) fn mac_with_carry(
     a: BigDigit,
@@ -97,7 +99,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
     //   number of operations, but uses more temporary allocations.
     //
     // The thresholds are somewhat arbitrary, chosen by evaluating the results
-    // of `cargo bench --bench bigint multiply`.
+    // of `cargo bench --bench bigint multiply --features rand`.
 
     if x.len() <= 32 {
         // Long multiplication:
@@ -217,7 +219,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
             }
             NoSign => (),
         }
-    } else {
+    } else if x.len() <= if cfg!(u64_digit) { 512 } else { 2048 } {
         // Toom-3 multiplication:
         //
         // Toom-3 is like Karatsuba above, but dividing the inputs into three parts.
@@ -346,6 +348,14 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
                 NoSign => {}
             }
         }
+    } else {
+        // Number-theoretic transform (NTT) multiplication:
+        //
+        // NTT multiplies two integers by computing the convolution of the arrays
+        // modulo a prime. Since the result may exceed the prime, we use two or three
+        // distinct primes and combine the results using the Chinese Remainder
+        // Theroem (CRT).
+        ntt::mac3(acc, b, c);
     }
 }
 

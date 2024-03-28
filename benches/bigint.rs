@@ -88,6 +88,21 @@ fn multiply_3(b: &mut Bencher) {
 }
 
 #[bench]
+fn multiply_4(b: &mut Bencher) {
+    multiply_bench(b, 100_000, 1_003_741);
+}
+
+#[bench]
+fn multiply_5(b: &mut Bencher) {
+    multiply_bench(b, 2_718_328, 2_738_633);
+}
+
+#[bench]
+fn multiply_6(b: &mut Bencher) {
+    multiply_bench(b, 27_183_279, 27_386_321);
+}
+
+#[bench]
 fn divide_0(b: &mut Bencher) {
     divide_bench(b, 1 << 8, 1 << 6);
 }
