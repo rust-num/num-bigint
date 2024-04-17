@@ -161,30 +161,10 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         let m2 = y.len() / 2;
         let (low2, high2) = y.split_at(m2);
 
-        // We reuse the same BigUint for all the intermediate multiplies and have to size p
-        // appropriately here: x.len() and high2.len() could be different:
-        let len = x.len() + high2.len() + 1;
-        let mut p = BigUint { data: vec![0; len] };
+        // (x * high2) * NBASE ^ m2 + z0
+        mac3(acc, x, low2);
+        mac3(&mut acc[m2..], x, high2);
 
-        // z0 = x * low2
-        mac3(&mut p.data, x, low2);
-        p.normalize();
-
-        // Add z0 directly to the accumulator
-        add2(acc, &p.data);
-
-        // Zero out p before the next multiply:
-        p.data.truncate(0);
-        p.data.resize(len, 0);
-
-        // temp = x * high2
-        mac3(&mut p.data, x, high2);
-        p.normalize();
-
-        // Add temp shifted by m2 to the accumulator
-        // This simulates the effect of multiplying temp by b^m2.
-        // Add directly starting at index m2 in the accumulator.
-        add2(&mut acc[m2..], &p.data);
     } else if x.len() <= 256 {
         // Karatsuba multiplication:
         //
