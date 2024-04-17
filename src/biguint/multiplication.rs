@@ -164,7 +164,6 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // (x * high2) * NBASE ^ m2 + z0
         mac3(acc, x, low2);
         mac3(&mut acc[m2..], x, high2);
-
     } else if x.len() <= 256 {
         // Karatsuba multiplication:
         //
