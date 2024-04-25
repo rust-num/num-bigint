@@ -4,6 +4,7 @@ use super::u32_to_u128;
 use super::{cmp_slice, BigUint};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
+use crate::std_alloc::Cow;
 use crate::UsizePromotion;
 
 use core::cmp::Ordering::{Equal, Greater, Less};
@@ -48,13 +49,13 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
     let mut rem = 0;
 
     if b <= big_digit::HALF {
-        for d in a.data.iter_mut().rev() {
+        for d in a.data.to_mut().iter_mut().rev() {
             let (q, r) = div_half(rem, *d, b);
             *d = q;
             rem = r;
         }
     } else {
-        for d in a.data.iter_mut().rev() {
+        for d in a.data.to_mut().iter_mut().rev() {
             let (q, r) = div_wide(rem, *d, b);
             *d = q;
             rem = r;
@@ -125,12 +126,15 @@ fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     }
 
     if d.data.len() == 1 {
-        if d.data == [1] {
+        if d.data[0] == 1 {
             return (u, Zero::zero());
         }
         let (div, rem) = div_rem_digit(u, d.data[0]);
         // reuse d
-        d.data.clear();
+        match &mut d.data {
+            Cow::Borrowed(v) => *v = &[],
+            Cow::Owned(v) => v.clear(),
+        }
         d += rem;
         return (div, d);
     }
@@ -172,7 +176,7 @@ pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     }
 
     if d.data.len() == 1 {
-        if d.data == [1] {
+        if d.data[0] == 1 {
             return (u.clone(), Zero::zero());
         }
 
@@ -237,7 +241,7 @@ fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
 
     let q_len = a.data.len() - b.len() + 1;
     let mut q = BigUint {
-        data: vec![0; q_len],
+        data: Cow::Owned(vec![0; q_len]),
     };
 
     for j in (0..q_len).rev() {
@@ -277,22 +281,22 @@ fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
         // q0 is now either the correct quotient digit, or in rare cases 1 too large.
         // Subtract (q0 << j) from a. This may overflow, in which case we will have to correct.
 
-        let mut borrow = sub_mul_digit_same_len(&mut a.data[j..], b, q0);
+        let mut borrow = sub_mul_digit_same_len(&mut a.data.to_mut()[j..], b, q0);
         if borrow > a0 {
             // q0 is too large. We need to add back one multiple of b.
             q0 -= 1;
-            borrow -= __add2(&mut a.data[j..], b);
+            borrow -= __add2(&mut a.data.to_mut()[j..], b);
         }
         // The top digit of a, stored in a0, has now been zeroed.
         debug_assert!(borrow == a0);
 
-        q.data[j] = q0;
+        q.data.to_mut()[j] = q0;
 
         // Pop off the next top digit of a.
-        a0 = a.data.pop().unwrap();
+        a0 = a.data.to_mut().pop().unwrap();
     }
 
-    a.data.push(a0);
+    a.data.to_mut().push(a0);
     a.normalize();
 
     debug_assert_eq!(cmp_slice(&a.data, b), Less);

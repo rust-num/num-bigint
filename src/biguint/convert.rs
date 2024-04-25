@@ -494,7 +494,7 @@ impl From<u64> for BigUint {
         let mut ret: BigUint = Zero::zero();
 
         while n != 0 {
-            ret.data.push(n as BigDigit);
+            ret.data.to_mut().push(n as BigDigit);
             // don't overflow if BITS is 64:
             n = (n >> 1) >> (big_digit::BITS - 1);
         }
@@ -509,7 +509,7 @@ impl From<u128> for BigUint {
         let mut ret: BigUint = Zero::zero();
 
         while n != 0 {
-            ret.data.push(n as BigDigit);
+            ret.data.to_mut().push(n as BigDigit);
             n >>= big_digit::BITS;
         }
 
@@ -639,7 +639,7 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     let mut r = 0;
     let mut rbits = 0;
 
-    for c in &u.data {
+    for c in u.data.iter() {
         r |= *c << rbits;
         rbits += big_digit::BITS;
 

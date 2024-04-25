@@ -35,10 +35,10 @@ impl BitAnd<&BigUint> for BigUint {
 impl BitAndAssign<&BigUint> for BigUint {
     #[inline]
     fn bitand_assign(&mut self, other: &BigUint) {
-        for (ai, &bi) in self.data.iter_mut().zip(other.data.iter()) {
+        for (ai, &bi) in self.data.to_mut().iter_mut().zip(other.data.iter()) {
             *ai &= bi;
         }
-        self.data.truncate(other.data.len());
+        self.data.to_mut().truncate(other.data.len());
         self.normalize();
     }
 }
@@ -57,12 +57,12 @@ impl BitOr<&BigUint> for BigUint {
 impl BitOrAssign<&BigUint> for BigUint {
     #[inline]
     fn bitor_assign(&mut self, other: &BigUint) {
-        for (ai, &bi) in self.data.iter_mut().zip(other.data.iter()) {
+        for (ai, &bi) in self.data.to_mut().iter_mut().zip(other.data.iter()) {
             *ai |= bi;
         }
         if other.data.len() > self.data.len() {
             let extra = &other.data[self.data.len()..];
-            self.data.extend(extra.iter().cloned());
+            self.data.to_mut().extend(extra.iter().cloned());
         }
     }
 }
@@ -81,12 +81,12 @@ impl BitXor<&BigUint> for BigUint {
 impl BitXorAssign<&BigUint> for BigUint {
     #[inline]
     fn bitxor_assign(&mut self, other: &BigUint) {
-        for (ai, &bi) in self.data.iter_mut().zip(other.data.iter()) {
+        for (ai, &bi) in self.data.to_mut().iter_mut().zip(other.data.iter()) {
             *ai ^= bi;
         }
         if other.data.len() > self.data.len() {
             let extra = &other.data[self.data.len()..];
-            self.data.extend(extra.iter().cloned());
+            self.data.to_mut().extend(extra.iter().cloned());
         }
         self.normalize();
     }
