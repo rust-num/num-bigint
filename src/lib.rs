@@ -78,11 +78,19 @@
 //! Note that you must use the version of `rand` that `num-bigint` is compatible
 //! with: `0.8`.
 //!
+//! ### Range iterators
+//!
+//! On nightly you can enable `nightly-step` feature that allows you to iterate
+//! over ranges such as `Bigint::zero()..`;
+//! keep in mind that it relies on `step_trait` nightly features and is prone
+//! to break with a new Rust or `num-bigint` release.
+//!
 //!
 //! ## Compatibility
 //!
 //! The `num-bigint` crate is tested for rustc 1.60 and greater.
 
+#![cfg_attr(feature = "nightly-step", feature(step_trait))]
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.4")]
 #![warn(rust_2018_idioms)]
 #![no_std]
@@ -125,6 +133,9 @@ mod biguint;
 
 #[cfg(feature = "rand")]
 mod bigrand;
+
+#[cfg(feature = "nightly-step")]
+mod step;
 
 #[cfg(target_pointer_width = "32")]
 type UsizePromotion = u32;

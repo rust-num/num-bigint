@@ -36,6 +36,10 @@ num-bigint = { version = "0.4", features = ["rand"] }
 Note that you must use the version of `rand` that `num-bigint` is compatible
 with: `0.8`.
 
+### Range iterators
+
+On nightly you can enable `nightly-step` feature that allows you to iterate over ranges such as `Bigint::zero()..`; keep in mind that it relies on `step_trait` nightly features and is prone to break with a new Rust or `num-bigint` release.
+
 ## Releases
 
 Release notes are available in [RELEASES.md](RELEASES.md).

@@ -22,6 +22,7 @@ arbitrary = ["dep:arbitrary"]
 quickcheck = ["dep:quickcheck"]
 rand = ["dep:rand"]
 serde = ["dep:serde"]
+nightly-step = []
 
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
@@ -73,3 +74,6 @@ default-features = false
 optional = true
 version = "1"
 default-features = false
+
+[dev-dependencies]
+itertools = { version = "0.12.1", default-features = false }
