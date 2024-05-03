@@ -21,12 +21,12 @@
 //! ```rust
 //! # fn main() {
 //! use num_bigint::BigUint;
-//! use num_traits::{Zero, One};
+//! use num_traits::One;
 //!
 //! // Calculate large fibonacci numbers.
 //! fn fib(n: usize) -> BigUint {
-//!     let mut f0: BigUint = Zero::zero();
-//!     let mut f1: BigUint = One::one();
+//!     let mut f0 = BigUint::ZERO;
+//!     let mut f1 = BigUint::one();
 //!     for _ in 0..n {
 //!         let f2 = f0 + &f1;
 //!         f0 = f1;

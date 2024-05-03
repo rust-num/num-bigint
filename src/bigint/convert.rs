@@ -228,7 +228,7 @@ impl From<u64> for BigInt {
                 data: BigUint::from(n),
             }
         } else {
-            BigInt::zero()
+            Self::ZERO
         }
     }
 }
@@ -242,7 +242,7 @@ impl From<u128> for BigInt {
                 data: BigUint::from(n),
             }
         } else {
-            BigInt::zero()
+            Self::ZERO
         }
     }
 }
@@ -267,7 +267,7 @@ impl From<BigUint> for BigInt {
     #[inline]
     fn from(n: BigUint) -> Self {
         if n.is_zero() {
-            BigInt::zero()
+            Self::ZERO
         } else {
             BigInt {
                 sign: Plus,
@@ -288,7 +288,7 @@ impl ToBigInt for BigUint {
     #[inline]
     fn to_bigint(&self) -> Option<BigInt> {
         if self.is_zero() {
-            Some(Zero::zero())
+            Some(BigInt::ZERO)
         } else {
             Some(BigInt {
                 sign: Plus,
@@ -303,7 +303,7 @@ impl ToBigUint for BigInt {
     fn to_biguint(&self) -> Option<BigUint> {
         match self.sign() {
             Plus => Some(self.data.clone()),
-            NoSign => Some(Zero::zero()),
+            NoSign => Some(BigUint::ZERO),
             Minus => None,
         }
     }
@@ -366,7 +366,7 @@ impl From<bool> for BigInt {
         if x {
             One::one()
         } else {
-            Zero::zero()
+            Self::ZERO
         }
     }
 }
@@ -376,7 +376,7 @@ pub(super) fn from_signed_bytes_be(digits: &[u8]) -> BigInt {
     let sign = match digits.first() {
         Some(v) if *v > 0x7f => Sign::Minus,
         Some(_) => Sign::Plus,
-        None => return BigInt::zero(),
+        None => return BigInt::ZERO,
     };
 
     if sign == Sign::Minus {
@@ -394,7 +394,7 @@ pub(super) fn from_signed_bytes_le(digits: &[u8]) -> BigInt {
     let sign = match digits.last() {
         Some(v) if *v > 0x7f => Sign::Minus,
         Some(_) => Sign::Plus,
-        None => return BigInt::zero(),
+        None => return BigInt::ZERO,
     };
 
     if sign == Sign::Minus {

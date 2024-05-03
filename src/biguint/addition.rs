@@ -7,7 +7,7 @@ use crate::UsizePromotion;
 
 use core::iter::Sum;
 use core::ops::{Add, AddAssign};
-use num_traits::{CheckedAdd, Zero};
+use num_traits::CheckedAdd;
 
 #[cfg(all(use_addcarry, target_arch = "x86_64"))]
 use core::arch::x86_64 as arch;

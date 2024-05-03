@@ -11,7 +11,7 @@ use core::str;
 use core::{u32, u64, u8};
 
 use num_integer::{Integer, Roots};
-use num_traits::{Num, One, Pow, ToPrimitive, Unsigned, Zero};
+use num_traits::{ConstZero, Num, One, Pow, ToPrimitive, Unsigned, Zero};
 
 mod addition;
 mod division;
@@ -101,7 +101,7 @@ fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 impl Default for BigUint {
     #[inline]
     fn default() -> BigUint {
-        Zero::zero()
+        Self::ZERO
     }
 }
 
@@ -146,7 +146,7 @@ impl fmt::Octal for BigUint {
 impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
-        BigUint { data: Vec::new() }
+        Self::ZERO
     }
 
     #[inline]
@@ -158,6 +158,11 @@ impl Zero for BigUint {
     fn is_zero(&self) -> bool {
         self.data.is_empty()
     }
+}
+
+impl ConstZero for BigUint {
+    // forward to the inherent const
+    const ZERO: Self = Self::ZERO; // BigUint { data: Vec::new() };
 }
 
 impl One for BigUint {
@@ -255,7 +260,7 @@ impl Integer for BigUint {
     #[inline]
     fn lcm(&self, other: &BigUint) -> BigUint {
         if self.is_zero() && other.is_zero() {
-            Self::zero()
+            Self::ZERO
         } else {
             self / self.gcd(other) * other
         }
@@ -267,7 +272,7 @@ impl Integer for BigUint {
     fn gcd_lcm(&self, other: &Self) -> (Self, Self) {
         let gcd = self.gcd(other);
         let lcm = if gcd.is_zero() {
-            Self::zero()
+            Self::ZERO
         } else {
             self / &gcd * other
         };
@@ -319,6 +324,14 @@ impl Integer for BigUint {
     #[inline]
     fn prev_multiple_of(&self, other: &Self) -> Self {
         self - self.mod_floor(other)
+    }
+
+    fn dec(&mut self) {
+        *self -= 1u32;
+    }
+
+    fn inc(&mut self) {
+        *self += 1u32;
     }
 }
 
@@ -519,12 +532,15 @@ pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
 }
 
 impl BigUint {
+    /// A constant `BigUint` with value 0, useful for static initialization.
+    pub const ZERO: Self = BigUint { data: Vec::new() };
+
     /// Creates and initializes a [`BigUint`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
-        let mut big = BigUint::zero();
+        let mut big = Self::ZERO;
 
         #[cfg(not(u64_digit))]
         {
@@ -543,7 +559,7 @@ impl BigUint {
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn from_slice(slice: &[u32]) -> BigUint {
-        let mut big = BigUint::zero();
+        let mut big = Self::ZERO;
         big.assign_from_slice(slice);
         big
     }
@@ -585,7 +601,7 @@ impl BigUint {
     #[inline]
     pub fn from_bytes_be(bytes: &[u8]) -> BigUint {
         if bytes.is_empty() {
-            Zero::zero()
+            Self::ZERO
         } else {
             let mut v = bytes.to_vec();
             v.reverse();
@@ -599,7 +615,7 @@ impl BigUint {
     #[inline]
     pub fn from_bytes_le(bytes: &[u8]) -> BigUint {
         if bytes.is_empty() {
-            Zero::zero()
+            Self::ZERO
         } else {
             convert::from_bitwise_digits_le(bytes, 8)
         }

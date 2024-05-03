@@ -45,12 +45,12 @@ name = "shootout-pidigits"
 [dependencies]
 
 [dependencies.num-integer]
-version = "0.1.42"
+version = "0.1.46"
 default-features = false
 features = ["i128"]
 
 [dependencies.num-traits]
-version = "0.2.16"
+version = "0.2.18"
 default-features = false
 features = ["i128"]
 

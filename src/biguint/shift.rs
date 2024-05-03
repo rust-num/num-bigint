@@ -135,7 +135,7 @@ macro_rules! impl_shift {
         impl ShlAssign<$rhs> for BigUint {
             #[inline]
             fn shl_assign(&mut self, rhs: $rhs) {
-                let n = mem::replace(self, BigUint::zero());
+                let n = mem::replace(self, Self::ZERO);
                 *self = n << rhs;
             }
         }
@@ -160,7 +160,7 @@ macro_rules! impl_shift {
         impl ShrAssign<$rhs> for BigUint {
             #[inline]
             fn shr_assign(&mut self, rhs: $rhs) {
-                let n = mem::replace(self, BigUint::zero());
+                let n = mem::replace(self, Self::ZERO);
                 *self = n >> rhs;
             }
         }
