@@ -7,7 +7,7 @@ use crate::UsizePromotion;
 
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::ops::{Sub, SubAssign};
-use num_traits::{CheckedSub, Zero};
+use num_traits::CheckedSub;
 
 #[cfg(all(use_addcarry, target_arch = "x86_64"))]
 use core::arch::x86_64 as arch;
@@ -305,7 +305,7 @@ impl CheckedSub for BigUint {
     fn checked_sub(&self, v: &BigUint) -> Option<BigUint> {
         match self.cmp(v) {
             Less => None,
-            Equal => Some(Zero::zero()),
+            Equal => Some(Self::ZERO),
             Greater => Some(self.sub(v)),
         }
     }

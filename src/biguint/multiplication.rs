@@ -457,7 +457,7 @@ fn sub_sign(mut a: &[BigDigit], mut b: &[BigDigit]) -> (Sign, BigUint) {
             sub2(&mut b, a);
             (Minus, biguint_from_vec(b))
         }
-        Ordering::Equal => (NoSign, Zero::zero()),
+        Ordering::Equal => (NoSign, BigUint::ZERO),
     }
 }
 
@@ -470,7 +470,7 @@ macro_rules! impl_mul {
             fn mul(self, other: $Other) -> BigUint {
                 match (&*self.data, &*other.data) {
                     // multiply by zero
-                    (&[], _) | (_, &[]) => BigUint::zero(),
+                    (&[], _) | (_, &[]) => BigUint::ZERO,
                     // multiply by a scalar
                     (_, &[digit]) => self * digit,
                     (&[digit], _) => other * digit,

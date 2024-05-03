@@ -80,7 +80,7 @@ pub(super) fn modpow(x: &BigInt, exponent: &BigInt, modulus: &BigInt) -> BigInt 
 
     let result = x.data.modpow(&exponent.data, &modulus.data);
     if result.is_zero() {
-        return BigInt::zero();
+        return BigInt::ZERO;
     }
 
     // The sign of the result follows the modulus, like `mod_floor`.

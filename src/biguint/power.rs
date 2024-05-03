@@ -14,7 +14,7 @@ impl Pow<&BigUint> for BigUint {
         if self.is_one() || exp.is_zero() {
             BigUint::one()
         } else if self.is_zero() {
-            BigUint::zero()
+            Self::ZERO
         } else if let Some(exp) = exp.to_u64() {
             self.pow(exp)
         } else if let Some(exp) = exp.to_u128() {
@@ -44,7 +44,7 @@ impl Pow<&BigUint> for &BigUint {
         if self.is_one() || exp.is_zero() {
             BigUint::one()
         } else if self.is_zero() {
-            BigUint::zero()
+            BigUint::ZERO
         } else {
             self.clone().pow(exp)
         }
