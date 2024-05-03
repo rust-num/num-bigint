@@ -325,6 +325,14 @@ impl Integer for BigUint {
     fn prev_multiple_of(&self, other: &Self) -> Self {
         self - self.mod_floor(other)
     }
+
+    fn dec(&mut self) {
+        *self -= 1u32;
+    }
+
+    fn inc(&mut self) {
+        *self += 1u32;
+    }
 }
 
 #[inline]
