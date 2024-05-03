@@ -635,6 +635,10 @@ impl CheckedEuclid for BigUint {
         }
         Some(self.rem_euclid(v))
     }
+
+    fn checked_div_rem_euclid(&self, v: &Self) -> Option<(Self, Self)> {
+        Some(self.div_rem_euclid(v))
+    }
 }
 
 impl Euclid for BigUint {
@@ -648,5 +652,10 @@ impl Euclid for BigUint {
     fn rem_euclid(&self, v: &BigUint) -> BigUint {
         // trivially same as regular remainder
         self % v
+    }
+
+    fn div_rem_euclid(&self, v: &Self) -> (Self, Self) {
+        // trivially same as regular division and remainder
+        self.div_rem(v)
     }
 }

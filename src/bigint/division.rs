@@ -463,6 +463,10 @@ impl CheckedEuclid for BigInt {
         }
         Some(self.rem_euclid(v))
     }
+
+    fn checked_div_rem_euclid(&self, v: &Self) -> Option<(Self, Self)> {
+        Some(self.div_rem_euclid(v))
+    }
 }
 
 impl Euclid for BigInt {
@@ -491,6 +495,19 @@ impl Euclid for BigInt {
             }
         } else {
             r
+        }
+    }
+
+    fn div_rem_euclid(&self, v: &Self) -> (Self, Self) {
+        let (q, r) = self.div_rem(v);
+        if r.is_negative() {
+            if v.is_positive() {
+                (q - 1, r + v)
+            } else {
+                (q + 1, r - v)
+            }
+        } else {
+            (q, r)
         }
     }
 }
