@@ -1,5 +1,3 @@
-#[cfg(not(u64_digit))]
-use super::u32_from_u128;
 use super::{BigUint, IntDigits};
 
 use crate::big_digit::{self, BigDigit};
@@ -9,31 +7,25 @@ use core::iter::Sum;
 use core::ops::{Add, AddAssign};
 use num_traits::CheckedAdd;
 
-#[cfg(all(use_addcarry, target_arch = "x86_64"))]
-use core::arch::x86_64 as arch;
-
-#[cfg(all(use_addcarry, target_arch = "x86"))]
-use core::arch::x86 as arch;
-
 // Add with carry:
-#[cfg(all(use_addcarry, u64_digit))]
+#[cfg(target_arch = "x86_64")]
 #[inline]
 fn adc(carry: u8, a: u64, b: u64, out: &mut u64) -> u8 {
     // Safety: There are absolutely no safety concerns with calling `_addcarry_u64`.
     // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_addcarry_u64(carry, a, b, out) }
+    unsafe { core::arch::x86_64::_addcarry_u64(carry, a, b, out) }
 }
 
-#[cfg(all(use_addcarry, not(u64_digit)))]
+#[cfg(target_arch = "x86")]
 #[inline]
 fn adc(carry: u8, a: u32, b: u32, out: &mut u32) -> u8 {
     // Safety: There are absolutely no safety concerns with calling `_addcarry_u32`.
     // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_addcarry_u32(carry, a, b, out) }
+    unsafe { core::arch::x86::_addcarry_u32(carry, a, b, out) }
 }
 
 // fallback for environments where we don't have an addcarry intrinsic
-#[cfg(not(use_addcarry))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
 fn adc(carry: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
     use crate::big_digit::DoubleBigDigit;
@@ -154,38 +146,38 @@ impl Add<u64> for BigUint {
 }
 
 impl AddAssign<u64> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn add_assign(&mut self, other: u64) {
-        let (hi, lo) = big_digit::from_doublebigdigit(other);
-        if hi == 0 {
-            *self += lo;
-        } else {
-            while self.data.len() < 2 {
-                self.data.push(0);
-            }
+    cfg_digit!(
+        #[inline]
+        fn add_assign(&mut self, other: u64) {
+            let (hi, lo) = big_digit::from_doublebigdigit(other);
+            if hi == 0 {
+                *self += lo;
+            } else {
+                while self.data.len() < 2 {
+                    self.data.push(0);
+                }
 
-            let carry = __add2(&mut self.data, &[lo, hi]);
-            if carry != 0 {
-                self.data.push(carry);
+                let carry = __add2(&mut self.data, &[lo, hi]);
+                if carry != 0 {
+                    self.data.push(carry);
+                }
             }
         }
-    }
 
-    #[cfg(u64_digit)]
-    #[inline]
-    fn add_assign(&mut self, other: u64) {
-        if other != 0 {
-            if self.data.is_empty() {
-                self.data.push(0);
-            }
+        #[inline]
+        fn add_assign(&mut self, other: u64) {
+            if other != 0 {
+                if self.data.is_empty() {
+                    self.data.push(0);
+                }
 
-            let carry = __add2(&mut self.data, &[other as BigDigit]);
-            if carry != 0 {
-                self.data.push(carry);
+                let carry = __add2(&mut self.data, &[other as BigDigit]);
+                if carry != 0 {
+                    self.data.push(carry);
+                }
             }
         }
-    }
+    );
 }
 
 impl Add<u128> for BigUint {
@@ -199,49 +191,49 @@ impl Add<u128> for BigUint {
 }
 
 impl AddAssign<u128> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn add_assign(&mut self, other: u128) {
-        if other <= u128::from(u64::max_value()) {
-            *self += other as u64
-        } else {
-            let (a, b, c, d) = u32_from_u128(other);
-            let carry = if a > 0 {
-                while self.data.len() < 4 {
-                    self.data.push(0);
-                }
-                __add2(&mut self.data, &[d, c, b, a])
+    cfg_digit!(
+        #[inline]
+        fn add_assign(&mut self, other: u128) {
+            if other <= u128::from(u64::max_value()) {
+                *self += other as u64
             } else {
-                debug_assert!(b > 0);
-                while self.data.len() < 3 {
+                let (a, b, c, d) = super::u32_from_u128(other);
+                let carry = if a > 0 {
+                    while self.data.len() < 4 {
+                        self.data.push(0);
+                    }
+                    __add2(&mut self.data, &[d, c, b, a])
+                } else {
+                    debug_assert!(b > 0);
+                    while self.data.len() < 3 {
+                        self.data.push(0);
+                    }
+                    __add2(&mut self.data, &[d, c, b])
+                };
+
+                if carry != 0 {
+                    self.data.push(carry);
+                }
+            }
+        }
+
+        #[inline]
+        fn add_assign(&mut self, other: u128) {
+            let (hi, lo) = big_digit::from_doublebigdigit(other);
+            if hi == 0 {
+                *self += lo;
+            } else {
+                while self.data.len() < 2 {
                     self.data.push(0);
                 }
-                __add2(&mut self.data, &[d, c, b])
-            };
 
-            if carry != 0 {
-                self.data.push(carry);
+                let carry = __add2(&mut self.data, &[lo, hi]);
+                if carry != 0 {
+                    self.data.push(carry);
+                }
             }
         }
-    }
-
-    #[cfg(u64_digit)]
-    #[inline]
-    fn add_assign(&mut self, other: u128) {
-        let (hi, lo) = big_digit::from_doublebigdigit(other);
-        if hi == 0 {
-            *self += lo;
-        } else {
-            while self.data.len() < 2 {
-                self.data.push(0);
-            }
-
-            let carry = __add2(&mut self.data, &[lo, hi]);
-            if carry != 0 {
-                self.data.push(carry);
-            }
-        }
-    }
+    );
 }
 
 impl CheckedAdd for BigUint {

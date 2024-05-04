@@ -10,7 +10,6 @@ name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
 version = "0.4.4"
 readme = "README.md"
-build = "build.rs"
 exclude = ["/ci/*", "/.github/*"]
 edition = "2021"
 rust-version = "1.60"

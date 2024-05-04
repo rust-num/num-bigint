@@ -1,7 +1,5 @@
 use super::addition::{__add2, add2};
 use super::subtraction::sub2;
-#[cfg(not(u64_digit))]
-use super::u32_from_u128;
 use super::{biguint_from_vec, cmp_slice, BigUint, IntDigits};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
@@ -544,22 +542,22 @@ impl Mul<u64> for BigUint {
     }
 }
 impl MulAssign<u64> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn mul_assign(&mut self, other: u64) {
-        if let Some(other) = BigDigit::from_u64(other) {
-            scalar_mul(self, other);
-        } else {
-            let (hi, lo) = big_digit::from_doublebigdigit(other);
-            *self = mul3(&self.data, &[lo, hi]);
+    cfg_digit!(
+        #[inline]
+        fn mul_assign(&mut self, other: u64) {
+            if let Some(other) = BigDigit::from_u64(other) {
+                scalar_mul(self, other);
+            } else {
+                let (hi, lo) = big_digit::from_doublebigdigit(other);
+                *self = mul3(&self.data, &[lo, hi]);
+            }
         }
-    }
 
-    #[cfg(u64_digit)]
-    #[inline]
-    fn mul_assign(&mut self, other: u64) {
-        scalar_mul(self, other);
-    }
+        #[inline]
+        fn mul_assign(&mut self, other: u64) {
+            scalar_mul(self, other);
+        }
+    );
 }
 
 impl Mul<u128> for BigUint {
@@ -573,30 +571,30 @@ impl Mul<u128> for BigUint {
 }
 
 impl MulAssign<u128> for BigUint {
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn mul_assign(&mut self, other: u128) {
-        if let Some(other) = BigDigit::from_u128(other) {
-            scalar_mul(self, other);
-        } else {
-            *self = match u32_from_u128(other) {
-                (0, 0, c, d) => mul3(&self.data, &[d, c]),
-                (0, b, c, d) => mul3(&self.data, &[d, c, b]),
-                (a, b, c, d) => mul3(&self.data, &[d, c, b, a]),
-            };
+    cfg_digit!(
+        #[inline]
+        fn mul_assign(&mut self, other: u128) {
+            if let Some(other) = BigDigit::from_u128(other) {
+                scalar_mul(self, other);
+            } else {
+                *self = match super::u32_from_u128(other) {
+                    (0, 0, c, d) => mul3(&self.data, &[d, c]),
+                    (0, b, c, d) => mul3(&self.data, &[d, c, b]),
+                    (a, b, c, d) => mul3(&self.data, &[d, c, b, a]),
+                };
+            }
         }
-    }
 
-    #[cfg(u64_digit)]
-    #[inline]
-    fn mul_assign(&mut self, other: u128) {
-        if let Some(other) = BigDigit::from_u128(other) {
-            scalar_mul(self, other);
-        } else {
-            let (hi, lo) = big_digit::from_doublebigdigit(other);
-            *self = mul3(&self.data, &[lo, hi]);
+        #[inline]
+        fn mul_assign(&mut self, other: u128) {
+            if let Some(other) = BigDigit::from_u128(other) {
+                scalar_mul(self, other);
+            } else {
+                let (hi, lo) = big_digit::from_doublebigdigit(other);
+                *self = mul3(&self.data, &[lo, hi]);
+            }
         }
-    }
+    );
 }
 
 impl CheckedMul for BigUint {

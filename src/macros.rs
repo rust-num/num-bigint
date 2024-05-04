@@ -1,5 +1,37 @@
 #![allow(unused_macros)]
 
+macro_rules! cfg_32 {
+    ($($any:tt)+) => {
+        #[cfg(not(any(target_pointer_width = "64", target_pointer_width = "128")))] $($any)+
+    }
+}
+
+macro_rules! cfg_32_or_test {
+    ($($any:tt)+) => {
+        #[cfg(any(not(any(target_pointer_width = "64", target_pointer_width = "128")), test))] $($any)+
+    }
+}
+
+macro_rules! cfg_64 {
+    ($($any:tt)+) => {
+        #[cfg(any(target_pointer_width = "64", target_pointer_width = "128"))] $($any)+
+    }
+}
+
+macro_rules! cfg_digit {
+    ($item32:item $item64:item) => {
+        cfg_32!($item32);
+        cfg_64!($item64);
+    };
+}
+
+macro_rules! cfg_digit_expr {
+    ($expr32:expr, $expr64:expr) => {
+        cfg_32!($expr32);
+        cfg_64!($expr64);
+    };
+}
+
 macro_rules! forward_val_val_binop {
     (impl $imp:ident for $res:ty, $method:ident) => {
         impl $imp<$res> for $res {
