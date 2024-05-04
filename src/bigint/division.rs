@@ -358,14 +358,14 @@ impl Rem<i32> for BigInt {
 
     #[inline]
     fn rem(self, other: i32) -> BigInt {
-        self % other.uabs()
+        self % other.unsigned_abs()
     }
 }
 
 impl RemAssign<i32> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i32) {
-        *self %= other.uabs();
+        *self %= other.unsigned_abs();
     }
 }
 
@@ -386,14 +386,14 @@ impl Rem<i64> for BigInt {
 
     #[inline]
     fn rem(self, other: i64) -> BigInt {
-        self % other.uabs()
+        self % other.unsigned_abs()
     }
 }
 
 impl RemAssign<i64> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i64) {
-        *self %= other.uabs();
+        *self %= other.unsigned_abs();
     }
 }
 
@@ -414,14 +414,14 @@ impl Rem<i128> for BigInt {
 
     #[inline]
     fn rem(self, other: i128) -> BigInt {
-        self % other.uabs()
+        self % other.unsigned_abs()
     }
 }
 
 impl RemAssign<i128> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i128) {
-        *self %= other.uabs();
+        *self %= other.unsigned_abs();
     }
 }
 
