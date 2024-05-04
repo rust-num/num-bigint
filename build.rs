@@ -11,11 +11,5 @@ fn main() {
         println!("cargo:rustc-cfg=u64_digit");
     }
 
-    if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
-        if arch == "x86_64" || arch == "x86" {
-            println!("cargo:rustc-cfg=use_addcarry");
-        }
-    }
-
     println!("cargo:rerun-if-changed=build.rs");
 }

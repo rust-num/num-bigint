@@ -9,31 +9,25 @@ use core::iter::Sum;
 use core::ops::{Add, AddAssign};
 use num_traits::CheckedAdd;
 
-#[cfg(all(use_addcarry, target_arch = "x86_64"))]
-use core::arch::x86_64 as arch;
-
-#[cfg(all(use_addcarry, target_arch = "x86"))]
-use core::arch::x86 as arch;
-
 // Add with carry:
-#[cfg(all(use_addcarry, u64_digit))]
+#[cfg(target_arch = "x86_64")]
 #[inline]
 fn adc(carry: u8, a: u64, b: u64, out: &mut u64) -> u8 {
     // Safety: There are absolutely no safety concerns with calling `_addcarry_u64`.
     // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_addcarry_u64(carry, a, b, out) }
+    unsafe { core::arch::x86_64::_addcarry_u64(carry, a, b, out) }
 }
 
-#[cfg(all(use_addcarry, not(u64_digit)))]
+#[cfg(target_arch = "x86")]
 #[inline]
 fn adc(carry: u8, a: u32, b: u32, out: &mut u32) -> u8 {
     // Safety: There are absolutely no safety concerns with calling `_addcarry_u32`.
     // It's just unsafe for API consistency with other intrinsics.
-    unsafe { arch::_addcarry_u32(carry, a, b, out) }
+    unsafe { core::arch::x86::_addcarry_u32(carry, a, b, out) }
 }
 
 // fallback for environments where we don't have an addcarry intrinsic
-#[cfg(not(use_addcarry))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
 fn adc(carry: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
     use crate::big_digit::DoubleBigDigit;
