@@ -293,10 +293,6 @@ impl Signed for BigInt {
 trait UnsignedAbs {
     type Unsigned;
 
-    /// A convenience method for getting the absolute value of a signed primitive as unsigned
-    /// See also `unsigned_abs`: <https://github.com/rust-lang/rust/issues/74913>
-    fn uabs(self) -> Self::Unsigned;
-
     fn checked_uabs(self) -> CheckedUnsignedAbs<Self::Unsigned>;
 }
 
@@ -310,11 +306,6 @@ macro_rules! impl_unsigned_abs {
     ($Signed:ty, $Unsigned:ty) => {
         impl UnsignedAbs for $Signed {
             type Unsigned = $Unsigned;
-
-            #[inline]
-            fn uabs(self) -> $Unsigned {
-                self.wrapping_abs() as $Unsigned
-            }
 
             #[inline]
             fn checked_uabs(self) -> CheckedUnsignedAbs<Self::Unsigned> {
