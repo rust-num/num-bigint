@@ -542,14 +542,13 @@ impl BigUint {
     pub fn new(digits: Vec<u32>) -> BigUint {
         let mut big = Self::ZERO;
 
-        #[cfg(not(u64_digit))]
-        {
-            big.data = digits;
-            big.normalize();
-        }
-
-        #[cfg(u64_digit)]
-        big.assign_from_slice(&digits);
+        cfg_digit_expr!(
+            {
+                big.data = digits;
+                big.normalize();
+            },
+            big.assign_from_slice(&digits)
+        );
 
         big
     }
@@ -571,11 +570,10 @@ impl BigUint {
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
         self.data.clear();
 
-        #[cfg(not(u64_digit))]
-        self.data.extend_from_slice(slice);
-
-        #[cfg(u64_digit)]
-        self.data.extend(slice.chunks(2).map(u32_chunk_to_u64));
+        cfg_digit_expr!(
+            self.data.extend_from_slice(slice),
+            self.data.extend(slice.chunks(2).map(u32_chunk_to_u64))
+        );
 
         self.normalize();
     }
@@ -1118,59 +1116,61 @@ fn u32_chunk_to_u64(chunk: &[u32]) -> u64 {
     digit
 }
 
-/// Combine four `u32`s into a single `u128`.
-#[cfg(any(test, not(u64_digit)))]
-#[inline]
-fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
-    u128::from(d) | (u128::from(c) << 32) | (u128::from(b) << 64) | (u128::from(a) << 96)
-}
-
-/// Split a single `u128` into four `u32`.
-#[cfg(any(test, not(u64_digit)))]
-#[inline]
-fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
-    (
-        (n >> 96) as u32,
-        (n >> 64) as u32,
-        (n >> 32) as u32,
-        n as u32,
-    )
-}
-
-#[cfg(not(u64_digit))]
-#[test]
-fn test_from_slice() {
-    fn check(slice: &[u32], data: &[BigDigit]) {
-        assert_eq!(BigUint::from_slice(slice).data, data);
+cfg_32_or_test!(
+    /// Combine four `u32`s into a single `u128`.
+    #[inline]
+    fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
+        u128::from(d) | (u128::from(c) << 32) | (u128::from(b) << 64) | (u128::from(a) << 96)
     }
-    check(&[1], &[1]);
-    check(&[0, 0, 0], &[]);
-    check(&[1, 2, 0, 0], &[1, 2]);
-    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
-    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
-    check(&[-1i32 as u32], &[-1i32 as BigDigit]);
-}
+);
 
-#[cfg(u64_digit)]
-#[test]
-fn test_from_slice() {
-    fn check(slice: &[u32], data: &[BigDigit]) {
-        assert_eq!(
-            BigUint::from_slice(slice).data,
-            data,
-            "from {:?}, to {:?}",
-            slice,
-            data
-        );
+cfg_32_or_test!(
+    /// Split a single `u128` into four `u32`.
+    #[inline]
+    fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
+        (
+            (n >> 96) as u32,
+            (n >> 64) as u32,
+            (n >> 32) as u32,
+            n as u32,
+        )
     }
-    check(&[1], &[1]);
-    check(&[0, 0, 0], &[]);
-    check(&[1, 2], &[8_589_934_593]);
-    check(&[1, 2, 0, 0], &[8_589_934_593]);
-    check(&[0, 0, 1, 2], &[0, 8_589_934_593]);
-    check(&[0, 0, 1, 2, 0, 0], &[0, 8_589_934_593]);
-    check(&[-1i32 as u32], &[(-1i32 as u32) as BigDigit]);
-}
+);
+
+cfg_digit!(
+    #[test]
+    fn test_from_slice() {
+        fn check(slice: &[u32], data: &[BigDigit]) {
+            assert_eq!(BigUint::from_slice(slice).data, data);
+        }
+        check(&[1], &[1]);
+        check(&[0, 0, 0], &[]);
+        check(&[1, 2, 0, 0], &[1, 2]);
+        check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
+        check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
+        check(&[-1i32 as u32], &[-1i32 as BigDigit]);
+    }
+
+    #[test]
+    fn test_from_slice() {
+        fn check(slice: &[u32], data: &[BigDigit]) {
+            assert_eq!(
+                BigUint::from_slice(slice).data,
+                data,
+                "from {:?}, to {:?}",
+                slice,
+                data
+            );
+        }
+        check(&[1], &[1]);
+        check(&[0, 0, 0], &[]);
+        check(&[1, 2], &[8_589_934_593]);
+        check(&[1, 2, 0, 0], &[8_589_934_593]);
+        check(&[0, 0, 1, 2], &[0, 8_589_934_593]);
+        check(&[0, 0, 1, 2, 0, 0], &[0, 8_589_934_593]);
+        check(&[-1i32 as u32], &[(-1i32 as u32) as BigDigit]);
+    }
+);
 
 #[test]
 fn test_u32_u128() {

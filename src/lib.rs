@@ -233,36 +233,31 @@ pub use crate::bigint::ToBigInt;
 pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
-    /// A [`BigDigit`] is a [`BigUint`]'s composing element.
-    #[cfg(not(u64_digit))]
-    pub(crate) type BigDigit = u32;
-    #[cfg(u64_digit)]
-    pub(crate) type BigDigit = u64;
+    // A [`BigDigit`] is a [`BigUint`]'s composing element.
+    cfg_digit!(
+        pub(crate) type BigDigit = u32;
+        pub(crate) type BigDigit = u64;
+    );
 
-    /// A [`DoubleBigDigit`] is the internal type used to do the computations.  Its
-    /// size is the double of the size of [`BigDigit`].
-    #[cfg(not(u64_digit))]
-    pub(crate) type DoubleBigDigit = u64;
-    #[cfg(u64_digit)]
-    pub(crate) type DoubleBigDigit = u128;
+    // A [`DoubleBigDigit`] is the internal type used to do the computations.  Its
+    // size is the double of the size of [`BigDigit`].
+    cfg_digit!(
+        pub(crate) type DoubleBigDigit = u64;
+        pub(crate) type DoubleBigDigit = u128;
+    );
 
-    /// A [`SignedDoubleBigDigit`] is the signed version of [`DoubleBigDigit`].
-    #[cfg(not(u64_digit))]
-    pub(crate) type SignedDoubleBigDigit = i64;
-    #[cfg(u64_digit)]
-    pub(crate) type SignedDoubleBigDigit = i128;
+    // A [`SignedDoubleBigDigit`] is the signed version of [`DoubleBigDigit`].
+    cfg_digit!(
+        pub(crate) type SignedDoubleBigDigit = i64;
+        pub(crate) type SignedDoubleBigDigit = i128;
+    );
 
-    // [`DoubleBigDigit`] size dependent
-    #[cfg(not(u64_digit))]
-    pub(crate) const BITS: u8 = 32;
-    #[cfg(u64_digit)]
-    pub(crate) const BITS: u8 = 64;
-
+    pub(crate) const BITS: u8 = BigDigit::BITS as u8;
     pub(crate) const HALF_BITS: u8 = BITS / 2;
     pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
 
-    const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
-    pub(crate) const MAX: BigDigit = LO_MASK as BigDigit;
+    pub(crate) const MAX: BigDigit = BigDigit::MAX;
+    const LO_MASK: DoubleBigDigit = MAX as DoubleBigDigit;
 
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {

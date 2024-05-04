@@ -1,6 +1,4 @@
 use super::addition::__add2;
-#[cfg(not(u64_digit))]
-use super::u32_to_u128;
 use super::{cmp_slice, BigUint};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
@@ -386,26 +384,26 @@ impl DivAssign<u64> for BigUint {
 impl Div<BigUint> for u64 {
     type Output = BigUint;
 
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / u64::from(other.data[0])),
-            2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-            _ => BigUint::ZERO,
+    cfg_digit!(
+        #[inline]
+        fn div(self, other: BigUint) -> BigUint {
+            match other.data.len() {
+                0 => panic!("attempt to divide by zero"),
+                1 => From::from(self / u64::from(other.data[0])),
+                2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
+                _ => BigUint::ZERO,
+            }
         }
-    }
 
-    #[cfg(u64_digit)]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / other.data[0]),
-            _ => BigUint::ZERO,
+        #[inline]
+        fn div(self, other: BigUint) -> BigUint {
+            match other.data.len() {
+                0 => panic!("attempt to divide by zero"),
+                1 => From::from(self / other.data[0]),
+                _ => BigUint::ZERO,
+            }
         }
-    }
+    );
 }
 
 impl Div<u128> for BigUint {
@@ -428,33 +426,34 @@ impl DivAssign<u128> for BigUint {
 impl Div<BigUint> for u128 {
     type Output = BigUint;
 
-    #[cfg(not(u64_digit))]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / u128::from(other.data[0])),
-            2 => From::from(
-                self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-            ),
-            3 => From::from(self / u32_to_u128(0, other.data[2], other.data[1], other.data[0])),
-            4 => From::from(
-                self / u32_to_u128(other.data[3], other.data[2], other.data[1], other.data[0]),
-            ),
-            _ => BigUint::ZERO,
+    cfg_digit!(
+        #[inline]
+        fn div(self, other: BigUint) -> BigUint {
+            use super::u32_to_u128;
+            match other.data.len() {
+                0 => panic!("attempt to divide by zero"),
+                1 => From::from(self / u128::from(other.data[0])),
+                2 => From::from(
+                    self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
+                ),
+                3 => From::from(self / u32_to_u128(0, other.data[2], other.data[1], other.data[0])),
+                4 => From::from(
+                    self / u32_to_u128(other.data[3], other.data[2], other.data[1], other.data[0]),
+                ),
+                _ => BigUint::ZERO,
+            }
         }
-    }
 
-    #[cfg(u64_digit)]
-    #[inline]
-    fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self / other.data[0] as u128),
-            2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-            _ => BigUint::ZERO,
+        #[inline]
+        fn div(self, other: BigUint) -> BigUint {
+            match other.data.len() {
+                0 => panic!("attempt to divide by zero"),
+                1 => From::from(self / other.data[0] as u128),
+                2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
+                _ => BigUint::ZERO,
+            }
         }
-    }
+    );
 }
 
 forward_val_ref_binop!(impl Rem for BigUint, rem);
