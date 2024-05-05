@@ -18,7 +18,7 @@ pub(super) const FAST_DIV_WIDE: bool = cfg!(any(target_arch = "x86", target_arch
 /// This is _not_ true for an arbitrary numerator/denominator.
 ///
 /// (This function also matches what the x86 divide instruction does).
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(any(miri, not(any(target_arch = "x86", target_arch = "x86_64"))))]
 #[inline]
 fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
     debug_assert!(hi < divisor);
@@ -29,7 +29,7 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
 }
 
 /// x86 and x86_64 can use a real `div` instruction.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(not(miri), any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
 fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigit) {
     // This debug assertion covers the potential #DE for divisor==0 or a quotient too large for one
