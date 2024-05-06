@@ -50,7 +50,7 @@ impl ToPrimitive for BigInt {
                 let m: u64 = 1 << 63;
                 match n.cmp(&m) {
                     Less => Some(-(n as i64)),
-                    Equal => Some(core::i64::MIN),
+                    Equal => Some(i64::MIN),
                     Greater => None,
                 }
             }
@@ -67,7 +67,7 @@ impl ToPrimitive for BigInt {
                 let m: u128 = 1 << 127;
                 match n.cmp(&m) {
                     Less => Some(-(n as i128)),
-                    Equal => Some(core::i128::MIN),
+                    Equal => Some(i128::MIN),
                     Greater => None,
                 }
             }
@@ -179,7 +179,7 @@ impl From<i64> for BigInt {
         if n >= 0 {
             BigInt::from(n as u64)
         } else {
-            let u = core::u64::MAX - (n as u64) + 1;
+            let u = u64::MAX - (n as u64) + 1;
             BigInt {
                 sign: Minus,
                 data: BigUint::from(u),
@@ -194,7 +194,7 @@ impl From<i128> for BigInt {
         if n >= 0 {
             BigInt::from(n as u128)
         } else {
-            let u = core::u128::MAX - (n as u128) + 1;
+            let u = u128::MAX - (n as u128) + 1;
             BigInt {
                 sign: Minus,
                 data: BigUint::from(u),

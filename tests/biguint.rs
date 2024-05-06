@@ -6,12 +6,9 @@ use num_integer::Integer;
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::collections::hash_map::RandomState;
 use std::hash::{BuildHasher, Hash, Hasher};
-use std::i64;
 use std::iter::repeat;
 use std::str::FromStr;
 use std::{f32, f64};
-use std::{i128, u128};
-use std::{u16, u32, u64, u8, usize};
 
 use num_traits::{
     pow, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Euclid, FromBytes, FromPrimitive, Num,

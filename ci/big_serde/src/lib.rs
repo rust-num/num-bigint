@@ -155,7 +155,7 @@ fn bad_size_hint<T: Debug + DeserializeOwned + One + PartialEq + Serialize>(
     assert_tokens(&T::one(), &tokens);
 
     tokens[prefix.len()] = Token::Seq {
-        len: Some(usize::max_value()),
+        len: Some(usize::MAX),
     };
 
     catch_unwind(|| assert_ser_tokens(&T::one(), &tokens)).unwrap_err();

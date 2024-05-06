@@ -8,9 +8,6 @@ use std::hash::{BuildHasher, Hash, Hasher};
 use std::iter::repeat;
 use std::ops::Neg;
 use std::{f32, f64};
-use std::{i128, u128};
-use std::{i16, i32, i64, i8, isize};
-use std::{u16, u32, u64, u8, usize};
 
 use num_integer::Integer;
 use num_traits::{

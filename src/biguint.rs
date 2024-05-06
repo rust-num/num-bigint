@@ -8,7 +8,6 @@ use core::fmt;
 use core::hash;
 use core::mem;
 use core::str;
-use core::{u32, u64, u8};
 
 use num_integer::{Integer, Roots};
 use num_traits::{ConstZero, Num, One, Pow, ToPrimitive, Unsigned, Zero};
@@ -410,7 +409,7 @@ impl Roots for BigUint {
             _ => {
                 // Try to guess by scaling down such that it does fit in `f64`.
                 // With some (x * 2ⁿᵏ), its nth root ≈ (ⁿ√x * 2ᵏ)
-                let extra_bits = bits - (core::f64::MAX_EXP as u64 - 1);
+                let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
                 let root_scale = Integer::div_ceil(&extra_bits, &n64);
                 let scale = root_scale * n64;
                 if scale < bits && bits - scale > n64 {
@@ -458,7 +457,7 @@ impl Roots for BigUint {
             _ => {
                 // Try to guess by scaling down such that it does fit in `f64`.
                 // With some (x * 2²ᵏ), its sqrt ≈ (√x * 2ᵏ)
-                let extra_bits = bits - (core::f64::MAX_EXP as u64 - 1);
+                let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
                 let root_scale = (extra_bits + 1) / 2;
                 let scale = root_scale * 2;
                 (self >> scale).sqrt() << root_scale
@@ -499,7 +498,7 @@ impl Roots for BigUint {
             _ => {
                 // Try to guess by scaling down such that it does fit in `f64`.
                 // With some (x * 2³ᵏ), its cbrt ≈ (∛x * 2ᵏ)
-                let extra_bits = bits - (core::f64::MAX_EXP as u64 - 1);
+                let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
                 let root_scale = (extra_bits + 2) / 3;
                 let scale = root_scale * 3;
                 (self >> scale).cbrt() << root_scale
@@ -1032,9 +1031,7 @@ impl BigUint {
         // Note: we're saturating `digit_index` and `new_len` -- any such case is guaranteed to
         // fail allocation, and that's more consistent than adding our own overflow panics.
         let bits_per_digit = u64::from(big_digit::BITS);
-        let digit_index = (bit / bits_per_digit)
-            .to_usize()
-            .unwrap_or(core::usize::MAX);
+        let digit_index = (bit / bits_per_digit).to_usize().unwrap_or(usize::MAX);
         let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
         if value {
             if digit_index >= self.data.len() {
@@ -1176,28 +1173,17 @@ cfg_digit!(
 fn test_u32_u128() {
     assert_eq!(u32_from_u128(0u128), (0, 0, 0, 0));
     assert_eq!(
-        u32_from_u128(u128::max_value()),
-        (
-            u32::max_value(),
-            u32::max_value(),
-            u32::max_value(),
-            u32::max_value()
-        )
+        u32_from_u128(u128::MAX),
+        (u32::MAX, u32::MAX, u32::MAX, u32::MAX)
     );
 
-    assert_eq!(
-        u32_from_u128(u32::max_value() as u128),
-        (0, 0, 0, u32::max_value())
-    );
+    assert_eq!(u32_from_u128(u32::MAX as u128), (0, 0, 0, u32::MAX));
+
+    assert_eq!(u32_from_u128(u64::MAX as u128), (0, 0, u32::MAX, u32::MAX));
 
     assert_eq!(
-        u32_from_u128(u64::max_value() as u128),
-        (0, 0, u32::max_value(), u32::max_value())
-    );
-
-    assert_eq!(
-        u32_from_u128((u64::max_value() as u128) + u32::max_value() as u128),
-        (0, 1, 0, u32::max_value() - 1)
+        u32_from_u128((u64::MAX as u128) + u32::MAX as u128),
+        (0, 1, 0, u32::MAX - 1)
     );
 
     assert_eq!(u32_from_u128(36_893_488_151_714_070_528), (0, 2, 1, 0));
@@ -1209,11 +1195,11 @@ fn test_u128_u32_roundtrip() {
     let values = vec![
         0u128,
         1u128,
-        u64::max_value() as u128 * 3,
-        u32::max_value() as u128,
-        u64::max_value() as u128,
-        (u64::max_value() as u128) + u32::max_value() as u128,
-        u128::max_value(),
+        u64::MAX as u128 * 3,
+        u32::MAX as u128,
+        u64::MAX as u128,
+        (u64::MAX as u128) + u32::MAX as u128,
+        u128::MAX,
     ];
 
     for val in &values {

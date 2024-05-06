@@ -69,7 +69,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
     let total_bits = (v.len() as u64).saturating_mul(bits.into());
     let big_digits = Integer::div_ceil(&total_bits, &big_digit::BITS.into())
         .to_usize()
-        .unwrap_or(core::usize::MAX);
+        .unwrap_or(usize::MAX);
     let mut data = Vec::with_capacity(big_digits);
 
     let mut d = 0;
@@ -245,7 +245,7 @@ impl Num for BigUint {
                 b'a'..=b'z' => b - b'a' + 10,
                 b'A'..=b'Z' => b - b'A' + 10,
                 b'_' => continue,
-                _ => core::u8::MAX,
+                _ => u8::MAX,
             };
             if d < radix as u8 {
                 v.push(d);
@@ -372,8 +372,8 @@ impl ToPrimitive for BigUint {
         let mantissa = high_bits_to_u64(self);
         let exponent = self.bits() - u64::from(fls(mantissa));
 
-        if exponent > core::f32::MAX_EXP as u64 {
-            Some(core::f32::INFINITY)
+        if exponent > f32::MAX_EXP as u64 {
+            Some(f32::INFINITY)
         } else {
             Some((mantissa as f32) * 2.0f32.powi(exponent as i32))
         }
@@ -384,8 +384,8 @@ impl ToPrimitive for BigUint {
         let mantissa = high_bits_to_u64(self);
         let exponent = self.bits() - u64::from(fls(mantissa));
 
-        if exponent > core::f64::MAX_EXP as u64 {
-            Some(core::f64::INFINITY)
+        if exponent > f64::MAX_EXP as u64 {
+            Some(f64::INFINITY)
         } else {
             Some((mantissa as f64) * 2.0f64.powi(exponent as i32))
         }
@@ -607,7 +607,7 @@ pub(super) fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     let digits_per_big_digit = big_digit::BITS / bits;
     let digits = Integer::div_ceil(&u.bits(), &u64::from(bits))
         .to_usize()
-        .unwrap_or(core::usize::MAX);
+        .unwrap_or(usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
     for mut r in u.data[..last_i].iter().cloned() {
@@ -633,7 +633,7 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     let mask: BigDigit = (1 << bits) - 1;
     let digits = Integer::div_ceil(&u.bits(), &u64::from(bits))
         .to_usize()
-        .unwrap_or(core::usize::MAX);
+        .unwrap_or(usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
     let mut r = 0;
@@ -845,7 +845,7 @@ fn test_radix_bases() {
     for radix in 3u32..256 {
         if !radix.is_power_of_two() {
             let (base, power) = get_radix_base(radix);
-            let radix = BigDigit::try_from(radix).unwrap();
+            let radix = BigDigit::from(radix);
             let power = u32::try_from(power).unwrap();
             assert_eq!(base, radix.pow(power));
             assert!(radix.checked_pow(power + 1).is_none());
@@ -858,7 +858,7 @@ fn test_half_radix_bases() {
     for radix in 3u32..256 {
         if !radix.is_power_of_two() {
             let (base, power) = get_half_radix_base(radix);
-            let radix = BigDigit::try_from(radix).unwrap();
+            let radix = BigDigit::from(radix);
             let power = u32::try_from(power).unwrap();
             assert_eq!(base, radix.pow(power));
             assert!(radix.pow(power + 1) > big_digit::HALF);

@@ -2,19 +2,19 @@
 
 macro_rules! cfg_32 {
     ($($any:tt)+) => {
-        #[cfg(not(any(target_pointer_width = "64", target_pointer_width = "128")))] $($any)+
+        #[cfg(not(target_pointer_width = "64"))] $($any)+
     }
 }
 
 macro_rules! cfg_32_or_test {
     ($($any:tt)+) => {
-        #[cfg(any(not(any(target_pointer_width = "64", target_pointer_width = "128")), test))] $($any)+
+        #[cfg(any(not(target_pointer_width = "64"), test))] $($any)+
     }
 }
 
 macro_rules! cfg_64 {
     ($($any:tt)+) => {
-        #[cfg(any(target_pointer_width = "64", target_pointer_width = "128"))] $($any)+
+        #[cfg(target_pointer_width = "64")] $($any)+
     }
 }
 

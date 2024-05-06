@@ -42,7 +42,7 @@ fn quickcheck_signed_eq_symmetric(a: BigInt, b: BigInt) -> bool {
 
 #[test]
 fn quickcheck_arith_primitive() {
-    let gen = Gen::new(usize::max_value());
+    let gen = Gen::new(usize::MAX);
     let mut qc = QuickCheck::new().gen(gen);
 
     fn test_unsigned_add_primitive(a: usize, b: usize) -> TestResult {
@@ -280,7 +280,7 @@ fn quickcheck_signed_conversion(a: BigInt, radix: u8) -> TestResult {
 
 #[test]
 fn quicktest_shift() {
-    let gen = Gen::new(usize::max_value());
+    let gen = Gen::new(usize::MAX);
     let mut qc = QuickCheck::new().gen(gen);
 
     fn test_shr_unsigned(a: u64, shift: u8) -> TestResult {
@@ -317,7 +317,7 @@ fn quicktest_shift() {
 
 #[test]
 fn quickcheck_modpow() {
-    let gen = Gen::new(usize::max_value());
+    let gen = Gen::new(usize::MAX);
     let mut qc = QuickCheck::new().gen(gen);
 
     fn simple_modpow(base: &BigInt, exponent: &BigInt, modulus: &BigInt) -> BigInt {
@@ -360,7 +360,7 @@ fn quickcheck_modpow() {
 
 #[test]
 fn quickcheck_modinv() {
-    let gen = Gen::new(usize::max_value());
+    let gen = Gen::new(usize::MAX);
     let mut qc = QuickCheck::new().gen(gen);
 
     fn test_modinv(value: i128, modulus: i128) -> TestResult {
@@ -417,7 +417,7 @@ fn quickcheck_modinv() {
 
 #[test]
 fn quickcheck_to_float_equals_i128_cast() {
-    let gen = Gen::new(usize::max_value());
+    let gen = Gen::new(usize::MAX);
     let mut qc = QuickCheck::new().gen(gen).tests(1_000_000);
 
     fn to_f32_equals_i128_cast(value: i128) -> bool {

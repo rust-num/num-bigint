@@ -58,7 +58,7 @@ fn biguint_shr<T: PrimInt>(n: Cow<'_, BigUint>, shift: T) -> BigUint {
         return n.into_owned();
     }
     let bits = T::from(big_digit::BITS).unwrap();
-    let digits = (shift / bits).to_usize().unwrap_or(core::usize::MAX);
+    let digits = (shift / bits).to_usize().unwrap_or(usize::MAX);
     let shift = (shift % bits).to_u8().unwrap();
     biguint_shr2(n, digits, shift)
 }
