@@ -8,8 +8,6 @@ use core::fmt;
 use core::hash;
 use core::ops::{Neg, Not};
 use core::str;
-use core::{i128, u128};
-use core::{i64, u64};
 
 use num_integer::{Integer, Roots};
 use num_traits::{ConstZero, Num, One, Pow, Signed, Zero};

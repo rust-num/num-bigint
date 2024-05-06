@@ -194,7 +194,7 @@ impl AddAssign<u128> for BigUint {
     cfg_digit!(
         #[inline]
         fn add_assign(&mut self, other: u128) {
-            if other <= u128::from(u64::max_value()) {
+            if other <= u128::from(u64::MAX) {
                 *self += other as u64
             } else {
                 let (a, b, c, d) = super::u32_from_u128(other);
