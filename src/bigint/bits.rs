@@ -36,7 +36,7 @@ fn negate_carry(a: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
 // + 1 & -ff = ...0 01 & ...f 01 = ...0 01 = + 1
 // +ff & - 1 = ...0 ff & ...f ff = ...0 ff = +ff
 // answer is pos, has length of a
-fn bitand_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
+fn bitand_pos_neg(a: &mut [BigDigit], b: &[BigDigit]) {
     let mut carry_b = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
         let twos_b = negate_carry(bi, &mut carry_b);
@@ -202,7 +202,7 @@ fn bitor_pos_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
 // - 1 | +ff = ...f ff | ...0 ff = ...f ff = - 1
 // -ff | + 1 = ...f 01 | ...0 01 = ...f 01 = -ff
 // answer is neg, has length of a
-fn bitor_neg_pos(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
+fn bitor_neg_pos(a: &mut [BigDigit], b: &[BigDigit]) {
     let mut carry_a = 1;
     let mut carry_or = 1;
     for (ai, &bi) in a.iter_mut().zip(b.iter()) {
