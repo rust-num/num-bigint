@@ -1,3 +1,19 @@
+# Release 0.4.5 (2024-05-06)
+
+- [Upgrade to 2021 edition, **MSRV 1.60**][292]
+- [Add `const ZERO` and implement `num_traits::ConstZero`][298]
+- [Add `modinv` methods for the modular inverse][288]
+- [Optimize multiplication with imbalanced operands][295]
+- [Optimize scalar division on x86 and x86-64][236]
+
+**Contributors**: @cuviper, @joelonsql, @waywardmonkeys
+
+[236]: https://github.com/rust-num/num-bigint/pull/236
+[288]: https://github.com/rust-num/num-bigint/pull/288
+[292]: https://github.com/rust-num/num-bigint/pull/292
+[295]: https://github.com/rust-num/num-bigint/pull/295
+[298]: https://github.com/rust-num/num-bigint/pull/298
+
 # Release 0.4.4 (2023-08-22)
 
 - [Implemented `From<bool>` for `BigInt` and `BigUint`.][239]
