@@ -369,9 +369,9 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // in terms of its coefficients:
         //
         // w0 = w(0)
-        // w1 = w(0)/2 + w(1)/3 - w(-1) + w(2)/6 - 2*w(inf)
+        // w1 = w(0)/2 + w(1)/3 - w(-1) + w(-2)/6 - 2*w(inf)
         // w2 = -w(0) + w(1)/2 + w(-1)/2 - w(inf)
-        // w3 = -w(0)/2 + w(1)/6 + w(-1)/2 - w(1)/6
+        // w3 = -w(0)/2 + w(1)/6 + w(-1)/2 - w(-2)/6 + 2*w(inf)
         // w4 = w(inf)
         //
         // This particular sequence is given by Bodrato and is an interpolation
