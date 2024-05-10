@@ -90,13 +90,13 @@ impl AddAssign<&BigUint> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: &BigUint) {
         let self_len = self.data.len();
-        let carry = if self_len < other.data.len() {
-            let lo_carry = __add2(&mut self.data[..], &other.data[..self_len]);
-            self.data.extend_from_slice(&other.data[self_len..]);
-            __add2(&mut self.data[self_len..], &[lo_carry])
-        } else {
-            __add2(&mut self.data[..], &other.data[..])
-        };
+        let mut other = &*other.data;
+        if self_len < other.len() {
+            let (low, high) = other.split_at(self_len);
+            self.data.extend_from_slice(high);
+            other = low;
+        }
+        let carry = __add2(&mut self.data, other);
         if carry != 0 {
             self.data.push(carry);
         }
@@ -124,12 +124,12 @@ impl AddAssign<u32> for BigUint {
     fn add_assign(&mut self, other: u32) {
         if other != 0 {
             if self.data.is_empty() {
-                self.data.push(0);
-            }
-
-            let carry = __add2(&mut self.data, &[other as BigDigit]);
-            if carry != 0 {
-                self.data.push(carry);
+                self.data.push(other as BigDigit);
+            } else {
+                let carry = __add2(&mut self.data, &[other as BigDigit]);
+                if carry != 0 {
+                    self.data.push(carry);
+                }
             }
         }
     }
@@ -168,12 +168,12 @@ impl AddAssign<u64> for BigUint {
         fn add_assign(&mut self, other: u64) {
             if other != 0 {
                 if self.data.is_empty() {
-                    self.data.push(0);
-                }
-
-                let carry = __add2(&mut self.data, &[other as BigDigit]);
-                if carry != 0 {
-                    self.data.push(carry);
+                    self.data.push(other as BigDigit);
+                } else {
+                    let carry = __add2(&mut self.data, &[other as BigDigit]);
+                    if carry != 0 {
+                        self.data.push(carry);
+                    }
                 }
             }
         }

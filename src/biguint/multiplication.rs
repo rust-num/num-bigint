@@ -2,7 +2,7 @@ use super::addition::{__add2, add2};
 use super::subtraction::sub2;
 use super::{biguint_from_vec, cmp_slice, BigUint, IntDigits};
 
-use crate::big_digit::{self, BigDigit, DoubleBigDigit};
+use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit};
 use crate::Sign::{self, Minus, NoSign, Plus};
 use crate::{BigInt, UsizePromotion};
 
@@ -58,7 +58,11 @@ fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
 }
 
 fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
-    BigInt::from(biguint_from_vec(slice.to_vec()))
+    let mut u = BigUint {
+        data: BigDigits::from_slice(slice),
+    };
+    u.normalize();
+    BigInt::from(u)
 }
 
 /// Three argument multiply accumulate:
@@ -233,7 +237,9 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         // We reuse the same BigUint for all the intermediate multiplies and have to size p
         // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
         let len = x1.len() + y1.len() + 1;
-        let mut p = BigUint { data: vec![0; len] };
+        let mut p = BigUint {
+            data: BigDigits::from_vec(vec![0; len]),
+        };
 
         // p2 = x1 * y1
         mac3(&mut p.data, x1, y1);
@@ -245,7 +251,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         add2(&mut acc[b * 2..], &p.data);
 
         // Zero out p before the next multiply:
-        p.data.truncate(0);
+        p.data.clear();
         p.data.resize(len, 0);
 
         // p0 = x0 * y0
@@ -262,7 +268,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 
         match j0_sign * j1_sign {
             Plus => {
-                p.data.truncate(0);
+                p.data.clear();
                 p.data.resize(len, 0);
 
                 mac3(&mut p.data, &j0.data, &j1.data);
@@ -409,10 +415,13 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 
 fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
     let len = x.len() + y.len() + 1;
-    let mut prod = BigUint { data: vec![0; len] };
+    let mut prod = BigUint {
+        data: BigDigits::from_vec(vec![0; len]),
+    };
 
     mac3(&mut prod.data, x, y);
-    prod.normalized()
+    prod.normalize();
+    prod
 }
 
 fn scalar_mul(a: &mut BigUint, b: BigDigit) {

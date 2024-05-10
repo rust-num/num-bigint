@@ -69,7 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-      - run: cargo doc --features std,serde,rand,quickcheck,arbitrary
+      - run: cargo doc --features std,inline,serde,rand,quickcheck,arbitrary
         env:
           RUSTDOCFLAGS: --cfg docsrs
 

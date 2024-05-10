@@ -15,7 +15,7 @@ use num_traits::{ConstZero, Num, One, Pow, Signed, Zero};
 
 use self::Sign::{Minus, NoSign, Plus};
 
-use crate::big_digit::BigDigit;
+use crate::big_digit::{BigDigit, BigDigits};
 use crate::biguint::to_str_radix_reversed;
 use crate::biguint::{BigUint, IntDigits, U32Digits, U64Digits};
 
@@ -245,6 +245,12 @@ impl One for BigInt {
     fn is_one(&self) -> bool {
         self.sign == Plus && self.data.is_one()
     }
+}
+
+#[cfg(feature = "inline")]
+impl num_traits::ConstOne for BigInt {
+    // forward to the inherent const
+    const ONE: Self = Self::ONE;
 }
 
 impl Signed for BigInt {
@@ -534,7 +540,7 @@ impl IntDigits for BigInt {
         self.data.digits()
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+    fn digits_mut(&mut self) -> &mut BigDigits {
         self.data.digits_mut()
     }
     #[inline]
@@ -569,12 +575,46 @@ impl BigInt {
         data: BigUint::ZERO,
     };
 
+    /// A constant `BigInt` with value 1, useful for static initialization.
+    #[cfg(feature = "inline")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
+    pub const ONE: Self = BigInt {
+        sign: Plus,
+        data: BigUint::ONE,
+    };
+
+    /// A constant `BigInt` with value -1, useful for static initialization.
+    #[cfg(feature = "inline")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
+    pub const NEG_ONE: Self = BigInt {
+        sign: Minus,
+        data: BigUint::ONE,
+    };
+
     /// Creates and initializes a [`BigInt`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
     pub fn new(sign: Sign, digits: Vec<u32>) -> BigInt {
         BigInt::from_biguint(sign, BigUint::new(digits))
+    }
+
+    /// Creates a constant [`BigInt`] from a primitive [`i32`] value.
+    ///
+    /// Non-`const` callers should use [`From<i32>`] instead.
+    #[inline]
+    #[cfg(feature = "inline")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
+    pub const fn new_const(n: i32) -> Self {
+        let (sign, u) = match n {
+            1.. => (Plus, n as u32),
+            0 => (NoSign, 0),
+            _ => (Minus, n.wrapping_neg() as u32),
+        };
+        BigInt {
+            sign,
+            data: BigUint::new_const(u),
+        }
     }
 
     /// Creates and initializes a [`BigInt`].
@@ -940,11 +980,10 @@ impl BigInt {
     ///
     /// ```
     /// use num_bigint::{BigInt, BigUint};
-    /// use num_traits::Zero;
     ///
     /// assert_eq!(BigInt::from(1234).magnitude(), &BigUint::from(1234u32));
     /// assert_eq!(BigInt::from(-4321).magnitude(), &BigUint::from(4321u32));
-    /// assert!(BigInt::ZERO.magnitude().is_zero());
+    /// assert_eq!(BigInt::ZERO.magnitude(), &BigUint::ZERO);
     /// ```
     #[inline]
     pub fn magnitude(&self) -> &BigUint {

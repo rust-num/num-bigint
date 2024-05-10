@@ -7,7 +7,7 @@ use super::addition::add2;
 use super::division::{div_rem_digit, FAST_DIV_WIDE};
 use super::multiplication::mac_with_carry;
 
-use crate::big_digit::{self, BigDigit};
+use crate::big_digit::{self, BigDigit, BigDigits};
 use crate::ParseBigIntError;
 use crate::TryFromBigIntError;
 
@@ -488,18 +488,44 @@ impl FromPrimitive for BigUint {
     }
 }
 
+impl From<u8> for BigUint {
+    #[inline]
+    fn from(n: u8) -> Self {
+        BigUint::from(u32::from(n))
+    }
+}
+
+impl From<u16> for BigUint {
+    #[inline]
+    fn from(n: u16) -> Self {
+        BigUint::from(u32::from(n))
+    }
+}
+
+impl From<u32> for BigUint {
+    #[inline]
+    fn from(n: u32) -> Self {
+        BigUint {
+            data: BigDigits::from_digit(n as BigDigit),
+        }
+    }
+}
+
 impl From<u64> for BigUint {
     #[inline]
-    fn from(mut n: u64) -> Self {
-        let mut ret: BigUint = Self::ZERO;
-
-        while n != 0 {
-            ret.data.push(n as BigDigit);
-            // don't overflow if BITS is 64:
-            n = (n >> 1) >> (big_digit::BITS - 1);
-        }
-
-        ret
+    fn from(n: u64) -> Self {
+        cfg_digit_expr!(
+            return if n > big_digit::MAX as u64 {
+                BigUint::new(vec![n as BigDigit, (n >> big_digit::BITS) as BigDigit])
+            } else {
+                BigUint {
+                    data: BigDigits::from_digit(n as BigDigit),
+                }
+            },
+            return BigUint {
+                data: BigDigits::from_digit(n),
+            }
+        );
     }
 }
 
@@ -517,21 +543,12 @@ impl From<u128> for BigUint {
     }
 }
 
-macro_rules! impl_biguint_from_uint {
-    ($T:ty) => {
-        impl From<$T> for BigUint {
-            #[inline]
-            fn from(n: $T) -> Self {
-                BigUint::from(n as u64)
-            }
-        }
-    };
+impl From<usize> for BigUint {
+    #[inline]
+    fn from(n: usize) -> Self {
+        BigUint::from(n as crate::UsizePromotion)
+    }
 }
-
-impl_biguint_from_uint!(u8);
-impl_biguint_from_uint!(u16);
-impl_biguint_from_uint!(u32);
-impl_biguint_from_uint!(usize);
 
 macro_rules! impl_biguint_try_from_int {
     ($T:ty, $from_ty:path) => {
@@ -639,7 +656,7 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     let mut r = 0;
     let mut rbits = 0;
 
-    for c in &u.data {
+    for c in &*u.data {
         r |= *c << rbits;
         rbits += big_digit::BITS;
 
