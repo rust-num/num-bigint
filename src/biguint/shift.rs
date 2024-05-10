@@ -1,8 +1,9 @@
 use super::{biguint_from_vec, BigUint};
 
 use crate::big_digit;
-use crate::std_alloc::{Cow, Vec};
 
+use alloc::borrow::Cow;
+use alloc::vec::Vec;
 use core::mem;
 use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use num_traits::{PrimInt, Zero};

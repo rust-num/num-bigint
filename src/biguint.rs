@@ -1,6 +1,7 @@
 use crate::big_digit::{self, BigDigit};
-use crate::std_alloc::{String, Vec};
 
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::cmp;
 use core::cmp::Ordering;
 use core::default::Default;

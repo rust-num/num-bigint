@@ -3,8 +3,8 @@ use super::Sign::{Minus, NoSign, Plus};
 
 use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::biguint::IntDigits;
-use crate::std_alloc::Vec;
 
+use alloc::vec::Vec;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
 use num_traits::{ToPrimitive, Zero};

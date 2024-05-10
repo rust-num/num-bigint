@@ -8,10 +8,10 @@ use super::division::{div_rem_digit, FAST_DIV_WIDE};
 use super::multiplication::mac_with_carry;
 
 use crate::big_digit::{self, BigDigit};
-use crate::std_alloc::Vec;
 use crate::ParseBigIntError;
 use crate::TryFromBigIntError;
 
+use alloc::vec::Vec;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::convert::TryFrom;
 use core::mem;

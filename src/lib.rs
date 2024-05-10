@@ -60,10 +60,10 @@
 //!
 //! ## Features
 //!
-//! The `std` crate feature is enabled by default, and is mandatory before Rust
-//! 1.36 and the stabilized `alloc` crate.  If you depend on `num-bigint` with
-//! `default-features = false`, you must manually enable the `std` feature yourself
-//! if your compiler is not new enough.
+//! The `std` crate feature is enabled by default, which enables [`std::error::Error`]
+//! implementations and some internal use of floating point approximations. This can be disabled by
+//! depending on `num-bigint` with `default-features = false`. Either way, the `alloc` crate is
+//! always required for heap allocation of the `BigInt`/`BigUint` digits.
 //!
 //! ### Random Generation
 //!
@@ -87,35 +87,13 @@
 #![warn(rust_2018_idioms)]
 #![no_std]
 
-#[cfg(feature = "std")]
-#[macro_use]
-extern crate std;
-
-#[cfg(feature = "std")]
-mod std_alloc {
-    pub(crate) use std::borrow::Cow;
-    #[cfg(feature = "quickcheck")]
-    pub(crate) use std::boxed::Box;
-    pub(crate) use std::string::String;
-    pub(crate) use std::vec::Vec;
-}
-
-#[cfg(not(feature = "std"))]
 #[macro_use]
 extern crate alloc;
 
-#[cfg(not(feature = "std"))]
-mod std_alloc {
-    pub(crate) use alloc::borrow::Cow;
-    #[cfg(feature = "quickcheck")]
-    pub(crate) use alloc::boxed::Box;
-    pub(crate) use alloc::string::String;
-    pub(crate) use alloc::vec::Vec;
-}
+#[cfg(feature = "std")]
+extern crate std;
 
 use core::fmt;
-#[cfg(feature = "std")]
-use std::error::Error;
 
 #[macro_use]
 mod macros;
@@ -176,7 +154,7 @@ impl fmt::Display for ParseBigIntError {
 }
 
 #[cfg(feature = "std")]
-impl Error for ParseBigIntError {
+impl std::error::Error for ParseBigIntError {
     fn description(&self) -> &str {
         self.__description()
     }

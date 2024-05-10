@@ -1,8 +1,8 @@
 use super::{BigInt, Sign};
+use crate::BigUint;
 
 #[cfg(feature = "quickcheck")]
-use crate::std_alloc::Box;
-use crate::BigUint;
+use alloc::boxed::Box;
 
 #[cfg(feature = "quickcheck")]
 impl quickcheck::Arbitrary for BigInt {
