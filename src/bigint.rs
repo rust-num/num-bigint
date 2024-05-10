@@ -24,16 +24,12 @@ mod division;
 mod multiplication;
 mod subtraction;
 
+mod arbitrary;
 mod bits;
 mod convert;
 mod power;
-mod shift;
-
-#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
-mod arbitrary;
-
-#[cfg(feature = "serde")]
 mod serde;
+mod shift;
 
 /// A `Sign` is a [`BigInt`]'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]

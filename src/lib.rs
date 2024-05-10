@@ -78,11 +78,24 @@
 //! Note that you must use the version of `rand` that `num-bigint` is compatible
 //! with: `0.8`.
 //!
+//! ### Arbitrary Big Integers
+//!
+//! `num-bigint` supports `arbitrary` and `quickcheck` features to implement
+//! [`arbitrary::Arbitrary`] and [`quickcheck::Arbitrary`], respectively, for both `BigInt` and
+//! `BigUint`. These are useful for fuzzing and other forms of randomized testing.
+//!
+//! ### Serialization
+//!
+//! The `serde` feature adds implementations of [`Serialize`][serde::Serialize] and
+//! [`Deserialize`][serde::Deserialize] for both `BigInt` and `BigUint`. Their serialized data is
+//! generated portably, regardless of platform differences like the internal digit size.
+//!
 //!
 //! ## Compatibility
 //!
 //! The `num-bigint` crate is tested for rustc 1.60 and greater.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.4")]
 #![warn(rust_2018_idioms)]
 #![no_std]
@@ -99,10 +112,8 @@ use core::fmt;
 mod macros;
 
 mod bigint;
-mod biguint;
-
-#[cfg(feature = "rand")]
 mod bigrand;
+mod biguint;
 
 #[cfg(target_pointer_width = "32")]
 type UsizePromotion = u32;
@@ -154,6 +165,7 @@ impl fmt::Display for ParseBigIntError {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseBigIntError {
     fn description(&self) -> &str {
         self.__description()
@@ -183,6 +195,7 @@ impl<T> TryFromBigIntError<T> {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl<T> std::error::Error for TryFromBigIntError<T>
 where
     T: fmt::Debug,
@@ -208,6 +221,7 @@ pub use crate::bigint::Sign;
 pub use crate::bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {

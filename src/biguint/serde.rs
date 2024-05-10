@@ -1,3 +1,6 @@
+#![cfg(feature = "serde")]
+#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+
 use super::{biguint_from_vec, BigUint};
 
 use alloc::vec::Vec;

@@ -24,6 +24,7 @@ serde = ["dep:serde"]
 
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 name = "bigint"

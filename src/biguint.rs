@@ -18,18 +18,14 @@ mod division;
 mod multiplication;
 mod subtraction;
 
+mod arbitrary;
 mod bits;
 mod convert;
 mod iter;
 mod monty;
 mod power;
-mod shift;
-
-#[cfg(any(feature = "quickcheck", feature = "arbitrary"))]
-mod arbitrary;
-
-#[cfg(feature = "serde")]
 mod serde;
+mod shift;
 
 pub(crate) use self::convert::to_str_radix_reversed;
 pub use self::iter::{U32Digits, U64Digits};
