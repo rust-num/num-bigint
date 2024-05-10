@@ -1,4 +1,6 @@
 //! Randomization of big integers
+#![cfg(feature = "rand")]
+#![cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 
 use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
