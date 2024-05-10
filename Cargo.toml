@@ -16,6 +16,7 @@ rust-version = "1.60"
 
 [features]
 default = ["std"]
+inline = []
 std = ["num-integer/std", "num-traits/std"]
 arbitrary = ["dep:arbitrary"]
 quickcheck = ["dep:quickcheck"]
@@ -23,7 +24,7 @@ rand = ["dep:rand"]
 serde = ["dep:serde"]
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
+features = ["std", "inline", "serde", "rand", "quickcheck", "arbitrary"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
