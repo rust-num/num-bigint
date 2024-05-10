@@ -1,10 +1,10 @@
 use super::Sign::{self, Minus, NoSign, Plus};
 use super::{BigInt, ToBigInt};
 
-use crate::std_alloc::Vec;
 use crate::TryFromBigIntError;
 use crate::{BigUint, ParseBigIntError, ToBigUint};
 
+use alloc::vec::Vec;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::convert::TryFrom;
 use core::str::{self, FromStr};

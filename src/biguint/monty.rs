@@ -1,4 +1,4 @@
-use crate::std_alloc::Vec;
+use alloc::vec::Vec;
 use core::mem;
 use core::ops::Shl;
 use num_traits::One;

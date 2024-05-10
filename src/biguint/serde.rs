@@ -1,7 +1,6 @@
 use super::{biguint_from_vec, BigUint};
 
-use crate::std_alloc::Vec;
-
+use alloc::vec::Vec;
 use core::{cmp, fmt, mem};
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};

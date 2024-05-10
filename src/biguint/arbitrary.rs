@@ -2,8 +2,8 @@ use super::{biguint_from_vec, BigUint};
 
 use crate::big_digit::BigDigit;
 #[cfg(feature = "quickcheck")]
-use crate::std_alloc::Box;
-use crate::std_alloc::Vec;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 #[cfg(feature = "quickcheck")]
 impl quickcheck::Arbitrary for BigUint {

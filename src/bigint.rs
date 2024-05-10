@@ -1,7 +1,8 @@
 // `Add`/`Sub` ops may flip from `BigInt` to its `BigUint` magnitude
 #![allow(clippy::suspicious_arithmetic_impl)]
 
-use crate::std_alloc::{String, Vec};
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::cmp::Ordering::{self, Equal};
 use core::default::Default;
 use core::fmt;
