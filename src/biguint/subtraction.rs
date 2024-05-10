@@ -25,16 +25,14 @@ fn sbb(borrow: u8, a: u32, b: u32, out: &mut u32) -> u8 {
 }
 
 // fallback for environments where we don't have a subborrow intrinsic
+// (copied from the standard library's `borrowing_sub`)
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
-fn sbb(borrow: u8, a: BigDigit, b: BigDigit, out: &mut BigDigit) -> u8 {
-    use crate::big_digit::SignedDoubleBigDigit;
-
-    let difference = SignedDoubleBigDigit::from(a)
-        - SignedDoubleBigDigit::from(b)
-        - SignedDoubleBigDigit::from(borrow);
-    *out = difference as BigDigit;
-    u8::from(difference < 0)
+fn sbb(borrow: u8, lhs: BigDigit, rhs: BigDigit, out: &mut BigDigit) -> u8 {
+    let (a, b) = lhs.overflowing_sub(rhs);
+    let (c, d) = a.overflowing_sub(borrow as BigDigit);
+    *out = c;
+    u8::from(b || d)
 }
 
 pub(super) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
