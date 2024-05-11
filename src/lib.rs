@@ -238,12 +238,6 @@ mod big_digit {
         pub(crate) type DoubleBigDigit = u128;
     );
 
-    // A [`SignedDoubleBigDigit`] is the signed version of [`DoubleBigDigit`].
-    cfg_digit!(
-        pub(crate) type SignedDoubleBigDigit = i64;
-        pub(crate) type SignedDoubleBigDigit = i128;
-    );
-
     pub(crate) const BITS: u8 = BigDigit::BITS as u8;
     pub(crate) const HALF_BITS: u8 = BITS / 2;
     pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
