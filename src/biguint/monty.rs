@@ -3,7 +3,7 @@ use core::mem;
 use core::ops::Shl;
 use num_traits::One;
 
-use crate::big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
+use crate::big_digit::{self, BigDigit, DoubleBigDigit};
 use crate::biguint::BigUint;
 
 struct MontyReducer {
@@ -15,8 +15,8 @@ struct MontyReducer {
 fn inv_mod_alt(b: BigDigit) -> BigDigit {
     assert_ne!(b & 1, 0);
 
-    let mut k0 = 2 - b as SignedDoubleBigDigit;
-    let mut t = (b - 1) as SignedDoubleBigDigit;
+    let mut k0 = BigDigit::wrapping_sub(2, b);
+    let mut t = b - 1;
     let mut i = 1;
     while i < big_digit::BITS {
         t = t.wrapping_mul(t);
@@ -24,7 +24,8 @@ fn inv_mod_alt(b: BigDigit) -> BigDigit {
 
         i <<= 1;
     }
-    -k0 as BigDigit
+    debug_assert_eq!(k0.wrapping_mul(b), 1);
+    k0.wrapping_neg()
 }
 
 impl MontyReducer {
