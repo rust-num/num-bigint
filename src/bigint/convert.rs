@@ -25,8 +25,7 @@ impl Num for BigInt {
     /// Creates and initializes a [`BigInt`].
     #[inline]
     fn from_str_radix(mut s: &str, radix: u32) -> Result<BigInt, ParseBigIntError> {
-        let sign = if s.starts_with('-') {
-            let tail = &s[1..];
+        let sign = if let Some(tail) = s.strip_prefix('-') {
             if !tail.starts_with('+') {
                 s = tail
             }

@@ -221,8 +221,7 @@ impl Num for BigUint {
     fn from_str_radix(s: &str, radix: u32) -> Result<BigUint, ParseBigIntError> {
         assert!(2 <= radix && radix <= 36, "The radix must be within 2...36");
         let mut s = s;
-        if s.starts_with('+') {
-            let tail = &s[1..];
+        if let Some(tail) = s.strip_prefix('+') {
             if !tail.starts_with('+') {
                 s = tail
             }
