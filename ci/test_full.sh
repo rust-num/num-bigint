@@ -27,8 +27,8 @@ if ! check_version $MSRV ; then
   exit 1
 fi
 
-STD_FEATURES=(arbitrary quickcheck rand serde)
-NO_STD_FEATURES=(serde rand)
+STD_FEATURES=(inline arbitrary quickcheck rand serde)
+NO_STD_FEATURES=(inline serde rand)
 echo "Testing supported features: ${STD_FEATURES[*]}"
 if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"
