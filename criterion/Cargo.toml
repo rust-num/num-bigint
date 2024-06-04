@@ -1,0 +1,65 @@
+[package]
+description = "Criterion benchmarks for the num-bigint crate"
+license     = "MIT OR Apache-2.0"
+name        = "num-bigint-criterion"
+version     = "0.1.0"
+exclude     = ["/.github/*"]
+edition     = "2018"
+autobenches = false
+
+[[bench]]
+harness = false
+name    = "bigint"
+
+[[bench]]
+harness = false
+name    = "factorial"
+
+[[bench]]
+harness = false
+name    = "gcd"
+
+[[bench]]
+harness = false
+name    = "roots"
+
+[features]
+#smallvec = ["num-bigint-small"]
+#union    = ["num-bigint-small/union"]
+default  = []
+
+[dependencies]
+serde_json       = "1.0.64"
+#ramp             = { version = "0.6.0", optional = true }
+#rug              = { version = "1.12.0", optional = true, features = ["rand"] }
+#ibig             = { version = "0.3.2", optional = true }
+#uint             = { version = "0.9.1", optional = true }
+#num-bigint-small = { git = "https://github.com/Lemmih/num-bigint", branch = "feature-small-uint", package = "num-bigint", features = ["rand"], optional = true }
+
+[dependencies.num-integer]
+version  = "0.1.44"
+features = ["i128"]
+
+#[dependencies.num-bigint]
+#version  = "0.4.0"
+#features = ["rand"]
+
+[dependencies.num-bigint]
+path     = ".."
+features = ["rand"]
+
+#[dependencies.num-rational]
+#version = "0.4.0"
+#git     = "https://github.com/Lemmih/num-rational"
+#branch  = "fewer-clones"
+
+[dependencies.num-traits]
+version  = "0.2.14"
+features = ["i128"]
+
+[dependencies.rand]
+version          = "0.8.4"
+default-features = false
+
+[dev-dependencies]
+criterion = "0.3.5"
