@@ -1,3 +1,11 @@
+# Release 0.4.6 (2024-06-27)
+
+- [Fixed compilation on `x86_64-unknown-linux-gnux32`.][312]
+
+**Contributors**: @cuviper, @ralphtandetzky, @yhx-12243
+
+[312]: https://github.com/rust-num/num-bigint/pull/312
+
 # Release 0.4.5 (2024-05-06)
 
 - [Upgrade to 2021 edition, **MSRV 1.60**][292]
