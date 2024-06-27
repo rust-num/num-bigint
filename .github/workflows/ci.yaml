@@ -42,6 +42,22 @@ jobs:
       - run: cargo build
       - run: ./ci/test_full.sh
 
+  # try building the x32 target -- x86_64 with target_pointer_width="32"
+  # (we can't execute without kernel CONFIG_X86_X32_ABI though)
+  x32:
+    name: Test (x32)
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get install gcc-multilib
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: x86_64-unknown-linux-gnux32
+      - run: cargo build --target x86_64-unknown-linux-gnux32 --all-features
+      - run: cargo test --no-run --target x86_64-unknown-linux-gnux32 --all-features
+
   # try a target that doesn't have std at all, but does have alloc
   no_std:
     name: No Std
@@ -78,7 +94,7 @@ jobs:
   success:
     name: Success
     runs-on: ubuntu-latest
-    needs: [test, i686, no_std, fmt, doc]
+    needs: [test, i686, x32, no_std, fmt, doc]
     # Github branch protection is exceedingly silly and treats "jobs skipped because a dependency
     # failed" as success. So we have to do some contortions to ensure the job fails if any of its
     # dependencies fails.

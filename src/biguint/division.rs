@@ -44,8 +44,21 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
     unsafe {
         let (div, rem);
 
+        cfg_digit!(
+            macro_rules! div {
+                () => {
+                    "div {0:e}"
+                };
+            }
+            macro_rules! div {
+                () => {
+                    "div {0:r}"
+                };
+            }
+        );
+
         core::arch::asm!(
-            "div {}",
+            div!(),
             in(reg) divisor,
             inout("dx") hi => rem,
             inout("ax") lo => div,
