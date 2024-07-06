@@ -1,4 +1,4 @@
-use crate::big_digit::{self, BigDigit};
+use crate::big_digit::{self, BigDigit, BigDigits};
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -32,7 +32,7 @@ pub use self::iter::{U32Digits, U64Digits};
 
 /// A big unsigned integer type.
 pub struct BigUint {
-    data: Vec<BigDigit>,
+    data: BigDigits,
 }
 
 // Note: derived `Clone` doesn't specialize `clone_from`,
@@ -54,7 +54,7 @@ impl Clone for BigUint {
 impl hash::Hash for BigUint {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        debug_assert!(self.data.last() != Some(&0));
+        debug_assert!(self.data.is_normal());
         self.data.hash(state);
     }
 }
@@ -62,9 +62,9 @@ impl hash::Hash for BigUint {
 impl PartialEq for BigUint {
     #[inline]
     fn eq(&self, other: &BigUint) -> bool {
-        debug_assert!(self.data.last() != Some(&0));
-        debug_assert!(other.data.last() != Some(&0));
-        self.data == other.data
+        debug_assert!(self.data.is_normal());
+        debug_assert!(other.data.is_normal());
+        *self.data == *other.data
     }
 }
 impl Eq for BigUint {}
@@ -79,15 +79,14 @@ impl PartialOrd for BigUint {
 impl Ord for BigUint {
     #[inline]
     fn cmp(&self, other: &BigUint) -> Ordering {
-        cmp_slice(&self.data[..], &other.data[..])
+        debug_assert!(self.data.is_normal());
+        debug_assert!(other.data.is_normal());
+        cmp_slice(&self.data, &other.data)
     }
 }
 
 #[inline]
 fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
-    debug_assert!(a.last() != Some(&0));
-    debug_assert!(b.last() != Some(&0));
-
     match Ord::cmp(&a.len(), &b.len()) {
         Ordering::Equal => Iterator::cmp(a.iter().rev(), b.iter().rev()),
         other => other,
@@ -158,13 +157,15 @@ impl Zero for BigUint {
 
 impl ConstZero for BigUint {
     // forward to the inherent const
-    const ZERO: Self = Self::ZERO; // BigUint { data: Vec::new() };
+    const ZERO: Self = Self::ZERO;
 }
 
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint { data: vec![1] }
+        BigUint {
+            data: BigDigits::from_digit(1),
+        }
     }
 
     #[inline]
@@ -175,8 +176,14 @@ impl One for BigUint {
 
     #[inline]
     fn is_one(&self) -> bool {
-        self.data[..] == [1]
+        *self.data == [1]
     }
+}
+
+#[cfg(feature = "inline")]
+impl num_traits::ConstOne for BigUint {
+    // forward to the inherent const
+    const ONE: Self = Self::ONE;
 }
 
 impl Unsigned for BigUint {}
@@ -524,12 +531,25 @@ pub trait ToBigUint {
 /// The digits are in little-endian base matching `BigDigit`.
 #[inline]
 pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
-    BigUint { data: digits }.normalized()
+    let mut n = BigUint {
+        data: BigDigits::from_vec(digits),
+    };
+    n.normalize();
+    n
 }
 
 impl BigUint {
     /// A constant `BigUint` with value 0, useful for static initialization.
-    pub const ZERO: Self = BigUint { data: Vec::new() };
+    pub const ZERO: Self = BigUint {
+        data: BigDigits::ZERO,
+    };
+
+    /// A constant `BigUint` with value 1, useful for static initialization.
+    #[cfg(feature = "inline")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
+    pub const ONE: Self = BigUint {
+        data: BigDigits::ONE,
+    };
 
     /// Creates and initializes a [`BigUint`].
     ///
@@ -540,13 +560,25 @@ impl BigUint {
 
         cfg_digit_expr!(
             {
-                big.data = digits;
+                big.data = BigDigits::from_vec(digits);
                 big.normalize();
             },
             big.assign_from_slice(&digits)
         );
 
         big
+    }
+
+    /// Creates a constant [`BigUint`] from a primitive [`u32`] value.
+    ///
+    /// Non-`const` callers should use [`From<u32>`] instead.
+    #[inline]
+    #[cfg(feature = "inline")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
+    pub const fn new_const(n: u32) -> Self {
+        BigUint {
+            data: BigDigits::from_digit(n as BigDigit),
+        }
     }
 
     /// Creates and initializes a [`BigUint`].
@@ -765,7 +797,7 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn iter_u32_digits(&self) -> U32Digits<'_> {
-        U32Digits::new(self.data.as_slice())
+        U32Digits::new(&self.data)
     }
 
     /// Returns an iterator of `u64` digits representation of the [`BigUint`] ordered least
@@ -784,7 +816,7 @@ impl BigUint {
     /// ```
     #[inline]
     pub fn iter_u64_digits(&self) -> U64Digits<'_> {
-        U64Digits::new(self.data.as_slice())
+        U64Digits::new(&self.data)
     }
 
     /// Returns the integer formatted as a string in the given radix.
@@ -848,31 +880,13 @@ impl BigUint {
     /// Determines the fewest bits necessary to express the [`BigUint`].
     #[inline]
     pub fn bits(&self) -> u64 {
-        if self.is_zero() {
-            return 0;
+        match self.data.last() {
+            Some(x) => {
+                let zeros: u64 = x.leading_zeros().into();
+                self.data.len() as u64 * u64::from(big_digit::BITS) - zeros
+            }
+            None => 0,
         }
-        let zeros: u64 = self.data.last().unwrap().leading_zeros().into();
-        self.data.len() as u64 * u64::from(big_digit::BITS) - zeros
-    }
-
-    /// Strips off trailing zero bigdigits - comparisons require the last element in the vector to
-    /// be nonzero.
-    #[inline]
-    fn normalize(&mut self) {
-        if let Some(&0) = self.data.last() {
-            let len = self.data.iter().rposition(|&d| d != 0).map_or(0, |i| i + 1);
-            self.data.truncate(len);
-        }
-        if self.data.len() < self.data.capacity() / 4 {
-            self.data.shrink_to_fit();
-        }
-    }
-
-    /// Returns a normalized [`BigUint`].
-    #[inline]
-    fn normalized(mut self) -> BigUint {
-        self.normalize();
-        self
     }
 
     /// Returns `self ^ exponent`.
@@ -988,18 +1002,20 @@ impl BigUint {
     /// Returns the number of least-significant bits that are zero,
     /// or `None` if the entire number is zero.
     pub fn trailing_zeros(&self) -> Option<u64> {
-        let i = self.data.iter().position(|&digit| digit != 0)?;
-        let zeros: u64 = self.data[i].trailing_zeros().into();
+        let data = &*self.data;
+        let i = data.iter().position(|&digit| digit != 0)?;
+        let zeros: u64 = data[i].trailing_zeros().into();
         Some(i as u64 * u64::from(big_digit::BITS) + zeros)
     }
 
     /// Returns the number of least-significant bits that are ones.
     pub fn trailing_ones(&self) -> u64 {
-        if let Some(i) = self.data.iter().position(|&digit| !digit != 0) {
-            let ones: u64 = self.data[i].trailing_ones().into();
+        let data = &*self.data;
+        if let Some(i) = data.iter().position(|&digit| !digit != 0) {
+            let ones: u64 = data[i].trailing_ones().into();
             i as u64 * u64::from(big_digit::BITS) + ones
         } else {
-            self.data.len() as u64 * u64::from(big_digit::BITS)
+            data.len() as u64 * u64::from(big_digit::BITS)
         }
     }
 
@@ -1036,10 +1052,12 @@ impl BigUint {
                 self.data.resize(new_len, 0);
             }
             self.data[digit_index] |= bit_mask;
-        } else if digit_index < self.data.len() {
-            self.data[digit_index] &= !bit_mask;
-            // the top bit may have been cleared, so normalize
-            self.normalize();
+        } else if let Some(digit) = self.data.get_mut(digit_index) {
+            *digit &= !bit_mask;
+            // if the top digit was cleared, we need to normalize
+            if *digit == 0 && digit_index + 1 == self.data.len() {
+                self.data.normalize();
+            }
         }
     }
 }
@@ -1070,7 +1088,7 @@ impl num_traits::ToBytes for BigUint {
 
 pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
+    fn digits_mut(&mut self) -> &mut BigDigits;
     fn normalize(&mut self);
     fn capacity(&self) -> usize;
     fn len(&self) -> usize;
@@ -1082,12 +1100,12 @@ impl IntDigits for BigUint {
         &self.data
     }
     #[inline]
-    fn digits_mut(&mut self) -> &mut Vec<BigDigit> {
+    fn digits_mut(&mut self) -> &mut BigDigits {
         &mut self.data
     }
     #[inline]
     fn normalize(&mut self) {
-        self.normalize();
+        self.data.normalize();
     }
     #[inline]
     fn capacity(&self) -> usize {
@@ -1135,7 +1153,7 @@ cfg_digit!(
     #[test]
     fn test_from_slice() {
         fn check(slice: &[u32], data: &[BigDigit]) {
-            assert_eq!(BigUint::from_slice(slice).data, data);
+            assert_eq!(*BigUint::from_slice(slice).data, *data);
         }
         check(&[1], &[1]);
         check(&[0, 0, 0], &[]);
@@ -1149,8 +1167,8 @@ cfg_digit!(
     fn test_from_slice() {
         fn check(slice: &[u32], data: &[BigDigit]) {
             assert_eq!(
-                BigUint::from_slice(slice).data,
-                data,
+                *BigUint::from_slice(slice).data,
+                *data,
                 "from {:?}, to {:?}",
                 slice,
                 data
