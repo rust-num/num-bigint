@@ -47,95 +47,109 @@ fn adc(carry: u8, lhs: BigDigit, rhs: BigDigit, out: &mut BigDigit) -> u8 {
     u8::from(b || d)
 }
 
-/// Performs a part of the addition. Returns a tuple containing the carry state
-/// and the number of integers that were added
-///
-/// By using as many registers as possible, we treat digits 5 by 5
 #[cfg(target_arch = "x86_64")]
-unsafe fn schoolbook_add_assign_x86_64(
-    lhs: *mut u64,
-    rhs: *const u64,
-    mut size: usize,
-) -> (bool, usize) {
-    size /= 5;
-    if size == 0 {
-        return (false, 0);
+cfg_64!(
+    /// Performs a part of the addition. Returns a tuple containing the carry state
+    /// and the number of integers that were added
+    ///
+    /// By using as many registers as possible, we treat digits 5 by 5
+    unsafe fn schoolbook_add_assign_x86_64(
+        lhs: *mut u64,
+        rhs: *const u64,
+        mut size: usize,
+    ) -> (bool, usize) {
+        size /= 5;
+        if size == 0 {
+            return (false, 0);
+        }
+
+        let mut c: u8;
+        let mut idx = 0;
+
+        asm!(
+            // Clear the carry flag
+            "clc",
+
+            "3:",
+
+            // Copy a in registers
+            "mov {a_tmp1}, qword ptr [{a} + 8*{idx}]",
+            "mov {a_tmp2}, qword ptr [{a} + 8*{idx} + 8]",
+            "mov {a_tmp3}, qword ptr [{a} + 8*{idx} + 16]",
+            "mov {a_tmp4}, qword ptr [{a} + 8*{idx} + 24]",
+            "mov {a_tmp5}, qword ptr [{a} + 8*{idx} + 32]",
+
+            // Copy b in registers
+            "mov {b_tmp1}, qword ptr [{b} + 8*{idx}]",
+            "mov {b_tmp2}, qword ptr [{b} + 8*{idx} + 8]",
+            "mov {b_tmp3}, qword ptr [{b} + 8*{idx} + 16]",
+            "mov {b_tmp4}, qword ptr [{b} + 8*{idx} + 24]",
+            "mov {b_tmp5}, qword ptr [{b} + 8*{idx} + 32]",
+
+            // Perform the addition
+            "adc {a_tmp1}, {b_tmp1}",
+            "adc {a_tmp2}, {b_tmp2}",
+            "adc {a_tmp3}, {b_tmp3}",
+            "adc {a_tmp4}, {b_tmp4}",
+            "adc {a_tmp5}, {b_tmp5}",
+
+            // Copy the return values
+            "mov qword ptr [{a} + 8*{idx}], {a_tmp1}",
+            "mov qword ptr [{a} + 8*{idx} + 8], {a_tmp2}",
+            "mov qword ptr [{a} + 8*{idx} + 16], {a_tmp3}",
+            "mov qword ptr [{a} + 8*{idx} + 24], {a_tmp4}",
+            "mov qword ptr [{a} + 8*{idx} + 32], {a_tmp5}",
+
+            // Increment loop counter
+            // `inc` and `dec` aren't modifying carry flag
+            "inc {idx}",
+            "inc {idx}",
+            "inc {idx}",
+            "inc {idx}",
+            "inc {idx}",
+            "dec {size}",
+            "jnz 3b",
+
+            // Output carry flag and clear
+            "setc {c}",
+            "clc",
+
+            size = in(reg) size,
+            a = in(reg) lhs,
+            b = in(reg) rhs,
+            c = lateout(reg_byte) c,
+            idx = inout(reg) idx,
+
+            a_tmp1 = out(reg) _,
+            a_tmp2 = out(reg) _,
+            a_tmp3 = out(reg) _,
+            a_tmp4 = out(reg) _,
+            a_tmp5 = out(reg) _,
+
+            b_tmp1 = out(reg) _,
+            b_tmp2 = out(reg) _,
+            b_tmp3 = out(reg) _,
+            b_tmp4 = out(reg) _,
+            b_tmp5 = out(reg) _,
+
+            options(nostack),
+        );
+
+        (c > 0, idx)
     }
+);
 
-    let mut c: u8;
-    let mut idx = 0;
-
-    asm!(
-        // Clear the carry flag
-        "clc",
-
-        "3:",
-
-        // Copy a in registers
-        "mov {a_tmp1}, qword ptr [{a} + 8*{idx}]",
-        "mov {a_tmp2}, qword ptr [{a} + 8*{idx} + 8]",
-        "mov {a_tmp3}, qword ptr [{a} + 8*{idx} + 16]",
-        "mov {a_tmp4}, qword ptr [{a} + 8*{idx} + 24]",
-        "mov {a_tmp5}, qword ptr [{a} + 8*{idx} + 32]",
-
-        // Copy b in registers
-        "mov {b_tmp1}, qword ptr [{b} + 8*{idx}]",
-        "mov {b_tmp2}, qword ptr [{b} + 8*{idx} + 8]",
-        "mov {b_tmp3}, qword ptr [{b} + 8*{idx} + 16]",
-        "mov {b_tmp4}, qword ptr [{b} + 8*{idx} + 24]",
-        "mov {b_tmp5}, qword ptr [{b} + 8*{idx} + 32]",
-
-        // Perform the addition
-        "adc {a_tmp1}, {b_tmp1}",
-        "adc {a_tmp2}, {b_tmp2}",
-        "adc {a_tmp3}, {b_tmp3}",
-        "adc {a_tmp4}, {b_tmp4}",
-        "adc {a_tmp5}, {b_tmp5}",
-
-        // Copy the return values
-        "mov qword ptr [{a} + 8*{idx}], {a_tmp1}",
-        "mov qword ptr [{a} + 8*{idx} + 8], {a_tmp2}",
-        "mov qword ptr [{a} + 8*{idx} + 16], {a_tmp3}",
-        "mov qword ptr [{a} + 8*{idx} + 24], {a_tmp4}",
-        "mov qword ptr [{a} + 8*{idx} + 32], {a_tmp5}",
-
-        // Increment loop counter
-        // `inc` and `dec` aren't modifying carry flag
-        "inc {idx}",
-        "inc {idx}",
-        "inc {idx}",
-        "inc {idx}",
-        "inc {idx}",
-        "dec {size}",
-        "jnz 3b",
-
-        // Output carry flag and clear
-        "setc {c}",
-        "clc",
-
-        size = in(reg) size,
-        a = in(reg) lhs,
-        b = in(reg) rhs,
-        c = lateout(reg_byte) c,
-        idx = inout(reg) idx,
-
-        a_tmp1 = out(reg) _,
-        a_tmp2 = out(reg) _,
-        a_tmp3 = out(reg) _,
-        a_tmp4 = out(reg) _,
-        a_tmp5 = out(reg) _,
-
-        b_tmp1 = out(reg) _,
-        b_tmp2 = out(reg) _,
-        b_tmp3 = out(reg) _,
-        b_tmp4 = out(reg) _,
-        b_tmp5 = out(reg) _,
-
-        options(nostack),
-    );
-
-    (c > 0, idx)
-}
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+cfg_32!(
+    /// TODO: The same trick as above can be applied to 32 bit targets
+    unsafe fn schoolbook_add_assign_x86_64(
+        _lhs: *mut u32,
+        _rhs: *const u32,
+        _size: usize,
+    ) -> (bool, usize) {
+        (false, 0)
+    }
+);
 
 /// Two argument addition of raw slices, `a += b`, returning the carry.
 ///
@@ -149,10 +163,10 @@ pub(super) fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
 
     let (a_lo, a_hi) = a.split_at_mut(b.len());
 
-    // On x86_64 machine, perform most of the addition via inline assembly
-    #[cfg(target_arch = "x86_64")]
+    // On x86 machine, perform most of the addition via inline assembly
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     let (c, done) = unsafe { schoolbook_add_assign_x86_64(a_lo.as_mut_ptr(), b.as_ptr(), b.len()) };
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
     let (c, done) = (false, 0);
 
     let mut carry = c as u8;
