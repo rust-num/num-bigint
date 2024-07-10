@@ -1,6 +1,8 @@
 use super::BigUint;
 #[cfg(target_arch = "x86_64")]
-use std::arch::asm;
+cfg_64!(
+    use std::arch::asm;
+);
 
 use crate::big_digit::{self, BigDigit};
 use crate::UsizePromotion;
