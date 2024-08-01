@@ -21,6 +21,7 @@ mod subtraction;
 mod arbitrary;
 mod bits;
 mod convert;
+mod factorial;
 mod iter;
 mod monty;
 mod power;
@@ -1040,6 +1041,15 @@ impl BigUint {
             self.data[digit_index] &= !bit_mask;
             // the top bit may have been cleared, so normalize
             self.normalize();
+        }
+    }
+
+    /// Computes the factorial of the `BigUInt`.
+    pub fn factorial(&self) -> BigUint {
+        // usize::MAX! > 2**usize::MAX, so just error w/o running the system out of memory
+        match self.to_usize() {
+            Option::Some(x) => factorial::factorial(x),
+            Option::None => panic!("{} is too large to calculate the factorial", self),
         }
     }
 }

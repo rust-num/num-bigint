@@ -1919,3 +1919,21 @@ fn test_set_bit() {
     x.set_bit(1, false);
     assert_eq!(x, BigUint::zero());
 }
+
+const FACTORIAL_100_BYTES: &[u32] = &[
+    0x00000000, 0x00000000, 0x00000000, 0x2735c61a, 0xee8b02ea, 0xb3b72ed2, 0x9420c6ec, 0x45570cca,
+    0xdf103917, 0x943a321c, 0xeb21b5b2, 0x66ef9a70, 0xa40d16e9, 0x28d54bbd, 0xdc240695, 0x964ec395,
+    0x00001b30,
+];
+
+#[test]
+fn test_factorial() {
+    let mut x = BigUint::zero();
+    assert_eq!(x.factorial(), BigUint::one());
+    x = BigUint::one();
+    assert_eq!(x.factorial(), BigUint::one());
+    x = BigUint::from(10u8);
+    assert_eq!(x.factorial(), BigUint::from(3628800u32));
+    x = BigUint::from(100u8);
+    assert_eq!(x.factorial(), BigUint::from_slice(FACTORIAL_100_BYTES));
+}
