@@ -211,6 +211,16 @@ fn to_str_radix_10_2(b: &mut Bencher) {
 }
 
 #[bench]
+fn to_str_radix_10_3(b: &mut Bencher) {
+    to_str_radix_bench(b, 10, 100009);
+}
+
+#[bench]
+fn to_str_radix_10_4(b: &mut Bencher) {
+    to_str_radix_bench(b, 10, 1000009);
+}
+
+#[bench]
 fn to_str_radix_16(b: &mut Bencher) {
     to_str_radix_bench(b, 16, 1009);
 }
