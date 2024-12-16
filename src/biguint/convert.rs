@@ -700,7 +700,7 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     // performance. We can mitigate this by dividing into chunks of a larger base first.
     // The threshold for this was chosen by anecdotal performance measurements to
     // approximate where this starts to make a noticeable difference.
-    if digits.data.len() >= 64 {
+    if digits.data.len() >= 32 {
         let mut big_bases = Vec::with_capacity(32);
         big_bases.push((BigUint::from(base), power));
 
