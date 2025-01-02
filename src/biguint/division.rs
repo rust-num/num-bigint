@@ -1,14 +1,15 @@
 use super::addition::__add2;
 use super::{cmp_slice, BigUint};
 
-use crate::big_digit::{self, BigDigit, DoubleBigDigit};
-use crate::UsizePromotion;
+use crate::big_digit::{self, BigDigit, DoubleBigDigit, BITS};
+use crate::biguint::IntDigits;
+use crate::{BigInt, UsizePromotion};
 
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, CheckedEuclid, Euclid, One, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, Euclid, One, Signed, ToPrimitive, Zero};
 
 pub(super) const FAST_DIV_WIDE: bool = cfg!(any(target_arch = "x86", target_arch = "x86_64"));
 
@@ -197,9 +198,9 @@ fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
 
     if shift == 0 {
         // no need to clone d
-        div_rem_core(u, &d.data)
+        div_rem_core(u, &d)
     } else {
-        let (q, r) = div_rem_core(u << shift, &(d << shift).data);
+        let (q, r) = div_rem_core(u << shift, &(d << shift));
         // renormalize the remainder
         (q, r >> shift)
     }
@@ -239,17 +240,130 @@ pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
 
     if shift == 0 {
         // no need to clone d
-        div_rem_core(u.clone(), &d.data)
+        div_rem_core(u.clone(), &d)
     } else {
-        let (q, r) = div_rem_core(u << shift, &(d << shift).data);
+        let (q, r) = div_rem_core(u << shift, &(d << shift));
         // renormalize the remainder
         (q, r >> shift)
     }
 }
 
+const BURNIKEL_ZIEGLER_THRESHOLD: usize = 64;
+
+/// This algorithm is from Burnikel and Ziegler, "Fast Recursive Division", Algorithm 1.
+/// It is a recursive algorithm that divides the dividend and divisor into blocks of digits
+/// and uses a divide-and-conquer approach to find the quotient.
+///
+/// The algorithm is more complex than the base algorithm, but it is faster for large operands.
+///
+/// Time complexity of this algorithm is the same as the algorithm used for the multiplication.
+/// 
+/// link: https://pure.mpg.de/rest/items/item_1819444_4/component/file_2599480/content 
+fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+    fn divide_biguint(mut b: BigUint, level: usize) -> (BigUint, BigUint) {
+        if b.len() <= level {
+            return (BigUint::ZERO, b);
+        }
+        let b1_data = b.data[level..].to_vec();
+        b.data.truncate(level);
+        (
+            BigUint { data: b1_data }.normalized(),
+            b.normalized(),
+        )
+    }
+
+    fn normalizing_shift_amount(b: &BigUint, level: usize) -> usize {
+        (level - b.len() + 1) * BITS as usize - b.data.last().unwrap().ilog2() as usize - 1
+    }
+
+    fn concat_biguint(b1: &BigUint, b2: BigUint, level: usize) -> BigUint {
+        let mut data = b2.data;
+        data.reserve(level + b1.len() - data.len());
+        data.extend(std::iter::repeat(0).take(level - data.len()));
+        data.extend_from_slice(&b1.data);
+        BigUint { data }.normalized()
+    }
+
+    fn div_two_digit_by_one(
+        ah: BigUint,
+        al: BigUint,
+        b: BigUint,
+        level: usize,
+    ) -> (BigUint, BigUint) {
+        // A precondition of this function is that q fits into a single digit.
+        debug_assert!(ah < b);
+        if level <= BURNIKEL_ZIEGLER_THRESHOLD {
+            return div_rem(concat_biguint(&ah, al.clone(), level), b);
+        }
+        let shift = normalizing_shift_amount(&b, level);
+        if shift != 0 {
+            let b = b << shift;
+            let (ah, al) = divide_biguint(concat_biguint(&ah, al.clone(), level) << shift, level);
+            let (q, r) = div_two_digit_by_one_normalized(ah, al, b, level);
+            (q, r >> shift)
+        } else {
+            div_two_digit_by_one_normalized(ah, al, b, level)
+        }
+    }
+
+    fn div_two_digit_by_one_normalized(
+        ah: BigUint,
+        al: BigUint,
+        b: BigUint,
+        level: usize,
+    ) -> (BigUint, BigUint) {
+        let level = level / 2;
+        let (a1, a2) = divide_biguint(ah, level);
+        let (a3, a4) = divide_biguint(al, level);
+        let (b1, b2) = divide_biguint(b, level);
+        let (q1, r) = div_three_halves_by_two(a1, a2, a3, b1.clone(), b2.clone(), level);
+        let (r1, r2) = divide_biguint(r, level);
+        let (q2, s) = div_three_halves_by_two(r1, r2, a4, b1, b2, level);
+        (concat_biguint(&q1, q2, level), s)
+    }
+
+    fn div_three_halves_by_two(
+        a1: BigUint,
+        a2: BigUint,
+        a3: BigUint,
+        b1: BigUint,
+        b2: BigUint,
+        level: usize,
+    ) -> (BigUint, BigUint) {
+        let (mut q, c) = div_two_digit_by_one(a1, a2, b1.clone(), level);
+        let mut r = BigInt::from(concat_biguint(&c, a3, level)) - BigInt::from(&q * &b2);
+        let b = concat_biguint(&b1, b2, level);
+        if r.is_negative() {
+            q -= 1u32;
+            r += BigInt::from(b.clone());
+            if r.is_negative() {
+                q -= 1u32;
+                r += BigInt::from(b.clone());
+            }
+        }
+        (q, r.into_biguint().unwrap())
+    }
+
+    let mut level = 1 << (u.data.len().ilog2());
+    if d.len() > level {
+        level *= 2;
+    }
+    let (u1, u2) = divide_biguint(u.clone(), level);
+    if &u1 > d {
+        div_two_digit_by_one(BigUint::ZERO, u.clone(), d.clone(), level * 2)    
+    } else {
+        div_two_digit_by_one(u1, u2, d.clone(), level)
+    }
+}
+
 /// An implementation of the base division algorithm.
 /// Knuth, TAOCP vol 2 section 4.3.1, algorithm D, with an improvement from exercises 19-21.
-fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
+fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
+    if a.len() > BURNIKEL_ZIEGLER_THRESHOLD * 2 && b.len() > BURNIKEL_ZIEGLER_THRESHOLD {
+        return div_rem_burnikel_ziegler(&a, b);
+    }
+
+    let b = &*b.data;
     debug_assert!(a.data.len() >= b.len() && b.len() > 1);
     debug_assert!(b.last().unwrap().leading_zeros() == 0);
 
