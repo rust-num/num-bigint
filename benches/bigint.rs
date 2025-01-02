@@ -113,6 +113,11 @@ fn divide_2(b: &mut Bencher) {
 }
 
 #[bench]
+fn divide_3(b: &mut Bencher) {
+    divide_bench(b, 1 << 20, 1 << 16);
+}
+
+#[bench]
 fn divide_big_little(b: &mut Bencher) {
     divide_bench(b, 1 << 16, 1 << 4);
 }
