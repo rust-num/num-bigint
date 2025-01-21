@@ -15,7 +15,7 @@ edition = "2021"
 rust-version = "1.60"
 
 [features]
-default = ["std"]
+default = ["std", "rand"]
 std = ["num-integer/std", "num-traits/std"]
 arbitrary = ["dep:arbitrary"]
 quickcheck = ["dep:quickcheck"]
@@ -56,7 +56,7 @@ features = ["i128"]
 
 [dependencies.rand]
 optional = true
-version = "0.8"
+version = " =0.9.0-beta.3"
 default-features = false
 
 [dependencies.serde]
@@ -73,3 +73,6 @@ default-features = false
 optional = true
 version = "1"
 default-features = false
+
+[dev-dependencies]
+rand = { version = " =0.9.0-beta.3", features = ["thread_rng"]}
