@@ -307,14 +307,15 @@ impl Distribution<BigInt> for RandomBits {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::BigUint;
 
     #[test]
     fn test_rand_biguint_range_works() {
         let mut rng = rand::rng();
         let minval = BigUint::zero();
         let maxval = BigUint::from(420u16);
-        let _a_random_bigint = rng.random_biguint_range(&minval, &maxval);
+        let a_random_biguint = rng.random_biguint_range(&minval, &maxval);
+        assert!(a_random_biguint >= minval);
+        assert!(a_random_biguint < maxval);
     }
 
     #[test]
@@ -322,6 +323,8 @@ mod test {
         let mut rng = rand::rng();
         let minval = BigInt::from(-420i16);
         let maxval = BigInt::from(420i16);
-        let _a_random_bigint = rng.random_bigint_range(&minval, &maxval);
+        let a_random_bigint = rng.random_bigint_range(&minval, &maxval);
+        assert!(a_random_bigint >= minval);
+        assert!(a_random_bigint < maxval);
     }
 }
