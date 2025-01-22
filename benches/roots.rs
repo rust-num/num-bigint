@@ -37,7 +37,7 @@ fn check(x: &BigUint, n: u32) {
 }
 
 fn bench_sqrt(b: &mut Bencher, bits: u64) {
-    let x = get_rng().gen_biguint(bits);
+    let x = get_rng().random_biguint(bits);
     eprintln!("bench_sqrt({})", x);
 
     check(&x, 2);
@@ -65,7 +65,7 @@ fn big4k_sqrt(b: &mut Bencher) {
 }
 
 fn bench_cbrt(b: &mut Bencher, bits: u64) {
-    let x = get_rng().gen_biguint(bits);
+    let x = get_rng().random_biguint(bits);
     eprintln!("bench_cbrt({})", x);
 
     check(&x, 3);
@@ -93,7 +93,7 @@ fn big4k_cbrt(b: &mut Bencher) {
 }
 
 fn bench_nth_root(b: &mut Bencher, bits: u64, n: u32) {
-    let x = get_rng().gen_biguint(bits);
+    let x = get_rng().random_biguint(bits);
     eprintln!("bench_{}th_root({})", n, x);
 
     check(&x, n);

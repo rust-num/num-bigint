@@ -39,7 +39,7 @@ pub trait RandBigInt {
     fn random_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
 }
 
-fn random_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
+fn random_bits<R: RngCore + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
     // `fill` is faster than many `random::<u32>` calls
     rng.fill(data);
     if rem > 0 {
@@ -48,7 +48,7 @@ fn random_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
     }
 }
 
-impl<R: Rng + ?Sized> RandBigInt for R {
+impl<R: RngCore + ?Sized> RandBigInt for R {
     cfg_digit!(
         fn random_biguint(&mut self, bit_size: u64) -> BigUint {
             let (digits, rem) = bit_size.div_rem(&32);
