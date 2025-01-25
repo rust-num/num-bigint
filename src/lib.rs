@@ -72,9 +72,10 @@
 //!
 //! ## Compatibility
 //!
-//! The `num-bigint` crate is tested for rustc 1.8 and greater.
+//! The `num-bigint` crate is tested for rustc 1.19 and greater.
 
 #![doc(html_root_url = "https://docs.rs/num-bigint/0.1")]
+#![cfg_attr(has_derive_rustc_serialize, warn(soft_unstable))] // un-deny
 
 #[cfg(any(feature = "rand", test))]
 extern crate rand;
