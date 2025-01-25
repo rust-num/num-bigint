@@ -1,3 +1,9 @@
+# Release 0.1.45
+
+- [Disable `rustc-serialize` derives for future compilers.][319]
+
+[319]: https://github.com/rust-num/num-bigint/pull/319
+
 # Release 0.1.44
 
 - [Division with single-digit divisors is now much faster.][42]
