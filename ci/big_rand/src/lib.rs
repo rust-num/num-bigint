@@ -18,9 +18,9 @@ mod biguint {
     #[test]
     fn test_rand() {
         let mut rng = rng();
-        let n: BigUint = rng.gen_biguint(137);
+        let n: BigUint = rng.random_biguint(137);
         assert!(n.bits() <= 137);
-        assert!(rng.gen_biguint(0).is_zero());
+        assert!(rng.random_biguint(0).is_zero());
     }
 
     #[test]
@@ -38,7 +38,7 @@ mod biguint {
 
         for _ in 0..10 {
             assert_eq!(
-                rng.gen_biguint_range(&BigUint::from(236u32), &BigUint::from(237u32)),
+                rng.random_biguint_range(&BigUint::from(236u32), &BigUint::from(237u32)),
                 BigUint::from(236u32)
             );
         }
@@ -46,10 +46,10 @@ mod biguint {
         let l = BigUint::from(403469000u32 + 2352);
         let u = BigUint::from(403469000u32 + 3513);
         for _ in 0..1000 {
-            let n: BigUint = rng.gen_biguint_below(&u);
+            let n: BigUint = rng.random_biguint_below(&u);
             assert!(n < u);
 
-            let n: BigUint = rng.gen_biguint_range(&l, &u);
+            let n: BigUint = rng.random_biguint_range(&l, &u);
             assert!(n >= l);
             assert!(n < u);
         }
@@ -58,7 +58,7 @@ mod biguint {
     #[test]
     #[should_panic]
     fn test_zero_rand_range() {
-        rng().gen_biguint_range(&BigUint::from(54u32), &BigUint::from(54u32));
+        rng().random_biguint_range(&BigUint::from(54u32), &BigUint::from(54u32));
     }
 
     #[test]
@@ -68,7 +68,7 @@ mod biguint {
         let l = BigUint::from(2352u32);
         let u = BigUint::from(3513u32);
         // Switching u and l should fail:
-        let _n: BigUint = rng.gen_biguint_range(&u, &l);
+        let _n: BigUint = rng.random_biguint_range(&u, &l);
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod biguint {
         let mut rng = R::from_seed(seed);
         for (i, &s) in expected.iter().enumerate() {
             let n: BigUint = s.parse().unwrap();
-            let r = rng.gen_biguint((1 << i) + i as u64);
+            let r = rng.random_biguint((1 << i) + i as u64);
             assert_eq!(n, r);
         }
     }
@@ -194,7 +194,7 @@ mod biguint {
         let bit_range = Uniform::new(0, 2048).unwrap();
         let sample_bits: Vec<_> = bit_range.sample_iter(&mut rng).take(100).collect();
         for bits in sample_bits {
-            let x = rng.gen_biguint(bits);
+            let x = rng.random_biguint(bits);
             for n in 2..11 {
                 check(x.clone(), n);
             }
@@ -213,9 +213,9 @@ mod bigint {
     #[test]
     fn test_rand() {
         let mut rng = rng();
-        let n: BigInt = rng.gen_bigint(137);
+        let n: BigInt = rng.random_bigint(137);
         assert!(n.bits() <= 137);
-        assert!(rng.gen_bigint(0).is_zero());
+        assert!(rng.random_bigint(0).is_zero());
     }
 
     #[test]
@@ -233,7 +233,7 @@ mod bigint {
 
         for _ in 0..10 {
             assert_eq!(
-                rng.gen_bigint_range(&BigInt::from(236), &BigInt::from(237)),
+                rng.random_bigint_range(&BigInt::from(236), &BigInt::from(237)),
                 BigInt::from(236)
             );
         }
@@ -241,7 +241,7 @@ mod bigint {
         fn check(l: BigInt, u: BigInt) {
             let mut rng = rand::rng();
             for _ in 0..1000 {
-                let n: BigInt = rng.gen_bigint_range(&l, &u);
+                let n: BigInt = rng.random_bigint_range(&l, &u);
                 assert!(n >= l);
                 assert!(n < u);
             }
@@ -256,7 +256,7 @@ mod bigint {
     #[test]
     #[should_panic]
     fn test_zero_rand_range() {
-        rng().gen_bigint_range(&BigInt::from(54), &BigInt::from(54));
+        rng().random_bigint_range(&BigInt::from(54), &BigInt::from(54));
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod bigint {
         let l = BigInt::from(2352);
         let u = BigInt::from(3513);
         // Switching u and l should fail:
-        let _n: BigInt = rng.gen_bigint_range(&u, &l);
+        let _n: BigInt = rng.random_bigint_range(&u, &l);
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod bigint {
         let mut rng = R::from_seed(seed);
         for (i, &s) in expected.iter().enumerate() {
             let n: BigInt = s.parse().unwrap();
-            let r = rng.gen_bigint((1 << i) + i as u64);
+            let r = rng.random_bigint((1 << i) + i as u64);
             assert_eq!(n, r);
         }
     }

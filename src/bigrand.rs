@@ -19,24 +19,24 @@ use num_traits::{ToPrimitive, Zero};
 /// The `rand` feature must be enabled to use this. See crate-level documentation for details.
 pub trait RandBigInt {
     /// Generate a random [`BigUint`] of the given bit size.
-    fn gen_biguint(&mut self, bit_size: u64) -> BigUint;
+    fn random_biguint(&mut self, bit_size: u64) -> BigUint;
 
     /// Generate a random [ BigInt`] of the given bit size.
-    fn gen_bigint(&mut self, bit_size: u64) -> BigInt;
+    fn random_bigint(&mut self, bit_size: u64) -> BigInt;
 
     /// Generate a random [`BigUint`] less than the given bound. Fails
     /// when the bound is zero.
-    fn gen_biguint_below(&mut self, bound: &BigUint) -> BigUint;
+    fn random_biguint_below(&mut self, bound: &BigUint) -> BigUint;
 
     /// Generate a random [`BigUint`] within the given range. The lower
     /// bound is inclusive; the upper bound is exclusive. Fails when
     /// the upper bound is not greater than the lower bound.
-    fn gen_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint;
+    fn random_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint;
 
     /// Generate a random [`BigInt`] within the given range. The lower
     /// bound is inclusive; the upper bound is exclusive. Fails when
     /// the upper bound is not greater than the lower bound.
-    fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
+    fn random_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt;
 }
 
 fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
@@ -50,7 +50,7 @@ fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
 
 impl<R: Rng + ?Sized> RandBigInt for R {
     cfg_digit!(
-        fn gen_biguint(&mut self, bit_size: u64) -> BigUint {
+        fn random_biguint(&mut self, bit_size: u64) -> BigUint {
             let (digits, rem) = bit_size.div_rem(&32);
             let len = (digits + (rem > 0) as u64)
                 .to_usize()
@@ -60,7 +60,7 @@ impl<R: Rng + ?Sized> RandBigInt for R {
             biguint_from_vec(data)
         }
 
-        fn gen_biguint(&mut self, bit_size: u64) -> BigUint {
+        fn random_biguint(&mut self, bit_size: u64) -> BigUint {
             use core::slice;
 
             let (digits, rem) = bit_size.div_rem(&32);
@@ -86,10 +86,10 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         }
     );
 
-    fn gen_bigint(&mut self, bit_size: u64) -> BigInt {
+    fn random_bigint(&mut self, bit_size: u64) -> BigInt {
         loop {
             // Generate a random BigUint...
-            let biguint = self.gen_biguint(bit_size);
+            let biguint = self.random_biguint(bit_size);
             // ...and then randomly assign it a Sign...
             let sign = if biguint.is_zero() {
                 // ...except that if the BigUint is zero, we need to try
@@ -110,35 +110,35 @@ impl<R: Rng + ?Sized> RandBigInt for R {
         }
     }
 
-    fn gen_biguint_below(&mut self, bound: &BigUint) -> BigUint {
+    fn random_biguint_below(&mut self, bound: &BigUint) -> BigUint {
         assert!(!bound.is_zero());
         let bits = bound.bits();
         loop {
-            let n = self.gen_biguint(bits);
+            let n = self.random_biguint(bits);
             if n < *bound {
                 return n;
             }
         }
     }
 
-    fn gen_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint {
+    fn random_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint {
         assert!(*lbound < *ubound);
         if lbound.is_zero() {
-            self.gen_biguint_below(ubound)
+            self.random_biguint_below(ubound)
         } else {
-            lbound + self.gen_biguint_below(&(ubound - lbound))
+            lbound + self.random_biguint_below(&(ubound - lbound))
         }
     }
 
-    fn gen_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt {
+    fn random_bigint_range(&mut self, lbound: &BigInt, ubound: &BigInt) -> BigInt {
         assert!(*lbound < *ubound);
         if lbound.is_zero() {
-            BigInt::from(self.gen_biguint_below(ubound.magnitude()))
+            BigInt::from(self.random_biguint_below(ubound.magnitude()))
         } else if ubound.is_zero() {
-            lbound + BigInt::from(self.gen_biguint_below(lbound.magnitude()))
+            lbound + BigInt::from(self.random_biguint_below(lbound.magnitude()))
         } else {
             let delta = ubound - lbound;
-            lbound + BigInt::from(self.gen_biguint_below(delta.magnitude()))
+            lbound + BigInt::from(self.random_biguint_below(delta.magnitude()))
         }
     }
 }
@@ -186,7 +186,7 @@ impl UniformSampler for UniformBigUint {
 
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        &self.base + rng.gen_biguint_below(&self.len)
+        &self.base + rng.random_biguint_below(&self.len)
     }
 
     #[inline]
@@ -204,7 +204,7 @@ impl UniformSampler for UniformBigUint {
         if low >= high {
             return Err(Error::EmptyRange);
         }
-        Ok(rng.gen_biguint_range(low, high))
+        Ok(rng.random_biguint_range(low, high))
     }
 }
 
@@ -255,7 +255,7 @@ impl UniformSampler for UniformBigInt {
 
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        &self.base + BigInt::from(rng.gen_biguint_below(&self.len))
+        &self.base + BigInt::from(rng.random_biguint_below(&self.len))
     }
 
     #[inline]
@@ -273,7 +273,7 @@ impl UniformSampler for UniformBigInt {
         if low >= high {
             return Err(Error::EmptyRange);
         }
-        Ok(rng.gen_bigint_range(low, high))
+        Ok(rng.random_bigint_range(low, high))
     }
 }
 
@@ -299,13 +299,13 @@ impl RandomBits {
 impl Distribution<BigUint> for RandomBits {
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BigUint {
-        rng.gen_biguint(self.bits)
+        rng.random_biguint(self.bits)
     }
 }
 
 impl Distribution<BigInt> for RandomBits {
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BigInt {
-        rng.gen_bigint(self.bits)
+        rng.random_bigint(self.bits)
     }
 }
