@@ -13,8 +13,8 @@ fn test_mul_divide_torture_count(count: usize) {
 
     for _ in 0..count {
         // Test with numbers of random sizes:
-        let xbits = rng.gen_range(0..bits_max);
-        let ybits = rng.gen_range(0..bits_max);
+        let xbits = rng.random_range(0..bits_max);
+        let ybits = rng.random_range(0..bits_max);
 
         let x = rng.gen_biguint(xbits);
         let y = rng.gen_biguint(ybits);

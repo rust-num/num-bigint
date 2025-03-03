@@ -57,7 +57,7 @@ features = ["i128"]
 
 [dependencies.rand]
 optional = true
-version = "0.8"
+version = "0.9"
 default-features = false
 
 [dependencies.serde]

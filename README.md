@@ -29,12 +29,12 @@ if your compiler is not new enough.
 feature is enabled. To enable it include rand as
 
 ```toml
-rand = "0.8"
+rand = "0.9"
 num-bigint = { version = "0.5", features = ["rand"] }
 ```
 
 Note that you must use the version of `rand` that `num-bigint` is compatible
-with: `0.8`.
+with: `0.9`.
 
 ## Releases
 

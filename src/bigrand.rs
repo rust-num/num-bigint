@@ -2,7 +2,7 @@
 #![cfg(feature = "rand")]
 #![cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 
-use rand::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
+use rand::distr::uniform::{Error, SampleBorrow, SampleUniform, UniformSampler};
 use rand::prelude::*;
 
 use crate::BigInt;
@@ -96,12 +96,12 @@ impl<R: Rng + ?Sized> RandBigInt for R {
                 // again with probability 0.5. This is because otherwise,
                 // the probability of generating a zero BigInt would be
                 // double that of any other number.
-                if self.gen() {
+                if self.random() {
                     continue;
                 } else {
                     NoSign
                 }
-            } else if self.gen() {
+            } else if self.random() {
                 Plus
             } else {
                 Minus
@@ -154,29 +154,33 @@ impl UniformSampler for UniformBigUint {
     type X = BigUint;
 
     #[inline]
-    fn new<B1, B2>(low_b: B1, high_b: B2) -> Self
+    fn new<B1, B2>(low_b: B1, high_b: B2) -> Result<Self, Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
         let low = low_b.borrow();
         let high = high_b.borrow();
-        assert!(low < high);
-        UniformBigUint {
+        if low >= high {
+            return Err(Error::EmptyRange);
+        }
+        Ok(UniformBigUint {
             len: high - low,
             base: low.clone(),
-        }
+        })
     }
 
     #[inline]
-    fn new_inclusive<B1, B2>(low_b: B1, high_b: B2) -> Self
+    fn new_inclusive<B1, B2>(low_b: B1, high_b: B2) -> Result<Self, Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
         let low = low_b.borrow();
         let high = high_b.borrow();
-        assert!(low <= high);
+        if low > high {
+            return Err(Error::EmptyRange);
+        }
         Self::new(low, high + 1u32)
     }
 
@@ -186,12 +190,21 @@ impl UniformSampler for UniformBigUint {
     }
 
     #[inline]
-    fn sample_single<R: Rng + ?Sized, B1, B2>(low: B1, high: B2, rng: &mut R) -> Self::X
+    fn sample_single<R: Rng + ?Sized, B1, B2>(
+        low_b: B1,
+        high_b: B2,
+        rng: &mut R,
+    ) -> Result<Self::X, Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        rng.gen_biguint_range(low.borrow(), high.borrow())
+        let low = low_b.borrow();
+        let high = high_b.borrow();
+        if low >= high {
+            return Err(Error::EmptyRange);
+        }
+        Ok(rng.gen_biguint_range(low, high))
     }
 }
 
@@ -210,29 +223,33 @@ impl UniformSampler for UniformBigInt {
     type X = BigInt;
 
     #[inline]
-    fn new<B1, B2>(low_b: B1, high_b: B2) -> Self
+    fn new<B1, B2>(low_b: B1, high_b: B2) -> Result<Self, Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
         let low = low_b.borrow();
         let high = high_b.borrow();
-        assert!(low < high);
-        UniformBigInt {
+        if low >= high {
+            return Err(Error::EmptyRange);
+        }
+        Ok(UniformBigInt {
             len: (high - low).into_parts().1,
             base: low.clone(),
-        }
+        })
     }
 
     #[inline]
-    fn new_inclusive<B1, B2>(low_b: B1, high_b: B2) -> Self
+    fn new_inclusive<B1, B2>(low_b: B1, high_b: B2) -> Result<Self, Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
         let low = low_b.borrow();
         let high = high_b.borrow();
-        assert!(low <= high);
+        if low > high {
+            return Err(Error::EmptyRange);
+        }
         Self::new(low, high + 1u32)
     }
 
@@ -242,12 +259,21 @@ impl UniformSampler for UniformBigInt {
     }
 
     #[inline]
-    fn sample_single<R: Rng + ?Sized, B1, B2>(low: B1, high: B2, rng: &mut R) -> Self::X
+    fn sample_single<R: Rng + ?Sized, B1, B2>(
+        low_b: B1,
+        high_b: B2,
+        rng: &mut R,
+    ) -> Result<Self::X, Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        rng.gen_bigint_range(low.borrow(), high.borrow())
+        let low = low_b.borrow();
+        let high = high_b.borrow();
+        if low >= high {
+            return Err(Error::EmptyRange);
+        }
+        Ok(rng.gen_bigint_range(low, high))
     }
 }
 
