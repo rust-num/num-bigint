@@ -13,7 +13,7 @@ publish = false
 readme = "README.md"
 exclude = ["/ci/*", "/.github/*"]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.63"
 
 [features]
 default = ["std"]
