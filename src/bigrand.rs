@@ -40,7 +40,7 @@ pub trait RandBigInt {
 }
 
 fn gen_bits<R: Rng + ?Sized>(rng: &mut R, data: &mut [u32], rem: u64) {
-    // `fill` is faster than many `gen::<u32>` calls
+    // `fill` is faster than many `random::<u32>` calls
     rng.fill(data);
     if rem > 0 {
         let last = data.len() - 1;
