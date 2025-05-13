@@ -31,14 +31,16 @@ jobs:
   i686:
     name: Test (i686)
     runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_TARGET: i686-unknown-linux-gnu
     steps:
       - run: |
           sudo apt-get update
           sudo apt-get install gcc-multilib
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable-i686-unknown-linux-gnu
+          target: i686-unknown-linux-gnu
       - run: cargo build
       - run: ./ci/test_full.sh
 
