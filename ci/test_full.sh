@@ -37,6 +37,8 @@ fi
 # arbitrary 1.1.4 started using array::from_fn
 check_version 1.63.0 || cargo update -p arbitrary --precise 1.1.3
 
+check_version 1.63.0 || cargo update -p libc --precise 0.2.163
+
 set -x
 
 # test the default with std
