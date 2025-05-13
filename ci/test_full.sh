@@ -83,9 +83,16 @@ case "${STD_FEATURES[*]}" in
       cd ci/big_serde
       cargo test
     ) ;;&
-  *rand*) cargo test --manifest-path ci/big_rand/Cargo.toml ;;&
+  *rand*) (
+      cd ci/big_rand
+      check_version 1.63.0 || cargo update -p libc --precise 0.2.163
+      check_version 1.61.0 || cargo update -p ppv-lite86 --precise 0.2.17
+      cargo test
+    ) ;;&
   *quickcheck*) (
       cd ci/big_quickcheck
+      check_version 1.63.0 || cargo update -p libc --precise 0.2.163
+      check_version 1.61.0 || cargo update -p syn --precise 2.0.67
       cargo test
     ) ;;&
 esac
