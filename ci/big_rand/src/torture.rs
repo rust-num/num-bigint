@@ -13,11 +13,11 @@ fn test_mul_divide_torture_count(count: usize) {
 
     for _ in 0..count {
         // Test with numbers of random sizes:
-        let xbits = rng.gen_range(0..bits_max);
-        let ybits = rng.gen_range(0..bits_max);
+        let xbits = rng.random_range(0..bits_max);
+        let ybits = rng.random_range(0..bits_max);
 
-        let x = rng.gen_biguint(xbits);
-        let y = rng.gen_biguint(ybits);
+        let x = rng.random_biguint(xbits);
+        let y = rng.random_biguint(ybits);
 
         if x.is_zero() || y.is_zero() {
             continue;
@@ -45,10 +45,10 @@ fn test_factored_mul_torture_count(count: usize) {
     let mut rng = get_rng();
 
     for _ in 0..count {
-        let w = rng.gen_biguint(bits);
-        let x = rng.gen_biguint(bits);
-        let y = rng.gen_biguint(bits);
-        let z = rng.gen_biguint(bits);
+        let w = rng.random_biguint(bits);
+        let x = rng.random_biguint(bits);
+        let y = rng.random_biguint(bits);
+        let z = rng.random_biguint(bits);
 
         let prod1 = (&w * &x) * (&y * &z);
         let prod2 = (&w * &y) * (&x * &z);

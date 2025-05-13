@@ -31,8 +31,4 @@ impl RngCore for XorShiftStar {
             chunk.copy_from_slice(slice)
         }
     }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-        Ok(self.fill_bytes(dest))
-    }
 }
