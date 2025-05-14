@@ -8,14 +8,14 @@ categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT OR Apache-2.0"
 name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
-version = "0.4.6"
+version = "0.5.0"
 readme = "README.md"
 exclude = ["/ci/*", "/.github/*"]
 edition = "2021"
 rust-version = "1.60"
 
 [features]
-default = ["std"]
+default = ["std", "rand"]
 std = ["num-integer/std", "num-traits/std"]
 arbitrary = ["dep:arbitrary"]
 quickcheck = ["dep:quickcheck"]
@@ -56,7 +56,7 @@ features = ["i128"]
 
 [dependencies.rand]
 optional = true
-version = "0.8"
+version = " =0.9.0"
 default-features = false
 
 [dependencies.serde]
@@ -73,3 +73,6 @@ default-features = false
 optional = true
 version = "1"
 default-features = false
+
+[dev-dependencies]
+rand = { version = " =0.9.0", features = ["thread_rng"]}

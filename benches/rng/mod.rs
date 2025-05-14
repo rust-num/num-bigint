@@ -32,7 +32,7 @@ impl RngCore for XorShiftStar {
         }
     }
 
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-        Ok(self.fill_bytes(dest))
-    }
+    // fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+    //     Ok(self.fill_bytes(dest))
+    // }
 }
