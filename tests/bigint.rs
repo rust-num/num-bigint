@@ -13,6 +13,10 @@ use num_integer::Integer;
 use num_traits::{
     pow, Euclid, FromBytes, FromPrimitive, Num, One, Pow, Signed, ToBytes, ToPrimitive, Zero,
 };
+use num_traits::ops::wrapping::WrappingAdd;
+use num_traits::ops::overflowing::OverflowingAdd;
+use num_traits::ops::wrapping::WrappingSub;
+use num_traits::ops::overflowing::OverflowingSub;
 
 mod consts;
 use crate::consts::*;
@@ -979,6 +983,43 @@ fn test_checked_add() {
 }
 
 #[test]
+fn test_wrapping_add() {
+    for elm in SUM_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+
+        assert_eq!(a.wrapping_add(&b), c);
+        assert_eq!(b.wrapping_add(&a), c);
+        assert_eq!(c.wrapping_add(&(-&a)), b);
+        assert_eq!(c.wrapping_add(&(-&b)), a);
+        assert_eq!(a.wrapping_add(&(-&c)), (-&b));
+        assert_eq!(b.wrapping_add(&(-&c)), (-&a));
+        assert_eq!((-&a).wrapping_add(&(-&b)), (-&c));
+        assert_eq!(a.wrapping_add(&(-&a)), BigInt::zero());
+    }
+}
+
+#[test]
+fn test_overflowing_add() {
+    for elm in SUM_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+
+        assert_eq!(a.overflowing_add(&b), (c.clone(), false));
+        assert_eq!(b.overflowing_add(&a), (c.clone(), false));
+        assert_eq!(c.overflowing_add(&(-&a)), (b.clone(), false));
+        assert_eq!(c.overflowing_add(&(-&b)), (a.clone(), false));
+        assert_eq!(a.overflowing_add(&(-&c)), ((-&b).clone(), false));
+        assert_eq!(b.overflowing_add(&(-&c)), ((-&a).clone(), false));
+        assert_eq!(c.overflowing_add(&(-&c)), (BigInt::zero(), false));
+    }
+}
+
+#[test]
 fn test_checked_sub() {
     for elm in SUM_TRIPLES.iter() {
         let (a_vec, b_vec, c_vec) = *elm;
@@ -994,6 +1035,44 @@ fn test_checked_sub() {
         assert!(a.checked_sub(&(-&b)).unwrap() == c);
         assert!((-&c).checked_sub(&(-&a)).unwrap() == (-&b));
         assert!(a.checked_sub(&a).unwrap() == BigInt::zero());
+    }
+}
+
+#[test]
+fn test_wrapping_sub() {
+    for elm in SUM_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+
+        assert_eq!(c.wrapping_sub(&a), b);
+        assert_eq!(c.wrapping_sub(&b), a);
+        assert_eq!((-&b).wrapping_sub(&a), (-&c));
+        assert_eq!((-&a).wrapping_sub(&b), (-&c));
+        assert_eq!(b.wrapping_sub(&(-&a)), c);
+        assert_eq!(a.wrapping_sub(&(-&b)), c);
+        assert_eq!((-&c).wrapping_sub(&(-&a)), (-&b));
+        assert_eq!(a.wrapping_sub(&a), BigInt::zero());
+    }
+}
+
+#[test]
+fn test_overflowing_sub() {
+    for elm in SUM_TRIPLES.iter() {
+        let (a_vec, b_vec, c_vec) = *elm;
+        let a = BigInt::from_slice(Plus, a_vec);
+        let b = BigInt::from_slice(Plus, b_vec);
+        let c = BigInt::from_slice(Plus, c_vec);
+
+        assert_eq!(c.overflowing_sub(&a), (b.clone(), false));
+        assert_eq!(c.overflowing_sub(&b), (a.clone(), false));
+        assert_eq!((-&b).overflowing_sub(&a), ((-&c).clone(), false));
+        assert_eq!((-&a).overflowing_sub(&b), ((-&c).clone(), false));
+        assert_eq!(b.overflowing_sub(&(-&a)), (c.clone(), false));
+        assert_eq!(a.overflowing_sub(&(-&b)), (c.clone(), false));
+        assert_eq!((-&c).overflowing_sub(&(-&a)), ((-&b).clone(), false));
+        assert_eq!(a.overflowing_sub(&a), (BigInt::zero(), false));
     }
 }
 

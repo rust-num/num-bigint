@@ -6,6 +6,8 @@ use crate::UsizePromotion;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::ops::{Sub, SubAssign};
 use num_traits::CheckedSub;
+use num_traits::WrappingSub;
+use num_traits::ops::overflowing::OverflowingSub;
 
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64 as arch;
@@ -308,5 +310,27 @@ impl CheckedSub for BigUint {
             Equal => Some(Self::ZERO),
             Greater => Some(self.sub(v)),
         }
+    }
+}
+
+// This would wrap if second argument is greater than first argument
+// However, the result would be infinite, so we panic
+impl WrappingSub for BigUint {
+    #[inline]
+    fn wrapping_sub(&self, v: &BigUint) -> BigUint {
+        assert!(self >= v, "Wrap would yield an infinite result");
+        self.sub(v)
+    }
+}
+
+// This would overflow if second argument is greater than first argument
+// However, the result would be infinite, so we panic
+// Note that overflow=true cannot be returned, as we cannot return a
+// correct wrapped result.
+impl OverflowingSub for BigUint {
+    #[inline]
+    fn overflowing_sub(&self, v: &BigUint) -> (BigUint, bool) {
+        assert!(self >= v, "Overflow would yield an infinite result");
+        (self.sub(v), false)
     }
 }
