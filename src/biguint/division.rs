@@ -1,9 +1,11 @@
 use super::addition::__add2;
+use super::shift::biguint_shl;
 use super::{cmp_slice, BigUint};
 
-use crate::big_digit::{self, BigDigit, DoubleBigDigit};
+use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit};
 use crate::UsizePromotion;
 
+use alloc::borrow::Cow;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
@@ -103,7 +105,8 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
         }
     }
 
-    (a.normalized(), rem)
+    a.data.normalize();
+    (a, rem)
 }
 
 #[inline]
@@ -158,54 +161,15 @@ fn sub_mul_digit_same_len(a: &mut [BigDigit], b: &[BigDigit], c: BigDigit) -> Bi
     big_digit::MAX - offset_carry
 }
 
-fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
-    if d.is_zero() {
-        panic!("attempt to divide by zero")
-    }
-    if u.is_zero() {
-        return (BigUint::ZERO, BigUint::ZERO);
-    }
-
-    if d.data.len() == 1 {
-        if d.data == [1] {
-            return (u, BigUint::ZERO);
-        }
-        let (div, rem) = div_rem_digit(u, d.data[0]);
-        // reuse d
-        d.data.clear();
-        d += rem;
-        return (div, d);
-    }
-
-    // Required or the q_len calculation below can underflow:
-    match u.cmp(&d) {
-        Less => return (BigUint::ZERO, u),
-        Equal => {
-            u.set_one();
-            return (u, BigUint::ZERO);
-        }
-        Greater => {} // Do nothing
-    }
-
-    // This algorithm is from Knuth, TAOCP vol 2 section 4.3, algorithm D:
-    //
-    // First, normalize the arguments so the highest bit in the highest digit of the divisor is
-    // set: the main loop uses the highest digit of the divisor for generating guesses, so we
-    // want it to be the largest number we can efficiently divide by.
-    //
-    let shift = d.data.last().unwrap().leading_zeros() as usize;
-
-    if shift == 0 {
-        // no need to clone d
-        div_rem_core(u, &d.data)
-    } else {
-        let (q, r) = div_rem_core(u << shift, &(d << shift).data);
-        // renormalize the remainder
-        (q, r >> shift)
-    }
+fn div_rem(u: BigUint, d: BigUint) -> (BigUint, BigUint) {
+    div_rem_cow(Cow::Owned(u), Cow::Owned(d))
 }
 
 pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+    div_rem_cow(Cow::Borrowed(u), Cow::Borrowed(d))
+}
+
+fn div_rem_cow(u: Cow<'_, BigUint>, d: Cow<'_, BigUint>) -> (BigUint, BigUint) {
     if d.is_zero() {
         panic!("attempt to divide by zero")
     }
@@ -213,18 +177,18 @@ pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         return (BigUint::ZERO, BigUint::ZERO);
     }
 
-    if d.data.len() == 1 {
-        if d.data == [1] {
-            return (u.clone(), BigUint::ZERO);
+    if let [digit] = *d.data {
+        let u = u.into_owned();
+        if digit == 1 {
+            return (u, BigUint::ZERO);
         }
-
-        let (div, rem) = div_rem_digit(u.clone(), d.data[0]);
+        let (div, rem) = div_rem_digit(u, digit);
         return (div, rem.into());
     }
 
     // Required or the q_len calculation below can underflow:
-    match u.cmp(d) {
-        Less => return (BigUint::ZERO, u.clone()),
+    match u.cmp(&d) {
+        Less => return (BigUint::ZERO, u.into_owned()),
         Equal => return (One::one(), BigUint::ZERO),
         Greater => {} // Do nothing
     }
@@ -235,13 +199,15 @@ pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     // set: the main loop uses the highest digit of the divisor for generating guesses, so we
     // want it to be the largest number we can efficiently divide by.
     //
-    let shift = d.data.last().unwrap().leading_zeros() as usize;
+    let shift = d.data.last().unwrap().leading_zeros();
 
     if shift == 0 {
         // no need to clone d
-        div_rem_core(u.clone(), &d.data)
+        div_rem_core(u.into_owned(), &d.data)
     } else {
-        let (q, r) = div_rem_core(u << shift, &(d << shift).data);
+        let u = biguint_shl(u, shift);
+        let d = biguint_shl(d, shift);
+        let (q, r) = div_rem_core(u, &d.data);
         // renormalize the remainder
         (q, r >> shift)
     }
@@ -279,7 +245,7 @@ fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
 
     let q_len = a.data.len() - b.len() + 1;
     let mut q = BigUint {
-        data: vec![0; q_len],
+        data: BigDigits::from_vec(vec![0; q_len]),
     };
 
     for j in (0..q_len).rev() {
@@ -334,12 +300,17 @@ fn div_rem_core(mut a: BigUint, b: &[BigDigit]) -> (BigUint, BigUint) {
         a0 = a.data.pop().unwrap();
     }
 
-    a.data.push(a0);
-    a.normalize();
+    if a0 != 0 {
+        a.data.push(a0);
+        a.data.shrink();
+    } else {
+        a.data.normalize();
+    }
 
     debug_assert_eq!(cmp_slice(&a.data, b), Less);
 
-    (q.normalized(), a)
+    q.data.normalize();
+    (q, a)
 }
 
 forward_val_ref_binop!(impl Div for BigUint, div);
@@ -399,9 +370,9 @@ impl Div<BigUint> for u32 {
 
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
-        match other.data.len() {
-            0 => panic!("attempt to divide by zero"),
-            1 => From::from(self as BigDigit / other.data[0]),
+        match *other.data {
+            [] => panic!("attempt to divide by zero"),
+            [x] => BigUint::from(self as BigDigit / x),
             _ => BigUint::ZERO,
         }
     }
@@ -431,19 +402,19 @@ impl Div<BigUint> for u64 {
     cfg_digit!(
         #[inline]
         fn div(self, other: BigUint) -> BigUint {
-            match other.data.len() {
-                0 => panic!("attempt to divide by zero"),
-                1 => From::from(self / u64::from(other.data[0])),
-                2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
+            match *other.data {
+                [] => panic!("attempt to divide by zero"),
+                [x] => BigUint::from(self / u64::from(x)),
+                [x, y] => BigUint::from(self / big_digit::to_doublebigdigit(y, x)),
                 _ => BigUint::ZERO,
             }
         }
 
         #[inline]
         fn div(self, other: BigUint) -> BigUint {
-            match other.data.len() {
-                0 => panic!("attempt to divide by zero"),
-                1 => From::from(self / other.data[0]),
+            match *other.data {
+                [] => panic!("attempt to divide by zero"),
+                [x] => BigUint::from(self / x),
                 _ => BigUint::ZERO,
             }
         }
@@ -474,26 +445,22 @@ impl Div<BigUint> for u128 {
         #[inline]
         fn div(self, other: BigUint) -> BigUint {
             use super::u32_to_u128;
-            match other.data.len() {
-                0 => panic!("attempt to divide by zero"),
-                1 => From::from(self / u128::from(other.data[0])),
-                2 => From::from(
-                    self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
-                ),
-                3 => From::from(self / u32_to_u128(0, other.data[2], other.data[1], other.data[0])),
-                4 => From::from(
-                    self / u32_to_u128(other.data[3], other.data[2], other.data[1], other.data[0]),
-                ),
+            match *other.data {
+                [] => panic!("attempt to divide by zero"),
+                [x] => BigUint::from(self / u128::from(x)),
+                [x, y] => BigUint::from(self / u128::from(big_digit::to_doublebigdigit(y, x))),
+                [x, y, z] => BigUint::from(self / u32_to_u128(0, z, y, x)),
+                [w, x, y, z] => BigUint::from(self / u32_to_u128(z, y, x, w)),
                 _ => BigUint::ZERO,
             }
         }
 
         #[inline]
         fn div(self, other: BigUint) -> BigUint {
-            match other.data.len() {
-                0 => panic!("attempt to divide by zero"),
-                1 => From::from(self / other.data[0] as u128),
-                2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
+            match *other.data {
+                [] => panic!("attempt to divide by zero"),
+                [x] => BigUint::from(self / u128::from(x)),
+                [x, y] => BigUint::from(self / big_digit::to_doublebigdigit(y, x)),
                 _ => BigUint::ZERO,
             }
         }
