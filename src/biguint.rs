@@ -11,6 +11,7 @@ use core::mem;
 use core::str;
 
 use num_integer::{Integer, Roots};
+use num_traits::bounds::LowerBounded;
 use num_traits::{ConstZero, Num, One, Pow, PrimInt, ToPrimitive, Unsigned, Zero};
 
 mod addition;
@@ -169,6 +170,12 @@ impl Zero for BigUint {
 impl ConstZero for BigUint {
     // forward to the inherent const
     const ZERO: Self = Self::ZERO;
+}
+
+impl LowerBounded for BigUint {
+    fn min_value() -> Self {
+        Self::ZERO
+    }
 }
 
 impl One for BigUint {
