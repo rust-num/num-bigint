@@ -1,4 +1,4 @@
-//! Test serialization and deserialization of `BigUint` and `BigInt`
+//! Test serialization and deserialization of [`BigUint`] and [`BigInt`]
 //!
 //! The serialized formats should not change, even if we change our
 //! internal representation, because we want to preserve forward and

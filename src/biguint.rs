@@ -528,7 +528,7 @@ pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
 }
 
 impl BigUint {
-    /// A constant `BigUint` with value 0, useful for static initialization.
+    /// A constant [`BigUint`] with value 0, useful for static initialization.
     pub const ZERO: Self = BigUint { data: Vec::new() };
 
     /// Creates and initializes a [`BigUint`].

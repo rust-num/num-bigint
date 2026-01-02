@@ -63,7 +63,7 @@
 //! The `std` crate feature is enabled by default, which enables [`std::error::Error`]
 //! implementations and some internal use of floating point approximations. This can be disabled by
 //! depending on `num-bigint` with `default-features = false`. Either way, the `alloc` crate is
-//! always required for heap allocation of the `BigInt`/`BigUint` digits.
+//! always required for heap allocation of the [`BigInt`]/[`BigUint`] digits.
 //!
 //! ### Random Generation
 //!
@@ -81,13 +81,13 @@
 //! ### Arbitrary Big Integers
 //!
 //! `num-bigint` supports `arbitrary` and `quickcheck` features to implement
-//! [`arbitrary::Arbitrary`] and [`quickcheck::Arbitrary`], respectively, for both `BigInt` and
-//! `BigUint`. These are useful for fuzzing and other forms of randomized testing.
+//! [`arbitrary::Arbitrary`] and [`quickcheck::Arbitrary`], respectively, for both [`BigInt`] and
+//! [`BigUint`]. These are useful for fuzzing and other forms of randomized testing.
 //!
 //! ### Serialization
 //!
 //! The `serde` feature adds implementations of [`Serialize`][serde::Serialize] and
-//! [`Deserialize`][serde::Deserialize] for both `BigInt` and `BigUint`. Their serialized data is
+//! [`Deserialize`][serde::Deserialize] for both [`BigInt`] and [`BigUint`]. Their serialized data is
 //! generated portably, regardless of platform differences like the internal digit size.
 //!
 //!

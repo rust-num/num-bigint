@@ -217,7 +217,7 @@ pub(super) fn from_radix_le(buf: &[u8], radix: u32) -> Option<BigUint> {
 impl Num for BigUint {
     type FromStrRadixErr = ParseBigIntError;
 
-    /// Creates and initializes a `BigUint`.
+    /// Creates and initializes a [`BigUint`].
     fn from_str_radix(s: &str, radix: u32) -> Result<BigUint, ParseBigIntError> {
         assert!(2 <= radix && radix <= 36, "The radix must be within 2...36");
         let mut s = s;
@@ -808,7 +808,7 @@ fn get_half_radix_base(radix: u32) -> (BigDigit, usize) {
 
 /// Generate tables of the greatest power of each radix that is less that the given maximum. These
 /// are returned from `get_radix_base` to batch the multiplication/division of radix conversions on
-/// full `BigUint` values, operating on primitive integers as much as possible.
+/// full [`BigUint`] values, operating on primitive integers as much as possible.
 ///
 /// e.g. BASES_16[3] = (59049, 10) // 3¹⁰ fits in u16, but 3¹¹ is too big
 ///      BASES_32[3] = (3486784401, 20)

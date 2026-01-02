@@ -1,4 +1,4 @@
-//! Test randomization of `BigUint` and `BigInt`
+//! Test randomization of [`BigUint`] and [`BigInt`]
 //!
 //! This test is in a completely separate crate so `rand::thread_rng()`
 //! can be available without "infecting" the rest of the build with

@@ -1,4 +1,4 @@
-// `Add`/`Sub` ops may flip from `BigInt` to its `BigUint` magnitude
+// `Add`/`Sub` ops may flip from [`BigInt`] to its [`BigUint`] magnitude
 #![allow(clippy::suspicious_arithmetic_impl)]
 
 use alloc::string::String;
@@ -563,7 +563,7 @@ pub trait ToBigInt {
 }
 
 impl BigInt {
-    /// A constant `BigInt` with value 0, useful for static initialization.
+    /// A constant [`BigInt`] with value 0, useful for static initialization.
     pub const ZERO: Self = BigInt {
         sign: NoSign,
         data: BigUint::ZERO,

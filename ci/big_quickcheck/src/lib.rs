@@ -1,4 +1,4 @@
-//! Quickcheck of `BigUint` and `BigInt`
+//! Quickcheck of [`BigUint`] and [`BigInt`]
 //!
 //! This test is in a completely separate crate so we can use `quickcheck_macros` only when
 //! `quickcheck` is active. The main crate can't have optional dev-dependencies, and it's
