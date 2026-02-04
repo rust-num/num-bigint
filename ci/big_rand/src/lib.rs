@@ -1,6 +1,6 @@
 //! Test randomization of `BigUint` and `BigInt`
 //!
-//! This test is in a completely separate crate so `rand::thread_rng()`
+//! This test is in a completely separate crate so `rand::rng()`
 //! can be available without "infecting" the rest of the build with
 //! `rand`'s default features, especially not `rand/std`.
 
@@ -11,21 +11,20 @@ mod torture;
 mod biguint {
     use num_bigint::{BigUint, RandBigInt, RandomBits};
     use num_traits::Zero;
-    use rand::distributions::{Distribution, Uniform};
-    use rand::thread_rng;
-    use rand::{Rng, SeedableRng};
+    use rand::distr::{Distribution, Uniform};
+    use rand::{RngExt, SeedableRng};
 
     #[test]
     fn test_rand() {
-        let mut rng = thread_rng();
-        let n: BigUint = rng.gen_biguint(137);
+        let mut rng = rand::rng();
+        let n: BigUint = rng.random_biguint(137);
         assert!(n.bits() <= 137);
-        assert!(rng.gen_biguint(0).is_zero());
+        assert!(rng.random_biguint(0).is_zero());
     }
 
     #[test]
     fn test_rand_bits() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let n: BigUint = rng.sample(&RandomBits::new(137));
         assert!(n.bits() <= 137);
         let z: BigUint = rng.sample(&RandomBits::new(0));
@@ -34,11 +33,11 @@ mod biguint {
 
     #[test]
     fn test_rand_range() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             assert_eq!(
-                rng.gen_biguint_range(&BigUint::from(236u32), &BigUint::from(237u32)),
+                rng.random_biguint_range(&BigUint::from(236u32), &BigUint::from(237u32)),
                 BigUint::from(236u32)
             );
         }
@@ -46,10 +45,10 @@ mod biguint {
         let l = BigUint::from(403469000u32 + 2352);
         let u = BigUint::from(403469000u32 + 3513);
         for _ in 0..1000 {
-            let n: BigUint = rng.gen_biguint_below(&u);
+            let n: BigUint = rng.random_biguint_below(&u);
             assert!(n < u);
 
-            let n: BigUint = rng.gen_biguint_range(&l, &u);
+            let n: BigUint = rng.random_biguint_range(&l, &u);
             assert!(n >= l);
             assert!(n < u);
         }
@@ -58,32 +57,32 @@ mod biguint {
     #[test]
     #[should_panic]
     fn test_zero_rand_range() {
-        thread_rng().gen_biguint_range(&BigUint::from(54u32), &BigUint::from(54u32));
+        rand::rng().random_biguint_range(&BigUint::from(54u32), &BigUint::from(54u32));
     }
 
     #[test]
     #[should_panic]
     fn test_negative_rand_range() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let l = BigUint::from(2352u32);
         let u = BigUint::from(3513u32);
         // Switching u and l should fail:
-        let _n: BigUint = rng.gen_biguint_range(&u, &l);
+        let _n: BigUint = rng.random_biguint_range(&u, &l);
     }
 
     #[test]
     fn test_rand_uniform() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
 
-        let tiny = Uniform::new(BigUint::from(236u32), BigUint::from(237u32));
+        let tiny = Uniform::new(BigUint::from(236u32), BigUint::from(237u32)).unwrap();
         for _ in 0..10 {
             assert_eq!(rng.sample(&tiny), BigUint::from(236u32));
         }
 
         let l = BigUint::from(403469000u32 + 2352);
         let u = BigUint::from(403469000u32 + 3513);
-        let below = Uniform::new(BigUint::zero(), u.clone());
-        let range = Uniform::new(l.clone(), u.clone());
+        let below = Uniform::new(BigUint::zero(), u.clone()).unwrap();
+        let range = Uniform::new(l.clone(), u.clone()).unwrap();
         for _ in 0..1000 {
             let n: BigUint = rng.sample(&below);
             assert!(n < u);
@@ -102,7 +101,7 @@ mod biguint {
         let mut rng = R::from_seed(seed);
         for (i, &s) in expected.iter().enumerate() {
             let n: BigUint = s.parse().unwrap();
-            let r = rng.gen_biguint((1 << i) + i as u64);
+            let r = rng.random_biguint((1 << i) + i as u64);
             assert_eq!(n, r);
         }
     }
@@ -111,16 +110,16 @@ mod biguint {
     fn test_chacha_value_stability() {
         const EXPECTED: &[&str] = &[
             "0",
-            "0",
-            "52",
-            "84",
-            "23780",
-            "86502865016",
-            "187057847319509867386",
-            "34045731223080904464438757488196244981910",
-            "23813754422987836414755953516143692594193066497413249270287126597896871975915808",
-            "57401636903146945411652549098818446911814352529449356393690984105383482703074355\
-             67088360974672291353736011718191813678720755501317478656550386324355699624671",
+            "5",
+            "9",
+            "1737",
+            "937307",
+            "65028028536",
+            "279291567688057625466",
+            "32684601755397150610585259058469172136086",
+            "3318554627982869824783889169605932904164279211594869435303134228496248029647136",
+            "2709999098147667596661525260287323466371098577491054736003573524257229599510813\
+             950331137383286571179078064518241667831227807123801978731742492319680324618975",
         ];
         use rand_chacha::ChaChaRng;
         seeded_value_stability::<ChaChaRng>(EXPECTED);
@@ -130,16 +129,16 @@ mod biguint {
     fn test_isaac_value_stability() {
         const EXPECTED: &[&str] = &[
             "1",
-            "4",
-            "3",
-            "649",
-            "89116",
-            "7730042024",
-            "20773149082453254949",
-            "35999009049239918667571895439206839620281",
-            "10191757312714088681302309313551624007714035309632506837271600807524767413673006",
-            "37805949268912387809989378008822038725134260145886913321084097194957861133272558\
-             43458183365174899239251448892645546322463253898288141861183340823194379722556",
+            "7",
+            "25",
+            "1683",
+            "117995",
+            "67859584168",
+            "518835239072611148581",
+            "16943196501667364713622917423027819778745",
+            "3128439869237800760464479228021661628664566245028432430864688183042066505636910",
+            "1300089857736899601863677638636111069172421900222879296808895380997042087658914\
+             2976856687389999376070549940495143742173349057217984875028392967823670091580",
         ];
         use rand_isaac::IsaacRng;
         seeded_value_stability::<IsaacRng>(EXPECTED);
@@ -149,16 +148,16 @@ mod biguint {
     fn test_xorshift_value_stability() {
         const EXPECTED: &[&str] = &[
             "1",
-            "0",
-            "37",
-            "395",
-            "181116",
-            "122718231117",
-            "1068467172329355695001",
-            "28246925743544411614293300167064395633287",
-            "12750053187017853048648861493745244146555950255549630854523304068318587267293038",
-            "53041498719137109355568081064978196049094604705283682101683207799515709404788873\
-             53417136457745727045473194367732849819278740266658219147356315674940229288531",
+            "5",
+            "4",
+            "1412",
+            "508011",
+            "45408819789",
+            "35449504201620804505",
+            "1704901123711211464150080787386475139719",
+            "3602478137269873610186753678058899426147621466964026295406154931693450025738094",
+            "2676219517644961904040299206849473763923504769692259108134502736982105190584472\
+             145963969095305013973645948123528298553311404505627077619646814679735036805715",
         ];
         use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED);
@@ -190,11 +189,11 @@ mod biguint {
             assert_eq!((&hi - 1u32).nth_root(n), root);
         }
 
-        let mut rng = thread_rng();
-        let bit_range = Uniform::new(0, 2048);
+        let mut rng = rand::rng();
+        let bit_range = Uniform::new(0, 2048).unwrap();
         let sample_bits: Vec<_> = bit_range.sample_iter(&mut rng).take(100).collect();
         for bits in sample_bits {
-            let x = rng.gen_biguint(bits);
+            let x = rng.random_biguint(bits);
             for n in 2..11 {
                 check(x.clone(), n);
             }
@@ -206,21 +205,20 @@ mod biguint {
 mod bigint {
     use num_bigint::{BigInt, RandBigInt, RandomBits};
     use num_traits::Zero;
-    use rand::distributions::Uniform;
-    use rand::thread_rng;
-    use rand::{Rng, SeedableRng};
+    use rand::distr::Uniform;
+    use rand::{RngExt, SeedableRng};
 
     #[test]
     fn test_rand() {
-        let mut rng = thread_rng();
-        let n: BigInt = rng.gen_bigint(137);
+        let mut rng = rand::rng();
+        let n: BigInt = rng.random_bigint(137);
         assert!(n.bits() <= 137);
-        assert!(rng.gen_bigint(0).is_zero());
+        assert!(rng.random_bigint(0).is_zero());
     }
 
     #[test]
     fn test_rand_bits() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let n: BigInt = rng.sample(&RandomBits::new(137));
         assert!(n.bits() <= 137);
         let z: BigInt = rng.sample(&RandomBits::new(0));
@@ -229,19 +227,19 @@ mod bigint {
 
     #[test]
     fn test_rand_range() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             assert_eq!(
-                rng.gen_bigint_range(&BigInt::from(236), &BigInt::from(237)),
+                rng.random_bigint_range(&BigInt::from(236), &BigInt::from(237)),
                 BigInt::from(236)
             );
         }
 
         fn check(l: BigInt, u: BigInt) {
-            let mut rng = thread_rng();
+            let mut rng = rand::rng();
             for _ in 0..1000 {
-                let n: BigInt = rng.gen_bigint_range(&l, &u);
+                let n: BigInt = rng.random_bigint_range(&l, &u);
                 assert!(n >= l);
                 assert!(n < u);
             }
@@ -256,31 +254,31 @@ mod bigint {
     #[test]
     #[should_panic]
     fn test_zero_rand_range() {
-        thread_rng().gen_bigint_range(&BigInt::from(54), &BigInt::from(54));
+        rand::rng().random_bigint_range(&BigInt::from(54), &BigInt::from(54));
     }
 
     #[test]
     #[should_panic]
     fn test_negative_rand_range() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let l = BigInt::from(2352);
         let u = BigInt::from(3513);
         // Switching u and l should fail:
-        let _n: BigInt = rng.gen_bigint_range(&u, &l);
+        let _n: BigInt = rng.random_bigint_range(&u, &l);
     }
 
     #[test]
     fn test_rand_uniform() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
 
-        let tiny = Uniform::new(BigInt::from(236u32), BigInt::from(237u32));
+        let tiny = Uniform::new(BigInt::from(236u32), BigInt::from(237u32)).unwrap();
         for _ in 0..10 {
             assert_eq!(rng.sample(&tiny), BigInt::from(236u32));
         }
 
         fn check(l: BigInt, u: BigInt) {
-            let mut rng = thread_rng();
-            let range = Uniform::new(l.clone(), u.clone());
+            let mut rng = rand::rng();
+            let range = Uniform::new(l.clone(), u.clone()).unwrap();
             for _ in 0..1000 {
                 let n: BigInt = rng.sample(&range);
                 assert!(n >= l);
@@ -302,7 +300,7 @@ mod bigint {
         let mut rng = R::from_seed(seed);
         for (i, &s) in expected.iter().enumerate() {
             let n: BigInt = s.parse().unwrap();
-            let r = rng.gen_bigint((1 << i) + i as u64);
+            let r = rng.random_bigint((1 << i) + i as u64);
             assert_eq!(n, r);
         }
     }
@@ -311,16 +309,16 @@ mod bigint {
     fn test_chacha_value_stability() {
         const EXPECTED: &[&str] = &[
             "0",
-            "-6",
-            "-1",
-            "1321",
-            "-147247",
-            "8486373526",
-            "-272736656290199720696",
-            "2731152629387534140535423510744221288522",
-            "-28820024790651190394679732038637785320661450462089347915910979466834461433196572",
-            "501454570554170484799723603981439288209930393334472085317977614690773821680884844\
-             8530978478667288338327570972869032358120588620346111979053742269317702532328",
+            "1",
+            "27",
+            "-2031",
+            "194831",
+            "-107270621334",
+            "604778049616971649784",
+            "-13279906003936626507900036341129035843658",
+            "9598537977256701954366948527195592617018633007593014285361020521520881912967196",
+            "-264136370194186516137263361513195811753545618309986722532270577136898598348583\
+             0633637046727891746431626435333970024327119474183088397436173223513443625647336",
         ];
         use rand_chacha::ChaChaRng;
         seeded_value_stability::<ChaChaRng>(EXPECTED);
@@ -329,17 +327,17 @@ mod bigint {
     #[test]
     fn test_isaac_value_stability() {
         const EXPECTED: &[&str] = &[
+            "-1",
             "1",
-            "0",
-            "5",
-            "113",
-            "-132240",
-            "-36348760761",
-            "-365690596708430705434",
-            "-14090753008246284277803606722552430292432",
-            "-26313941628626248579319341019368550803676255307056857978955881718727601479436059",
-            "-14563174552421101848999036239003801073335703811160945137332228646111920972691151\
-             88341090358094331641182310792892459091016794928947242043358702692294695845817",
+            "-43",
+            "-1167",
+            "593159",
+            "87888368313",
+            "863752686698588599066",
+            "25660353483558192035558343375232549481936",
+            "28977159681084521074061473674568372684301464954366590951863406150909603461154587",
+            "87978171425457850961822054897752872385195765083062159849110972253115624397595266\
+             8338609763273154793791639422990440190830083511986328340851006045387434229689",
         ];
         use rand_isaac::IsaacRng;
         seeded_value_stability::<IsaacRng>(EXPECTED);
@@ -348,17 +346,17 @@ mod bigint {
     #[test]
     fn test_xorshift_value_stability() {
         const EXPECTED: &[&str] = &[
-            "-1",
-            "-4",
-            "11",
-            "-1802",
-            "966495",
-            "-62592045703",
-            "-602281783447192077116",
-            "-34335811410223060575607987996861632509125",
-            "29156580925282215857325937227200350542000244609280383263289720243118706105351199",
-            "49920038676141573457451407325930326489996232208489690499754573826911037849083623\
-             24546142615325187412887314466195222441945661833644117700809693098722026764846",
+            "1",
+            "4",
+            "-43",
+            "810",
+            "-389184",
+            "127016555143",
+            "860536200479125799740",
+            "9835480991915491206245016261774321284293",
+            "-14103609324431110452261709176070922521075146602747109938160234322089999252159519",
+            "-22299954340459823432328915829626283467388738618069360141644037252844203947132116\
+             47324956509902805306783167903408806315469788533784856707400727767026773441070",
         ];
         use rand_xorshift::XorShiftRng;
         seeded_value_stability::<XorShiftRng>(EXPECTED);
@@ -366,11 +364,10 @@ mod bigint {
 
     #[test]
     fn test_random_shr() {
-        use rand::distributions::Standard;
-        use rand::Rng;
-        let rng = rand::thread_rng();
+        use rand::distr::StandardUniform;
+        let rng = rand::rng();
 
-        for p in rng.sample_iter::<i64, _>(&Standard).take(1000) {
+        for p in rng.sample_iter::<i64, _>(&StandardUniform).take(1000) {
             let big = BigInt::from(p);
             let bigger = &big << 1000;
             assert_eq!(&bigger >> 1000, big);

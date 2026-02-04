@@ -45,12 +45,12 @@
 //! ```rust,ignore
 //! use num_bigint::{ToBigInt, RandBigInt};
 //!
-//! let mut rng = rand::thread_rng();
-//! let a = rng.gen_bigint(1000);
+//! let mut rng = rand::rng();
+//! let a = rng.random_bigint(1000);
 //!
 //! let low = -10000.to_bigint().unwrap();
 //! let high = 10000.to_bigint().unwrap();
-//! let b = rng.gen_bigint_range(&low, &high);
+//! let b = rng.random_bigint_range(&low, &high);
 //!
 //! // Probably an even larger number.
 //! println!("{}", a * b);
@@ -71,12 +71,14 @@
 //! feature is enabled. To enable it include rand as
 //!
 //! ```toml
-//! rand = "0.8"
-//! num-bigint = { version = "0.4", features = ["rand"] }
+//! rand = "0.10"
+//! num-bigint = { version = "0.5", features = ["rand"] }
 //! ```
 //!
 //! Note that you must use the version of `rand` that `num-bigint` is compatible
-//! with: `0.8`.
+//! with: `0.10`.
+//!
+//! You can similarly use `rand_core v0.10` for a more restricted subset.
 //!
 //! ### Arbitrary Big Integers
 //!
@@ -96,7 +98,6 @@
 //! The `num-bigint` crate is tested for rustc 1.60 and greater.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/num-bigint/0.4")]
 #![warn(rust_2018_idioms)]
 #![no_std]
 
@@ -220,9 +221,13 @@ pub use crate::bigint::BigInt;
 pub use crate::bigint::Sign;
 pub use crate::bigint::ToBigInt;
 
+#[cfg(feature = "rand_core")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand_core")))]
+pub use crate::bigrand::RandBigInt;
+
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+pub use crate::bigrand::{RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
     // A [`BigDigit`] is a [`BigUint`]'s composing element.

@@ -10,6 +10,7 @@ jobs:
       matrix:
         rust: [
           1.60.0, # MSRV
+          1.85.0, # rand
           stable,
           beta,
           nightly

@@ -27,8 +27,9 @@ if ! check_version $MSRV ; then
   exit 1
 fi
 
-STD_FEATURES=(arbitrary quickcheck rand serde)
-NO_STD_FEATURES=(serde rand)
+NO_STD_FEATURES=(serde)
+check_version 1.85 && NO_STD_FEATURES+=(rand_core rand)
+STD_FEATURES=(${NO_STD_FEATURES[*]} arbitrary quickcheck)
 echo "Testing supported features: ${STD_FEATURES[*]}"
 if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"
@@ -85,8 +86,6 @@ case "${STD_FEATURES[*]}" in
     ) ;;&
   *rand*) (
       cd ci/big_rand
-      check_version 1.63.0 || cargo update -p libc --precise 0.2.163
-      check_version 1.61.0 || cargo update -p ppv-lite86 --precise 0.2.17
       cargo test
     ) ;;&
   *quickcheck*) (
