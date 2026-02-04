@@ -21,6 +21,14 @@ check_version() {
   ]]
 }
 
+export CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback
+generate_lockfile() {
+  cargo generate-lockfile
+  if ! check_version 1.85 ; then
+    cargo +stable update
+  fi
+}
+
 echo "Testing $CRATE on rustc $RUST_VERSION"
 if ! check_version $MSRV ; then
   echo "The minimum for $CRATE is rustc $MSRV"
@@ -35,10 +43,10 @@ if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"
 fi
 
-# arbitrary 1.1.4 started using array::from_fn
-check_version 1.63.0 || cargo update -p arbitrary --precise 1.1.3
+generate_lockfile
 
-check_version 1.63.0 || cargo update -p libc --precise 0.2.163
+# arbitrary 1.1.4 started using array::from_fn, but didn't set rust-version
+check_version 1.63.0 || cargo update -p arbitrary --precise 1.1.3
 
 set -x
 
@@ -82,16 +90,17 @@ fi
 case "${STD_FEATURES[*]}" in
   *serde*) (
       cd ci/big_serde
+      generate_lockfile
       cargo test
     ) ;;&
   *rand*) (
       cd ci/big_rand
+      generate_lockfile
       cargo test
     ) ;;&
   *quickcheck*) (
       cd ci/big_quickcheck
-      check_version 1.63.0 || cargo update -p libc --precise 0.2.163
-      check_version 1.61.0 || cargo update -p syn --precise 2.0.67
+      generate_lockfile
       cargo test
     ) ;;&
 esac
