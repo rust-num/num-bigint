@@ -425,7 +425,7 @@ impl Integer for BigInt {
 
     /// Calculates the Greatest Common Divisor (GCD) of the number and `other`.
     ///
-    /// The result is always positive.
+    /// The result is always non-negative.
     #[inline]
     fn gcd(&self, other: &BigInt) -> BigInt {
         BigInt::from(self.data.gcd(&other.data))
