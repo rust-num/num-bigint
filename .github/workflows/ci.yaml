@@ -10,7 +10,8 @@ jobs:
       matrix:
         rust: [
           1.60.0, # MSRV
-          1.85.0, # rand
+          1.63.0, # rand v0.9
+          1.85.0, # rand v0.10
           stable,
           beta,
           nightly
@@ -70,7 +71,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           target: thumbv6m-none-eabi
-      - run: cargo build --target thumbv6m-none-eabi --no-default-features --features "serde rand"
+      - run: cargo build --target thumbv6m-none-eabi --no-default-features --features "serde rand_0_9 rand_0_10"
 
   fmt:
     name: Format
@@ -88,9 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-      - run: cargo doc --features std,serde,rand,quickcheck,arbitrary
-        env:
-          RUSTDOCFLAGS: --cfg docsrs
+      - run: cargo rustdoc --features std,serde,rand_0_9,rand_0_10,quickcheck,arbitrary -- --cfg docsrs
 
   # One job that "summarizes" the success state of this pipeline. This can then be added to branch
   # protection, rather than having to add each job separately.

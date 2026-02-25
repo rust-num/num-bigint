@@ -1,9 +1,8 @@
 #![feature(test)]
-#![cfg(feature = "rand_core")]
 
 extern crate test;
 
-use num_bigint::{BigInt, BigUint, RandBigInt};
+use num_bigint::{BigInt, BigRng010, BigUint};
 use num_traits::{FromPrimitive, Num, One, Zero};
 use std::mem::replace;
 use test::Bencher;

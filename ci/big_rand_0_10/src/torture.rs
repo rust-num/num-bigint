@@ -1,4 +1,5 @@
-use num_bigint::RandBigInt;
+use crate::BigRng;
+
 use num_traits::Zero;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;

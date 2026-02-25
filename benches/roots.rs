@@ -1,9 +1,8 @@
 #![feature(test)]
-#![cfg(feature = "rand_core")]
 
 extern crate test;
 
-use num_bigint::{BigUint, RandBigInt};
+use num_bigint::{BigRng010, BigUint};
 use test::Bencher;
 
 mod rng;

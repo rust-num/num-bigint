@@ -42,19 +42,24 @@
 //!
 //! It's easy to generate large random numbers:
 //!
-//! ```rust,ignore
-//! use num_bigint::{ToBigInt, RandBigInt};
+#![cfg_attr(feature = "rand_0_10", doc = "```")]
+#![cfg_attr(not(feature = "rand_0_10"), doc = "```ignore")]
+//! # use ::rand_0_10 as rand;
+//! use rand::{SeedableRng, rngs::SmallRng};
+//! use num_bigint::{BigInt, BigRng010};
 //!
-//! let mut rng = rand::rng();
+//! // This seed is just for demonstration, but in most cases
+//! // you'll probably want a non-deterministic `rng`.
+//! let mut rng = SmallRng::seed_from_u64(42);
 //! let a = rng.random_bigint(1000);
 //!
-//! let low = -10000.to_bigint().unwrap();
-//! let high = 10000.to_bigint().unwrap();
+//! let low = BigInt::from(-10000);
+//! let high = BigInt::from(10000);
 //! let b = rng.random_bigint_range(&low, &high);
 //!
 //! // Probably an even larger number.
 //! println!("{}", a * b);
-//! ```
+#![doc = "```"]
 //!
 //! See the "Features" section for instructions for enabling random number generation.
 //!
@@ -67,18 +72,26 @@
 //!
 //! ### Random Generation
 //!
-//! `num-bigint` supports the generation of random big integers when the `rand`
-//! feature is enabled. To enable it include rand as
+//! `num-bigint` supports the generation of random big integers when either of the `rand_0_9` or
+//! `rand_0_10` features are enabled. The [`BigRng09`] and [`BigRng010`] traits provide extension
+//! methods for any `rand_core` RNG of their respective version, while the structs [`RandomBits`],
+//! [`UniformBigInt`], and [`UniformBigUint`] fulfill further functionality for random
+//! distributions in `rand::distr`.
+//!
+//! For example, using `rand v0.10` in your `Cargo.toml` may look like this:
 //!
 //! ```toml
 //! rand = "0.10"
-//! num-bigint = { version = "0.5", features = ["rand"] }
+//! num-bigint = { version = "0.5", features = ["rand_0_10"] }
 //! ```
 //!
-//! Note that you must use the version of `rand` that `num-bigint` is compatible
-//! with: `0.10`.
+//! Note that you must use the same version of `rand` as the feature you enable in `num-bigint`.
+//! It's also fine for multiple versions to be enabled at once -- the random-distribution structs
+//! will be shared with trait implementations for each `rand` feature that is enabled, while the
+//! `BigRng` traits are distinct.
 //!
-//! You can similarly use `rand_core v0.10` for a more restricted subset.
+//! You can instead use `rand_core_0_9` or `rand_core_0_10` for a more restricted subset, with
+//! *only* the `BigRng` traits.
 //!
 //! ### Arbitrary Big Integers
 //!
@@ -221,12 +234,13 @@ pub use crate::bigint::BigInt;
 pub use crate::bigint::Sign;
 pub use crate::bigint::ToBigInt;
 
-#[cfg(feature = "rand_core")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand_core")))]
-pub use crate::bigrand::RandBigInt;
+#[cfg(feature = "rand_core_0_10")]
+pub use crate::bigrand::BigRng010;
 
-#[cfg(feature = "rand")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+#[cfg(feature = "rand_core_0_9")]
+pub use crate::bigrand::BigRng09;
+
+#[cfg(any(feature = "rand_0_10", feature = "rand_0_9"))]
 pub use crate::bigrand::{RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {

@@ -25,18 +25,18 @@ if your compiler is not new enough.
 
 ### Random Generation
 
-`num-bigint` supports the generation of random big integers when the `rand`
-feature is enabled. To enable it include rand as
+`num-bigint` supports the generation of random big integers when either of the
+`rand_0_9` or `rand_0_10` features are enabled. For example:
 
 ```toml
 rand = "0.10"
-num-bigint = { version = "0.5", features = ["rand"] }
+num-bigint = { version = "0.5", features = ["rand_0_10"] }
 ```
 
-Note that you must use the version of `rand` that `num-bigint` is compatible
-with: `0.10`.
+Note that you must use the same version of `rand` as the feature you enable.
 
-You can similarly use `rand_core v0.10` for a more restricted subset.
+You can instead use `rand_core_0_9` or `rand_core_0_10` for a more restricted
+subset.
 
 ## Releases
 
