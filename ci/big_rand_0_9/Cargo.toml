@@ -1,0 +1,17 @@
+[package]
+name = "big_rand"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.63"
+publish = false
+
+[dependencies]
+num-traits = "0.2.11"
+rand = "0.9"
+rand_chacha = "0.9"
+rand_isaac = "0.4"
+rand_xorshift = "0.4"
+
+[dependencies.num-bigint]
+features = ["rand_0_9"]
+path = "../.."

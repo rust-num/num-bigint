@@ -13,7 +13,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-num-bigint = "0.4"
+num-bigint = "0.5"
 ```
 
 ## Features
@@ -25,16 +25,18 @@ if your compiler is not new enough.
 
 ### Random Generation
 
-`num-bigint` supports the generation of random big integers when the `rand`
-feature is enabled. To enable it include rand as
+`num-bigint` supports the generation of random big integers when either of the
+`rand_0_9` or `rand_0_10` features are enabled. For example:
 
 ```toml
-rand = "0.8"
-num-bigint = { version = "0.4", features = ["rand"] }
+rand = "0.10"
+num-bigint = { version = "0.5", features = ["rand_0_10"] }
 ```
 
-Note that you must use the version of `rand` that `num-bigint` is compatible
-with: `0.8`.
+Note that you must use the same version of `rand` as the feature you enable.
+
+You can instead use `rand_core_0_9` or `rand_core_0_10` for a more restricted
+subset.
 
 ## Releases
 

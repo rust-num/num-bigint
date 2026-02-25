@@ -8,7 +8,7 @@ categories = [ "algorithms", "data-structures", "science" ]
 license = "MIT OR Apache-2.0"
 name = "num-bigint"
 repository = "https://github.com/rust-num/num-bigint"
-version = "0.4.6"
+version = "0.5.0"
 readme = "README.md"
 exclude = ["/ci/*", "/.github/*"]
 edition = "2021"
@@ -19,24 +19,30 @@ default = ["std"]
 std = ["num-integer/std", "num-traits/std"]
 arbitrary = ["dep:arbitrary"]
 quickcheck = ["dep:quickcheck"]
-rand = ["dep:rand"]
+rand_0_9 = ["rand_core_0_9", "dep:rand_0_9"]
+rand_core_0_9 = ["dep:rand_core_0_9"]
+rand_0_10 = ["rand_core_0_10", "dep:rand_0_10"]
+rand_core_0_10 = ["dep:rand_core_0_10"]
 serde = ["dep:serde"]
 
 [package.metadata.docs.rs]
-features = ["std", "serde", "rand", "quickcheck", "arbitrary"]
+features = ["std", "serde", "rand_0_10", "rand_0_9", "quickcheck", "arbitrary"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 name = "bigint"
+required-features = ["rand_0_10"]
 
 [[bench]]
 name = "factorial"
 
 [[bench]]
 name = "gcd"
+required-features = ["rand_0_10"]
 
 [[bench]]
 name = "roots"
+required-features = ["rand_0_10"]
 
 [[bench]]
 harness = false
@@ -54,9 +60,28 @@ version = "0.2.18"
 default-features = false
 features = ["i128"]
 
-[dependencies.rand]
+[dependencies.rand_0_9]
+package = "rand"
 optional = true
-version = "0.8"
+version = "0.9"
+default-features = false
+
+[dependencies.rand_core_0_9]
+package = "rand_core"
+optional = true
+version = "0.9"
+default-features = false
+
+[dependencies.rand_0_10]
+package = "rand"
+optional = true
+version = "0.10"
+default-features = false
+
+[dependencies.rand_core_0_10]
+package = "rand_core"
+optional = true
+version = "0.10"
 default-features = false
 
 [dependencies.serde]
