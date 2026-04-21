@@ -48,12 +48,9 @@ fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
     }
 
     let (carry_hi, carry_lo) = big_digit::from_doublebigdigit(carry);
+    debug_assert_eq!(carry_hi, 0, "mac_with_carry never keeps high bits");
 
-    let final_carry = if carry_hi == 0 {
-        __add2(a_hi, &[carry_lo])
-    } else {
-        __add2(a_hi, &[carry_hi, carry_lo])
-    };
+    let final_carry = __add2(a_hi, &[carry_lo]);
     assert_eq!(final_carry, 0, "carry overflow during multiplication!");
 }
 
