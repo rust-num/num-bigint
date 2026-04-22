@@ -3,7 +3,7 @@
 set -e
 
 CRATE=num-bigint
-MSRV=1.60
+MSRV=1.63
 
 get_rust_version() {
   local array=($(rustc --version));
