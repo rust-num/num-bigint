@@ -5,12 +5,12 @@ mod biguint {
     fn check<T: Into<BigUint>>(x: T, n: u32) {
         let x: BigUint = x.into();
         let root = x.nth_root(n);
-        println!("check {}.nth_root({}) = {}", x, n, root);
+        println!("check {x}.nth_root({n}) = {root}");
 
         if n == 2 {
-            assert_eq!(root, x.sqrt())
+            assert_eq!(root, x.sqrt());
         } else if n == 3 {
-            assert_eq!(root, x.cbrt())
+            assert_eq!(root, x.cbrt());
         }
 
         let lo = root.pow(n);
@@ -120,9 +120,9 @@ mod bigint {
         let res = big_x.nth_root(n);
 
         if n == 2 {
-            assert_eq!(&res, &big_x.sqrt())
+            assert_eq!(&res, &big_x.sqrt());
         } else if n == 3 {
-            assert_eq!(&res, &big_x.cbrt())
+            assert_eq!(&res, &big_x.cbrt());
         }
 
         if big_x.is_negative() {

@@ -421,7 +421,7 @@ fn scalar_mul(a: &mut BigUint, b: BigDigit) {
                 *a <<= b.trailing_zeros();
             } else {
                 let mut carry = 0;
-                for a in a.data.iter_mut() {
+                for a in &mut a.data {
                     *a = mul_with_carry(*a, b, &mut carry);
                 }
                 if carry != 0 {
@@ -434,10 +434,10 @@ fn scalar_mul(a: &mut BigUint, b: BigDigit) {
 
 fn sub_sign(mut a: &[BigDigit], mut b: &[BigDigit]) -> (Sign, BigUint) {
     // Normalize:
-    if let Some(&0) = a.last() {
+    if a.last() == Some(&0) {
         a = &a[..a.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
     }
-    if let Some(&0) = b.last() {
+    if b.last() == Some(&0) {
         b = &b[..b.iter().rposition(|&x| x != 0).map_or(0, |i| i + 1)];
     }
 
@@ -514,10 +514,10 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigUint, mul)
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigUint, mul);
 
 impl Mul<u32> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn mul(mut self, other: u32) -> BigUint {
+    fn mul(mut self, other: u32) -> Self {
         self *= other;
         self
     }
@@ -530,10 +530,10 @@ impl MulAssign<u32> for BigUint {
 }
 
 impl Mul<u64> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn mul(mut self, other: u64) -> BigUint {
+    fn mul(mut self, other: u64) -> Self {
         self *= other;
         self
     }
@@ -558,10 +558,10 @@ impl MulAssign<u64> for BigUint {
 }
 
 impl Mul<u128> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn mul(mut self, other: u128) -> BigUint {
+    fn mul(mut self, other: u128) -> Self {
         self *= other;
         self
     }
@@ -596,7 +596,7 @@ impl MulAssign<u128> for BigUint {
 
 impl CheckedMul for BigUint {
     #[inline]
-    fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_mul(&self, v: &Self) -> Option<Self> {
         Some(self.mul(v))
     }
 }

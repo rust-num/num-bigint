@@ -13,8 +13,8 @@ use rng::get_rng;
 
 fn bench(b: &mut Bencher, bits: u64, gcd: fn(&BigUint, &BigUint) -> BigUint) {
     let mut rng = get_rng();
-    let x = rng.gen_biguint(bits);
-    let y = rng.gen_biguint(bits);
+    let x = rng.random_biguint(bits);
+    let y = rng.random_biguint(bits);
 
     assert_eq!(euclid(&x, &y), x.gcd(&y));
 

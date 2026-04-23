@@ -115,7 +115,7 @@ mod bigint {
 
     fn check_modpow<T: Into<BigInt>>(b: T, e: T, m: T, r: T) {
         fn check(b: &BigInt, e: &BigInt, m: &BigInt, r: &BigInt) {
-            assert_eq!(&b.modpow(e, m), r, "{} ** {} (mod {}) != {}", b, e, m, r);
+            assert_eq!(&b.modpow(e, m), r, "{b} ** {e} (mod {m}) != {r}");
 
             let even_m = m << 1u8;
             let even_modpow = b.modpow(e, m);

@@ -17,7 +17,7 @@ fn test_scalar_add() {
         assert_unsigned_scalar_assign_op!(x += y == z);
     }
 
-    for elm in SUM_TRIPLES.iter() {
+    for elm in SUM_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigUint::from_slice(a_vec);
         let b = BigUint::from_slice(b_vec);
@@ -36,7 +36,7 @@ fn test_scalar_sub() {
         assert_unsigned_scalar_assign_op!(x -= y == z);
     }
 
-    for elm in SUM_TRIPLES.iter() {
+    for elm in SUM_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigUint::from_slice(a_vec);
         let b = BigUint::from_slice(b_vec);
@@ -55,7 +55,7 @@ fn test_scalar_mul() {
         assert_unsigned_scalar_assign_op!(x *= y == z);
     }
 
-    for elm in MUL_TRIPLES.iter() {
+    for elm in MUL_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigUint::from_slice(a_vec);
         let b = BigUint::from_slice(b_vec);
@@ -82,7 +82,7 @@ fn test_scalar_div_rem() {
         assert_unsigned_scalar_assign_op!(x %= y == r);
     }
 
-    for elm in MUL_TRIPLES.iter() {
+    for elm in MUL_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigUint::from_slice(a_vec);
         let b = BigUint::from_slice(b_vec);
@@ -97,7 +97,7 @@ fn test_scalar_div_rem() {
         }
     }
 
-    for elm in DIV_REM_QUADRUPLES.iter() {
+    for elm in DIV_REM_QUADRUPLES {
         let (a_vec, b_vec, c_vec, d_vec) = *elm;
         let a = BigUint::from_slice(a_vec);
         let b = BigUint::from_slice(b_vec);

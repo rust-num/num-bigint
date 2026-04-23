@@ -19,7 +19,7 @@ fn test_scalar_add() {
         assert_signed_scalar_assign_op!(x += y == z);
     }
 
-    for elm in SUM_TRIPLES.iter() {
+    for elm in SUM_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigInt::from_slice(Plus, a_vec);
         let b = BigInt::from_slice(Plus, b_vec);
@@ -45,7 +45,7 @@ fn test_scalar_sub() {
         assert_signed_scalar_assign_op!(x -= y == z);
     }
 
-    for elm in SUM_TRIPLES.iter() {
+    for elm in SUM_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigInt::from_slice(Plus, a_vec);
         let b = BigInt::from_slice(Plus, b_vec);
@@ -71,7 +71,7 @@ fn test_scalar_mul() {
         assert_signed_scalar_assign_op!(x *= y == z);
     }
 
-    for elm in MUL_TRIPLES.iter() {
+    for elm in MUL_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigInt::from_slice(Plus, a_vec);
         let b = BigInt::from_slice(Plus, b_vec);
@@ -100,7 +100,9 @@ fn test_scalar_div_rem() {
         assert!(r == *ans_r);
 
         let b = BigInt::from(b);
-        let (a, ans_q, ans_r) = (a.clone(), ans_q.clone(), ans_r.clone());
+        let a = a.clone();
+        let ans_q = ans_q.clone();
+        let ans_r = ans_r.clone();
         assert_signed_scalar_op!(a / b == ans_q);
         assert_signed_scalar_op!(a % b == ans_r);
         assert_signed_scalar_assign_op!(a /= b == ans_q);
@@ -118,7 +120,7 @@ fn test_scalar_div_rem() {
         check_sub(&a.neg(), b, &q.neg(), &r.neg());
     }
 
-    for elm in MUL_TRIPLES.iter() {
+    for elm in MUL_TRIPLES {
         let (a_vec, b_vec, c_vec) = *elm;
         let a = BigInt::from_slice(Plus, a_vec);
         let b = BigInt::from_slice(Plus, b_vec);
@@ -135,7 +137,7 @@ fn test_scalar_div_rem() {
         }
     }
 
-    for elm in DIV_REM_QUADRUPLES.iter() {
+    for elm in DIV_REM_QUADRUPLES {
         let (a_vec, b_vec, c_vec, d_vec) = *elm;
         let a = BigInt::from_slice(Plus, a_vec);
         let c = BigInt::from_slice(Plus, c_vec);

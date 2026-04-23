@@ -137,22 +137,22 @@ enum BigIntErrorKind {
 }
 
 impl ParseBigIntError {
-    fn __description(&self) -> &str {
-        use crate::BigIntErrorKind::*;
+    const fn __description(&self) -> &'static str {
+        use crate::BigIntErrorKind::{Empty, InvalidDigit};
         match self.kind {
             Empty => "cannot parse integer from empty string",
             InvalidDigit => "invalid digit found in string",
         }
     }
 
-    fn empty() -> Self {
-        ParseBigIntError {
+    const fn empty() -> Self {
+        Self {
             kind: BigIntErrorKind::Empty,
         }
     }
 
-    fn invalid() -> Self {
-        ParseBigIntError {
+    const fn invalid() -> Self {
+        Self {
             kind: BigIntErrorKind::InvalidDigit,
         }
     }
@@ -179,11 +179,11 @@ pub struct TryFromBigIntError<T> {
 }
 
 impl<T> TryFromBigIntError<T> {
-    fn new(original: T) -> Self {
-        TryFromBigIntError { original }
+    const fn new(original: T) -> Self {
+        Self { original }
     }
 
-    fn __description(&self) -> &str {
+    const fn __description(&self) -> &'static str {
         "out of range conversion regarding big integer attempted"
     }
 
@@ -246,17 +246,17 @@ mod big_digit {
     const LO_MASK: DoubleBigDigit = MAX as DoubleBigDigit;
 
     #[inline]
-    fn get_hi(n: DoubleBigDigit) -> BigDigit {
+    const fn get_hi(n: DoubleBigDigit) -> BigDigit {
         (n >> BITS) as BigDigit
     }
     #[inline]
-    fn get_lo(n: DoubleBigDigit) -> BigDigit {
+    const fn get_lo(n: DoubleBigDigit) -> BigDigit {
         (n & LO_MASK) as BigDigit
     }
 
     /// Split one [`DoubleBigDigit`] into two [`BigDigit`]s.
     #[inline]
-    pub(crate) fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
+    pub(crate) const fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
         (get_hi(n), get_lo(n))
     }
 

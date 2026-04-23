@@ -10,9 +10,7 @@ use num_traits::{PrimInt, Zero};
 
 #[inline]
 fn biguint_shl<T: PrimInt>(n: Cow<'_, BigUint>, shift: T) -> BigUint {
-    if shift < T::zero() {
-        panic!("attempt to shift left with negative");
-    }
+    assert!((shift >= T::zero()), "attempt to shift left with negative");
     if n.is_zero() {
         return n.into_owned();
     }
@@ -23,21 +21,20 @@ fn biguint_shl<T: PrimInt>(n: Cow<'_, BigUint>, shift: T) -> BigUint {
 }
 
 fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
-    let mut data = match digits {
-        0 => n.into_owned().data,
-        _ => {
-            let len = digits.saturating_add(n.data.len() + 1);
-            let mut data = Vec::with_capacity(len);
-            data.resize(digits, 0);
-            data.extend(n.data.iter());
-            data
-        }
+    let mut data = if digits == 0 {
+        n.into_owned().data
+    } else {
+        let len = digits.saturating_add(n.data.len() + 1);
+        let mut data = Vec::with_capacity(len);
+        data.resize(digits, 0);
+        data.extend(n.data.iter());
+        data
     };
 
     if shift > 0 {
         let mut carry = 0;
         let carry_shift = big_digit::BITS - shift;
-        for elem in data[digits..].iter_mut() {
+        for elem in &mut data[digits..] {
             let new_carry = *elem >> carry_shift;
             *elem = (*elem << shift) | carry;
             carry = new_carry;
@@ -52,9 +49,7 @@ fn biguint_shl2(n: Cow<'_, BigUint>, digits: usize, shift: u8) -> BigUint {
 
 #[inline]
 fn biguint_shr<T: PrimInt>(n: Cow<'_, BigUint>, shift: T) -> BigUint {
-    if shift < T::zero() {
-        panic!("attempt to shift right with negative");
-    }
+    assert!((shift >= T::zero()), "attempt to shift right with negative");
     if n.is_zero() {
         return n.into_owned();
     }

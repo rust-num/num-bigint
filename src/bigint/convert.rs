@@ -14,8 +14,8 @@ impl FromStr for BigInt {
     type Err = ParseBigIntError;
 
     #[inline]
-    fn from_str(s: &str) -> Result<BigInt, ParseBigIntError> {
-        BigInt::from_str_radix(s, 10)
+    fn from_str(s: &str) -> Result<Self, ParseBigIntError> {
+        Self::from_str_radix(s, 10)
     }
 }
 
@@ -24,17 +24,15 @@ impl Num for BigInt {
 
     /// Creates and initializes a [`BigInt`].
     #[inline]
-    fn from_str_radix(mut s: &str, radix: u32) -> Result<BigInt, ParseBigIntError> {
-        let sign = if let Some(tail) = s.strip_prefix('-') {
+    fn from_str_radix(mut s: &str, radix: u32) -> Result<Self, ParseBigIntError> {
+        let sign = s.strip_prefix('-').map_or(Plus, |tail| {
             if !tail.starts_with('+') {
-                s = tail
+                s = tail;
             }
             Minus
-        } else {
-            Plus
-        };
+        });
         let bu = BigUint::from_str_radix(s, radix)?;
-        Ok(BigInt::from_biguint(sign, bu))
+        Ok(Self::from_biguint(sign, bu))
     }
 }
 
@@ -142,32 +140,32 @@ impl_try_from_bigint!(i128, ToPrimitive::to_i128);
 
 impl FromPrimitive for BigInt {
     #[inline]
-    fn from_i64(n: i64) -> Option<BigInt> {
-        Some(BigInt::from(n))
+    fn from_i64(n: i64) -> Option<Self> {
+        Some(Self::from(n))
     }
 
     #[inline]
-    fn from_i128(n: i128) -> Option<BigInt> {
-        Some(BigInt::from(n))
+    fn from_i128(n: i128) -> Option<Self> {
+        Some(Self::from(n))
     }
 
     #[inline]
-    fn from_u64(n: u64) -> Option<BigInt> {
-        Some(BigInt::from(n))
+    fn from_u64(n: u64) -> Option<Self> {
+        Some(Self::from(n))
     }
 
     #[inline]
-    fn from_u128(n: u128) -> Option<BigInt> {
-        Some(BigInt::from(n))
+    fn from_u128(n: u128) -> Option<Self> {
+        Some(Self::from(n))
     }
 
     #[inline]
-    fn from_f64(n: f64) -> Option<BigInt> {
+    fn from_f64(n: f64) -> Option<Self> {
         if n >= 0.0 {
-            BigUint::from_f64(n).map(BigInt::from)
+            BigUint::from_f64(n).map(Self::from)
         } else {
             let x = BigUint::from_f64(-n)?;
-            Some(-BigInt::from(x))
+            Some(-Self::from(x))
         }
     }
 }
@@ -176,10 +174,10 @@ impl From<i64> for BigInt {
     #[inline]
     fn from(n: i64) -> Self {
         if n >= 0 {
-            BigInt::from(n as u64)
+            Self::from(n as u64)
         } else {
             let u = u64::MAX - (n as u64) + 1;
-            BigInt {
+            Self {
                 sign: Minus,
                 data: BigUint::from(u),
             }
@@ -191,10 +189,10 @@ impl From<i128> for BigInt {
     #[inline]
     fn from(n: i128) -> Self {
         if n >= 0 {
-            BigInt::from(n as u128)
+            Self::from(n as u128)
         } else {
             let u = u128::MAX - (n as u128) + 1;
-            BigInt {
+            Self {
                 sign: Minus,
                 data: BigUint::from(u),
             }
@@ -222,7 +220,7 @@ impl From<u64> for BigInt {
     #[inline]
     fn from(n: u64) -> Self {
         if n > 0 {
-            BigInt {
+            Self {
                 sign: Plus,
                 data: BigUint::from(n),
             }
@@ -236,7 +234,7 @@ impl From<u128> for BigInt {
     #[inline]
     fn from(n: u128) -> Self {
         if n > 0 {
-            BigInt {
+            Self {
                 sign: Plus,
                 data: BigUint::from(n),
             }
@@ -268,7 +266,7 @@ impl From<BigUint> for BigInt {
         if n.is_zero() {
             Self::ZERO
         } else {
-            BigInt {
+            Self {
                 sign: Plus,
                 data: n,
             }
@@ -312,7 +310,7 @@ impl TryFrom<&BigInt> for BigUint {
     type Error = TryFromBigIntError<()>;
 
     #[inline]
-    fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError<()>> {
+    fn try_from(value: &BigInt) -> Result<Self, TryFromBigIntError<()>> {
         value
             .to_biguint()
             .ok_or_else(|| TryFromBigIntError::new(()))
@@ -323,7 +321,7 @@ impl TryFrom<BigInt> for BigUint {
     type Error = TryFromBigIntError<BigInt>;
 
     #[inline]
-    fn try_from(value: BigInt) -> Result<BigUint, TryFromBigIntError<BigInt>> {
+    fn try_from(value: BigInt) -> Result<Self, TryFromBigIntError<BigInt>> {
         if value.sign() == Sign::Minus {
             Err(TryFromBigIntError::new(value))
         } else {
@@ -409,7 +407,7 @@ pub(super) fn from_signed_bytes_le(digits: &[u8]) -> BigInt {
 #[inline]
 pub(super) fn to_signed_bytes_be(x: &BigInt) -> Vec<u8> {
     let mut bytes = x.data.to_bytes_be();
-    let first_byte = bytes.first().cloned().unwrap_or(0);
+    let first_byte = bytes.first().copied().unwrap_or(0);
     if first_byte > 0x7f
         && !(first_byte == 0x80 && bytes.iter().skip(1).all(Zero::is_zero) && x.sign == Sign::Minus)
     {
@@ -425,7 +423,7 @@ pub(super) fn to_signed_bytes_be(x: &BigInt) -> Vec<u8> {
 #[inline]
 pub(super) fn to_signed_bytes_le(x: &BigInt) -> Vec<u8> {
     let mut bytes = x.data.to_bytes_le();
-    let last_byte = bytes.last().cloned().unwrap_or(0);
+    let last_byte = bytes.last().copied().unwrap_or(0);
     if last_byte > 0x7f
         && !(last_byte == 0x80
             && bytes.iter().rev().skip(1).all(Zero::is_zero)
@@ -444,14 +442,14 @@ pub(super) fn to_signed_bytes_le(x: &BigInt) -> Vec<u8> {
 /// in little-endian byte order.
 #[inline]
 fn twos_complement_le(digits: &mut [u8]) {
-    twos_complement(digits)
+    twos_complement(digits);
 }
 
 /// Perform in-place two's complement of the given binary representation
 /// in big-endian byte order.
 #[inline]
 fn twos_complement_be(digits: &mut [u8]) {
-    twos_complement(digits.iter_mut().rev())
+    twos_complement(digits.iter_mut().rev());
 }
 
 /// Perform in-place two's complement of the given digit iterator

@@ -100,7 +100,7 @@ impl_shift! { i8, i16, i32, i64, i128, isize }
 fn shr_round_down<T: PrimInt>(i: &BigInt, shift: T) -> bool {
     if i.is_negative() {
         let zeros = i.trailing_zeros().expect("negative values are non-zero");
-        shift > T::zero() && shift.to_u64().map(|shift| zeros < shift).unwrap_or(true)
+        shift > T::zero() && shift.to_u64().map_or(true, |shift| zeros < shift)
     } else {
         false
     }

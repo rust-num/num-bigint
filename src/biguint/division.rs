@@ -83,9 +83,7 @@ fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, Big
 
 #[inline]
 pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
-    if b == 0 {
-        panic!("attempt to divide by zero")
-    }
+    assert!((b != 0), "attempt to divide by zero");
 
     let mut rem = 0;
 
@@ -108,9 +106,7 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) 
 
 #[inline]
 fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
-    if b == 0 {
-        panic!("attempt to divide by zero")
-    }
+    assert!((b != 0), "attempt to divide by zero");
 
     let mut rem = 0;
 
@@ -159,9 +155,7 @@ fn sub_mul_digit_same_len(a: &mut [BigDigit], b: &[BigDigit], c: BigDigit) -> Bi
 }
 
 fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
-    if d.is_zero() {
-        panic!("attempt to divide by zero")
-    }
+    assert!(!d.is_zero(), "attempt to divide by zero");
     if u.is_zero() {
         return (BigUint::ZERO, BigUint::ZERO);
     }
@@ -206,9 +200,7 @@ fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
 }
 
 pub(super) fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
-    if d.is_zero() {
-        panic!("attempt to divide by zero")
-    }
+    assert!(!d.is_zero(), "attempt to divide by zero");
     if u.is_zero() {
         return (BigUint::ZERO, BigUint::ZERO);
     }
@@ -346,11 +338,11 @@ forward_val_ref_binop!(impl Div for BigUint, div);
 forward_ref_val_binop!(impl Div for BigUint, div);
 forward_val_assign!(impl DivAssign for BigUint, div_assign);
 
-impl Div<BigUint> for BigUint {
-    type Output = BigUint;
+impl Div<Self> for BigUint {
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: BigUint) -> BigUint {
+    fn div(self, other: Self) -> Self {
         let (q, _) = div_rem(self, other);
         q
     }
@@ -365,9 +357,9 @@ impl Div<&BigUint> for &BigUint {
         q
     }
 }
-impl DivAssign<&BigUint> for BigUint {
+impl DivAssign<&Self> for BigUint {
     #[inline]
-    fn div_assign(&mut self, other: &BigUint) {
+    fn div_assign(&mut self, other: &Self) {
         *self = &*self / other;
     }
 }
@@ -379,10 +371,10 @@ forward_all_scalar_binop_to_val_val!(impl Div<u64> for BigUint, div);
 forward_all_scalar_binop_to_val_val!(impl Div<u128> for BigUint, div);
 
 impl Div<u32> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: u32) -> BigUint {
+    fn div(self, other: u32) -> Self {
         let (q, _) = div_rem_digit(self, other as BigDigit);
         q
     }
@@ -408,10 +400,10 @@ impl Div<BigUint> for u32 {
 }
 
 impl Div<u64> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: u64) -> BigUint {
+    fn div(self, other: u64) -> Self {
         let (q, _) = div_rem(self, From::from(other));
         q
     }
@@ -451,10 +443,10 @@ impl Div<BigUint> for u64 {
 }
 
 impl Div<u128> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: u128) -> BigUint {
+    fn div(self, other: u128) -> Self {
         let (q, _) = div_rem(self, From::from(other));
         q
     }
@@ -504,11 +496,11 @@ forward_val_ref_binop!(impl Rem for BigUint, rem);
 forward_ref_val_binop!(impl Rem for BigUint, rem);
 forward_val_assign!(impl RemAssign for BigUint, rem_assign);
 
-impl Rem<BigUint> for BigUint {
-    type Output = BigUint;
+impl Rem<Self> for BigUint {
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: BigUint) -> BigUint {
+    fn rem(self, other: Self) -> Self {
         if let Some(other) = other.to_u32() {
             &self % other
         } else {
@@ -523,17 +515,18 @@ impl Rem<&BigUint> for &BigUint {
 
     #[inline]
     fn rem(self, other: &BigUint) -> BigUint {
-        if let Some(other) = other.to_u32() {
-            self % other
-        } else {
-            let (_, r) = self.div_rem(other);
-            r
-        }
+        other.to_u32().map_or_else(
+            || {
+                let (_, r) = self.div_rem(other);
+                r
+            },
+            |other| self % other,
+        )
     }
 }
-impl RemAssign<&BigUint> for BigUint {
+impl RemAssign<&Self> for BigUint {
     #[inline]
-    fn rem_assign(&mut self, other: &BigUint) {
+    fn rem_assign(&mut self, other: &Self) {
         *self = &*self % other;
     }
 }
@@ -600,10 +593,10 @@ impl_rem_assign_scalar!(i16, to_i16);
 impl_rem_assign_scalar!(i8, to_i8);
 
 impl Rem<u64> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: u64) -> BigUint {
+    fn rem(self, other: u64) -> Self {
         let (_, r) = div_rem(self, From::from(other));
         r
     }
@@ -626,10 +619,10 @@ impl Rem<BigUint> for u64 {
 }
 
 impl Rem<u128> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: u128) -> BigUint {
+    fn rem(self, other: u128) -> Self {
         let (_, r) = div_rem(self, From::from(other));
         r
     }
@@ -654,7 +647,7 @@ impl Rem<BigUint> for u128 {
 
 impl CheckedDiv for BigUint {
     #[inline]
-    fn checked_div(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_div(&self, v: &Self) -> Option<Self> {
         if v.is_zero() {
             return None;
         }
@@ -664,7 +657,7 @@ impl CheckedDiv for BigUint {
 
 impl CheckedEuclid for BigUint {
     #[inline]
-    fn checked_div_euclid(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_div_euclid(&self, v: &Self) -> Option<Self> {
         if v.is_zero() {
             return None;
         }
@@ -672,7 +665,7 @@ impl CheckedEuclid for BigUint {
     }
 
     #[inline]
-    fn checked_rem_euclid(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_rem_euclid(&self, v: &Self) -> Option<Self> {
         if v.is_zero() {
             return None;
         }
@@ -686,13 +679,13 @@ impl CheckedEuclid for BigUint {
 
 impl Euclid for BigUint {
     #[inline]
-    fn div_euclid(&self, v: &BigUint) -> BigUint {
+    fn div_euclid(&self, v: &Self) -> Self {
         // trivially same as regular division
         self / v
     }
 
     #[inline]
-    fn rem_euclid(&self, v: &BigUint) -> BigUint {
+    fn rem_euclid(&self, v: &Self) -> Self {
         // trivially same as regular remainder
         self % v
     }

@@ -71,13 +71,10 @@ cfg_digit!(
         impl<'a> U32Digits<'a> {
             #[inline]
             pub(super) fn new(data: &'a [u64]) -> Self {
-                let last_hi_is_zero = data
-                    .last()
-                    .map(|&last| {
-                        let last_hi = (last >> 32) as u32;
-                        last_hi == 0
-                    })
-                    .unwrap_or(false);
+                let last_hi_is_zero = data.last().map_or(false, |&last| {
+                    let last_hi = (last >> 32) as u32;
+                    last_hi == 0
+                });
                 U32Digits {
                     data,
                     next_is_lo: true,
@@ -235,7 +232,7 @@ cfg_digit!(
             type Item = u64;
             #[inline]
             fn next(&mut self) -> Option<u64> {
-                self.it.next().cloned()
+                self.it.next().copied()
             }
 
             #[inline]
@@ -245,12 +242,12 @@ cfg_digit!(
 
             #[inline]
             fn nth(&mut self, n: usize) -> Option<u64> {
-                self.it.nth(n).cloned()
+                self.it.nth(n).copied()
             }
 
             #[inline]
             fn last(self) -> Option<u64> {
-                self.it.last().cloned()
+                self.it.last().copied()
             }
 
             #[inline]
@@ -261,7 +258,7 @@ cfg_digit!(
 
         impl DoubleEndedIterator for U64Digits<'_> {
             fn next_back(&mut self) -> Option<Self::Item> {
-                self.it.next_back().cloned()
+                self.it.next_back().copied()
             }
         }
     };
@@ -287,10 +284,10 @@ fn test_iter_u32_digits() {
     assert_eq!(it.len(), 0);
     assert_eq!(it.next(), None);
 
-    let n = super::BigUint::from(112500000000u64);
+    let n = super::BigUint::from(112_500_000_000_u64);
     let mut it = n.iter_u32_digits();
     assert_eq!(it.len(), 2);
-    assert_eq!(it.next(), Some(830850304));
+    assert_eq!(it.next(), Some(830_850_304));
     assert_eq!(it.len(), 1);
     assert_eq!(it.next(), Some(26));
     assert_eq!(it.len(), 0);
@@ -329,10 +326,10 @@ fn test_iter_u32_digits_be() {
     assert_eq!(it.len(), 0);
     assert_eq!(it.next(), None);
 
-    let n = super::BigUint::from(112500000000u64);
+    let n = super::BigUint::from(112_500_000_000_u64);
     let mut it = n.iter_u32_digits();
     assert_eq!(it.len(), 2);
-    assert_eq!(it.next(), Some(830850304));
+    assert_eq!(it.next(), Some(830_850_304));
     assert_eq!(it.len(), 1);
     assert_eq!(it.next(), Some(26));
     assert_eq!(it.len(), 0);

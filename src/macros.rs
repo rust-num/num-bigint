@@ -160,7 +160,7 @@ macro_rules! forward_val_assign_scalar {
     };
 }
 
-/// use this if val_val_binop is already implemented and the reversed order is required
+/// use this if `val_val_binop` is already implemented and the reversed order is required
 macro_rules! forward_scalar_val_val_binop_commutative {
     (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
         impl $imp<$res> for $scalar {

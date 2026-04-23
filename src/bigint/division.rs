@@ -20,9 +20,9 @@ impl Div<&BigInt> for &BigInt {
     }
 }
 
-impl DivAssign<&BigInt> for BigInt {
+impl DivAssign<&Self> for BigInt {
     #[inline]
-    fn div_assign(&mut self, other: &BigInt) {
+    fn div_assign(&mut self, other: &Self) {
         *self = &*self / other;
     }
 }
@@ -35,11 +35,11 @@ forward_all_scalar_binop_to_val_val!(impl Div<u64> for BigInt, div);
 forward_all_scalar_binop_to_val_val!(impl Div<u128> for BigInt, div);
 
 impl Div<u32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: u32) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data / other)
+    fn div(self, other: u32) -> Self {
+        Self::from_biguint(self.sign, self.data / other)
     }
 }
 
@@ -63,11 +63,11 @@ impl Div<BigInt> for u32 {
 }
 
 impl Div<u64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: u64) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data / other)
+    fn div(self, other: u64) -> Self {
+        Self::from_biguint(self.sign, self.data / other)
     }
 }
 
@@ -91,11 +91,11 @@ impl Div<BigInt> for u64 {
 }
 
 impl Div<u128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: u128) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data / other)
+    fn div(self, other: u128) -> Self {
+        Self::from_biguint(self.sign, self.data / other)
     }
 }
 
@@ -123,10 +123,10 @@ forward_all_scalar_binop_to_val_val!(impl Div<i64> for BigInt, div);
 forward_all_scalar_binop_to_val_val!(impl Div<i128> for BigInt, div);
 
 impl Div<i32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: i32) -> BigInt {
+    fn div(self, other: i32) -> Self {
         match other.checked_uabs() {
             Positive(u) => self / u,
             Negative(u) => -self / u,
@@ -160,10 +160,10 @@ impl Div<BigInt> for i32 {
 }
 
 impl Div<i64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: i64) -> BigInt {
+    fn div(self, other: i64) -> Self {
         match other.checked_uabs() {
             Positive(u) => self / u,
             Negative(u) => -self / u,
@@ -197,10 +197,10 @@ impl Div<BigInt> for i64 {
 }
 
 impl Div<i128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn div(self, other: i128) -> BigInt {
+    fn div(self, other: i128) -> Self {
         match other.checked_uabs() {
             Positive(u) => self / u,
             Negative(u) => -self / u,
@@ -240,20 +240,24 @@ impl Rem<&BigInt> for &BigInt {
 
     #[inline]
     fn rem(self, other: &BigInt) -> BigInt {
-        if let Some(other) = other.to_u32() {
-            self % other
-        } else if let Some(other) = other.to_i32() {
-            self % other
-        } else {
-            let (_, r) = self.div_rem(other);
-            r
-        }
+        other.to_u32().map_or_else(
+            || {
+                other.to_i32().map_or_else(
+                    || {
+                        let (_, r) = self.div_rem(other);
+                        r
+                    },
+                    |other| self % other,
+                )
+            },
+            |other| self % other,
+        )
     }
 }
 
-impl RemAssign<&BigInt> for BigInt {
+impl RemAssign<&Self> for BigInt {
     #[inline]
-    fn rem_assign(&mut self, other: &BigInt) {
+    fn rem_assign(&mut self, other: &Self) {
         *self = &*self % other;
     }
 }
@@ -266,11 +270,11 @@ forward_all_scalar_binop_to_val_val!(impl Rem<u64> for BigInt, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<u128> for BigInt, rem);
 
 impl Rem<u32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: u32) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data % other)
+    fn rem(self, other: u32) -> Self {
+        Self::from_biguint(self.sign, self.data % other)
     }
 }
 
@@ -294,11 +298,11 @@ impl Rem<BigInt> for u32 {
 }
 
 impl Rem<u64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: u64) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data % other)
+    fn rem(self, other: u64) -> Self {
+        Self::from_biguint(self.sign, self.data % other)
     }
 }
 
@@ -322,11 +326,11 @@ impl Rem<BigInt> for u64 {
 }
 
 impl Rem<u128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: u128) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data % other)
+    fn rem(self, other: u128) -> Self {
+        Self::from_biguint(self.sign, self.data % other)
     }
 }
 
@@ -354,10 +358,10 @@ forward_all_scalar_binop_to_val_val!(impl Rem<i64> for BigInt, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<i128> for BigInt, rem);
 
 impl Rem<i32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: i32) -> BigInt {
+    fn rem(self, other: i32) -> Self {
         self % other.unsigned_abs()
     }
 }
@@ -382,10 +386,10 @@ impl Rem<BigInt> for i32 {
 }
 
 impl Rem<i64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: i64) -> BigInt {
+    fn rem(self, other: i64) -> Self {
         self % other.unsigned_abs()
     }
 }
@@ -410,10 +414,10 @@ impl Rem<BigInt> for i64 {
 }
 
 impl Rem<i128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn rem(self, other: i128) -> BigInt {
+    fn rem(self, other: i128) -> Self {
         self % other.unsigned_abs()
     }
 }
@@ -439,7 +443,7 @@ impl Rem<BigInt> for i128 {
 
 impl CheckedDiv for BigInt {
     #[inline]
-    fn checked_div(&self, v: &BigInt) -> Option<BigInt> {
+    fn checked_div(&self, v: &Self) -> Option<Self> {
         if v.is_zero() {
             return None;
         }
@@ -449,7 +453,7 @@ impl CheckedDiv for BigInt {
 
 impl CheckedEuclid for BigInt {
     #[inline]
-    fn checked_div_euclid(&self, v: &BigInt) -> Option<BigInt> {
+    fn checked_div_euclid(&self, v: &Self) -> Option<Self> {
         if v.is_zero() {
             return None;
         }
@@ -457,7 +461,7 @@ impl CheckedEuclid for BigInt {
     }
 
     #[inline]
-    fn checked_rem_euclid(&self, v: &BigInt) -> Option<BigInt> {
+    fn checked_rem_euclid(&self, v: &Self) -> Option<Self> {
         if v.is_zero() {
             return None;
         }
@@ -471,7 +475,7 @@ impl CheckedEuclid for BigInt {
 
 impl Euclid for BigInt {
     #[inline]
-    fn div_euclid(&self, v: &BigInt) -> BigInt {
+    fn div_euclid(&self, v: &Self) -> Self {
         let (q, r) = self.div_rem(v);
         if r.is_negative() {
             if v.is_positive() {
@@ -485,7 +489,7 @@ impl Euclid for BigInt {
     }
 
     #[inline]
-    fn rem_euclid(&self, v: &BigInt) -> BigInt {
+    fn rem_euclid(&self, v: &Self) -> Self {
         let r = self % v;
         if r.is_negative() {
             if v.is_positive() {

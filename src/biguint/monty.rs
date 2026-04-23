@@ -50,11 +50,7 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
     // or else the result will not be properly reduced.
     assert!(
         x.data.len() == n && y.data.len() == n && m.data.len() == n,
-        "{:?} {:?} {:?} {}",
-        x,
-        y,
-        m,
-        n
+        "{x:?} {y:?} {m:?} {n}"
     );
 
     let mut z = BigUint::ZERO;
@@ -109,7 +105,7 @@ fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
         let zi = xi.wrapping_sub(*yi).wrapping_sub(c);
         z[i] = zi;
         // see "Hacker's Delight", section 2-12 (overflow detection)
-        c = ((yi & !xi) | ((yi | !xi) & zi)) >> (big_digit::BITS - 1)
+        c = ((yi & !xi) | ((yi | !xi) & zi)) >> (big_digit::BITS - 1);
     }
 
     c
@@ -117,7 +113,7 @@ fn sub_vv(z: &mut [BigDigit], x: &[BigDigit], y: &[BigDigit]) -> BigDigit {
 
 /// z1<<_W + z0 = x+y+c, with c == 0 or 1
 #[inline(always)]
-fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
+const fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
     let yc = y.wrapping_add(c);
     let z0 = x.wrapping_add(yc);
     let z1 = if z0 < x || yc < y { 1 } else { 0 };
@@ -127,7 +123,7 @@ fn add_ww(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
 
 /// z1 << _W + z0 = x * y + c
 #[inline(always)]
-fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
+const fn mul_add_www(x: BigDigit, y: BigDigit, c: BigDigit) -> (BigDigit, BigDigit) {
     let z = x as DoubleBigDigit * y as DoubleBigDigit + c as DoubleBigDigit;
     ((z >> big_digit::BITS) as BigDigit, z as BigDigit)
 }

@@ -223,7 +223,7 @@ impl Num for BigUint {
         let mut s = s;
         if let Some(tail) = s.strip_prefix('+') {
             if !tail.starts_with('+') {
-                s = tail
+                s = tail;
             }
         }
 
@@ -307,7 +307,7 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
                     // XXX Conversion is useless if already 64-bit.
                     #[allow(clippy::useless_conversion)]
                     let masked = u64::from(*d) << (64 - (digit_bits - bits_want) as u32);
-                    ret |= (masked != 0) as u64;
+                    ret |= u64::from(masked != 0);
                 }
 
                 ret_bits += bits_want;
@@ -336,7 +336,7 @@ impl ToPrimitive for BigUint {
         let mut ret: u64 = 0;
         let mut bits = 0;
 
-        for i in self.data.iter() {
+        for i in &self.data {
             if bits >= 64 {
                 return None;
             }
@@ -354,7 +354,7 @@ impl ToPrimitive for BigUint {
         let mut ret: u128 = 0;
         let mut bits = 0;
 
-        for i in self.data.iter() {
+        for i in &self.data {
             if bits >= 128 {
                 return None;
             }
@@ -429,35 +429,35 @@ impl_try_from_biguint!(i128, ToPrimitive::to_i128);
 
 impl FromPrimitive for BigUint {
     #[inline]
-    fn from_i64(n: i64) -> Option<BigUint> {
+    fn from_i64(n: i64) -> Option<Self> {
         if n >= 0 {
-            Some(BigUint::from(n as u64))
+            Some(Self::from(n as u64))
         } else {
             None
         }
     }
 
     #[inline]
-    fn from_i128(n: i128) -> Option<BigUint> {
+    fn from_i128(n: i128) -> Option<Self> {
         if n >= 0 {
-            Some(BigUint::from(n as u128))
+            Some(Self::from(n as u128))
         } else {
             None
         }
     }
 
     #[inline]
-    fn from_u64(n: u64) -> Option<BigUint> {
-        Some(BigUint::from(n))
+    fn from_u64(n: u64) -> Option<Self> {
+        Some(Self::from(n))
     }
 
     #[inline]
-    fn from_u128(n: u128) -> Option<BigUint> {
-        Some(BigUint::from(n))
+    fn from_u128(n: u128) -> Option<Self> {
+        Some(Self::from(n))
     }
 
     #[inline]
-    fn from_f64(mut n: f64) -> Option<BigUint> {
+    fn from_f64(mut n: f64) -> Option<Self> {
         // handle NAN, INFINITY, NEG_INFINITY
         if !n.is_finite() {
             return None;
@@ -477,7 +477,7 @@ impl FromPrimitive for BigUint {
             return None;
         }
 
-        let mut ret = BigUint::from(mantissa);
+        let mut ret = Self::from(mantissa);
         match exponent.cmp(&0) {
             Greater => ret <<= exponent as usize,
             Equal => {}
@@ -490,7 +490,7 @@ impl FromPrimitive for BigUint {
 impl From<u64> for BigUint {
     #[inline]
     fn from(mut n: u64) -> Self {
-        let mut ret: BigUint = Self::ZERO;
+        let mut ret: Self = Self::ZERO;
 
         while n != 0 {
             ret.data.push(n as BigDigit);
@@ -505,7 +505,7 @@ impl From<u64> for BigUint {
 impl From<u128> for BigUint {
     #[inline]
     fn from(mut n: u128) -> Self {
-        let mut ret: BigUint = Self::ZERO;
+        let mut ret: Self = Self::ZERO;
 
         while n != 0 {
             ret.data.push(n as BigDigit);
@@ -609,7 +609,7 @@ pub(super) fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
         .unwrap_or(usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
-    for mut r in u.data[..last_i].iter().cloned() {
+    for mut r in u.data[..last_i].iter().copied() {
         for _ in 0..digits_per_big_digit {
             res.push((r & mask) as u8);
             r >>= bits;
@@ -659,7 +659,7 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
         res.push(r as u8);
     }
 
-    while let Some(&0) = res.last() {
+    while res.last() == Some(&0) {
         res.pop();
     }
 
@@ -831,7 +831,7 @@ const fn generate_radix_bases(max: BigDigit) -> [(BigDigit, usize); 257] {
                 base = b;
                 power += 1;
             }
-            bases[radix as usize] = (base, power)
+            bases[radix as usize] = (base, power);
         }
         radix += 1;
     }

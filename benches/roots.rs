@@ -1,5 +1,5 @@
 #![feature(test)]
-#![cfg(feature = "rand")]
+#![cfg(feature = "rand_core")]
 
 extern crate test;
 
@@ -20,9 +20,9 @@ use rng::get_rng;
 fn check(x: &BigUint, n: u32) {
     let root = x.nth_root(n);
     if n == 2 {
-        assert_eq!(root, x.sqrt())
+        assert_eq!(root, x.sqrt());
     } else if n == 3 {
-        assert_eq!(root, x.cbrt())
+        assert_eq!(root, x.cbrt());
     }
 
     let lo = root.pow(n);
@@ -37,8 +37,8 @@ fn check(x: &BigUint, n: u32) {
 }
 
 fn bench_sqrt(b: &mut Bencher, bits: u64) {
-    let x = get_rng().gen_biguint(bits);
-    eprintln!("bench_sqrt({})", x);
+    let x = get_rng().random_biguint(bits);
+    eprintln!("bench_sqrt({x})");
 
     check(&x, 2);
     b.iter(|| x.sqrt());
@@ -65,8 +65,8 @@ fn big4k_sqrt(b: &mut Bencher) {
 }
 
 fn bench_cbrt(b: &mut Bencher, bits: u64) {
-    let x = get_rng().gen_biguint(bits);
-    eprintln!("bench_cbrt({})", x);
+    let x = get_rng().random_biguint(bits);
+    eprintln!("bench_cbrt({x})");
 
     check(&x, 3);
     b.iter(|| x.cbrt());
@@ -93,8 +93,8 @@ fn big4k_cbrt(b: &mut Bencher) {
 }
 
 fn bench_nth_root(b: &mut Bencher, bits: u64, n: u32) {
-    let x = get_rng().gen_biguint(bits);
-    eprintln!("bench_{}th_root({})", n, x);
+    let x = get_rng().random_biguint(bits);
+    eprintln!("bench_{n}th_root({x})");
 
     check(&x, n);
     b.iter(|| x.nth_root(n));

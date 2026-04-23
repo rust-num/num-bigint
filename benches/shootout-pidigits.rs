@@ -52,8 +52,8 @@ struct Context {
 }
 
 impl Context {
-    fn new() -> Context {
-        Context {
+    fn new() -> Self {
+        Self {
             numer: One::one(),
             accum: Zero::zero(),
             denom: One::one(),
@@ -68,7 +68,7 @@ impl Context {
         if self.numer > self.accum {
             return -1;
         }
-        let (q, r) = (&self.numer * Context::from_i32(3) + &self.accum).div_rem(&self.denom);
+        let (q, r) = (&self.numer * Self::from_i32(3) + &self.accum).div_rem(&self.denom);
         if r + &self.numer >= self.denom {
             return -1;
         }
@@ -76,15 +76,15 @@ impl Context {
     }
 
     fn next_term(&mut self, k: i32) {
-        let y2 = Context::from_i32(k * 2 + 1);
+        let y2 = Self::from_i32(k * 2 + 1);
         self.accum = (&self.accum + (&self.numer << 1)) * &y2;
-        self.numer = &self.numer * Context::from_i32(k);
+        self.numer = &self.numer * Self::from_i32(k);
         self.denom = &self.denom * y2;
     }
 
     fn eliminate_digit(&mut self, d: i32) {
-        let d = Context::from_i32(d);
-        let ten = Context::from_i32(10);
+        let d = Self::from_i32(d);
+        let ten = Self::from_i32(10);
         self.accum = (&self.accum - &self.denom * d) * &ten;
         self.numer = &self.numer * ten;
     }
@@ -105,9 +105,9 @@ fn pidigits(n: isize, out: &mut dyn io::Write) -> io::Result<()> {
             }
         }
 
-        write!(out, "{}", d)?;
+        write!(out, "{d}")?;
         if i % 10 == 0 {
-            writeln!(out, "\t:{}", i)?;
+            writeln!(out, "\t:{i}")?;
         }
 
         context.eliminate_digit(d);
@@ -118,7 +118,7 @@ fn pidigits(n: isize, out: &mut dyn io::Write) -> io::Result<()> {
         for _ in m..10 {
             write!(out, " ")?;
         }
-        writeln!(out, "\t:{}", n)?;
+        writeln!(out, "\t:{n}")?;
     }
     Ok(())
 }

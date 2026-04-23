@@ -11,10 +11,10 @@ use crate::ValueVec::*;
 
 impl ToBigInt for ValueVec {
     fn to_bigint(&self) -> Option<BigInt> {
-        match self {
-            &N => Some(BigInt::from_slice(Sign::NoSign, &[])),
-            &P(s) => Some(BigInt::from_slice(Sign::Plus, s)),
-            &M(s) => Some(BigInt::from_slice(Sign::Minus, s)),
+        match *self {
+            N => Some(BigInt::from_slice(Sign::NoSign, &[])),
+            P(s) => Some(BigInt::from_slice(Sign::Plus, s)),
+            M(s) => Some(BigInt::from_slice(Sign::Minus, s)),
         }
     }
 }
@@ -106,7 +106,7 @@ const I64_VALUES: &[i64] = &[
 
 #[test]
 fn test_not() {
-    for &(ref a, ref not) in NOT_VALUES.iter() {
+    for (a, not) in NOT_VALUES {
         let a = a.to_bigint().unwrap();
         let not = not.to_bigint().unwrap();
 
@@ -115,23 +115,23 @@ fn test_not() {
             assert_eq!(!prim_a, prim_not);
         }
 
-        assert_eq!(!a.clone(), not, "!{:x}", a);
-        assert_eq!(!not.clone(), a, "!{:x}", not);
+        assert_eq!(!a.clone(), not, "!{a:x}");
+        assert_eq!(!not.clone(), a, "!{not:x}");
     }
 }
 
 #[test]
 fn test_not_i64() {
-    for &prim_a in I64_VALUES.iter() {
+    for &prim_a in I64_VALUES {
         let a = prim_a.to_bigint().unwrap();
         let not = (!prim_a).to_bigint().unwrap();
-        assert_eq!(!a.clone(), not, "!{:x}", a);
+        assert_eq!(!a.clone(), not, "!{a:x}");
     }
 }
 
 #[test]
 fn test_bitwise() {
-    for &(ref a, ref b, ref and, ref or, ref xor) in BITWISE_VALUES.iter() {
+    for (a, b, and, or, xor) in BITWISE_VALUES {
         let a = a.to_bigint().unwrap();
         let b = b.to_bigint().unwrap();
         let and = and.to_bigint().unwrap();
@@ -151,27 +151,27 @@ fn test_bitwise() {
             }
         }
 
-        assert_eq!(a.clone() & &b, and, "{:x} & {:x}", a, b);
-        assert_eq!(b.clone() & &a, and, "{:x} & {:x}", b, a);
-        assert_eq!(a.clone() | &b, or, "{:x} | {:x}", a, b);
-        assert_eq!(b.clone() | &a, or, "{:x} | {:x}", b, a);
-        assert_eq!(a.clone() ^ &b, xor, "{:x} ^ {:x}", a, b);
-        assert_eq!(b.clone() ^ &a, xor, "{:x} ^ {:x}", b, a);
+        assert_eq!(a.clone() & &b, and, "{a:x} & {b:x}");
+        assert_eq!(b.clone() & &a, and, "{b:x} & {a:x}");
+        assert_eq!(a.clone() | &b, or, "{a:x} | {b:x}");
+        assert_eq!(b.clone() | &a, or, "{b:x} | {a:x}");
+        assert_eq!(a.clone() ^ &b, xor, "{a:x} ^ {b:x}");
+        assert_eq!(b.clone() ^ &a, xor, "{b:x} ^ {a:x}");
     }
 }
 
 #[test]
 fn test_bitwise_i64() {
-    for &prim_a in I64_VALUES.iter() {
+    for &prim_a in I64_VALUES {
         let a = prim_a.to_bigint().unwrap();
-        for &prim_b in I64_VALUES.iter() {
+        for &prim_b in I64_VALUES {
             let b = prim_b.to_bigint().unwrap();
             let and = (prim_a & prim_b).to_bigint().unwrap();
             let or = (prim_a | prim_b).to_bigint().unwrap();
             let xor = (prim_a ^ prim_b).to_bigint().unwrap();
-            assert_eq!(a.clone() & &b, and, "{:x} & {:x}", a, b);
-            assert_eq!(a.clone() | &b, or, "{:x} | {:x}", a, b);
-            assert_eq!(a.clone() ^ &b, xor, "{:x} ^ {:x}", a, b);
+            assert_eq!(a.clone() & &b, and, "{a:x} & {b:x}");
+            assert_eq!(a.clone() | &b, or, "{a:x} | {b:x}");
+            assert_eq!(a.clone() ^ &b, xor, "{a:x} ^ {b:x}");
         }
     }
 }
