@@ -73,3 +73,8 @@ default-features = false
 optional = true
 version = "1"
 default-features = false
+
+[dev-dependencies]
+
+[dev-dependencies.dhat]
+version = "0.3.3"

@@ -1153,6 +1153,15 @@ impl BigInt {
         // The top bit may have been cleared, so normalize
         self.normalize();
     }
+
+    /// Returns the total amount of memory allocated internally by the
+    /// big int, in bytes.
+    ///
+    /// The returned number is informational only. It is intended to be
+    /// primarily used for memory profiling.
+    pub fn allocation_size(&self) -> usize {
+        self.data.allocation_size()
+    }
 }
 
 impl num_traits::FromBytes for BigInt {
