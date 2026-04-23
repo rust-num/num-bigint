@@ -8,6 +8,8 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Sub, SubAssign};
 use num_traits::CheckedSub;
+use num_traits::WrappingSub;
+use num_traits::ops::overflowing::OverflowingSub;
 
 // We want to forward to BigUint::sub, but it's not clear how that will go until
 // we compare both sign and magnitude.  So we duplicate this body for every
@@ -296,5 +298,21 @@ impl CheckedSub for BigInt {
     #[inline]
     fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
         Some(self.sub(v))
+    }
+}
+
+// Never wraps, unless we are out of memory
+impl WrappingSub for BigInt {
+    #[inline]
+    fn wrapping_sub(&self, v: &BigInt) -> BigInt {
+        self.sub(v)
+    }
+}
+
+// Overflow never occurs, unless we are out of memory
+impl OverflowingSub for BigInt {
+    #[inline]
+    fn overflowing_sub(&self, v: &BigInt) -> (BigInt, bool) {
+        (self.sub(v), false)
     }
 }

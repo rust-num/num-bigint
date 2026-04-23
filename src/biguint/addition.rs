@@ -6,6 +6,8 @@ use crate::UsizePromotion;
 use core::iter::Sum;
 use core::ops::{Add, AddAssign};
 use num_traits::CheckedAdd;
+use num_traits::WrappingAdd;
+use num_traits::ops::overflowing::OverflowingAdd;
 
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64 as arch;
@@ -250,6 +252,22 @@ impl CheckedAdd for BigUint {
     #[inline]
     fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
         Some(self.add(v))
+    }
+}
+
+// Never wraps, unless we are out of memory
+impl WrappingAdd for BigUint {
+    #[inline]
+    fn wrapping_add(&self, v: &BigUint) -> BigUint {
+        self.add(v)
+    }
+}
+
+// Never overflows, unless we are out of memory
+impl OverflowingAdd for BigUint {
+    #[inline]
+    fn overflowing_add(&self, v: &BigUint) -> (BigUint, bool) {
+        (self.add(v), false)
     }
 }
 
