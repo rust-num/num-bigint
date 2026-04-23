@@ -40,7 +40,7 @@ pub struct BigUint {
 impl Clone for BigUint {
     #[inline]
     fn clone(&self) -> Self {
-        BigUint {
+        Self {
             data: self.data.clone(),
         }
     }
@@ -61,7 +61,7 @@ impl hash::Hash for BigUint {
 
 impl PartialEq for BigUint {
     #[inline]
-    fn eq(&self, other: &BigUint) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         debug_assert!(self.data.last() != Some(&0));
         debug_assert!(other.data.last() != Some(&0));
         self.data == other.data
@@ -71,14 +71,14 @@ impl Eq for BigUint {}
 
 impl PartialOrd for BigUint {
     #[inline]
-    fn partial_cmp(&self, other: &BigUint) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for BigUint {
     #[inline]
-    fn cmp(&self, other: &BigUint) -> Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         cmp_slice(&self.data[..], &other.data[..])
     }
 }
@@ -96,7 +96,7 @@ fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 
 impl Default for BigUint {
     #[inline]
-    fn default() -> BigUint {
+    fn default() -> Self {
         Self::ZERO
     }
 }
@@ -141,7 +141,7 @@ impl fmt::Octal for BigUint {
 
 impl Zero for BigUint {
     #[inline]
-    fn zero() -> BigUint {
+    fn zero() -> Self {
         Self::ZERO
     }
 
@@ -163,8 +163,8 @@ impl ConstZero for BigUint {
 
 impl One for BigUint {
     #[inline]
-    fn one() -> BigUint {
-        BigUint { data: vec![1] }
+    fn one() -> Self {
+        Self { data: vec![1] }
     }
 
     #[inline]
@@ -183,29 +183,29 @@ impl Unsigned for BigUint {}
 
 impl Integer for BigUint {
     #[inline]
-    fn div_rem(&self, other: &BigUint) -> (BigUint, BigUint) {
+    fn div_rem(&self, other: &Self) -> (Self, Self) {
         division::div_rem_ref(self, other)
     }
 
     #[inline]
-    fn div_floor(&self, other: &BigUint) -> BigUint {
+    fn div_floor(&self, other: &Self) -> Self {
         let (d, _) = division::div_rem_ref(self, other);
         d
     }
 
     #[inline]
-    fn mod_floor(&self, other: &BigUint) -> BigUint {
+    fn mod_floor(&self, other: &Self) -> Self {
         let (_, m) = division::div_rem_ref(self, other);
         m
     }
 
     #[inline]
-    fn div_mod_floor(&self, other: &BigUint) -> (BigUint, BigUint) {
+    fn div_mod_floor(&self, other: &Self) -> (Self, Self) {
         division::div_rem_ref(self, other)
     }
 
     #[inline]
-    fn div_ceil(&self, other: &BigUint) -> BigUint {
+    fn div_ceil(&self, other: &Self) -> Self {
         let (d, m) = division::div_rem_ref(self, other);
         if m.is_zero() {
             d
@@ -254,7 +254,7 @@ impl Integer for BigUint {
 
     /// Calculates the Lowest Common Multiple (LCM) of the number and `other`.
     #[inline]
-    fn lcm(&self, other: &BigUint) -> BigUint {
+    fn lcm(&self, other: &Self) -> Self {
         if self.is_zero() && other.is_zero() {
             Self::ZERO
         } else {
@@ -277,13 +277,13 @@ impl Integer for BigUint {
 
     /// Deprecated, use `is_multiple_of` instead.
     #[inline]
-    fn divides(&self, other: &BigUint) -> bool {
+    fn divides(&self, other: &Self) -> bool {
         self.is_multiple_of(other)
     }
 
     /// Returns `true` if the number is a multiple of `other`.
     #[inline]
-    fn is_multiple_of(&self, other: &BigUint) -> bool {
+    fn is_multiple_of(&self, other: &Self) -> bool {
         if other.is_zero() {
             return self.is_zero();
         }
@@ -385,7 +385,7 @@ impl Roots for BigUint {
         let bits = self.bits();
         let n64 = u64::from(n);
         if bits <= n64 {
-            return BigUint::one();
+            return Self::one();
         }
 
         // If we fit in `u64`, compute the root that way.
@@ -401,7 +401,7 @@ impl Roots for BigUint {
                 use num_traits::FromPrimitive;
 
                 // We fit in `f64` (lossy), so get a better initial guess from that.
-                BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
+                Self::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
             }
             _ => {
                 // Try to guess by scaling down such that it does fit in `f64`.
@@ -412,7 +412,7 @@ impl Roots for BigUint {
                 if scale < bits && bits - scale > n64 {
                     (self >> scale).nth_root(n) << root_scale
                 } else {
-                    BigUint::one() << max_bits
+                    Self::one() << max_bits
                 }
             }
         };
@@ -449,7 +449,7 @@ impl Roots for BigUint {
                 use num_traits::FromPrimitive;
 
                 // We fit in `f64` (lossy), so get a better initial guess from that.
-                BigUint::from_f64(f.sqrt()).unwrap()
+                Self::from_f64(f.sqrt()).unwrap()
             }
             _ => {
                 // Try to guess by scaling down such that it does fit in `f64`.
@@ -490,7 +490,7 @@ impl Roots for BigUint {
                 use num_traits::FromPrimitive;
 
                 // We fit in `f64` (lossy), so get a better initial guess from that.
-                BigUint::from_f64(f.cbrt()).unwrap()
+                Self::from_f64(f.cbrt()).unwrap()
             }
             _ => {
                 // Try to guess by scaling down such that it does fit in `f64`.
@@ -529,13 +529,13 @@ pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
 
 impl BigUint {
     /// A constant `BigUint` with value 0, useful for static initialization.
-    pub const ZERO: Self = BigUint { data: Vec::new() };
+    pub const ZERO: Self = Self { data: Vec::new() };
 
     /// Creates and initializes a [`BigUint`].
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
-    pub fn new(digits: Vec<u32>) -> BigUint {
+    pub fn new(digits: Vec<u32>) -> Self {
         let mut big = Self::ZERO;
 
         cfg_digit_expr!(
@@ -553,7 +553,7 @@ impl BigUint {
     ///
     /// The base 2<sup>32</sup> digits are ordered least significant digit first.
     #[inline]
-    pub fn from_slice(slice: &[u32]) -> BigUint {
+    pub fn from_slice(slice: &[u32]) -> Self {
         let mut big = Self::ZERO;
         big.assign_from_slice(slice);
         big
@@ -593,13 +593,13 @@ impl BigUint {
     ///            BigUint::parse_bytes(b"22405534230753963835153736737", 10).unwrap());
     /// ```
     #[inline]
-    pub fn from_bytes_be(bytes: &[u8]) -> BigUint {
+    pub fn from_bytes_be(bytes: &[u8]) -> Self {
         if bytes.is_empty() {
             Self::ZERO
         } else {
             let mut v = bytes.to_vec();
             v.reverse();
-            BigUint::from_bytes_le(&v)
+            Self::from_bytes_le(&v)
         }
     }
 
@@ -607,7 +607,7 @@ impl BigUint {
     ///
     /// The bytes are in little-endian byte order.
     #[inline]
-    pub fn from_bytes_le(bytes: &[u8]) -> BigUint {
+    pub fn from_bytes_le(bytes: &[u8]) -> Self {
         if bytes.is_empty() {
             Self::ZERO
         } else {
@@ -632,9 +632,9 @@ impl BigUint {
     /// assert_eq!(BigUint::parse_bytes(b"G", 16), None);
     /// ```
     #[inline]
-    pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigUint> {
+    pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<Self> {
         let s = str::from_utf8(buf).ok()?;
-        BigUint::from_str_radix(s, radix).ok()
+        Self::from_str_radix(s, radix).ok()
     }
 
     /// Creates and initializes a [`BigUint`]. Each `u8` of the input slice is
@@ -653,7 +653,7 @@ impl BigUint {
     /// let a = BigUint::from_radix_be(inbase190, 190).unwrap();
     /// assert_eq!(a.to_radix_be(190), inbase190);
     /// ```
-    pub fn from_radix_be(buf: &[u8], radix: u32) -> Option<BigUint> {
+    pub fn from_radix_be(buf: &[u8], radix: u32) -> Option<Self> {
         convert::from_radix_be(buf, radix)
     }
 
@@ -673,7 +673,7 @@ impl BigUint {
     /// let a = BigUint::from_radix_be(inbase190, 190).unwrap();
     /// assert_eq!(a.to_radix_be(190), inbase190);
     /// ```
-    pub fn from_radix_le(buf: &[u8], radix: u32) -> Option<BigUint> {
+    pub fn from_radix_le(buf: &[u8], radix: u32) -> Option<Self> {
         convert::from_radix_le(buf, radix)
     }
 
@@ -870,7 +870,7 @@ impl BigUint {
 
     /// Returns a normalized [`BigUint`].
     #[inline]
-    fn normalized(mut self) -> BigUint {
+    fn normalized(mut self) -> Self {
         self.normalize();
         self
     }

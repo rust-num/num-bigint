@@ -23,18 +23,18 @@ impl BitAnd<&BigUint> for &BigUint {
 
 forward_val_assign!(impl BitAndAssign for BigUint, bitand_assign);
 
-impl BitAnd<&BigUint> for BigUint {
-    type Output = BigUint;
+impl BitAnd<&Self> for BigUint {
+    type Output = Self;
 
     #[inline]
-    fn bitand(mut self, other: &BigUint) -> BigUint {
+    fn bitand(mut self, other: &Self) -> Self {
         self &= other;
         self
     }
 }
-impl BitAndAssign<&BigUint> for BigUint {
+impl BitAndAssign<&Self> for BigUint {
     #[inline]
-    fn bitand_assign(&mut self, other: &BigUint) {
+    fn bitand_assign(&mut self, other: &Self) {
         for (ai, &bi) in self.data.iter_mut().zip(other.data.iter()) {
             *ai &= bi;
         }
@@ -46,17 +46,17 @@ impl BitAndAssign<&BigUint> for BigUint {
 forward_all_binop_to_val_ref_commutative!(impl BitOr for BigUint, bitor);
 forward_val_assign!(impl BitOrAssign for BigUint, bitor_assign);
 
-impl BitOr<&BigUint> for BigUint {
-    type Output = BigUint;
+impl BitOr<&Self> for BigUint {
+    type Output = Self;
 
-    fn bitor(mut self, other: &BigUint) -> BigUint {
+    fn bitor(mut self, other: &Self) -> Self {
         self |= other;
         self
     }
 }
-impl BitOrAssign<&BigUint> for BigUint {
+impl BitOrAssign<&Self> for BigUint {
     #[inline]
-    fn bitor_assign(&mut self, other: &BigUint) {
+    fn bitor_assign(&mut self, other: &Self) {
         for (ai, &bi) in self.data.iter_mut().zip(other.data.iter()) {
             *ai |= bi;
         }
@@ -70,17 +70,17 @@ impl BitOrAssign<&BigUint> for BigUint {
 forward_all_binop_to_val_ref_commutative!(impl BitXor for BigUint, bitxor);
 forward_val_assign!(impl BitXorAssign for BigUint, bitxor_assign);
 
-impl BitXor<&BigUint> for BigUint {
-    type Output = BigUint;
+impl BitXor<&Self> for BigUint {
+    type Output = Self;
 
-    fn bitxor(mut self, other: &BigUint) -> BigUint {
+    fn bitxor(mut self, other: &Self) -> Self {
         self ^= other;
         self
     }
 }
-impl BitXorAssign<&BigUint> for BigUint {
+impl BitXorAssign<&Self> for BigUint {
     #[inline]
-    fn bitxor_assign(&mut self, other: &BigUint) {
+    fn bitxor_assign(&mut self, other: &Self) {
         for (ai, &bi) in self.data.iter_mut().zip(other.data.iter()) {
             *ai ^= bi;
         }

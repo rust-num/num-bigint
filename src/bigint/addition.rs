@@ -55,27 +55,27 @@ impl Add<BigInt> for &BigInt {
     }
 }
 
-impl Add<&BigInt> for BigInt {
-    type Output = BigInt;
+impl Add<&Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: &BigInt) -> BigInt {
+    fn add(self, other: &Self) -> Self {
         bigint_add!(self, self, self.data, other, other.clone(), &other.data)
     }
 }
 
-impl Add<BigInt> for BigInt {
-    type Output = BigInt;
+impl Add<Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: BigInt) -> BigInt {
+    fn add(self, other: Self) -> Self {
         bigint_add!(self, self, self.data, other, other, other.data)
     }
 }
 
-impl AddAssign<&BigInt> for BigInt {
+impl AddAssign<&Self> for BigInt {
     #[inline]
-    fn add_assign(&mut self, other: &BigInt) {
+    fn add_assign(&mut self, other: &Self) {
         let n = mem::replace(self, Self::ZERO);
         *self = n + other;
     }
@@ -89,17 +89,17 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Add<u64> for BigInt, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u128> for BigInt, add);
 
 impl Add<u32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: u32) -> BigInt {
+    fn add(self, other: u32) -> Self {
         match self.sign {
             NoSign => From::from(other),
-            Plus => BigInt::from(self.data + other),
+            Plus => Self::from(self.data + other),
             Minus => match self.data.cmp(&From::from(other)) {
                 Equal => Self::ZERO,
-                Less => BigInt::from(other - self.data),
-                Greater => -BigInt::from(self.data - other),
+                Less => Self::from(other - self.data),
+                Greater => -Self::from(self.data - other),
             },
         }
     }
@@ -114,17 +114,17 @@ impl AddAssign<u32> for BigInt {
 }
 
 impl Add<u64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: u64) -> BigInt {
+    fn add(self, other: u64) -> Self {
         match self.sign {
             NoSign => From::from(other),
-            Plus => BigInt::from(self.data + other),
+            Plus => Self::from(self.data + other),
             Minus => match self.data.cmp(&From::from(other)) {
                 Equal => Self::ZERO,
-                Less => BigInt::from(other - self.data),
-                Greater => -BigInt::from(self.data - other),
+                Less => Self::from(other - self.data),
+                Greater => -Self::from(self.data - other),
             },
         }
     }
@@ -139,17 +139,17 @@ impl AddAssign<u64> for BigInt {
 }
 
 impl Add<u128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: u128) -> BigInt {
+    fn add(self, other: u128) -> Self {
         match self.sign {
-            NoSign => BigInt::from(other),
-            Plus => BigInt::from(self.data + other),
+            NoSign => Self::from(other),
+            Plus => Self::from(self.data + other),
             Minus => match self.data.cmp(&From::from(other)) {
                 Equal => Self::ZERO,
-                Less => BigInt::from(other - self.data),
-                Greater => -BigInt::from(self.data - other),
+                Less => Self::from(other - self.data),
+                Greater => -Self::from(self.data - other),
             },
         }
     }
@@ -167,10 +167,10 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Add<i64> for BigInt, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<i128> for BigInt, add);
 
 impl Add<i32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: i32) -> BigInt {
+    fn add(self, other: i32) -> Self {
         match other.checked_uabs() {
             Positive(u) => self + u,
             Negative(u) => self - u,
@@ -188,10 +188,10 @@ impl AddAssign<i32> for BigInt {
 }
 
 impl Add<i64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: i64) -> BigInt {
+    fn add(self, other: i64) -> Self {
         match other.checked_uabs() {
             Positive(u) => self + u,
             Negative(u) => self - u,
@@ -209,10 +209,10 @@ impl AddAssign<i64> for BigInt {
 }
 
 impl Add<i128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn add(self, other: i128) -> BigInt {
+    fn add(self, other: i128) -> Self {
         match other.checked_uabs() {
             Positive(u) => self + u,
             Negative(u) => self - u,
@@ -231,7 +231,7 @@ impl AddAssign<i128> for BigInt {
 
 impl CheckedAdd for BigInt {
     #[inline]
-    fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
+    fn checked_add(&self, v: &Self) -> Option<Self> {
         Some(self.add(v))
     }
 }

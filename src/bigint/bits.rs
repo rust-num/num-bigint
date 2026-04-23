@@ -130,11 +130,11 @@ impl BitAnd<&BigInt> for &BigInt {
     }
 }
 
-impl BitAnd<&BigInt> for BigInt {
-    type Output = BigInt;
+impl BitAnd<&Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn bitand(mut self, other: &BigInt) -> BigInt {
+    fn bitand(mut self, other: &Self) -> Self {
         self &= other;
         self
     }
@@ -142,8 +142,8 @@ impl BitAnd<&BigInt> for BigInt {
 
 forward_val_assign!(impl BitAndAssign for BigInt, bitand_assign);
 
-impl BitAndAssign<&BigInt> for BigInt {
-    fn bitand_assign(&mut self, other: &BigInt) {
+impl BitAndAssign<&Self> for BigInt {
+    fn bitand_assign(&mut self, other: &Self) {
         match (self.sign, other.sign) {
             (NoSign, _) => {}
             (_, NoSign) => self.set_zero(),
@@ -270,11 +270,11 @@ impl BitOr<&BigInt> for &BigInt {
     }
 }
 
-impl BitOr<&BigInt> for BigInt {
-    type Output = BigInt;
+impl BitOr<&Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn bitor(mut self, other: &BigInt) -> BigInt {
+    fn bitor(mut self, other: &Self) -> Self {
         self |= other;
         self
     }
@@ -282,8 +282,8 @@ impl BitOr<&BigInt> for BigInt {
 
 forward_val_assign!(impl BitOrAssign for BigInt, bitor_assign);
 
-impl BitOrAssign<&BigInt> for BigInt {
-    fn bitor_assign(&mut self, other: &BigInt) {
+impl BitOrAssign<&Self> for BigInt {
+    fn bitor_assign(&mut self, other: &Self) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
             (NoSign, _) => self.clone_from(other),
@@ -408,11 +408,11 @@ fn bitxor_neg_neg(a: &mut Vec<BigDigit>, b: &[BigDigit]) {
 
 forward_all_binop_to_val_ref_commutative!(impl BitXor for BigInt, bitxor);
 
-impl BitXor<&BigInt> for BigInt {
-    type Output = BigInt;
+impl BitXor<&Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn bitxor(mut self, other: &BigInt) -> BigInt {
+    fn bitxor(mut self, other: &Self) -> Self {
         self ^= other;
         self
     }
@@ -420,8 +420,8 @@ impl BitXor<&BigInt> for BigInt {
 
 forward_val_assign!(impl BitXorAssign for BigInt, bitxor_assign);
 
-impl BitXorAssign<&BigInt> for BigInt {
-    fn bitxor_assign(&mut self, other: &BigInt) {
+impl BitXorAssign<&Self> for BigInt {
+    fn bitxor_assign(&mut self, other: &Self) {
         match (self.sign, other.sign) {
             (_, NoSign) => {}
             (NoSign, _) => self.clone_from(other),

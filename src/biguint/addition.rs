@@ -88,17 +88,17 @@ pub(super) fn add2(a: &mut [BigDigit], b: &[BigDigit]) {
 forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
 forward_val_assign!(impl AddAssign for BigUint, add_assign);
 
-impl Add<&BigUint> for BigUint {
-    type Output = BigUint;
+impl Add<&Self> for BigUint {
+    type Output = Self;
 
-    fn add(mut self, other: &BigUint) -> BigUint {
+    fn add(mut self, other: &Self) -> Self {
         self += other;
         self
     }
 }
-impl AddAssign<&BigUint> for BigUint {
+impl AddAssign<&Self> for BigUint {
     #[inline]
-    fn add_assign(&mut self, other: &BigUint) {
+    fn add_assign(&mut self, other: &Self) {
         let self_len = self.data.len();
         let carry = if self_len < other.data.len() {
             let lo_carry = __add2(&mut self.data[..], &other.data[..self_len]);
@@ -120,10 +120,10 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Add<u64> for BigUint, add)
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u128> for BigUint, add);
 
 impl Add<u32> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn add(mut self, other: u32) -> BigUint {
+    fn add(mut self, other: u32) -> Self {
         self += other;
         self
     }
@@ -146,10 +146,10 @@ impl AddAssign<u32> for BigUint {
 }
 
 impl Add<u64> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn add(mut self, other: u64) -> BigUint {
+    fn add(mut self, other: u64) -> Self {
         self += other;
         self
     }
@@ -191,10 +191,10 @@ impl AddAssign<u64> for BigUint {
 }
 
 impl Add<u128> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn add(mut self, other: u128) -> BigUint {
+    fn add(mut self, other: u128) -> Self {
         self += other;
         self
     }
@@ -248,7 +248,7 @@ impl AddAssign<u128> for BigUint {
 
 impl CheckedAdd for BigUint {
     #[inline]
-    fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_add(&self, v: &Self) -> Option<Self> {
         Some(self.add(v))
     }
 }

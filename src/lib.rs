@@ -146,13 +146,13 @@ impl ParseBigIntError {
     }
 
     fn empty() -> Self {
-        ParseBigIntError {
+        Self {
             kind: BigIntErrorKind::Empty,
         }
     }
 
     fn invalid() -> Self {
-        ParseBigIntError {
+        Self {
             kind: BigIntErrorKind::InvalidDigit,
         }
     }
@@ -180,7 +180,7 @@ pub struct TryFromBigIntError<T> {
 
 impl<T> TryFromBigIntError<T> {
     fn new(original: T) -> Self {
-        TryFromBigIntError { original }
+        Self { original }
     }
 
     fn __description(&self) -> &str {

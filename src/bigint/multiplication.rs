@@ -8,11 +8,11 @@ use core::iter::Product;
 use core::ops::{Mul, MulAssign};
 use num_traits::{CheckedMul, One, Zero};
 
-impl Mul<Sign> for Sign {
-    type Output = Sign;
+impl Mul<Self> for Sign {
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: Sign) -> Sign {
+    fn mul(self, other: Self) -> Self {
         match (self, other) {
             (NoSign, _) | (_, NoSign) => NoSign,
             (Plus, Plus) | (Minus, Minus) => Plus,
@@ -72,11 +72,11 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigInt, mul);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigInt, mul);
 
 impl Mul<u32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: u32) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data * other)
+    fn mul(self, other: u32) -> Self {
+        Self::from_biguint(self.sign, self.data * other)
     }
 }
 
@@ -91,11 +91,11 @@ impl MulAssign<u32> for BigInt {
 }
 
 impl Mul<u64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: u64) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data * other)
+    fn mul(self, other: u64) -> Self {
+        Self::from_biguint(self.sign, self.data * other)
     }
 }
 
@@ -110,11 +110,11 @@ impl MulAssign<u64> for BigInt {
 }
 
 impl Mul<u128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: u128) -> BigInt {
-        BigInt::from_biguint(self.sign, self.data * other)
+    fn mul(self, other: u128) -> Self {
+        Self::from_biguint(self.sign, self.data * other)
     }
 }
 
@@ -133,10 +133,10 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i64> for BigInt, mul);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<i128> for BigInt, mul);
 
 impl Mul<i32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: i32) -> BigInt {
+    fn mul(self, other: i32) -> Self {
         match other.checked_uabs() {
             Positive(u) => self * u,
             Negative(u) => -self * u,
@@ -158,10 +158,10 @@ impl MulAssign<i32> for BigInt {
 }
 
 impl Mul<i64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: i64) -> BigInt {
+    fn mul(self, other: i64) -> Self {
         match other.checked_uabs() {
             Positive(u) => self * u,
             Negative(u) => -self * u,
@@ -183,10 +183,10 @@ impl MulAssign<i64> for BigInt {
 }
 
 impl Mul<i128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn mul(self, other: i128) -> BigInt {
+    fn mul(self, other: i128) -> Self {
         match other.checked_uabs() {
             Positive(u) => self * u,
             Negative(u) => -self * u,
@@ -209,7 +209,7 @@ impl MulAssign<i128> for BigInt {
 
 impl CheckedMul for BigInt {
     #[inline]
-    fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
+    fn checked_mul(&self, v: &Self) -> Option<Self> {
         Some(self.mul(v))
     }
 }

@@ -514,10 +514,10 @@ forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigUint, mul)
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigUint, mul);
 
 impl Mul<u32> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn mul(mut self, other: u32) -> BigUint {
+    fn mul(mut self, other: u32) -> Self {
         self *= other;
         self
     }
@@ -530,10 +530,10 @@ impl MulAssign<u32> for BigUint {
 }
 
 impl Mul<u64> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn mul(mut self, other: u64) -> BigUint {
+    fn mul(mut self, other: u64) -> Self {
         self *= other;
         self
     }
@@ -558,10 +558,10 @@ impl MulAssign<u64> for BigUint {
 }
 
 impl Mul<u128> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn mul(mut self, other: u128) -> BigUint {
+    fn mul(mut self, other: u128) -> Self {
         self *= other;
         self
     }
@@ -596,7 +596,7 @@ impl MulAssign<u128> for BigUint {
 
 impl CheckedMul for BigUint {
     #[inline]
-    fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_mul(&self, v: &Self) -> Option<Self> {
         Some(self.mul(v))
     }
 }

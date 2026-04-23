@@ -6,13 +6,13 @@ use crate::big_digit::{self, BigDigit};
 use num_integer::Integer;
 use num_traits::{One, Pow, ToPrimitive, Zero};
 
-impl Pow<&BigUint> for BigUint {
-    type Output = BigUint;
+impl Pow<&Self> for BigUint {
+    type Output = Self;
 
     #[inline]
-    fn pow(self, exp: &BigUint) -> BigUint {
+    fn pow(self, exp: &Self) -> Self {
         if self.is_one() || exp.is_zero() {
-            BigUint::one()
+            Self::one()
         } else if self.is_zero() {
             Self::ZERO
         } else if let Some(exp) = exp.to_u64() {
@@ -27,11 +27,11 @@ impl Pow<&BigUint> for BigUint {
     }
 }
 
-impl Pow<BigUint> for BigUint {
-    type Output = BigUint;
+impl Pow<Self> for BigUint {
+    type Output = Self;
 
     #[inline]
-    fn pow(self, exp: BigUint) -> BigUint {
+    fn pow(self, exp: Self) -> Self {
         Pow::pow(self, &exp)
     }
 }

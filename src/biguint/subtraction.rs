@@ -108,16 +108,16 @@ forward_val_val_binop!(impl Sub for BigUint, sub);
 forward_ref_ref_binop!(impl Sub for BigUint, sub);
 forward_val_assign!(impl SubAssign for BigUint, sub_assign);
 
-impl Sub<&BigUint> for BigUint {
-    type Output = BigUint;
+impl Sub<&Self> for BigUint {
+    type Output = Self;
 
-    fn sub(mut self, other: &BigUint) -> BigUint {
+    fn sub(mut self, other: &Self) -> Self {
         self -= other;
         self
     }
 }
-impl SubAssign<&BigUint> for BigUint {
-    fn sub_assign(&mut self, other: &BigUint) {
+impl SubAssign<&Self> for BigUint {
+    fn sub_assign(&mut self, other: &Self) {
         sub2(&mut self.data[..], &other.data[..]);
         self.normalize();
     }
@@ -148,10 +148,10 @@ forward_all_scalar_binop_to_val_val!(impl Sub<u64> for BigUint, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<u128> for BigUint, sub);
 
 impl Sub<u32> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn sub(mut self, other: u32) -> BigUint {
+    fn sub(mut self, other: u32) -> Self {
         self -= other;
         self
     }
@@ -191,10 +191,10 @@ impl Sub<BigUint> for u32 {
 }
 
 impl Sub<u64> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn sub(mut self, other: u64) -> BigUint {
+    fn sub(mut self, other: u64) -> Self {
         self -= other;
         self
     }
@@ -245,10 +245,10 @@ impl Sub<BigUint> for u64 {
 }
 
 impl Sub<u128> for BigUint {
-    type Output = BigUint;
+    type Output = Self;
 
     #[inline]
-    fn sub(mut self, other: u128) -> BigUint {
+    fn sub(mut self, other: u128) -> Self {
         self -= other;
         self
     }
@@ -302,7 +302,7 @@ impl Sub<BigUint> for u128 {
 
 impl CheckedSub for BigUint {
     #[inline]
-    fn checked_sub(&self, v: &BigUint) -> Option<BigUint> {
+    fn checked_sub(&self, v: &Self) -> Option<Self> {
         match self.cmp(v) {
             Less => None,
             Equal => Some(Self::ZERO),

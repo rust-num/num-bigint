@@ -31,7 +31,7 @@ fn inv_mod_alt(b: BigDigit) -> BigDigit {
 impl MontyReducer {
     fn new(n: &BigUint) -> Self {
         let n0inv = inv_mod_alt(n.data[0]);
-        MontyReducer { n0inv }
+        Self { n0inv }
     }
 }
 
@@ -50,11 +50,7 @@ fn montgomery(x: &BigUint, y: &BigUint, m: &BigUint, k: BigDigit, n: usize) -> B
     // or else the result will not be properly reduced.
     assert!(
         x.data.len() == n && y.data.len() == n && m.data.len() == n,
-        "{:?} {:?} {:?} {}",
-        x,
-        y,
-        m,
-        n
+        "{x:?} {y:?} {m:?} {n}"
     );
 
     let mut z = BigUint::ZERO;

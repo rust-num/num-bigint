@@ -54,27 +54,27 @@ impl Sub<BigInt> for &BigInt {
     }
 }
 
-impl Sub<&BigInt> for BigInt {
-    type Output = BigInt;
+impl Sub<&Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: &BigInt) -> BigInt {
+    fn sub(self, other: &Self) -> Self {
         bigint_sub!(self, self, self.data, other, other.clone(), &other.data)
     }
 }
 
-impl Sub<BigInt> for BigInt {
-    type Output = BigInt;
+impl Sub<Self> for BigInt {
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: BigInt) -> BigInt {
+    fn sub(self, other: Self) -> Self {
         bigint_sub!(self, self, self.data, other, other, other.data)
     }
 }
 
-impl SubAssign<&BigInt> for BigInt {
+impl SubAssign<&Self> for BigInt {
     #[inline]
-    fn sub_assign(&mut self, other: &BigInt) {
+    fn sub_assign(&mut self, other: &Self) {
         let n = mem::replace(self, Self::ZERO);
         *self = n - other;
     }
@@ -88,17 +88,17 @@ forward_all_scalar_binop_to_val_val!(impl Sub<u64> for BigInt, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<u128> for BigInt, sub);
 
 impl Sub<u32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: u32) -> BigInt {
+    fn sub(self, other: u32) -> Self {
         match self.sign {
-            NoSign => -BigInt::from(other),
-            Minus => -BigInt::from(self.data + other),
+            NoSign => -Self::from(other),
+            Minus => -Self::from(self.data + other),
             Plus => match self.data.cmp(&From::from(other)) {
                 Equal => Self::ZERO,
-                Greater => BigInt::from(self.data - other),
-                Less => -BigInt::from(other - self.data),
+                Greater => Self::from(self.data - other),
+                Less => -Self::from(other - self.data),
             },
         }
     }
@@ -139,17 +139,17 @@ impl Sub<BigInt> for u128 {
 }
 
 impl Sub<u64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: u64) -> BigInt {
+    fn sub(self, other: u64) -> Self {
         match self.sign {
-            NoSign => -BigInt::from(other),
-            Minus => -BigInt::from(self.data + other),
+            NoSign => -Self::from(other),
+            Minus => -Self::from(self.data + other),
             Plus => match self.data.cmp(&From::from(other)) {
                 Equal => Self::ZERO,
-                Greater => BigInt::from(self.data - other),
-                Less => -BigInt::from(other - self.data),
+                Greater => Self::from(self.data - other),
+                Less => -Self::from(other - self.data),
             },
         }
     }
@@ -164,17 +164,17 @@ impl SubAssign<u64> for BigInt {
 }
 
 impl Sub<u128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: u128) -> BigInt {
+    fn sub(self, other: u128) -> Self {
         match self.sign {
-            NoSign => -BigInt::from(other),
-            Minus => -BigInt::from(self.data + other),
+            NoSign => -Self::from(other),
+            Minus => -Self::from(self.data + other),
             Plus => match self.data.cmp(&From::from(other)) {
                 Equal => Self::ZERO,
-                Greater => BigInt::from(self.data - other),
-                Less => -BigInt::from(other - self.data),
+                Greater => Self::from(self.data - other),
+                Less => -Self::from(other - self.data),
             },
         }
     }
@@ -193,10 +193,10 @@ forward_all_scalar_binop_to_val_val!(impl Sub<i64> for BigInt, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<i128> for BigInt, sub);
 
 impl Sub<i32> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: i32) -> BigInt {
+    fn sub(self, other: i32) -> Self {
         match other.checked_uabs() {
             Positive(u) => self - u,
             Negative(u) => self + u,
@@ -226,10 +226,10 @@ impl Sub<BigInt> for i32 {
 }
 
 impl Sub<i64> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: i64) -> BigInt {
+    fn sub(self, other: i64) -> Self {
         match other.checked_uabs() {
             Positive(u) => self - u,
             Negative(u) => self + u,
@@ -259,10 +259,10 @@ impl Sub<BigInt> for i64 {
 }
 
 impl Sub<i128> for BigInt {
-    type Output = BigInt;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, other: i128) -> BigInt {
+    fn sub(self, other: i128) -> Self {
         match other.checked_uabs() {
             Positive(u) => self - u,
             Negative(u) => self + u,
@@ -294,7 +294,7 @@ impl Sub<BigInt> for i128 {
 
 impl CheckedSub for BigInt {
     #[inline]
-    fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
+    fn checked_sub(&self, v: &Self) -> Option<Self> {
         Some(self.sub(v))
     }
 }
