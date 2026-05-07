@@ -245,7 +245,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
         add2(&mut acc[b * 2..], &p.data);
 
         // Zero out p before the next multiply:
-        p.data.truncate(0);
+        p.data.clear();
         p.data.resize(len, 0);
 
         // p0 = x0 * y0
@@ -262,7 +262,7 @@ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
 
         match j0_sign * j1_sign {
             Plus => {
-                p.data.truncate(0);
+                p.data.clear();
                 p.data.resize(len, 0);
 
                 mac3(&mut p.data, &j0.data, &j1.data);
