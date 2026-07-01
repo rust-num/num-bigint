@@ -17,8 +17,9 @@ use core::arch::x86 as arch;
 #[cfg(target_arch = "x86_64")]
 cfg_64!(
     #[inline]
+    #[allow(unused_unsafe)] // TODO(MSRV 1.93): the intrinsic became safe
     fn sbb(borrow: u8, a: u64, b: u64, out: &mut u64) -> u8 {
-        // Safety: There are absolutely no safety concerns with calling `_subborrow_u64`.
+        // SAFETY: There are absolutely no safety concerns with calling `_subborrow_u64`.
         // It's just unsafe for API consistency with other intrinsics.
         unsafe { arch::_subborrow_u64(borrow, a, b, out) }
     }
@@ -27,8 +28,9 @@ cfg_64!(
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 cfg_32!(
     #[inline]
+    #[allow(unused_unsafe)] // TODO(MSRV 1.93): the intrinsic became safe
     fn sbb(borrow: u8, a: u32, b: u32, out: &mut u32) -> u8 {
-        // Safety: There are absolutely no safety concerns with calling `_subborrow_u32`.
+        // SAFETY: There are absolutely no safety concerns with calling `_subborrow_u32`.
         // It's just unsafe for API consistency with other intrinsics.
         unsafe { arch::_subborrow_u32(borrow, a, b, out) }
     }
