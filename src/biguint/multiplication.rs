@@ -9,7 +9,7 @@ use crate::{BigInt, UsizePromotion};
 use core::cmp::Ordering;
 use core::iter::Product;
 use core::ops::{Mul, MulAssign};
-use num_traits::{CheckedMul, FromPrimitive, One, Zero};
+use num_traits::{CheckedMul, FromPrimitive, Zero};
 
 #[inline]
 pub(super) fn mac_with_carry(

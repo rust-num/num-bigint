@@ -10,7 +10,7 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, CheckedEuclid, Euclid, One, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, Euclid, ToPrimitive, Zero};
 
 pub(super) const FAST_DIV_WIDE: bool = cfg!(any(target_arch = "x86", target_arch = "x86_64"));
 
@@ -189,7 +189,7 @@ fn div_rem_cow(u: Cow<'_, BigUint>, d: Cow<'_, BigUint>) -> (BigUint, BigUint) {
     // Required or the q_len calculation below can underflow:
     match u.cmp(&d) {
         Less => return (BigUint::ZERO, u.into_owned()),
-        Equal => return (One::one(), BigUint::ZERO),
+        Equal => return (BigUint::ONE, BigUint::ZERO),
         Greater => {} // Do nothing
     }
 

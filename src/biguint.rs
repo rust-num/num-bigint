@@ -163,9 +163,7 @@ impl ConstZero for BigUint {
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint {
-            data: BigDigits::from_digit(1),
-        }
+        Self::ONE
     }
 
     #[inline]
@@ -351,7 +349,7 @@ where
         // powers, and then take a long time to walk back.  We know an upper
         // bound based on bit size, so saturate on that.
         x = if xn.bits() > max_bits {
-            BigUint::one() << max_bits
+            BigUint::ONE << max_bits
         } else {
             xn
         };
@@ -391,7 +389,7 @@ impl Roots for BigUint {
         let bits = self.bits();
         let n64 = u64::from(n);
         if bits <= n64 {
-            return BigUint::one();
+            return BigUint::ONE;
         }
 
         // If we fit in `u64`, compute the root that way.
@@ -418,13 +416,13 @@ impl Roots for BigUint {
                 if scale < bits && bits - scale > n64 {
                     (self >> scale).nth_root(n) << root_scale
                 } else {
-                    BigUint::one() << max_bits
+                    BigUint::ONE << max_bits
                 }
             }
         };
 
         #[cfg(not(feature = "std"))]
-        let guess = BigUint::one() << max_bits;
+        let guess = BigUint::ONE << max_bits;
 
         let n_min_1 = n - 1;
         fixpoint(guess, max_bits, move |s| {
@@ -468,7 +466,7 @@ impl Roots for BigUint {
         };
 
         #[cfg(not(feature = "std"))]
-        let guess = BigUint::one() << max_bits;
+        let guess = BigUint::ONE << max_bits;
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / s;
@@ -509,7 +507,7 @@ impl Roots for BigUint {
         };
 
         #[cfg(not(feature = "std"))]
-        let guess = BigUint::one() << max_bits;
+        let guess = BigUint::ONE << max_bits;
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / (s * s);
@@ -929,7 +927,7 @@ impl BigUint {
             "attempt to calculate with zero modulus!"
         );
         if modulus.is_one() {
-            return Some(Self::zero());
+            return Some(Self::ZERO);
         }
 
         let mut r0; // = modulus.clone();
@@ -949,7 +947,7 @@ impl BigUint {
             }
             r0 = r1;
             r1 = r2;
-            t0 = Self::one();
+            t0 = Self::ONE;
             t1 = modulus - q;
         }
 

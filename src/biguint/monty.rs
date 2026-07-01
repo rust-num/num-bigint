@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 use core::mem;
 use core::ops::Shl;
-use num_traits::One;
 
 use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit};
 use crate::biguint::BigUint;
@@ -151,13 +150,13 @@ pub(super) fn monty_modpow(x: &BigUint, y: &BigUint, m: &BigUint) -> BigUint {
     }
 
     // rr = 2**(2*_W*len(m)) mod m
-    let mut rr = BigUint::one();
+    let mut rr = BigUint::ONE;
     rr = (rr.shl(2 * num_words as u64 * u64::from(big_digit::BITS))) % m;
     if rr.data.len() < num_words {
         rr.data.resize(num_words, 0);
     }
     // one = 1, with equal length to that of m
-    let mut one = BigUint::one();
+    let mut one = BigUint::ONE;
     one.data.resize(num_words, 0);
 
     let n = 4;

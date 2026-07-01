@@ -196,8 +196,8 @@ impl Not for &BigInt {
 
     fn not(self) -> BigInt {
         match self.sign {
-            NoSign => -BigInt::one(),
-            Plus => -BigInt::from(&self.data + 1u32),
+            NoSign => BigInt::NEG_ONE,
+            Plus => BigInt::from_biguint(Minus, &self.data + 1u32),
             Minus => BigInt::from(&self.data - 1u32),
         }
     }
@@ -229,10 +229,7 @@ impl ConstZero for BigInt {
 impl One for BigInt {
     #[inline]
     fn one() -> BigInt {
-        BigInt {
-            sign: Plus,
-            data: BigUint::one(),
-        }
+        Self::ONE
     }
 
     #[inline]
@@ -273,8 +270,8 @@ impl Signed for BigInt {
     #[inline]
     fn signum(&self) -> BigInt {
         match self.sign {
-            Plus => BigInt::one(),
-            Minus => -BigInt::one(),
+            Plus => Self::ONE,
+            Minus => Self::NEG_ONE,
             NoSign => Self::ZERO,
         }
     }
