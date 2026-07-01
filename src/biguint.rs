@@ -180,7 +180,6 @@ impl One for BigUint {
     }
 }
 
-#[cfg(feature = "inline")]
 impl num_traits::ConstOne for BigUint {
     // forward to the inherent const
     const ONE: Self = Self::ONE;
@@ -545,8 +544,6 @@ impl BigUint {
     };
 
     /// A constant `BigUint` with value 1, useful for static initialization.
-    #[cfg(feature = "inline")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
     pub const ONE: Self = BigUint {
         data: BigDigits::ONE,
     };
@@ -573,8 +570,6 @@ impl BigUint {
     ///
     /// Non-`const` callers should use [`From<u32>`] instead.
     #[inline]
-    #[cfg(feature = "inline")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
     pub const fn new_const(n: u32) -> Self {
         BigUint {
             data: BigDigits::from_digit(n as BigDigit),

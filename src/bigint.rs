@@ -247,7 +247,6 @@ impl One for BigInt {
     }
 }
 
-#[cfg(feature = "inline")]
 impl num_traits::ConstOne for BigInt {
     // forward to the inherent const
     const ONE: Self = Self::ONE;
@@ -576,16 +575,12 @@ impl BigInt {
     };
 
     /// A constant `BigInt` with value 1, useful for static initialization.
-    #[cfg(feature = "inline")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
     pub const ONE: Self = BigInt {
         sign: Plus,
         data: BigUint::ONE,
     };
 
     /// A constant `BigInt` with value -1, useful for static initialization.
-    #[cfg(feature = "inline")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
     pub const NEG_ONE: Self = BigInt {
         sign: Minus,
         data: BigUint::ONE,
@@ -603,8 +598,6 @@ impl BigInt {
     ///
     /// Non-`const` callers should use [`From<i32>`] instead.
     #[inline]
-    #[cfg(feature = "inline")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "inline")))]
     pub const fn new_const(n: i32) -> Self {
         let (sign, u) = match n {
             1.. => (Plus, n as u32),

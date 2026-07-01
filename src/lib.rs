@@ -65,13 +65,6 @@
 //! depending on `num-bigint` with `default-features = false`. Either way, the `alloc` crate is
 //! always required for heap allocation of the `BigInt`/`BigUint` digits.
 //!
-//! ### Inline Small Integers
-//!
-//! The `inline` crate feature enables small values to be stored directly in `BigInt` and `BigUint`
-//! without a heap allocation. This also add new `const` values like [`BigUint::ONE`] and
-//! [`BigInt::NEG_ONE`], as well as [`BigUint::new_const`] and [`BigInt::new_const`] methods for
-//! 32-bit constant initialization.
-//!
 //! ### Random Generation
 //!
 //! `num-bigint` supports the generation of random big integers when the `rand`
