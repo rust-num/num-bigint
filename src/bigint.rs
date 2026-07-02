@@ -1004,7 +1004,17 @@ impl BigInt {
         self.data.bits()
     }
 
-    /// Converts this [`BigInt`] into a [`BigUint`], if it's not negative.
+    /// Converts this owned [`BigInt`] into a [`BigUint`], if it's not negative.
+    #[inline]
+    pub fn into_biguint(self) -> Option<BigUint> {
+        match self.sign {
+            Plus => Some(self.data),
+            NoSign => Some(BigUint::ZERO),
+            Minus => None,
+        }
+    }
+
+    /// Converts this borrowed [`BigInt`] into a [`BigUint`], if it's not negative.
     #[inline]
     pub fn to_biguint(&self) -> Option<BigUint> {
         match self.sign {

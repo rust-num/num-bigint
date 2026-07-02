@@ -208,6 +208,22 @@ impl BigDigits {
         }
     }
 
+    pub(crate) fn reserve(&mut self, additional: usize) {
+        match &mut *self {
+            BigDigits::Inline(opt_x) => {
+                let capacity = usize::from(opt_x.is_some()) + additional;
+                if capacity > 1 {
+                    let mut vec = Vec::with_capacity(capacity);
+                    if let Some(x) = *opt_x {
+                        vec.push(x);
+                    }
+                    *self = BigDigits::Heap(vec);
+                }
+            }
+            BigDigits::Heap(xs) => xs.reserve(additional),
+        }
+    }
+
     pub(crate) fn resize(&mut self, len: usize, value: BigDigit) {
         match &mut *self {
             BigDigits::Inline(x) => match len {

@@ -1,7 +1,7 @@
 // This uses stdlib features higher than the MSRV
 #![allow(clippy::manual_range_contains)] // 1.35
 
-use super::{biguint_from_vec, BigUint, ToBigUint};
+use super::{biguint_from_vec, fls, ilog2, BigUint, ToBigUint};
 
 use super::addition::add2;
 use super::division::{div_rem_digit, FAST_DIV_WIDE};
@@ -14,21 +14,10 @@ use crate::TryFromBigIntError;
 use alloc::vec::Vec;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::convert::TryFrom;
-use core::mem;
 use core::str::FromStr;
-use num_integer::{Integer, Roots};
+use num_integer::Integer;
 use num_traits::float::FloatCore;
-use num_traits::{FromPrimitive, Num, PrimInt, ToPrimitive, Zero};
-
-/// Find last set bit
-/// fls(0) == 0, fls(u32::MAX) == 32
-fn fls<T: PrimInt>(v: T) -> u8 {
-    mem::size_of::<T>() as u8 * 8 - v.leading_zeros() as u8
-}
-
-fn ilog2<T: PrimInt>(v: T) -> u8 {
-    fls(v) - 1
-}
+use num_traits::{FromPrimitive, Num, ToPrimitive, Zero};
 
 impl FromStr for BigUint {
     type Err = ParseBigIntError;
@@ -702,7 +691,7 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     // Estimate how big the result will be, so we can pre-allocate it.
     let mut res = Vec::with_capacity(radix_digits.to_usize().unwrap_or(0));
 
-    let mut digits = u.clone();
+    let digits = u.clone();
 
     // X86 DIV can quickly divide by a full digit, otherwise we choose a divisor
     // that's suitable for `div_half` to avoid slow `DoubleBigDigit` division.
@@ -717,35 +706,49 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     // performance. We can mitigate this by dividing into chunks of a larger base first.
     // The threshold for this was chosen by anecdotal performance measurements to
     // approximate where this starts to make a noticeable difference.
-    if digits.data.len() >= 64 {
-        let mut big_base = BigUint::from(base);
-        let mut big_power = 1usize;
+    if digits.data.len() >= 32 {
+        let mut big_bases = Vec::with_capacity(32);
+        big_bases.push((BigUint::from(base), power));
 
-        // Choose a target base length near √n.
-        let target_len = digits.data.len().sqrt();
-        while big_base.data.len() < target_len {
-            big_base = &big_base * &big_base;
-            big_power *= 2;
-        }
-
-        // This outer loop will run approximately √n times.
-        while digits > big_base {
-            // This is still the dominating factor, with n digits divided by √n digits.
-            let (q, mut big_r) = digits.div_rem(&big_base);
-            digits = q;
-
-            // This inner loop now has O(√n²)=O(n) behavior altogether.
-            for _ in 0..big_power {
-                let (q, mut r) = div_rem_digit(big_r, base);
-                big_r = q;
-                for _ in 0..power {
-                    res.push((r % radix) as u8);
-                    r /= radix;
-                }
+        loop {
+            let (big_base, power) = big_bases.last().unwrap();
+            if big_base.data.len() > digits.data.len() / 2 + 1 {
+                break;
             }
+            let next_big_base = big_base * big_base;
+            let next_power = *power * 2;
+            big_bases.push((next_big_base, next_power));
         }
+
+        to_radix_digits_le_divide_and_conquer(
+            digits,
+            base,
+            power,
+            &big_bases,
+            big_bases.len() - 1,
+            &mut res,
+            radix,
+        );
+        while res.last() == Some(&0) {
+            res.pop();
+        }
+        return res;
     }
 
+    to_radix_digits_le_small(digits, base, power, &mut res, radix);
+
+    res
+}
+
+// Extract little-endian radix digits for small numbers
+#[inline(always)] // forced inline to get const-prop for radix=10
+fn to_radix_digits_le_small(
+    mut digits: BigUint,
+    base: BigDigit,
+    power: usize,
+    res: &mut Vec<u8>,
+    radix: BigDigit,
+) {
     while digits.data.len() > 1 {
         let (q, mut r) = div_rem_digit(digits, base);
         for _ in 0..power {
@@ -760,8 +763,34 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
         res.push((r % radix) as u8);
         r /= radix;
     }
+}
 
-    res
+fn to_radix_digits_le_divide_and_conquer(
+    number: BigUint,
+    base: BigDigit,
+    power: usize,
+    big_bases: &[(BigUint, usize)],
+    k: usize,
+    res: &mut Vec<u8>,
+    radix: BigDigit,
+) {
+    let &(ref big_base, result_len) = &big_bases[k];
+    if number.data.len() < 8 {
+        let prev_res_len = res.len();
+        if !number.is_zero() {
+            to_radix_digits_le_small(number, base, power, res, radix);
+        }
+        while res.len() < prev_res_len + result_len * 2 {
+            res.push(0);
+        }
+        return;
+    }
+    // number always has two digits in the big base
+    let (digit_1, digit_2) = number.div_rem(big_base);
+    assert!(&digit_1 < big_base);
+    assert!(&digit_2 < big_base);
+    to_radix_digits_le_divide_and_conquer(digit_2, base, power, big_bases, k - 1, res, radix);
+    to_radix_digits_le_divide_and_conquer(digit_1, base, power, big_bases, k - 1, res, radix);
 }
 
 pub(super) fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {

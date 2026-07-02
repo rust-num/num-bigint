@@ -11,7 +11,7 @@ use core::mem;
 use core::str;
 
 use num_integer::{Integer, Roots};
-use num_traits::{ConstZero, Num, One, Pow, ToPrimitive, Unsigned, Zero};
+use num_traits::{ConstZero, Num, One, Pow, PrimInt, ToPrimitive, Unsigned, Zero};
 
 mod addition;
 mod division;
@@ -29,6 +29,17 @@ mod shift;
 
 pub(crate) use self::convert::to_str_radix_reversed;
 pub use self::iter::{U32Digits, U64Digits};
+
+/// Find last set bit
+/// fls(0) == 0, fls(u32::MAX) == 32
+fn fls<T: PrimInt>(v: T) -> u8 {
+    mem::size_of::<T>() as u8 * 8 - v.leading_zeros() as u8
+}
+
+// TODO(MSRV 1.67): change callers to inherent `ilog2` instead
+fn ilog2<T: PrimInt>(v: T) -> u8 {
+    fls(v) - 1
+}
 
 /// A big unsigned integer type.
 pub struct BigUint {

@@ -923,6 +923,30 @@ fn test_div_rem_big_multiple() {
 }
 
 #[test]
+fn test_div_rem_burnikel_ziegler_u1_equals_d() {
+    // Construct u and d such that the B-Z entry point sees u1 == d.
+    //
+    // d has 65 u64-digits (130 u32-digits) with MSB set, ensuring:
+    //   - d.len() > 64 (enters B-Z)
+    //   - no normalization shift (MSB already set)
+    //
+    // u = d << 8192 + 42, so u's high part (split at `level` digits) is exactly d.
+    //   For u64: u.len()=193, level=128, split gives u1=d
+    //   For u32: u.len()=386, level=256, split gives u1=d
+    //
+    // The entry point originally had `if &u1 > d` (should be >=), so the else branch was
+    // taken with u1==d, violating div_two_digit_by_one's precondition ah < b.
+    let d = (BigUint::one() << 4159usize) + BigUint::one();
+    let remainder = BigUint::from(42u32);
+    let u = (&d << 8192usize) + &remainder;
+
+    let expected_q = BigUint::one() << 8192usize;
+    let (q, r) = u.div_rem(&d);
+    assert_eq!(q, expected_q, "quotient should be 1 << 8192");
+    assert_eq!(r, remainder, "remainder should be 42");
+}
+
+#[test]
 fn test_div_ceil() {
     fn check(a: &BigUint, b: &BigUint, d: &BigUint, m: &BigUint) {
         if m.is_zero() {
