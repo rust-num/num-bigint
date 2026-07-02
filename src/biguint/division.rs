@@ -1,6 +1,6 @@
 use super::addition::__add2;
 use super::shift::biguint_shl;
-use super::{cmp_slice, BigUint};
+use super::{cmp_slice, ilog2, BigUint};
 
 use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit, BITS};
 use crate::biguint::IntDigits;
@@ -238,7 +238,7 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     }
 
     fn normalizing_shift_amount(b: &BigUint, level: usize) -> usize {
-        (level - b.len() + 1) * BITS as usize - b.data.last().unwrap().ilog2() as usize - 1
+        (level - b.len() + 1) * BITS as usize - ilog2(*b.data.last().unwrap()) as usize - 1
     }
 
     fn concat_biguint(b1: &BigUint, b2: BigUint, level: usize) -> BigUint {
@@ -310,7 +310,7 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         (q, r.into_biguint().unwrap())
     }
 
-    let mut level = 1 << (u.data.len().ilog2());
+    let mut level = 1 << ilog2(u.data.len());
     if d.len() > level {
         level *= 2;
     }

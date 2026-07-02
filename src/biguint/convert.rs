@@ -1,7 +1,7 @@
 // This uses stdlib features higher than the MSRV
 #![allow(clippy::manual_range_contains)] // 1.35
 
-use super::{biguint_from_vec, BigUint, ToBigUint};
+use super::{biguint_from_vec, fls, ilog2, BigUint, ToBigUint};
 
 use super::addition::add2;
 use super::division::{div_rem_digit, FAST_DIV_WIDE};
@@ -14,21 +14,10 @@ use crate::TryFromBigIntError;
 use alloc::vec::Vec;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::convert::TryFrom;
-use core::mem;
 use core::str::FromStr;
 use num_integer::Integer;
 use num_traits::float::FloatCore;
-use num_traits::{FromPrimitive, Num, PrimInt, ToPrimitive, Zero};
-
-/// Find last set bit
-/// fls(0) == 0, fls(u32::MAX) == 32
-fn fls<T: PrimInt>(v: T) -> u8 {
-    mem::size_of::<T>() as u8 * 8 - v.leading_zeros() as u8
-}
-
-fn ilog2<T: PrimInt>(v: T) -> u8 {
-    fls(v) - 1
-}
+use num_traits::{FromPrimitive, Num, ToPrimitive, Zero};
 
 impl FromStr for BigUint {
     type Err = ParseBigIntError;
