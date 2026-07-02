@@ -1,9 +1,9 @@
 [package]
 name = "big_quickcheck"
-version = "0.1.0"
-authors = ["Josh Stone <cuviper@gmail.com>"]
+version = "0.0.0"
 edition = "2018"
 rust-version = "1.60"
+publish = false
 
 [dependencies]
 num-integer = "0.1.42"
