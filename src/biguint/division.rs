@@ -259,12 +259,12 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         // A precondition of this function is that q fits into a single digit.
         debug_assert!(ah < b);
         if level <= BURNIKEL_ZIEGLER_THRESHOLD {
-            return div_rem(concat_biguint(&ah, al.clone(), level), b);
+            return div_rem(concat_biguint(&ah, al, level), b);
         }
         let shift = normalizing_shift_amount(&b, level);
         if shift != 0 {
             let b = b << shift;
-            let (ah, al) = divide_biguint(concat_biguint(&ah, al.clone(), level) << shift, level);
+            let (ah, al) = divide_biguint(concat_biguint(&ah, al, level) << shift, level);
             let (q, r) = div_two_digit_by_one_normalized(ah, al, b, level);
             (q, r >> shift)
         } else {
@@ -304,7 +304,7 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
             r += BigInt::from(b.clone());
             if r.is_negative() {
                 q -= 1u32;
-                r += BigInt::from(b.clone());
+                r += BigInt::from(b);
             }
         }
         (q, r.into_biguint().unwrap())
