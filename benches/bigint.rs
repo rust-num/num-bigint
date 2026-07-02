@@ -1,9 +1,8 @@
 #![feature(test)]
-#![cfg(feature = "rand")]
 
 extern crate test;
 
-use num_bigint::{BigInt, BigUint, RandBigInt};
+use num_bigint::{BigInt, BigRng010, BigUint};
 use num_traits::{FromPrimitive, Num, One, Zero};
 use std::mem::replace;
 use test::Bencher;
@@ -13,24 +12,24 @@ use rng::get_rng;
 
 fn multiply_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.random_bigint(xbits);
+    let y = rng.random_bigint(ybits);
 
     b.iter(|| &x * &y);
 }
 
 fn divide_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.random_bigint(xbits);
+    let y = rng.random_bigint(ybits);
 
     b.iter(|| &x / &y);
 }
 
 fn remainder_bench(b: &mut Bencher, xbits: u64, ybits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(xbits);
-    let y = rng.gen_bigint(ybits);
+    let x = rng.random_bigint(xbits);
+    let y = rng.random_bigint(ybits);
 
     b.iter(|| &x % &y);
 }
@@ -191,7 +190,7 @@ fn fib_to_string(b: &mut Bencher) {
 
 fn to_str_radix_bench(b: &mut Bencher, radix: u32, bits: u64) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(bits);
+    let x = rng.random_bigint(bits);
     b.iter(|| x.to_str_radix(radix));
 }
 
@@ -237,7 +236,7 @@ fn to_str_radix_36(b: &mut Bencher) {
 
 fn from_str_radix_bench(b: &mut Bencher, radix: u32) {
     let mut rng = get_rng();
-    let x = rng.gen_bigint(1009);
+    let x = rng.random_bigint(1009);
     let s = x.to_str_radix(radix);
     assert_eq!(x, BigInt::from_str_radix(&s, radix).unwrap());
     b.iter(|| BigInt::from_str_radix(&s, radix));
@@ -271,7 +270,7 @@ fn from_str_radix_36(b: &mut Bencher) {
 fn rand_bench(b: &mut Bencher, bits: u64) {
     let mut rng = get_rng();
 
-    b.iter(|| rng.gen_bigint(bits));
+    b.iter(|| rng.random_bigint(bits));
 }
 
 #[bench]
@@ -342,7 +341,7 @@ fn shr(b: &mut Bencher) {
 fn hash(b: &mut Bencher) {
     use std::collections::HashSet;
     let mut rng = get_rng();
-    let v: Vec<BigInt> = (1000..2000).map(|bits| rng.gen_bigint(bits)).collect();
+    let v: Vec<BigInt> = (1000..2000).map(|bits| rng.random_bigint(bits)).collect();
     b.iter(|| {
         let h: HashSet<&BigInt> = v.iter().collect();
         assert_eq!(h.len(), v.len());
@@ -414,8 +413,8 @@ const RFC3526_2048BIT_MODP_GROUP: &str = "\
 #[bench]
 fn modpow(b: &mut Bencher) {
     let mut rng = get_rng();
-    let base = rng.gen_biguint(2048);
-    let e = rng.gen_biguint(2048);
+    let base = rng.random_biguint(2048);
+    let e = rng.random_biguint(2048);
     let m = BigUint::from_str_radix(RFC3526_2048BIT_MODP_GROUP, 16).unwrap();
 
     b.iter(|| base.modpow(&e, &m));
@@ -424,8 +423,8 @@ fn modpow(b: &mut Bencher) {
 #[bench]
 fn modpow_even(b: &mut Bencher) {
     let mut rng = get_rng();
-    let base = rng.gen_biguint(2048);
-    let e = rng.gen_biguint(2048);
+    let base = rng.random_biguint(2048);
+    let e = rng.random_biguint(2048);
     // Make the modulus even, so monty (base-2^32) doesn't apply.
     let m = BigUint::from_str_radix(RFC3526_2048BIT_MODP_GROUP, 16).unwrap() - 1u32;
 
@@ -435,7 +434,7 @@ fn modpow_even(b: &mut Bencher) {
 #[bench]
 fn to_u32_digits(b: &mut Bencher) {
     let mut rng = get_rng();
-    let n = rng.gen_biguint(2048);
+    let n = rng.random_biguint(2048);
 
     b.iter(|| n.to_u32_digits());
 }
@@ -443,7 +442,7 @@ fn to_u32_digits(b: &mut Bencher) {
 #[bench]
 fn iter_u32_digits(b: &mut Bencher) {
     let mut rng = get_rng();
-    let n = rng.gen_biguint(2048);
+    let n = rng.random_biguint(2048);
 
     b.iter(|| n.iter_u32_digits().max());
 }
@@ -451,7 +450,7 @@ fn iter_u32_digits(b: &mut Bencher) {
 #[bench]
 fn to_u64_digits(b: &mut Bencher) {
     let mut rng = get_rng();
-    let n = rng.gen_biguint(2048);
+    let n = rng.random_biguint(2048);
 
     b.iter(|| n.to_u64_digits());
 }
@@ -459,7 +458,7 @@ fn to_u64_digits(b: &mut Bencher) {
 #[bench]
 fn iter_u64_digits(b: &mut Bencher) {
     let mut rng = get_rng();
-    let n = rng.gen_biguint(2048);
+    let n = rng.random_biguint(2048);
 
     b.iter(|| n.iter_u64_digits().max());
 }

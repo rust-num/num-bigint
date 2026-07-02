@@ -35,8 +35,10 @@ if ! check_version $MSRV ; then
   exit 1
 fi
 
-STD_FEATURES=(arbitrary quickcheck rand serde)
-NO_STD_FEATURES=(serde rand)
+NO_STD_FEATURES=(serde)
+check_version 1.63 && NO_STD_FEATURES+=(rand_core_0_9 rand_0_9)
+check_version 1.85 && NO_STD_FEATURES+=(rand_core_0_10 rand_0_10)
+STD_FEATURES=(${NO_STD_FEATURES[*]} arbitrary quickcheck)
 echo "Testing supported features: ${STD_FEATURES[*]}"
 if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"
@@ -92,8 +94,13 @@ case "${STD_FEATURES[*]}" in
       generate_lockfile
       cargo test
     ) ;;&
-  *rand*) (
-      cd ci/big_rand
+  *rand_0_9*) (
+      cd ci/big_rand_0_9
+      generate_lockfile
+      cargo test
+    ) ;;&
+  *rand_0_10*) (
+      cd ci/big_rand_0_10
       generate_lockfile
       cargo test
     ) ;;&

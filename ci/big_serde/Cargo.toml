@@ -1,9 +1,9 @@
 [package]
 name = "big_serde"
-version = "0.1.0"
-authors = ["Josh Stone <cuviper@gmail.com>"]
+version = "0.0.0"
 edition = "2018"
 rust-version = "1.60"
+publish = false
 
 [dependencies]
 num-traits = "0.2.11"
