@@ -3,7 +3,6 @@ use super::shift::biguint_shl;
 use super::{cmp_slice, ilog2, BigUint};
 
 use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit, BITS};
-use crate::biguint::IntDigits;
 use crate::UsizePromotion;
 
 use alloc::borrow::Cow;
@@ -227,7 +226,7 @@ const BURNIKEL_ZIEGLER_THRESHOLD: usize = 64;
 /// link: https://pure.mpg.de/rest/items/item_1819444_4/component/file_2599480/content
 fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     fn divide_biguint(mut b: BigUint, level: usize) -> (BigUint, BigUint) {
-        if b.len() <= level {
+        if b.data.len() <= level {
             return (BigUint::ZERO, b);
         }
         let mut b1_data = BigDigits::from_slice(&b.data[level..]);
@@ -312,7 +311,7 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     }
 
     let mut level = 1 << ilog2(u.data.len());
-    if d.len() > level {
+    if d.data.len() > level {
         level *= 2;
     }
     let (u1, u2) = divide_biguint(u.clone(), level);
