@@ -204,11 +204,11 @@ fn div_rem_cow(u: Cow<'_, BigUint>, d: Cow<'_, BigUint>) -> (BigUint, BigUint) {
 
     if shift == 0 {
         // no need to clone d
-        div_rem_core(u.into_owned(), &d)
+        div_rem_core(u, &d)
     } else {
         let u = biguint_shl(u, shift);
         let d = biguint_shl(d, shift);
-        let (q, r) = div_rem_core(u, &d);
+        let (q, r) = div_rem_core(Cow::Owned(u), &d);
         // renormalize the remainder
         (q, r >> shift)
     }
@@ -325,11 +325,14 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
 
 /// An implementation of the base division algorithm.
 /// Knuth, TAOCP vol 2 section 4.3.1, algorithm D, with an improvement from exercises 19-21.
-fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
-    if a.len() > BURNIKEL_ZIEGLER_THRESHOLD * 2 && b.len() > BURNIKEL_ZIEGLER_THRESHOLD {
+fn div_rem_core(a: Cow<'_, BigUint>, b: &BigUint) -> (BigUint, BigUint) {
+    if (a.data.len() > BURNIKEL_ZIEGLER_THRESHOLD * 2)
+        && (b.data.len() > BURNIKEL_ZIEGLER_THRESHOLD)
+    {
         return div_rem_burnikel_ziegler(&a, b);
     }
 
+    let mut a = a.into_owned();
     let b = &*b.data;
     debug_assert!(a.data.len() >= b.len() && b.len() > 1);
     debug_assert!(b.last().unwrap().leading_zeros() == 0);
