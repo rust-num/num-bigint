@@ -237,13 +237,13 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         (BigUint { data: b1_data }, b)
     }
 
-    fn normalizing_shift_amount(b: &BigUint, level: usize) -> usize {
-        (level - b.len() + 1) * BITS as usize - ilog2(*b.data.last().unwrap()) as usize - 1
+    fn normalizing_shift_amount(b: &BigUint, level: usize) -> u64 {
+        (level as u64) * u64::from(BITS) - b.bits()
     }
 
     fn concat_biguint(b1: &BigUint, b2: BigUint, level: usize) -> BigUint {
         let mut data = b2.data;
-        data.reserve(level + b1.len() - data.len());
+        data.reserve(level + b1.data.len() - data.len());
         data.resize(level, 0);
         data.extend_from_slice(&b1.data);
         data.normalize();
