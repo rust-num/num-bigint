@@ -244,9 +244,10 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     fn concat_biguint(b1: &BigUint, b2: BigUint, level: usize) -> BigUint {
         let mut data = b2.data;
         data.reserve(level + b1.len() - data.len());
-        data.extend(std::iter::repeat(0).take(level - data.len()));
+        data.resize(level, 0);
         data.extend_from_slice(&b1.data);
-        BigUint { data }.normalized()
+        data.normalize();
+        BigUint { data }
     }
 
     fn div_two_digit_by_one(
