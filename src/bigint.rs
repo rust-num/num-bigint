@@ -34,11 +34,11 @@ mod shift;
 /// A `Sign` is a [`BigInt`]'s composing element.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Debug, Hash)]
 pub enum Sign {
-    /// The value of the [`BigInt`] is equal to its absolute value multiplied by `-1`.
+    /// The value of the [`BigInt`] is less than `0`.
     Minus,
-    /// The value of the [`BigInt`] is equal to its absolute value multiplied by `0`.
+    /// The value of the [`BigInt`] is equal to `0`.
     NoSign,
-    /// The value of the [`BigInt`] is equal to its absolute value multiplied by `1`.
+    /// The value of the [`BigInt`] is greater than `0`.
     Plus,
 }
 
