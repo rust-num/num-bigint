@@ -4,14 +4,14 @@ use super::{cmp_slice, ilog2, BigUint};
 
 use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit, BITS};
 use crate::biguint::IntDigits;
-use crate::{BigInt, UsizePromotion};
+use crate::UsizePromotion;
 
 use alloc::borrow::Cow;
 use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, CheckedEuclid, Euclid, Signed, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, Euclid, ToPrimitive, Zero};
 
 pub(super) const FAST_DIV_WIDE: bool = cfg!(any(target_arch = "x86", target_arch = "x86_64"));
 
@@ -297,17 +297,18 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         level: usize,
     ) -> (BigUint, BigUint) {
         let (mut q, c) = div_two_digit_by_one(a1, a2, b1.clone(), level);
-        let mut r = BigInt::from(concat_biguint(&c, a3, level)) - BigInt::from(&q * &b2);
-        let b = concat_biguint(&b1, b2, level);
-        if r.is_negative() {
+        let (mut r, rsub) = (concat_biguint(&c, a3, level), &q * &b2);
+        // The algorithm guarantees at most two corrections are needed.
+        if r < rsub {
+            let b = concat_biguint(&b1, b2, level);
             q -= 1u32;
-            r += BigInt::from(b.clone());
-            if r.is_negative() {
+            r += &b;
+            if r < rsub {
                 q -= 1u32;
-                r += BigInt::from(b);
+                r += &b;
             }
         }
-        (q, r.into_biguint().unwrap())
+        (q, r - rsub)
     }
 
     let mut level = 1 << ilog2(u.data.len());
