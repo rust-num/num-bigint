@@ -315,7 +315,7 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         level *= 2;
     }
     let (u1, u2) = divide_biguint(u.clone(), level);
-    if &u1 > d {
+    if &u1 >= d {
         div_two_digit_by_one(BigUint::ZERO, u.clone(), d.clone(), level * 2)
     } else {
         div_two_digit_by_one(u1, u2, d.clone(), level)
