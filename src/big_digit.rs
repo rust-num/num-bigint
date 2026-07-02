@@ -212,11 +212,13 @@ impl BigDigits {
         match &mut *self {
             BigDigits::Inline(opt_x) => {
                 let capacity = usize::from(opt_x.is_some()) + additional;
-                let mut vec = Vec::with_capacity(capacity);
-                if let Some(x) = *opt_x {
-                    vec.push(x);
+                if capacity > 1 {
+                    let mut vec = Vec::with_capacity(capacity);
+                    if let Some(x) = *opt_x {
+                        vec.push(x);
+                    }
+                    *self = BigDigits::Heap(vec);
                 }
-                *self = BigDigits::Heap(vec);
             }
             BigDigits::Heap(xs) => xs.reserve(additional),
         }
