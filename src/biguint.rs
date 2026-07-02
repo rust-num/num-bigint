@@ -237,8 +237,6 @@ impl Integer for BigUint {
     }
 
     /// Calculates the Greatest Common Divisor (GCD) of the number and `other`.
-    ///
-    /// The result is always positive.
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
         #[inline]
