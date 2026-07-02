@@ -1013,7 +1013,7 @@ impl BigInt {
             Minus => None,
         }
     }
-    
+
     /// Converts this [`BigInt`] into a [`BigUint`], if it's not negative.
     #[inline]
     pub fn to_biguint(&self) -> Option<BigUint> {

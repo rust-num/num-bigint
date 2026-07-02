@@ -1,7 +1,7 @@
 // This uses stdlib features higher than the MSRV
 #![allow(clippy::manual_range_contains)] // 1.35
 
-use super::{biguint_from_vec, BigUint, IntDigits, ToBigUint};
+use super::{biguint_from_vec, BigUint, ToBigUint};
 
 use super::addition::add2;
 use super::division::{div_rem_digit, FAST_DIV_WIDE};
@@ -16,7 +16,7 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 use core::convert::TryFrom;
 use core::mem;
 use core::str::FromStr;
-use num_integer::{Integer, Roots};
+use num_integer::Integer;
 use num_traits::float::FloatCore;
 use num_traits::{FromPrimitive, Num, PrimInt, ToPrimitive, Zero};
 
@@ -702,7 +702,7 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     // Estimate how big the result will be, so we can pre-allocate it.
     let mut res = Vec::with_capacity(radix_digits.to_usize().unwrap_or(0));
 
-    let mut digits = u.clone();
+    let digits = u.clone();
 
     // X86 DIV can quickly divide by a full digit, otherwise we choose a divisor
     // that's suitable for `div_half` to avoid slow `DoubleBigDigit` division.
