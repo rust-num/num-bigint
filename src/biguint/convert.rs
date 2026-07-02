@@ -744,10 +744,10 @@ pub(super) fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
 #[inline(always)] // forced inline to get const-prop for radix=10
 fn to_radix_digits_le_small(
     mut digits: BigUint,
-    base: u64,
+    base: BigDigit,
     power: usize,
     res: &mut Vec<u8>,
-    radix: u64,
+    radix: BigDigit,
 ) {
     while digits.data.len() > 1 {
         let (q, mut r) = div_rem_digit(digits, base);
@@ -767,12 +767,12 @@ fn to_radix_digits_le_small(
 
 fn to_radix_digits_le_divide_and_conquer(
     number: BigUint,
-    base: u64,
+    base: BigDigit,
     power: usize,
     big_bases: &[(BigUint, usize)],
     k: usize,
     res: &mut Vec<u8>,
-    radix: u64,
+    radix: BigDigit,
 ) {
     let &(ref big_base, result_len) = &big_bases[k];
     if number.data.len() < 8 {
