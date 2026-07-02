@@ -1,5 +1,4 @@
 [package]
-authors = ["The Rust Project Developers"]
 description = "Big integer implementation for Rust"
 documentation = "https://docs.rs/num-bigint"
 homepage = "https://github.com/rust-num/num-bigint"
