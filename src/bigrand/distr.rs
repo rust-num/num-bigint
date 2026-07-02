@@ -1,4 +1,5 @@
 //! Random distributions of big integers
+#![allow(clippy::duplicate_mod)]
 
 use super::{rand, BigRng};
 use crate::{BigInt, BigUint, RandomBits, UniformBigInt, UniformBigUint};

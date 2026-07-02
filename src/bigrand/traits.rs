@@ -1,4 +1,5 @@
 //! Randomization of big integers
+#![allow(clippy::duplicate_mod)]
 
 use super::Rng;
 use crate::Sign::*;
