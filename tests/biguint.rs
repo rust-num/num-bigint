@@ -947,6 +947,30 @@ fn test_div_rem_burnikel_ziegler_u1_equals_d() {
 }
 
 #[test]
+fn test_div_rem_burnikel_ziegler_a1_equals_b1() {
+    // This triggered a bug for the missing a1 >= b1 guard in div_three_halves_by_two
+    // (Algorithm 2, step 3b of the Burnikel-Ziegler paper).
+    //
+    // d has 65 u64-digits (130 u32-digits). In div_two_digit_by_one, the normalization
+    // shift pads d to fill `level` digits. After div_two_digit_by_one_normalized splits
+    // both ah and the shifted d at the half-level, the second div_three_halves_by_two call
+    // receives a remainder whose upper half equals b1 (the upper half of the shifted d).
+    // It then called div_two_digit_by_one(a1, a2, b1, level) with a1 == b1, violating the
+    // a1 < b1 precondition.
+    //
+    // The quotient ((1 << 4096) - 1) is chosen so the remainder is d - 1, which shares
+    // the same upper half as d after normalization.
+    let d = (BigUint::one() << 4159usize) + BigUint::one();
+    let expected_q = (BigUint::one() << 4096usize) - BigUint::one();
+    let expected_r = &d - BigUint::one();
+    let u = &d * &expected_q + &expected_r;
+
+    let (q, r) = u.div_rem(&d);
+    assert_eq!(q, expected_q, "quotient mismatch");
+    assert_eq!(r, expected_r, "remainder mismatch");
+}
+
+#[test]
 fn test_div_ceil() {
     fn check(a: &BigUint, b: &BigUint, d: &BigUint, m: &BigUint) {
         if m.is_zero() {
