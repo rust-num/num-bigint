@@ -1,3 +1,11 @@
+# Release 0.5.1 (2026-07-04)
+
+- [Fixed a regression in the B-Z division algorithm.][348]
+
+[348]: https://github.com/rust-num/num-bigint/pull/338
+
+**Contributors**: @cuviper
+
 # Release 0.5.0 (2026-07-02)
 
 - [Upgrade to `rand` v0.10 and/or v0.9, and split `rand_core`][338].
