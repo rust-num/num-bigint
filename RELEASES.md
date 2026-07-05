@@ -2,7 +2,7 @@
 
 - [Fixed a regression in the B-Z division algorithm.][348]
 
-[348]: https://github.com/rust-num/num-bigint/pull/338
+[348]: https://github.com/rust-num/num-bigint/pull/348
 
 **Contributors**: @cuviper
 
@@ -21,6 +21,14 @@
 [value-breaking]: https://rust-random.github.io/book/crate-reprod.html#api-breaking-value-breaking-and-semver
 
 **Contributors**: @bionicles, @cuviper, @divergentdave
+
+# Release 0.4.8 (2026-07-04)
+
+- [Fixed a regression in the B-Z division algorithm.][349]
+
+[349]: https://github.com/rust-num/num-bigint/pull/349
+
+**Contributors**: @cuviper
 
 # Release 0.4.7 (2026-07-02)
 
