@@ -295,19 +295,34 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         b2: BigUint,
         level: usize,
     ) -> (BigUint, BigUint) {
-        let (mut q, c) = div_two_digit_by_one(a1, a2, b1.clone(), level);
-        let (mut r, rsub) = (concat_biguint(&c, a3, level), &q * &b2);
+        // Algorithm 2 step 3 distinguishes A₁<B₁ or A₁≥B₁, preserving
+        // div_two_digit_by_one's asserted invariant that `ah < b`.
+        let (mut q, r1, d);
+        if a1 < b1 {
+            (q, r1) = div_two_digit_by_one(a1, a2, b1.clone(), level);
+            d = &q * &b2;
+        } else {
+            // set Q = βⁿ-1 and set R₁ = [A₁;A₂] - [B₁;0] + [0;B₁]
+            //                        (= [A₁;A₂] - QB₁)
+            q = BigUint {
+                data: BigDigits::from_vec(vec![BigDigit::MAX; level]),
+            };
+            r1 = concat_biguint(&(a1 - &b1), a2, level) + &b1;
+            // also Q*B₂ = (βⁿ-1)B₂ = βⁿB₂ - B₂
+            d = (&b2 << (level * usize::from(BITS))) - &b2;
+        };
         // The algorithm guarantees at most two corrections are needed.
-        if r < rsub {
+        let mut r = concat_biguint(&r1, a3, level);
+        if r < d {
             let b = concat_biguint(&b1, b2, level);
             q -= 1u32;
             r += &b;
-            if r < rsub {
+            if r < d {
                 q -= 1u32;
                 r += &b;
             }
         }
-        (q, r - rsub)
+        (q, r - d)
     }
 
     let mut level = 1 << ilog2(u.data.len());
