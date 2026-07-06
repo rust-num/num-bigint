@@ -1,6 +1,6 @@
 use super::addition::__add2;
 use super::shift::biguint_shl;
-use super::{cmp_slice, ilog2, BigUint};
+use super::{cmp_slice, BigUint};
 
 use crate::big_digit::{self, BigDigit, BigDigits, DoubleBigDigit, BITS};
 use crate::UsizePromotion;
@@ -193,6 +193,14 @@ fn div_rem_cow(u: Cow<'_, BigUint>, d: Cow<'_, BigUint>) -> (BigUint, BigUint) {
         Greater => {} // Do nothing
     }
 
+    // Larger operands use the algorithm from Burnikel and Ziegler,
+    // which has its own similar shift-normalization strategy.
+    if (u.data.len() > BURNIKEL_ZIEGLER_THRESHOLD * 2)
+        && (d.data.len() > BURNIKEL_ZIEGLER_THRESHOLD)
+    {
+        return div_rem_burnikel_ziegler(u, d);
+    }
+
     // This algorithm is from Knuth, TAOCP vol 2 section 4.3, algorithm D:
     //
     // First, normalize the arguments so the highest bit in the highest digit of the divisor is
@@ -200,14 +208,13 @@ fn div_rem_cow(u: Cow<'_, BigUint>, d: Cow<'_, BigUint>) -> (BigUint, BigUint) {
     // want it to be the largest number we can efficiently divide by.
     //
     let shift = d.data.last().unwrap().leading_zeros();
-
     if shift == 0 {
         // no need to clone d
-        div_rem_core(u, &d)
+        div_rem_core(u.into_owned(), &d)
     } else {
         let u = biguint_shl(u, shift);
         let d = biguint_shl(d, shift);
-        let (q, r) = div_rem_core(Cow::Owned(u), &d);
+        let (q, r) = div_rem_core(u, &d);
         // renormalize the remainder
         (q, r >> shift)
     }
@@ -215,7 +222,7 @@ fn div_rem_cow(u: Cow<'_, BigUint>, d: Cow<'_, BigUint>) -> (BigUint, BigUint) {
 
 const BURNIKEL_ZIEGLER_THRESHOLD: usize = 64;
 
-/// This algorithm is from Burnikel and Ziegler, "Fast Recursive Division", Algorithm 1.
+/// This algorithm is from Burnikel and Ziegler, "Fast Recursive Division".
 /// It is a recursive algorithm that divides the dividend and divisor into blocks of digits
 /// and uses a divide-and-conquer approach to find the quotient.
 ///
@@ -224,7 +231,7 @@ const BURNIKEL_ZIEGLER_THRESHOLD: usize = 64;
 /// Time complexity of this algorithm is the same as the algorithm used for the multiplication.
 ///
 /// link: https://pure.mpg.de/rest/items/item_1819444_4/component/file_2599480/content
-fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+fn div_rem_burnikel_ziegler(a: Cow<'_, BigUint>, b: Cow<'_, BigUint>) -> (BigUint, BigUint) {
     fn divide_biguint(mut b: BigUint, level: usize) -> (BigUint, BigUint) {
         if b.data.len() <= level {
             return (BigUint::ZERO, b);
@@ -255,28 +262,13 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         b: BigUint,
         level: usize,
     ) -> (BigUint, BigUint) {
-        // A precondition of this function is that q fits into a single digit.
+        // The quotient must fit into a single digit, i.e. A < βⁿB.
         debug_assert!(ah < b);
+        // The divisor must also have its MSB set, i.e. βⁿ/2 ≤ B < βⁿ.
+        debug_assert_eq!(normalizing_shift_amount(&b, level), 0);
         if level <= BURNIKEL_ZIEGLER_THRESHOLD {
             return div_rem(concat_biguint(&ah, al, level), b);
         }
-        let shift = normalizing_shift_amount(&b, level);
-        if shift != 0 {
-            let b = b << shift;
-            let (ah, al) = divide_biguint(concat_biguint(&ah, al, level) << shift, level);
-            let (q, r) = div_two_digit_by_one_normalized(ah, al, b, level);
-            (q, r >> shift)
-        } else {
-            div_two_digit_by_one_normalized(ah, al, b, level)
-        }
-    }
-
-    fn div_two_digit_by_one_normalized(
-        ah: BigUint,
-        al: BigUint,
-        b: BigUint,
-        level: usize,
-    ) -> (BigUint, BigUint) {
         let level = level / 2;
         let (a1, a2) = divide_biguint(ah, level);
         let (a3, a4) = divide_biguint(al, level);
@@ -325,28 +317,59 @@ fn div_rem_burnikel_ziegler(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         (q, r - d)
     }
 
-    let mut level = 1 << ilog2(u.data.len());
-    if d.data.len() > level {
-        level *= 2;
+    fn div_blocks(a: &BigUint, b: &BigUint, level: usize) -> (BigUint, BigUint) {
+        let mut a_blocks = a.data.chunks(level);
+
+        // If the most-significant block is already less than b,
+        // then it serves as the initial remainder.
+        let mut r = BigUint::ZERO;
+        if let Some(ah) = a_blocks.clone().next_back() {
+            if cmp_slice(ah, &b.data) == Less {
+                _ = a_blocks.next_back();
+                // NB: assuming a is normalized, then so is r
+                r = BigUint {
+                    data: BigDigits::from_slice(ah),
+                };
+            }
+        }
+
+        let mut q_data = vec![0; a_blocks.len() * level];
+        let q_blocks = q_data.chunks_mut(level);
+
+        // Iterate block-by-block like long division
+        for (q, ai) in q_blocks.zip(a_blocks).rev() {
+            let mut ai = BigUint {
+                data: BigDigits::from_slice(ai),
+            };
+            ai.data.normalize();
+            let (qi, ri) = div_two_digit_by_one(r, ai, b.clone(), level);
+            q[..qi.data.len()].copy_from_slice(&qi.data);
+            r = ri;
+        }
+
+        let mut q = BigUint {
+            data: BigDigits::from_vec(q_data),
+        };
+        q.data.normalize();
+        (q, r)
     }
-    let (u1, u2) = divide_biguint(u.clone(), level);
-    if &u1 >= d {
-        div_two_digit_by_one(BigUint::ZERO, u.clone(), d.clone(), level * 2)
+
+    // The block size is the minimum 2ᵏ that fits the divisor.
+    let level = b.data.len().next_power_of_two();
+    let shift = normalizing_shift_amount(&b, level);
+    if shift == 0 {
+        div_blocks(&a, &b, level)
     } else {
-        div_two_digit_by_one(u1, u2, d.clone(), level)
+        let a = biguint_shl(a, shift);
+        let b = biguint_shl(b, shift);
+        let (q, r) = div_blocks(&a, &b, level);
+        (q, r >> shift)
     }
 }
 
 /// An implementation of the base division algorithm.
 /// Knuth, TAOCP vol 2 section 4.3.1, algorithm D, with an improvement from exercises 19-21.
-fn div_rem_core(a: Cow<'_, BigUint>, b: &BigUint) -> (BigUint, BigUint) {
-    if (a.data.len() > BURNIKEL_ZIEGLER_THRESHOLD * 2)
-        && (b.data.len() > BURNIKEL_ZIEGLER_THRESHOLD)
-    {
-        return div_rem_burnikel_ziegler(&a, b);
-    }
-
-    let mut a = a.into_owned();
+fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
     let b = &*b.data;
     debug_assert!(a.data.len() >= b.len() && b.len() > 1);
     debug_assert!(b.last().unwrap().leading_zeros() == 0);
