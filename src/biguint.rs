@@ -1069,6 +1069,15 @@ impl BigUint {
             }
         }
     }
+
+    /// Returns the total amount of memory allocated internally by the
+    /// big uint, in bytes.
+    ///
+    /// The returned number is informational only. It is intended to be
+    /// primarily used for memory profiling.
+    pub fn allocation_size(&self) -> usize {
+        self.data.capacity() * std::mem::size_of::<BigDigit>()
+    }
 }
 
 impl num_traits::FromBytes for BigUint {
