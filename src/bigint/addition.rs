@@ -9,6 +9,8 @@ use core::iter::Sum;
 use core::mem;
 use core::ops::{Add, AddAssign};
 use num_traits::CheckedAdd;
+use num_traits::WrappingAdd;
+use num_traits::ops::overflowing::OverflowingAdd;
 
 // We want to forward to BigUint::add, but it's not clear how that will go until
 // we compare both sign and magnitude.  So we duplicate this body for every
@@ -233,6 +235,22 @@ impl CheckedAdd for BigInt {
     #[inline]
     fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
         Some(self.add(v))
+    }
+}
+
+// Never wraps, unless we are out of memory
+impl WrappingAdd for BigInt {
+    #[inline]
+    fn wrapping_add(&self, v: &BigInt) -> BigInt {
+        self.add(v)
+    }
+}
+
+// Overflow never occurs, unless we are out of memory
+impl OverflowingAdd for BigInt {
+    #[inline]
+    fn overflowing_add(&self, v: &BigInt) -> (BigInt, bool) {
+        (self.add(v), false)
     }
 }
 
