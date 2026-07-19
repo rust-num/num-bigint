@@ -214,4 +214,23 @@ impl CheckedMul for BigInt {
     }
 }
 
+/// Equivalent to `self.set_sign(self.sign() * rhs)`.
+impl Mul<Sign> for BigInt {
+    type Output = BigInt;
+
+    #[inline]
+    fn mul(mut self, rhs: Sign) -> Self::Output {
+        self *= rhs;
+        self
+    }
+}
+
+/// Equivalent to `self.set_sign(self.sign() * rhs)`.
+impl MulAssign<Sign> for BigInt {
+    #[inline]
+    fn mul_assign(&mut self, rhs: Sign) {
+        self.set_sign(self.sign() * rhs);
+    }
+}
+
 impl_product_iter_type!(BigInt);

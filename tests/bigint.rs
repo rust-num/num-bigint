@@ -752,6 +752,21 @@ fn test_mul() {
 }
 
 #[test]
+fn test_mul_sign() {
+    assert_eq!(BigInt::zero() * Plus, BigInt::zero());
+    assert_eq!(BigInt::zero() * Minus, BigInt::zero());
+    assert_eq!(BigInt::zero() * NoSign, BigInt::zero());
+
+    assert_eq!(BigInt::one() * Plus, BigInt::one());
+    assert_eq!(BigInt::one() * Minus, -BigInt::one());
+    assert_eq!(BigInt::one() * NoSign, BigInt::zero());
+
+    assert_eq!((-BigInt::one()) * Plus, -BigInt::one());
+    assert_eq!((-BigInt::one()) * Minus, BigInt::one());
+    assert_eq!((-BigInt::one()) * NoSign, BigInt::zero());
+}
+
+#[test]
 fn test_div_mod_floor() {
     fn check_sub(a: &BigInt, b: &BigInt, ans_d: &BigInt, ans_m: &BigInt) {
         let (d, m) = a.div_mod_floor(b);
@@ -1472,4 +1487,32 @@ fn test_set_bit() {
     x = BigInt::from_biguint(Minus, (BigUint::one() << 200) - BigUint::one());
     x.set_bit(0, false);
     assert_eq!(x, BigInt::from_biguint(Minus, BigUint::one() << 200));
+}
+
+#[test]
+fn test_set_sign() {
+    // Zero should be unaffected.
+    for sign in &[Plus, Minus, NoSign] {
+        let mut x = BigInt::zero();
+        x.set_sign(*sign);
+        assert!(x.is_zero());
+    }
+
+    // Since the only thing different about the two numbers is their signs,
+    // the `set_sign` operation should behave the same.
+    for orig_x in &[BigInt::one(), -BigInt::one()] {
+        let mut x = orig_x.clone();
+        x.set_sign(Plus);
+        assert_eq!(x.sign(), Plus);
+        assert_eq!(x, BigInt::one());
+
+        x = orig_x.clone();
+        x.set_sign(Minus);
+        assert_eq!(x.sign(), Minus);
+        assert_eq!(x, -BigInt::one());
+
+        x = orig_x.clone();
+        x.set_sign(NoSign);
+        assert!(x.is_zero());
+    }
 }
