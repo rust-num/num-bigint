@@ -1038,7 +1038,7 @@ impl BigUint {
         let bits_per_digit = u64::from(big_digit::BITS);
         if let Some(digit_index) = (bit / bits_per_digit).to_usize() {
             if let Some(digit) = self.data.get(digit_index) {
-                let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+                let bit_mask: BigDigit = 1 << (bit % bits_per_digit);
                 return (digit & bit_mask) != 0;
             }
         }
@@ -1054,7 +1054,7 @@ impl BigUint {
         // fail allocation, and that's more consistent than adding our own overflow panics.
         let bits_per_digit = u64::from(big_digit::BITS);
         let digit_index = (bit / bits_per_digit).to_usize().unwrap_or(usize::MAX);
-        let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+        let bit_mask: BigDigit = 1 << (bit % bits_per_digit);
         if value {
             if digit_index >= self.data.len() {
                 let new_len = digit_index.saturating_add(1);
