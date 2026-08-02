@@ -24,6 +24,7 @@ mod bits;
 mod convert;
 mod iter;
 mod monty;
+mod ntt;
 mod power;
 mod serde;
 mod shift;
