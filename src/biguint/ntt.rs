@@ -208,11 +208,11 @@ impl<const P: u64> Arith<P> {
 }
 
 struct NttPlan {
-    pub n: usize, // n == g*m
-    pub g: usize, // g: size of the base case
-    pub m: usize, // m divides Arith::<P>::MAX_NTT_LEN
-    pub last_radix: usize,
-    pub s_list: Vec<(usize, usize)>,
+    n: usize, // n == g*m
+    g: usize, // g: size of the base case
+    m: usize, // m divides Arith::<P>::MAX_NTT_LEN
+    last_radix: usize,
+    s_list: Vec<(usize, usize)>,
 }
 
 impl NttPlan {
