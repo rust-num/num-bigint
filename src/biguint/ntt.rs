@@ -73,6 +73,20 @@ impl<const P: u64> Arith<P> {
 
     const ROOTR: u64 = {
         // ROOT * R mod P (ROOT: MAX_NTT_LEN divides MultiplicativeOrder[ROOT, P])
+        //
+        // Find an element p whose multiplicative order is a multiple of
+        // MAX_NTT_LEN, then compute ROOTR = p^((P-1)/MAX_NTT_LEN) to obtain
+        // an element of exact order MAX_NTT_LEN.
+        //
+        // We only test p^((P-1)/q) != 1 for q in {2, 3, 5} — the prime
+        // factors of MAX_NTT_LEN. This suffices because:
+        //   - FACTORS_2/3/5 extract all factors of 2, 3, 5 from P-1, so
+        //     R = (P-1)/MAX_NTT_LEN is coprime to MAX_NTT_LEN by construction.
+        //   - Any remaining prime factors of P-1 (e.g. 7, 13, 17 for the
+        //     current primes) are absorbed by the p^R exponentiation and
+        //     do not affect the order of ROOTR.
+        //
+        // P must be prime for Z/PZ to be a field; this is not checked here.
         assert!(Self::MAX_NTT_LEN % 4050 == 0);
         let mut p = Self::R;
         loop {
@@ -226,7 +240,22 @@ impl NttPlan {
                     let (mut tmp, mut cost) = (len, 0);
                     let mut g_new = 1;
 
-                    // Length-dependent weights for cost estimation.
+                    // Cost model for NTT length selection.
+                    //
+                    // Each radix-R stage processes N elements in N/R groups of R-point
+                    // butterflies. The per-stage cost is approximated as N * weight / 100,
+                    // where weight reflects the butterfly's arithmetic cost and cache
+                    // behavior, calibrated empirically:
+                    //   - radix-2: weight 85 (small) / 100 (large)
+                    //   - radix-3: weight 100 (reference)
+                    //   - radix-4: weight 90 (small) / 100 (large)
+                    //   - radix-5: weight 156-186 (length-dependent)
+                    //   - radix-6: weight 110 (small) / 115 (large)
+                    //
+                    // The small/large threshold (2^20 elements) approximates L2 cache
+                    // residency. Radix-5 has the highest weight due to its mul-heavy
+                    // butterfly (5 modular multiplications vs. 1 for radix-3/4).
+
                     let small_transform = len <= 1 << 20;
                     let radix6_weight = if small_transform { 110 } else { 115 };
                     let radix5_weight =
