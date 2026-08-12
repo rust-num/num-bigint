@@ -67,7 +67,7 @@ impl<const P: u64> Arith<P> {
     const PINV: u64 = arith::invmod_2pow64(P); // P^-1 mod 2^64
 
     const MAX_NTT_LEN: u64 =
-        2u64.pow(Self::factors(2)) * 3u64.pow(Self::factors(3)) * 5u64.pow(Self::factors(5));
+        2u64.pow(Self::FACTORS_2) * 3u64.pow(Self::FACTORS_3) * 5u64.pow(Self::FACTORS_5);
 
     const ROOTR: u64 = {
         // ROOT * R mod P (ROOT: MAX_NTT_LEN divides MultiplicativeOrder[ROOT, P])
@@ -83,6 +83,10 @@ impl<const P: u64> Arith<P> {
             p = Self::addmod(p, Self::R);
         }
     };
+
+    const FACTORS_2: u32 = Self::factors(2);
+    const FACTORS_3: u32 = Self::factors(3);
+    const FACTORS_5: u32 = Self::factors(5);
 
     // Counts the number of `divisor` factors in P-1.
     const fn factors(divisor: u64) -> u32 {
@@ -216,15 +220,15 @@ impl NttPlan {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
         let (mut len_max, mut len_max_cost, mut g) = (usize::MAX, usize::MAX, 1);
         for m7 in 0..=1 {
-            for m5 in 0..=Arith::<P>::factors(5) {
-                for m3 in 0..=Arith::<P>::factors(3) {
+            for m5 in 0..=Arith::<P>::FACTORS_5 {
+                for m3 in 0..=Arith::<P>::FACTORS_3 {
                     let len = 7u64.pow(m7) * 5u64.pow(m5) * 3u64.pow(m3);
                     if len >= 2 * min_len as u64 {
                         break;
                     }
 
                     let (mut len, mut m2) = (len as usize, 0);
-                    while len < min_len && m2 < Arith::<P>::factors(2) {
+                    while len < min_len && m2 < Arith::<P>::FACTORS_2 {
                         len *= 2;
                         m2 += 1;
                     }
