@@ -35,9 +35,9 @@ impl BigUint {
             _ => {}
         }
 
-        // Normalize to a 2ᵏ bit length with at most one leading zero.
-        let k = self.data.len().next_power_of_two();
-        let shift = ((k as u64) * u64::from(BITS) - self.bits()) / 2;
+        // Normalize to an even length with at most one leading zero.
+        let len = Integer::next_multiple_of(&self.data.len(), &2);
+        let shift = ((len as u64) * u64::from(BITS) - self.bits()) / 2;
         if shift == 0 {
             sqrt_rem(&self.data).0
         } else {
@@ -188,11 +188,11 @@ fn sqrt_rem(n: &[BigDigit]) -> (BigUint, BigUint) {
     // Algorithm SqrtRem(n = a₃b³ + a₂b² + a₁b + a₀)
     // Input: 0 ≤ aᵢ < b with a₃ ≥ b/4
     // Output: (s,r) such that s² ≤ n = s² + r < (s+1)²
-    debug_assert!(n.len().is_power_of_two());
+    debug_assert!(Integer::is_multiple_of(&n.len(), &2));
     debug_assert!(n.last().unwrap().leading_zeros() < 2);
 
     if n.len() < 4 {
-        // The recursion always cuts in half, so we should have exactly 2 digits.
+        // The recursion length is always even, so we should have exactly 2 digits.
         // We can finish this with primitive `DoubleBigDigit::sqrt`.
         debug_assert_eq!(n.len(), 2);
         let lo = n[0];
