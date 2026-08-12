@@ -118,18 +118,6 @@ impl<const P: u64> Arith<P> {
         Self::mreduce(a as u128 * b as u128)
     }
 
-    // Multiplication with Montgomery reduction:
-    //   a * b * R^-1 mod P
-    // This function only applies the multiplication when INV && TWIDDLE,
-    //   otherwise it just returns b.
-    const fn mmulmod_invtw<const INV: bool, const TWIDDLE: bool>(a: u64, b: u64) -> u64 {
-        if INV && TWIDDLE {
-            Self::mmulmod(a, b)
-        } else {
-            b
-        }
-    }
-
     // Fused-multiply-sub with Montgomery reduction:
     //   a * b * R^-1 - c mod P
     const fn mmulsubmod(a: u64, b: u64, c: u64) -> u64 {
@@ -438,7 +426,10 @@ const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
         b = Arith::<P>::mmulmod(w1, b);
     }
     let out0 = Arith::<P>::addmod(a, b);
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1, Arith::<P>::submod(a, b));
+    let mut out1 = Arith::<P>::submod(a, b);
+    if INV && TWIDDLE {
+        out1 = Arith::<P>::mmulmod(w1, out1);
+    }
     (out0, out1)
 }
 
@@ -464,14 +455,12 @@ const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     }
     let kbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U3, Arith::<P>::submod(b, c));
     let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w1,
-        Arith::<P>::submod(a, Arith::<P>::submod(c, kbmc)),
-    );
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w2,
-        Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc),
-    );
+    let mut out1 = Arith::<P>::submod(a, Arith::<P>::submod(c, kbmc));
+    let mut out2 = Arith::<P>::submod(Arith::<P>::submod(a, b), kbmc);
+    if INV && TWIDDLE {
+        out1 = Arith::<P>::mmulmod(w1, out1);
+        out2 = Arith::<P>::mmulmod(w2, out2);
+    }
     (out0, out1, out2)
 }
 
@@ -506,12 +495,14 @@ const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let bmd = Arith::<P>::submod(b, d);
     let jbmd = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U4, bmd);
     let out0 = Arith::<P>::addmod(apc, bpd);
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w1,
-        Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(amc, jbmd),
-    );
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w2, Arith::<P>::submod(apc, bpd));
-    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3, Arith::<P>::submod(amc, jbmd));
+    let mut out1 = Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(amc, jbmd);
+    let mut out2 = Arith::<P>::submod(apc, bpd);
+    let mut out3 = Arith::<P>::submod(amc, jbmd);
+    if INV && TWIDDLE {
+        out1 = Arith::<P>::mmulmod(w1, out1);
+        out2 = Arith::<P>::mmulmod(w2, out2);
+        out3 = Arith::<P>::mmulmod(w3, out3);
+    }
     (out0, out1, out2, out3)
 }
 
@@ -562,16 +553,16 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let s1 = Arith::<P>::submod(m3, m2);
     let s2 = Arith::<P>::addmod(m2, m3);
     let out0 = m1;
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1, Arith::<P>::submod(s1, m5));
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w2,
-        Arith::<P>::submod(Arith::<P>::submod(0, s2), m6),
-    );
-    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3, Arith::<P>::submod(m6, s2));
-    let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w4,
-        Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s1, m5),
-    );
+    let mut out1 = Arith::<P>::submod(s1, m5);
+    let mut out2 = Arith::<P>::submod(Arith::<P>::submod(0, s2), m6);
+    let mut out3 = Arith::<P>::submod(m6, s2);
+    let mut out4 = Arith::<P>::addmodopt_invtw::<INV, TWIDDLE>(s1, m5);
+    if INV && TWIDDLE {
+        out1 = Arith::<P>::mmulmod(w1, out1);
+        out2 = Arith::<P>::mmulmod(w2, out2);
+        out3 = Arith::<P>::mmulmod(w3, out3);
+        out4 = Arith::<P>::mmulmod(w4, out4);
+    }
     (out0, out1, out2, out3, out4)
 }
 
@@ -616,27 +607,19 @@ const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     (c, f) = (Arith::<P>::addmod(c, f), Arith::<P>::submod(c, f));
     let lbmc = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::submod(b, c));
     let out0 = Arith::<P>::addmod(a, Arith::<P>::addmod(b, c));
-    let out2 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w2,
-        Arith::<P>::submod(a, Arith::<P>::submod(b, lbmc)),
-    );
-    let out4 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w4,
-        Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc),
-    );
+    let mut out2 = Arith::<P>::submod(a, Arith::<P>::submod(b, lbmc));
+    let mut out4 = Arith::<P>::submod(Arith::<P>::submod(a, c), lbmc);
     let lepf = Arith::<P>::mmulmod(NttKernelImpl::<P, INV>::U6, Arith::<P>::addmod64(e, f));
-    let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w1,
-        Arith::<P>::submod(d, Arith::<P>::submod(f, lepf)),
-    );
-    let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w3,
-        Arith::<P>::submod(d, Arith::<P>::submod(e, f)),
-    );
-    let out5 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(
-        w5,
-        Arith::<P>::submod(d, Arith::<P>::submod(lepf, e)),
-    );
+    let mut out1 = Arith::<P>::submod(d, Arith::<P>::submod(f, lepf));
+    let mut out3 = Arith::<P>::submod(d, Arith::<P>::submod(e, f));
+    let mut out5 = Arith::<P>::submod(d, Arith::<P>::submod(lepf, e));
+    if INV && TWIDDLE {
+        out1 = Arith::<P>::mmulmod(w1, out1);
+        out2 = Arith::<P>::mmulmod(w2, out2);
+        out3 = Arith::<P>::mmulmod(w3, out3);
+        out4 = Arith::<P>::mmulmod(w4, out4);
+        out5 = Arith::<P>::mmulmod(w5, out5);
+    }
     (out0, out1, out2, out3, out4, out5)
 }
 
