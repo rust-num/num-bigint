@@ -7,7 +7,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::similar_names)]
 
-use crate::biguint::Vec;
+use super::Vec;
 
 mod arith {
     // Extended Euclid algorithm:
@@ -141,8 +141,8 @@ impl<const P: u64> Arith<P> {
         }
         cur
     }
-    // Computes c as u128 * mreduce(v) as u128,
-    //   using d: u64 = mmulmod(P-1, c).
+    // Computes c as u128 * mreduce(v) as u128, using d: u64 = mmulmod(P-1, c).
+    //
     // It is caller's responsibility to ensure that d is correct.
     // Note that d can be computed by calling mreducelo(c).
     const fn mmulmod_noreduce(v: u128, c: u64, d: u64) -> u128 {
@@ -800,7 +800,7 @@ const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
 // Propagates carry from the beginning to the end of acc,
-//   and returns the resulting carry if it is nonzero.
+// and returns the resulting carry if it is nonzero.
 fn propagate_carry(acc: &mut [u64], mut carry: u64) -> u64 {
     for x in acc {
         let (v, overflow) = x.overflowing_add(carry);
@@ -908,7 +908,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         }
     }
     // Process remaining carries. The addition carry_acc + bitbuf should not overflow
-    //   since bitbuf is underfilled and carry_acc is always 0 or 1.
+    // since bitbuf is underfilled and carry_acc is always 0 or 1.
     propagate_carry(&mut acc[j..], carry_acc + bitbuf);
 }
 
