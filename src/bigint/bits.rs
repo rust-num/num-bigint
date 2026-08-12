@@ -474,7 +474,7 @@ pub(super) fn set_negative_bit(x: &mut BigInt, bit: u64, value: bool) {
             // so initially we have `carry_in` = `carry_out` = 1. Furthermore, we
             // stop traversing the digits when there are no more carries.
             let bit_index = (bit / bits_per_digit).to_usize().unwrap();
-            let bit_mask = (1 as BigDigit) << (bit % bits_per_digit);
+            let bit_mask: BigDigit = 1 << (bit % bits_per_digit);
             let mut digit_iter = data.digits_mut().iter_mut().skip(bit_index);
             let mut carry_in = 1;
             let mut carry_out = 1;

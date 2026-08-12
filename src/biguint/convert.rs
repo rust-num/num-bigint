@@ -81,7 +81,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
 
     if dbits > 0 {
         debug_assert!(dbits < big_digit::BITS);
-        data.push(d as BigDigit);
+        data.push(d);
     }
 
     biguint_from_vec(data)
