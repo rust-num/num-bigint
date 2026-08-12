@@ -67,33 +67,48 @@ fn fib2(n: usize) -> BigUint {
 }
 
 #[bench]
-fn multiply_0(b: &mut Bencher) {
+fn multiply_8_8(b: &mut Bencher) {
     multiply_bench(b, 1 << 8, 1 << 8);
 }
 
 #[bench]
-fn multiply_1(b: &mut Bencher) {
+fn multiply_8_16(b: &mut Bencher) {
     multiply_bench(b, 1 << 8, 1 << 16);
 }
 
 #[bench]
-fn multiply_2(b: &mut Bencher) {
-    multiply_bench(b, 1 << 16, 1 << 16);
-}
-
-#[bench]
-fn multiply_3(b: &mut Bencher) {
-    multiply_bench(b, 1 << 16, 1 << 17);
-}
-
-#[bench]
-fn multiply_4(b: &mut Bencher) {
+fn multiply_12_13(b: &mut Bencher) {
     multiply_bench(b, 1 << 12, 1 << 13);
 }
 
 #[bench]
-fn multiply_5(b: &mut Bencher) {
+fn multiply_12_14(b: &mut Bencher) {
     multiply_bench(b, 1 << 12, 1 << 14);
+}
+
+#[bench]
+fn multiply_13_13(b: &mut Bencher) {
+    multiply_bench(b, 1 << 13, 1 << 13);
+}
+
+#[bench]
+fn multiply_14_14(b: &mut Bencher) {
+    multiply_bench(b, 1 << 14, 1 << 14);
+}
+
+#[bench]
+fn multiply_15_15(b: &mut Bencher) {
+    multiply_bench(b, 1 << 15, 1 << 15);
+}
+
+#[bench]
+fn multiply_16_16(b: &mut Bencher) {
+    multiply_bench(b, 1 << 16, 1 << 16);
+}
+
+#[bench]
+fn multiply_16_17(b: &mut Bencher) {
+    multiply_bench(b, 1 << 16, 1 << 17);
 }
 
 #[bench]
