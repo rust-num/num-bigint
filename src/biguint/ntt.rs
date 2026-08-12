@@ -29,6 +29,7 @@ mod arith {
             c = [c[1] - q * c[0], c[0], c[3] - q * c[2], c[2]];
         }
     }
+
     // Modular inverse: a^-1 mod modulus
     //   (m == 0 means m == 2^64)
     const fn invmod_inner(a: u64, modulus: u64) -> u64 {
@@ -45,11 +46,13 @@ mod arith {
         assert!(x > 0 && x < 1i128 << 64);
         x as u64
     }
+
     // Modular inverse: a^-1 mod modulus (modulus != 0)
     pub const fn invmod(a: u64, modulus: u64) -> u64 {
         assert!(modulus != 0);
         invmod_inner(a, modulus)
     }
+
     // Modular inverse: a^-1 mod 2^64
     pub const fn invmod_2pow64(a: u64) -> u64 {
         invmod_inner(a, 0)
@@ -64,12 +67,15 @@ mod arith {
 // 2^64 without a 129-bit addition, and supports the fused and delayed
 // reductions required by the NTT kernels.
 struct Arith<const P: u64> {}
+
 impl<const P: u64> Arith<P> {
     const R: u64 = ((1u128 << 64) % P as u128) as u64; // 2^64 mod P
     const R2: u64 = (Self::R as u128 * Self::R as u128 % P as u128) as u64; // R^2 mod P
     const PINV: u64 = arith::invmod_2pow64(P); // P^-1 mod 2^64
+
     const MAX_NTT_LEN: u64 =
         2u64.pow(Self::factors(2)) * 3u64.pow(Self::factors(3)) * 5u64.pow(Self::factors(5));
+
     const ROOTR: u64 = {
         // ROOT * R mod P (ROOT: MAX_NTT_LEN divides MultiplicativeOrder[ROOT, P])
         assert!(Self::MAX_NTT_LEN % 4050 == 0);
@@ -84,6 +90,7 @@ impl<const P: u64> Arith<P> {
             p = Self::addmod(p, Self::R);
         }
     };
+
     // Counts the number of `divisor` factors in P-1.
     const fn factors(divisor: u64) -> u32 {
         let (mut tmp, mut ans) = (P - 1, 0);
@@ -93,6 +100,7 @@ impl<const P: u64> Arith<P> {
         }
         ans
     }
+
     // Montgomery reduction:
     //   x * R^-1 mod P
     const fn mreduce(x: u128) -> u64 {
@@ -105,11 +113,13 @@ impl<const P: u64> Arith<P> {
             out
         }
     }
+
     // Multiplication with Montgomery reduction:
     //   a * b * R^-1 mod P
     const fn mmulmod(a: u64, b: u64) -> u64 {
         Self::mreduce(a as u128 * b as u128)
     }
+
     // Multiplication with Montgomery reduction:
     //   a * b * R^-1 mod P
     // This function only applies the multiplication when INV && TWIDDLE,
@@ -121,6 +131,7 @@ impl<const P: u64> Arith<P> {
             b
         }
     }
+
     // Fused-multiply-sub with Montgomery reduction:
     //   a * b * R^-1 - c mod P
     const fn mmulsubmod(a: u64, b: u64, c: u64) -> u64 {
@@ -129,6 +140,7 @@ impl<const P: u64> Arith<P> {
         let hi = Self::submod((x >> 64) as u64, c);
         Self::mreduce(lo as u128 | ((hi as u128) << 64))
     }
+
     // Computes base^exponent mod P with Montgomery reduction
     const fn mpowmod(mut base: u64, mut exponent: u64) -> u64 {
         let mut cur = Self::R;
@@ -141,6 +153,7 @@ impl<const P: u64> Arith<P> {
         }
         cur
     }
+
     // Computes c as u128 * mreduce(v) as u128, using d: u64 = mmulmod(P-1, c).
     //
     // It is caller's responsibility to ensure that d is correct.
@@ -155,15 +168,18 @@ impl<const P: u64> Arith<P> {
             w
         }
     }
+
     // Computes submod(0, mreduce(x as u128)) fast.
     const fn mreducelo(x: u64) -> u64 {
         let m = x.wrapping_mul(Self::PINV);
         ((m as u128 * P as u128) >> 64) as u64
     }
+
     // Computes a + b mod P, output range [0, P)
     const fn addmod(a: u64, b: u64) -> u64 {
         Self::submod(a, P.wrapping_sub(b))
     }
+
     // Computes a + b mod P, output range [0, 2^64)
     const fn addmod64(a: u64, b: u64) -> u64 {
         let (out, overflow) = a.overflowing_add(b);
@@ -173,6 +189,7 @@ impl<const P: u64> Arith<P> {
             out
         }
     }
+
     // Computes a + b mod P, selects addmod64 or addmod depending on INV && TWIDDLE
     const fn addmodopt_invtw<const INV: bool, const TWIDDLE: bool>(a: u64, b: u64) -> u64 {
         if INV && TWIDDLE {
@@ -181,6 +198,7 @@ impl<const P: u64> Arith<P> {
             Self::addmod(a, b)
         }
     }
+
     // Computes a - b mod P, output range [0, P)
     const fn submod(a: u64, b: u64) -> u64 {
         let (out, overflow) = a.overflowing_sub(b);
@@ -199,6 +217,7 @@ struct NttPlan {
     pub last_radix: usize,
     pub s_list: Vec<(usize, usize)>,
 }
+
 impl NttPlan {
     fn build<const P: u64>(min_len: usize) -> Self {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
@@ -210,11 +229,13 @@ impl NttPlan {
                     if len >= 2 * min_len as u64 {
                         break;
                     }
+
                     let (mut len, mut m2) = (len as usize, 0);
                     while len < min_len && m2 < Arith::<P>::factors(2) {
                         len *= 2;
                         m2 += 1;
                     }
+
                     if len >= min_len && len < len_max_cost {
                         let (mut tmp, mut cost) = (len, 0);
                         let mut g_new = 1;
@@ -246,6 +267,7 @@ impl NttPlan {
                         } else if len % 6 == 0 {
                             (g_new, tmp, cost) = (6, tmp / 6, cost + len * 91 / 100);
                         }
+
                         let (mut b6, mut b2) = (false, false);
                         while tmp % 6 == 0 {
                             (tmp, cost) = (tmp / 6, cost + len * radix6_weight / 100);
@@ -264,6 +286,7 @@ impl NttPlan {
                             (tmp, cost) = (tmp / 2, cost + len * radix2_weight / 100);
                             b2 = true;
                         }
+
                         if b6 && b2 {
                             // One radix-6 stage and the remaining radix-2 stage are
                             // executed as radix-4 and radix-3 stages.
@@ -272,6 +295,7 @@ impl NttPlan {
                             cost += len * radix4_weight / 100;
                             cost += len * radix3_weight / 100;
                         }
+
                         // Account for work that scales with transform length but is
                         // independent of the chosen stage decomposition.
                         cost += len * 4 / 100;
@@ -282,6 +306,7 @@ impl NttPlan {
                 }
             }
         }
+
         let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
         let mut tmp = len_max / g;
         while tmp % 6 == 0 {
@@ -310,6 +335,7 @@ impl NttPlan {
             cnt4 += 1;
             cnt3 += 1;
         }
+
         let s_list = {
             let mut out = vec![];
             let mut tmp = len_max;
@@ -335,6 +361,7 @@ impl NttPlan {
             }
             out
         };
+
         Self {
             n: len_max,
             g,
@@ -344,6 +371,7 @@ impl NttPlan {
         }
     }
 }
+
 fn conv_base<const P: u64>(out: &mut [u64], x: &[u64], y: &[u64], c: u64) {
     assert_eq!(out.len(), x.len());
     assert_eq!(x.len(), y.len());
@@ -360,6 +388,7 @@ fn conv_base<const P: u64>(out: &mut [u64], x: &[u64], y: &[u64], c: u64) {
                 w
             };
         }
+
         v = Arith::<P>::mmulmod_noreduce(v, c, c2);
         for j in 0..=i {
             let (w, overflow) = v.overflowing_sub(x[j] as u128 * y[i - j] as u128);
@@ -369,20 +398,24 @@ fn conv_base<const P: u64>(out: &mut [u64], x: &[u64], y: &[u64], c: u64) {
                 w
             };
         }
+
         out[i] = Arith::<P>::mreduce(v);
     }
 }
 
 struct NttKernelImpl<const P: u64, const INV: bool>;
+
 impl<const P: u64, const INV: bool> NttKernelImpl<P, INV> {
     const ROOTR: u64 = Arith::<P>::mpowmod(
         Arith::<P>::ROOTR,
         if INV { Arith::<P>::MAX_NTT_LEN - 1 } else { 1 },
     );
+
     const U3: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN / 3);
     const U4: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN / 4);
     const U5: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN / 5);
     const U6: u64 = Arith::<P>::mpowmod(Self::ROOTR, Arith::<P>::MAX_NTT_LEN / 6);
+
     const C5: (u64, u64, u64, u64, u64, u64) = {
         let w = Self::U5;
         let w2 = Arith::<P>::mpowmod(w, 2);
@@ -397,6 +430,7 @@ impl<const P: u64, const INV: bool> NttKernelImpl<P, INV> {
         (0, c51, c52, c53, c54, c55)
     };
 }
+
 const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     a: u64,
@@ -409,6 +443,7 @@ const fn ntt2_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out1 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w1, Arith::<P>::submod(a, b));
     (out0, out1)
 }
+
 fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mut [u64], w1: u64) {
     let w1 = if TWIDDLE { w1 } else { 0 };
     let s1 = px.len() / 2;
@@ -417,6 +452,7 @@ fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
         (*a, *b) = ntt2_kernel::<P, INV, TWIDDLE>(w1, *a, *b);
     }
 }
+
 const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     w2: u64,
@@ -440,6 +476,7 @@ const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     );
     (out0, out1, out2)
 }
+
 fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mut [u64], w1: u64) {
     let w1 = if TWIDDLE { w1 } else { 0 };
     let w2 = Arith::<P>::mmulmod(w1, w1);
@@ -450,6 +487,7 @@ fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
         (*a, *b, *c) = ntt3_kernel::<P, INV, TWIDDLE>(w1, w2, *a, *b, *c);
     }
 }
+
 const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     w2: u64,
@@ -478,6 +516,7 @@ const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     let out3 = Arith::<P>::mmulmod_invtw::<INV, TWIDDLE>(w3, Arith::<P>::submod(amc, jbmd));
     (out0, out1, out2, out3)
 }
+
 fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mut [u64], w1: u64) {
     let w1 = if TWIDDLE { w1 } else { 0 };
     let w2 = Arith::<P>::mmulmod(w1, w1);
@@ -490,6 +529,7 @@ fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
         (*a, *b, *c, *d) = ntt4_kernel::<P, INV, TWIDDLE>(w1, w2, w3, *a, *b, *c, *d);
     }
 }
+
 const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     w2: u64,
@@ -535,6 +575,7 @@ const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     );
     (out0, out1, out2, out3, out4)
 }
+
 fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mut [u64], w1: u64) {
     let w1 = if TWIDDLE { w1 } else { 0 };
     let w2 = Arith::<P>::mmulmod(w1, w1);
@@ -549,6 +590,7 @@ fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
         (*a, *b, *c, *d, *e) = ntt5_kernel::<P, INV, TWIDDLE>(w1, w2, w3, w4, *a, *b, *c, *d, *e);
     }
 }
+
 const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     w2: u64,
@@ -597,6 +639,7 @@ const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     );
     (out0, out1, out2, out3, out4, out5)
 }
+
 fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mut [u64], w1: u64) {
     let w1 = if TWIDDLE { w1 } else { 0 };
     let w2 = Arith::<P>::mmulmod(w1, w1);
@@ -756,6 +799,7 @@ fn conv<const P: u64>(
         NttKernelImpl::<P, false>::ROOTR,
         Arith::<P>::MAX_NTT_LEN / last_radix,
     );
+
     while i < plan.n {
         // We accumulate the results just before `x_block` for cache friendliness.
         let (out_block, x_block) = x[i..i + 2 * g].split_at_mut(g);
@@ -791,11 +835,14 @@ const P2: u64 = 17_984_575_660_032_000_001; // Max NTT length = 2^19 * 3^17 * 5^
 const P3: u64 = 17_995_154_822_184_960_001; // Max NTT length = 2^17 * 3^22 * 5^4 = 2_570_736_403_169_280_000
 
 const P1INV_R_MOD_P2: u64 = Arith::<P2>::mmulmod(Arith::<P2>::R2, arith::invmod(P1, P2));
+
 const P1P2INV_R_MOD_P3: u64 = Arith::<P3>::mmulmod(
     Arith::<P3>::R2,
     arith::invmod((P1 as u128 * P2 as u128 % P3 as u128) as u64, P3),
 );
+
 const P1_R_MOD_P3: u64 = Arith::<P3>::mmulmod(Arith::<P3>::R2, P1);
+
 const P1P2_LO: u64 = (P1 as u128 * P2 as u128) as u64;
 const P1P2_HI: u64 = ((P1 as u128 * P2 as u128) >> 64) as u64;
 
@@ -856,8 +903,10 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     let mut y = vec![0u64; plan_y.g + plan_y.n];
     let mut r = vec![0u64; plan_x.g + plan_x.n];
     let mut s = vec![0u64; plan_y.g + plan_y.n];
+
     pack_into(b, &mut x[plan_x.g..], &mut y[plan_y.g..], bits);
     pack_into(c, &mut r[plan_x.g..], &mut s[plan_y.g..], bits);
+
     conv::<P2>(
         &plan_x,
         &mut x,
@@ -866,6 +915,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         c_len,
         arith::invmod(P3, P2),
     );
+
     conv::<P3>(
         &plan_y,
         &mut y,
@@ -907,6 +957,7 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
             bitbuf = out >> (bits - p);
         }
     }
+
     // Process remaining carries. The addition carry_acc + bitbuf should not overflow
     // since bitbuf is underfilled and carry_acc is always 0 or 1.
     propagate_carry(&mut acc[j..], carry_acc + bitbuf);
@@ -988,6 +1039,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
         let u = Arith::<P2>::mmulmod(bma, P1INV_R_MOD_P2);
         let v = a as u128 + P1 as u128 * u as u128;
         let v_mod_p3 = Arith::<P3>::addmod(a, Arith::<P3>::mmulmod(P1_R_MOD_P3, u));
+
         // Now we have reduced the congruences into two:
         //     x === v mod P1P2,
         //     x === c mod P3.
