@@ -1,11 +1,4 @@
 #![forbid(unsafe_code)]
-#![allow(clippy::cast_sign_loss)]
-#![allow(clippy::cast_lossless)]
-#![allow(clippy::cast_possible_truncation)]
-#![allow(clippy::many_single_char_names)]
-#![allow(clippy::needless_range_loop)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::similar_names)]
 
 use super::Vec;
 
@@ -530,6 +523,7 @@ fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     w2: u64,
@@ -591,6 +585,7 @@ fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
     w1: u64,
     w2: u64,
