@@ -2,6 +2,7 @@
 
 use super::{BigDigit, Vec};
 use core::cmp::max;
+use core::iter::zip;
 
 mod arith {
     // Extended Euclid algorithm:
@@ -437,9 +438,9 @@ fn ntt2_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     let w1 = if TWIDDLE { w1 } else { 0 };
     let s1 = px.len() / 2;
     let (a, b) = px.split_at_mut(s1);
-    for (a, b) in a.iter_mut().zip(b) {
+    zip(a, b).for_each(|(a, b)| {
         [*a, *b] = ntt2_kernel::<P, INV, TWIDDLE>(*a, *b, w1);
-    }
+    });
 }
 
 const fn ntt3_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
@@ -473,9 +474,9 @@ fn ntt3_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     let s1 = px.len() / 3;
     let (a, rest) = px.split_at_mut(s1);
     let (b, c) = rest.split_at_mut(s1);
-    for ((a, b), c) in a.iter_mut().zip(b).zip(c) {
+    zip(zip(a, b), c).for_each(|((a, b), c)| {
         [*a, *b, *c] = ntt3_kernel::<P, INV, TWIDDLE>(*a, *b, *c, w);
-    }
+    });
 }
 
 const fn ntt4_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
@@ -519,9 +520,9 @@ fn ntt4_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     let (a, rest) = px.split_at_mut(s1);
     let (b, rest) = rest.split_at_mut(s1);
     let (c, d) = rest.split_at_mut(s1);
-    for (((a, b), c), d) in a.iter_mut().zip(b).zip(c).zip(d) {
+    zip(zip(zip(a, b), c), d).for_each(|(((a, b), c), d)| {
         [*a, *b, *c, *d] = ntt4_kernel::<P, INV, TWIDDLE>(*a, *b, *c, *d, w);
-    }
+    });
 }
 
 const fn ntt5_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
@@ -581,9 +582,9 @@ fn ntt5_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     let (b, rest) = rest.split_at_mut(s1);
     let (c, rest) = rest.split_at_mut(s1);
     let (d, e) = rest.split_at_mut(s1);
-    for ((((a, b), c), d), e) in a.iter_mut().zip(b).zip(c).zip(d).zip(e) {
+    zip(zip(zip(zip(a, b), c), d), e).for_each(|((((a, b), c), d), e)| {
         [*a, *b, *c, *d, *e] = ntt5_kernel::<P, INV, TWIDDLE>(*a, *b, *c, *d, *e, w);
-    }
+    });
 }
 
 const fn ntt6_kernel<const P: u64, const INV: bool, const TWIDDLE: bool>(
@@ -639,9 +640,9 @@ fn ntt6_single_block<const P: u64, const INV: bool, const TWIDDLE: bool>(px: &mu
     let (c, rest) = rest.split_at_mut(s1);
     let (d, rest) = rest.split_at_mut(s1);
     let (e, f) = rest.split_at_mut(s1);
-    for (((((a, b), c), d), e), f) in a.iter_mut().zip(b).zip(c).zip(d).zip(e).zip(f) {
+    zip(zip(zip(zip(zip(a, b), c), d), e), f).for_each(|(((((a, b), c), d), e), f)| {
         [*a, *b, *c, *d, *e, *f] = ntt6_kernel::<P, INV, TWIDDLE>(*a, *b, *c, *d, *e, *f, w);
-    }
+    });
 }
 
 fn ntt_dif_dit<const P: u64, const INV: bool>(plan: &NttPlan, x: &mut [u64], twiddles: &[u64]) {
@@ -845,7 +846,7 @@ fn propagate_carry(acc: &mut [u64], mut carry: u64) -> u64 {
 fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
     fn pack_into(src: &[u64], dst1: &mut [u64], dst2: &mut [u64], bits: u64) {
         let mut p = 0u64;
-        let mut dst = dst1.iter_mut().zip(dst2);
+        let mut dst = zip(dst1, dst2);
         let mut x = 0u64;
         let mask = (1u64 << bits) - 1;
         for v in src {
