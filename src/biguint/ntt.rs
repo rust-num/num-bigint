@@ -711,7 +711,7 @@ fn conv<const P: u64>(
     assert!(!x.is_empty() && x.len() == y.len());
     let (_n, g, m, last_radix) = (plan.n, plan.g, plan.m, plan.last_radix as u64);
 
-    /* multiply by a constant in advance */
+    // multiply by a constant in advance
     mult = Arith::<P>::mmulmod(
         Arith::<P>::mpowmod(Arith::<P>::R2, 3),
         Arith::<P>::mmulmod(mult, (P - 1) / m as u64),
@@ -724,14 +724,14 @@ fn conv<const P: u64>(
         *v = Arith::<P>::mmulmod(*v, mult);
     }
 
-    /* compute the total space needed for twiddle factors */
+    // compute the total space needed for twiddle factors
     let (mut radix_prefix_product, mut twiddle_count) = (1, 2); // 2 extra slots
     for &(_, radix) in &plan.s_list {
         twiddle_count += radix_prefix_product;
         radix_prefix_product *= radix;
     }
 
-    /* build twiddle factors */
+    // build twiddle factors
     let mut twiddles = vec![0u64; twiddle_count];
     let mut last_stage_twiddle_start = 0;
     for i in 0..plan.s_list.len() {
@@ -744,11 +744,11 @@ fn conv<const P: u64>(
         }
     }
 
-    /* dif fft */
+    // dif fft
     ntt_dif_dit::<P, false>(plan, &mut x[g..], &twiddles);
     ntt_dif_dit::<P, false>(plan, &mut y[g..], &twiddles);
 
-    /* naive multiplication */
+    // naive multiplication
     let (mut i, mut last_stage_twiddle_index, mut position_in_last_radix) =
         (0, last_stage_twiddle_start, 0);
     let mut current_twiddle = Arith::<P>::R;
@@ -772,7 +772,7 @@ fn conv<const P: u64>(
         }
     }
 
-    /* dit fft */
+    // dit fft
     let mut twiddle_offset = 0;
     for i in (0..plan.s_list.len()).rev() {
         twiddle_offset +=
@@ -875,14 +875,14 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         Arith::<P3>::submod(0, arith::invmod(P2, P3)),
     );
 
-    /* merge the results in {x, y} into r (process carry along the way) */
+    // merge the results in {x, y} into r (process carry along the way)
     let mask = (1u64 << bits) - 1;
     let mut carry: u128 = 0;
     let (mut j, mut p) = (0usize, 0u64);
     let mut bitbuf: u64 = 0;
     let mut carry_acc: u64 = 0;
     for i in 0..min_len {
-        /* extract the convolution result */
+        // extract the convolution result
         let (a, b) = (x[i], y[i]);
         let (mut v, overflow) =
             (a as u128 * P3 as u128 + carry).overflowing_sub(b as u128 * P2 as u128);
@@ -891,18 +891,18 @@ fn mac3_two_primes(acc: &mut [u64], b: &[u64], c: &[u64], bits: u64) {
         }
         carry = v >> bits;
 
-        /* write to bitbuf */
+        // write to bitbuf
         let out = (v as u64) & mask;
         bitbuf |= out << p;
         p += bits;
         if p >= 64 {
-            /* flush bitbuf to the output buffer */
+            // flush bitbuf to the output buffer
             let (w, overflow1) = bitbuf.overflowing_add(carry_acc);
             let (w, overflow2) = acc[j].overflowing_add(w);
             acc[j] = w;
             carry_acc = u64::from(overflow1 || overflow2);
 
-            /* roll-over */
+            // roll-over
             (j, p) = (j + 1, p - 64);
             bitbuf = out >> (bits - p);
         }
@@ -922,7 +922,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let mut z = vec![0u64; plan_z.g + plan_z.n];
     let mut r = vec![0u64; max(x.len(), max(y.len(), z.len()))];
 
-    /* convolution with modulo P1 */
+    // convolution with modulo P1
     for i in 0..b.len() {
         x[plan_x.g + i] = if b[i] >= P1 { b[i] - P1 } else { b[i] };
     }
@@ -938,7 +938,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
         1,
     );
 
-    /* convolution with modulo P2 */
+    // convolution with modulo P2
     for i in 0..b.len() {
         y[plan_y.g + i] = if b[i] >= P2 { b[i] - P2 } else { b[i] };
     }
@@ -955,7 +955,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
         1,
     );
 
-    /* convolution with modulo P3 */
+    // convolution with modulo P3
     for i in 0..b.len() {
         z[plan_z.g + i] = if b[i] >= P3 { b[i] - P3 } else { b[i] };
     }
@@ -972,7 +972,7 @@ fn mac3_three_primes(acc: &mut [u64], b: &[u64], c: &[u64]) {
         1,
     );
 
-    /* merge the results in {x, y, z} into acc (process carry along the way) */
+    // merge the results in {x, y, z} into acc (process carry along the way)
     let mut carry: u128 = 0;
     for i in 0..min_len {
         let (a, b, c) = (x[i], y[i], z[i]);
@@ -1047,11 +1047,11 @@ fn mac3_u64(acc: &mut [u64], b: &[u64], c: &[u64]) {
     let max_cnt = max(b.len(), c.len()) as u64;
     let bits = compute_bits(max_cnt);
     if bits >= 43 {
-        /* can pack more effective bits per u64 with two primes than with three primes */
+        // can pack more effective bits per u64 with two primes than with three primes
         mac3_two_primes(acc, b, c, bits);
     } else {
-        /* can pack at most 21 effective bits per u64, which is worse than
-        64/3 = 21.3333.. effective bits per u64 achieved with three primes */
+        // can pack at most 21 effective bits per u64, which is worse than
+        // 64/3 = 21.3333.. effective bits per u64 achieved with three primes
         mac3_three_primes(acc, b, c);
     }
 }
@@ -1080,7 +1080,7 @@ cfg_digit! {
             }
         }
 
-        /* convert to u64 => process => convert back to BigDigit (u32) */
+        // convert to u64 => process => convert back to BigDigit (u32)
         let mut acc_u64 = bigdigit_to_u64(acc, true);
         mac3_u64(&mut acc_u64, &bigdigit_to_u64(b, false), &bigdigit_to_u64(c, false));
         u64_to_bigdigit(&acc_u64, acc);
