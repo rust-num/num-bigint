@@ -49,6 +49,11 @@ fn big64_sqrt(b: &mut Bencher) {
 }
 
 #[bench]
+fn big128_sqrt(b: &mut Bencher) {
+    bench_sqrt(b, 128);
+}
+
+#[bench]
 fn big1k_sqrt(b: &mut Bencher) {
     bench_sqrt(b, 1024);
 }
@@ -61,6 +66,31 @@ fn big2k_sqrt(b: &mut Bencher) {
 #[bench]
 fn big4k_sqrt(b: &mut Bencher) {
     bench_sqrt(b, 4096);
+}
+
+#[bench]
+fn big8k_sqrt(b: &mut Bencher) {
+    bench_sqrt(b, 8192);
+}
+
+#[bench]
+fn big15k_sqrt(b: &mut Bencher) {
+    bench_sqrt(b, 15 * 1024 + 1);
+}
+
+#[bench]
+fn big16k_sqrt(b: &mut Bencher) {
+    bench_sqrt(b, 16 * 1024);
+}
+
+#[bench]
+fn big17k_sqrt(b: &mut Bencher) {
+    bench_sqrt(b, 17 * 1024 + 1);
+}
+
+#[bench]
+fn big32k_sqrt(b: &mut Bencher) {
+    bench_sqrt(b, 32 * 1024);
 }
 
 fn bench_cbrt(b: &mut Bencher, bits: u64) {
