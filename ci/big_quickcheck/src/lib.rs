@@ -244,18 +244,52 @@ fn quickcheck_unsigned_pow_one(a: BigUint) -> bool {
 }
 
 #[quickcheck]
-fn quickcheck_unsigned_sqrt(a: BigUint) -> bool {
-    (&a * &a).sqrt() == a
+fn quickcheck_unsigned_sqrt(a: BigUint) {
+    let n = &a * &a;
+    assert_eq!(n.sqrt(), a);
+
+    if !a.is_zero() {
+        assert_eq!((&n - 1u32).sqrt(), &a - 1u32);
+        assert_eq!((&n + 1u32).sqrt(), a);
+    }
+
+    let a1 = &a + 1u32;
+    let n1 = &a1 * &a1;
+    assert_eq!((&n1 - 1u32).sqrt(), a);
+    assert_eq!(n1.sqrt(), a1);
 }
 
 #[quickcheck]
-fn quickcheck_unsigned_cbrt(a: BigUint) -> bool {
-    (&a * &a * &a).cbrt() == a
+fn quickcheck_unsigned_sqrt_big(a: BigUint, b: BigUint) {
+    let n = &a * &b;
+    let s = n.sqrt();
+    assert!(&s * &s <= n);
+
+    let s1 = &s + 1u32;
+    assert!(&s1 * &s1 > n);
 }
 
 #[quickcheck]
-fn quickcheck_signed_cbrt(a: BigInt) -> bool {
-    (&a * &a * &a).cbrt() == a
+fn quickcheck_unsigned_cbrt(a: BigUint) {
+    let n = &a * &a * &a;
+    assert_eq!(n.cbrt(), a);
+
+    if !a.is_zero() {
+        assert_eq!((&n - 1u32).cbrt(), &a - 1u32);
+        assert_eq!((&n + 1u32).cbrt(), a);
+    }
+
+    let a1 = &a + 1u32;
+    let n1 = &a1 * &a1 * &a1;
+    assert_eq!((&n1 - 1u32).cbrt(), a);
+    assert_eq!(n1.cbrt(), a1);
+}
+
+#[quickcheck]
+fn quickcheck_signed_cbrt(a: BigInt) {
+    let n = &a * &a * &a;
+    assert_eq!(n.cbrt(), a);
+    assert_eq!((-&n).cbrt(), -&a);
 }
 
 #[quickcheck]
