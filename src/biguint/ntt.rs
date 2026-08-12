@@ -209,86 +209,81 @@ impl NttPlan {
     fn build<const P: u64>(min_len: usize) -> Self {
         assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
         let (mut len_max, mut len_max_cost, mut g) = (usize::MAX, usize::MAX, 1);
-        for m7 in 0..=1 {
-            for m5 in 0..=Arith::<P>::FACTORS_5 {
-                for m3 in 0..=Arith::<P>::FACTORS_3 {
-                    let len = 7u64.pow(m7) * 5u64.pow(m5) * 3u64.pow(m3);
-                    if len >= 2 * min_len as u64 {
-                        break;
+        for m5 in 0..=Arith::<P>::FACTORS_5 {
+            for m3 in 0..=Arith::<P>::FACTORS_3 {
+                let len = 5u64.pow(m5) * 3u64.pow(m3);
+                if len >= 2 * min_len as u64 {
+                    break;
+                }
+
+                let (mut len, mut m2) = (len as usize, 0);
+                while len < min_len && m2 < Arith::<P>::FACTORS_2 {
+                    len *= 2;
+                    m2 += 1;
+                }
+
+                if len >= min_len && len < len_max_cost {
+                    let (mut tmp, mut cost) = (len, 0);
+                    let mut g_new = 1;
+
+                    // Length-dependent weights for cost estimation.
+                    let small_transform = len <= 1 << 20;
+                    let radix6_weight = if small_transform { 110 } else { 115 };
+                    let radix5_weight =
+                        156 + 30 * len.saturating_sub(5 << 14).min(1 << 16) / (1 << 16);
+                    let radix4_weight = if small_transform { 90 } else { 100 };
+                    let radix3_weight = 100;
+                    let radix2_weight = if small_transform { 85 } else { 100 };
+
+                    if len % 5 == 0 {
+                        (g_new, tmp, cost) = (5, tmp / 5, cost + len * 89 / 100);
+                    } else if m3 >= m2 + 2 {
+                        (g_new, tmp, cost) = (9, tmp / 9, cost + len * 180 / 100);
+                    } else if m2 >= m3 + 3 && (m2 - m3) % 2 == 1 {
+                        (g_new, tmp, cost) = (8, tmp / 8, cost + len * 130 / 100);
+                    } else if m2 >= m3 + 2 && m3 == 0 {
+                        (g_new, tmp, cost) = (4, tmp / 4, cost + len * 87 / 100);
+                    } else if m2 == 0 && m3 >= 1 {
+                        (g_new, tmp, cost) = (3, tmp / 3, cost + len * 86 / 100);
+                    } else if m3 == 0 && m2 >= 1 {
+                        (g_new, tmp, cost) = (2, tmp / 2, cost + len * 86 / 100);
+                    } else if len % 6 == 0 {
+                        (g_new, tmp, cost) = (6, tmp / 6, cost + len * 91 / 100);
                     }
 
-                    let (mut len, mut m2) = (len as usize, 0);
-                    while len < min_len && m2 < Arith::<P>::FACTORS_2 {
-                        len *= 2;
-                        m2 += 1;
+                    let (mut b6, mut b2) = (false, false);
+                    while tmp % 6 == 0 {
+                        (tmp, cost) = (tmp / 6, cost + len * radix6_weight / 100);
+                        b6 = true;
+                    }
+                    while tmp % 5 == 0 {
+                        (tmp, cost) = (tmp / 5, cost + len * radix5_weight / 100);
+                    }
+                    while tmp % 4 == 0 {
+                        (tmp, cost) = (tmp / 4, cost + len * radix4_weight / 100);
+                    }
+                    while tmp % 3 == 0 {
+                        (tmp, cost) = (tmp / 3, cost + len * radix3_weight / 100);
+                    }
+                    while tmp % 2 == 0 {
+                        (tmp, cost) = (tmp / 2, cost + len * radix2_weight / 100);
+                        b2 = true;
                     }
 
-                    if len >= min_len && len < len_max_cost {
-                        let (mut tmp, mut cost) = (len, 0);
-                        let mut g_new = 1;
+                    if b6 && b2 {
+                        // One radix-6 stage and the remaining radix-2 stage are
+                        // executed as radix-4 and radix-3 stages.
+                        cost -= len * radix6_weight / 100;
+                        cost -= len * radix2_weight / 100;
+                        cost += len * radix4_weight / 100;
+                        cost += len * radix3_weight / 100;
+                    }
 
-                        // Length-dependent weights for cost estimation.
-                        let small_transform = len <= 1 << 20;
-                        let g7_weight = if small_transform { 1113 } else { 1150 };
-                        let radix6_weight = if small_transform { 110 } else { 115 };
-                        let radix5_weight =
-                            156 + 30 * len.saturating_sub(5 << 14).min(1 << 16) / (1 << 16);
-                        let radix4_weight = if small_transform { 90 } else { 100 };
-                        let radix3_weight = 100;
-                        let radix2_weight = if small_transform { 85 } else { 100 };
-
-                        if len % 7 == 0 {
-                            (g_new, tmp, cost) = (7, tmp / 7, cost + len * g7_weight / 1000);
-                        } else if len % 5 == 0 {
-                            (g_new, tmp, cost) = (5, tmp / 5, cost + len * 89 / 100);
-                        } else if m3 >= m2 + 2 {
-                            (g_new, tmp, cost) = (9, tmp / 9, cost + len * 180 / 100);
-                        } else if m2 >= m3 + 3 && (m2 - m3) % 2 == 1 {
-                            (g_new, tmp, cost) = (8, tmp / 8, cost + len * 130 / 100);
-                        } else if m2 >= m3 + 2 && m3 == 0 {
-                            (g_new, tmp, cost) = (4, tmp / 4, cost + len * 87 / 100);
-                        } else if m2 == 0 && m3 >= 1 {
-                            (g_new, tmp, cost) = (3, tmp / 3, cost + len * 86 / 100);
-                        } else if m3 == 0 && m2 >= 1 {
-                            (g_new, tmp, cost) = (2, tmp / 2, cost + len * 86 / 100);
-                        } else if len % 6 == 0 {
-                            (g_new, tmp, cost) = (6, tmp / 6, cost + len * 91 / 100);
-                        }
-
-                        let (mut b6, mut b2) = (false, false);
-                        while tmp % 6 == 0 {
-                            (tmp, cost) = (tmp / 6, cost + len * radix6_weight / 100);
-                            b6 = true;
-                        }
-                        while tmp % 5 == 0 {
-                            (tmp, cost) = (tmp / 5, cost + len * radix5_weight / 100);
-                        }
-                        while tmp % 4 == 0 {
-                            (tmp, cost) = (tmp / 4, cost + len * radix4_weight / 100);
-                        }
-                        while tmp % 3 == 0 {
-                            (tmp, cost) = (tmp / 3, cost + len * radix3_weight / 100);
-                        }
-                        while tmp % 2 == 0 {
-                            (tmp, cost) = (tmp / 2, cost + len * radix2_weight / 100);
-                            b2 = true;
-                        }
-
-                        if b6 && b2 {
-                            // One radix-6 stage and the remaining radix-2 stage are
-                            // executed as radix-4 and radix-3 stages.
-                            cost -= len * radix6_weight / 100;
-                            cost -= len * radix2_weight / 100;
-                            cost += len * radix4_weight / 100;
-                            cost += len * radix3_weight / 100;
-                        }
-
-                        // Account for work that scales with transform length but is
-                        // independent of the chosen stage decomposition.
-                        cost += len * 4 / 100;
-                        if cost < len_max_cost {
-                            (len_max, len_max_cost, g) = (len, cost, g_new);
-                        }
+                    // Account for work that scales with transform length but is
+                    // independent of the chosen stage decomposition.
+                    cost += len * 4 / 100;
+                    if cost < len_max_cost {
+                        (len_max, len_max_cost, g) = (len, cost, g_new);
                     }
                 }
             }
