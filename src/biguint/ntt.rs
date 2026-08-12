@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
-use super::Vec;
+use super::{BigDigit, Vec};
+use core::cmp::max;
 
 mod arith {
     // Extended Euclid algorithm:
@@ -825,9 +826,6 @@ fn conv<const P: u64>(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-use crate::big_digit::BigDigit;
-use core::cmp::max;
 
 const P1: u64 = 14_259_017_916_245_606_401; // Max NTT length = 2^22 * 3^21 * 5^2 = 1_096_847_532_018_892_800
 const P2: u64 = 17_984_575_660_032_000_001; // Max NTT length = 2^19 * 3^17 * 5^6 = 1_057_916_215_296_000_000
