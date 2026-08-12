@@ -187,10 +187,10 @@ fn test_cmp() {
     let vs: [&[u32]; 4] = [&[2_u32], &[1, 1], &[2, 1], &[1, 1, 1]];
     let mut nums = Vec::new();
     for s in vs.iter().rev() {
-        nums.push(BigInt::from_slice(Minus, *s));
+        nums.push(BigInt::from_slice(Minus, s));
     }
     nums.push(Zero::zero());
-    nums.extend(vs.iter().map(|s| BigInt::from_slice(Plus, *s)));
+    nums.extend(vs.iter().map(|s| BigInt::from_slice(Plus, s)));
 
     for (i, ni) in nums.iter().enumerate() {
         for (j0, nj) in nums[i..].iter().enumerate() {
@@ -199,26 +199,26 @@ fn test_cmp() {
                 assert_eq!(ni.cmp(nj), Equal);
                 assert_eq!(nj.cmp(ni), Equal);
                 assert_eq!(ni, nj);
-                assert!(!(ni != nj));
+                assert!((ni == nj));
                 assert!(ni <= nj);
                 assert!(ni >= nj);
-                assert!(!(ni < nj));
-                assert!(!(ni > nj));
+                assert!((ni >= nj));
+                assert!((ni <= nj));
             } else {
                 assert_eq!(ni.cmp(nj), Less);
                 assert_eq!(nj.cmp(ni), Greater);
 
-                assert!(!(ni == nj));
+                assert!((ni != nj));
                 assert!(ni != nj);
 
                 assert!(ni <= nj);
-                assert!(!(ni >= nj));
+                assert!((ni < nj));
                 assert!(ni < nj);
-                assert!(!(ni > nj));
+                assert!((ni <= nj));
 
-                assert!(!(nj <= ni));
+                assert!((nj > ni));
                 assert!(nj >= ni);
-                assert!(!(nj < ni));
+                assert!((nj >= ni));
                 assert!(nj > ni);
             }
         }
@@ -1217,9 +1217,7 @@ fn test_from_str_radix() {
 
     // issue 10522, this hit an edge case that caused it to
     // attempt to allocate a vector of size (-1u) == huge.
-    let x: BigInt = format!("1{}", repeat("0").take(36).collect::<String>())
-        .parse()
-        .unwrap();
+    let x: BigInt = format!("1{}", "0".repeat(36)).parse().unwrap();
     let _y = x.to_string();
 }
 
@@ -1318,7 +1316,7 @@ fn test_iter_product() {
         FromPrimitive::from_i32(-1004).unwrap(),
         FromPrimitive::from_i32(1005).unwrap(),
     ];
-    let result = data.get(0).unwrap()
+    let result = data.first().unwrap()
         * data.get(1).unwrap()
         * data.get(2).unwrap()
         * data.get(3).unwrap()

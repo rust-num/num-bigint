@@ -90,7 +90,7 @@ fn test_to_bytes_le() {
 #[test]
 fn test_cmp() {
     let data: [&[_]; 7] = [&[], &[1], &[2], &[!0], &[0, 1], &[2, 1], &[1, 1, 1]];
-    let data: Vec<BigUint> = data.iter().map(|v| BigUint::from_slice(*v)).collect();
+    let data: Vec<BigUint> = data.iter().map(|v| BigUint::from_slice(v)).collect();
     for (i, ni) in data.iter().enumerate() {
         for (j0, nj) in data[i..].iter().enumerate() {
             let j = j0 + i;
@@ -98,26 +98,26 @@ fn test_cmp() {
                 assert_eq!(ni.cmp(nj), Equal);
                 assert_eq!(nj.cmp(ni), Equal);
                 assert_eq!(ni, nj);
-                assert!(!(ni != nj));
+                assert!((ni == nj));
                 assert!(ni <= nj);
                 assert!(ni >= nj);
-                assert!(!(ni < nj));
-                assert!(!(ni > nj));
+                assert!((ni >= nj));
+                assert!((ni <= nj));
             } else {
                 assert_eq!(ni.cmp(nj), Less);
                 assert_eq!(nj.cmp(ni), Greater);
 
-                assert!(!(ni == nj));
+                assert!((ni != nj));
                 assert!(ni != nj);
 
                 assert!(ni <= nj);
-                assert!(!(ni >= nj));
+                assert!((ni < nj));
                 assert!(ni < nj);
-                assert!(!(ni > nj));
+                assert!((ni <= nj));
 
-                assert!(!(nj <= ni));
+                assert!((nj > ni));
                 assert!(nj >= ni);
-                assert!(!(nj < ni));
+                assert!((nj >= ni));
                 assert!(nj > ni);
             }
         }
@@ -146,6 +146,7 @@ fn test_hash() {
 }
 
 // LEFT, RIGHT, AND, OR, XOR
+#[allow(clippy::type_complexity)]
 const BIT_TESTS: &[(&[u32], &[u32], &[u32], &[u32], &[u32])] = &[
     (&[], &[], &[], &[], &[]),
     (&[1, 0, 1], &[1, 1], &[1], &[1, 1, 1], &[0, 1, 1]),
@@ -1265,14 +1266,8 @@ fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
         (
             BigUint::from_slice(&[1, 2]),
             vec![
-                (
-                    2,
-                    format!("10{}1", repeat("0").take(bits - 1).collect::<String>()),
-                ),
-                (
-                    4,
-                    format!("2{}1", repeat("0").take(bits / 2 - 1).collect::<String>()),
-                ),
+                (2, format!("10{}1", "0".repeat(bits - 1))),
+                (4, format!("2{}1", "0".repeat(bits / 2 - 1))),
                 (
                     10,
                     match bits {
@@ -1282,10 +1277,7 @@ fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
                         _ => panic!(),
                     },
                 ),
-                (
-                    16,
-                    format!("2{}1", repeat("0").take(bits / 4 - 1).collect::<String>()),
-                ),
+                (16, format!("2{}1", "0".repeat(bits / 4 - 1))),
             ],
         ),
         (
@@ -1293,18 +1285,14 @@ fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
             vec![
                 (
                     2,
-                    format!(
-                        "11{}10{}1",
-                        repeat("0").take(bits - 2).collect::<String>(),
-                        repeat("0").take(bits - 1).collect::<String>()
-                    ),
+                    format!("11{}10{}1", "0".repeat(bits - 2), "0".repeat(bits - 1)),
                 ),
                 (
                     4,
                     format!(
                         "3{}2{}1",
-                        repeat("0").take(bits / 2 - 1).collect::<String>(),
-                        repeat("0").take(bits / 2 - 1).collect::<String>()
+                        "0".repeat(bits / 2 - 1),
+                        "0".repeat(bits / 2 - 1)
                     ),
                 ),
                 (
@@ -1329,8 +1317,8 @@ fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
                     16,
                     format!(
                         "3{}2{}1",
-                        repeat("0").take(bits / 4 - 1).collect::<String>(),
-                        repeat("0").take(bits / 4 - 1).collect::<String>()
+                        "0".repeat(bits / 4 - 1),
+                        "0".repeat(bits / 4 - 1)
                     ),
                 ),
             ],
@@ -1342,9 +1330,9 @@ fn to_str_pairs() -> Vec<(BigUint, Vec<(u32, String)>)> {
 fn test_to_str_radix() {
     let r = to_str_pairs();
     for num_pair in r.iter() {
-        let &(ref n, ref rs) = num_pair;
+        let (n, rs) = num_pair;
         for str_pair in rs.iter() {
-            let &(ref radix, ref str) = str_pair;
+            let (radix, str) = str_pair;
             assert_eq!(n.to_str_radix(*radix), *str);
         }
     }
@@ -1675,9 +1663,9 @@ fn test_from_and_to_radix() {
 fn test_from_str_radix() {
     let r = to_str_pairs();
     for num_pair in r.iter() {
-        let &(ref n, ref rs) = num_pair;
+        let (n, rs) = num_pair;
         for str_pair in rs.iter() {
-            let &(ref radix, ref str) = str_pair;
+            let (radix, str) = str_pair;
             assert_eq!(n, &BigUint::from_str_radix(str, *radix).unwrap());
         }
     }
@@ -1845,7 +1833,7 @@ fn test_iter_product() {
         FromPrimitive::from_u32(1004).unwrap(),
         FromPrimitive::from_u32(1005).unwrap(),
     ];
-    let result = data.get(0).unwrap()
+    let result = data.first().unwrap()
         * data.get(1).unwrap()
         * data.get(2).unwrap()
         * data.get(3).unwrap()
