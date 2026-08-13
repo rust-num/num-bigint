@@ -23,6 +23,7 @@ rand_core_0_9 = ["dep:rand_core_0_9"]
 rand_0_10 = ["rand_core_0_10", "dep:rand_0_10"]
 rand_core_0_10 = ["dep:rand_core_0_10"]
 serde = ["dep:serde"]
+bench-internals = []
 
 [package.metadata.docs.rs]
 features = ["std", "serde", "rand_0_10", "rand_0_9", "quickcheck", "arbitrary"]
@@ -46,6 +47,10 @@ required-features = ["rand_0_10"]
 [[bench]]
 harness = false
 name = "shootout-pidigits"
+
+[[bench]]
+name = "ntt_plan"
+required-features = ["bench-internals"]
 
 [dependencies]
 

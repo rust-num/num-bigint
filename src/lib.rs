@@ -229,6 +229,9 @@ pub use crate::biguint::BigUint;
 pub use crate::biguint::ToBigUint;
 pub use crate::biguint::U32Digits;
 pub use crate::biguint::U64Digits;
+#[cfg(feature = "bench-internals")]
+#[doc(hidden)]
+pub use crate::biguint::__benchmark_ntt_plan_build;
 
 pub use crate::bigint::BigInt;
 pub use crate::bigint::Sign;
