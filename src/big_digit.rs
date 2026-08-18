@@ -85,7 +85,15 @@ impl BigDigits {
     pub(crate) fn push(&mut self, y: BigDigit) {
         match &mut *self {
             BigDigits::Inline(x @ None) => *x = Some(y),
-            BigDigits::Inline(Some(x)) => *self = BigDigits::Heap([*x, y].to_vec()),
+            BigDigits::Inline(Some(x)) => {
+                // Capacity 2 here would make growth run 2 -> 4 -> 8, one realloc more than
+                // `Vec::push` does on its own: its minimum non-zero capacity is 4 for
+                // `BigDigit`, at either digit width.
+                let mut xs = Vec::with_capacity(4);
+                xs.push(*x);
+                xs.push(y);
+                *self = BigDigits::Heap(xs);
+            }
             BigDigits::Heap(xs) => xs.push(y),
         }
     }
