@@ -49,6 +49,17 @@ pub(crate) fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
 /// <https://github.com/rust-lang/rust/blob/e71c0f1e3395b10a8c331317be1a5c107bdf7b2e/library/alloc/src/raw_vec/mod.rs#L153-L166>
 const MIN_NON_ZERO_CAP: usize = 4;
 
+/// A heap buffer with room for at least `capacity` digits.
+///
+/// `Vec::with_capacity` allocates exactly what it is asked for, while the methods that grow a
+/// `Vec` — `push`, `reserve`, `resize`, `extend` — never allocate less than [`MIN_NON_ZERO_CAP`],
+/// so going through this leaves an `Inline` -> `Heap` spill holding the allocation the same
+/// operation on a `Heap` would have produced.
+#[inline]
+fn heap_with_capacity(capacity: usize) -> Vec<BigDigit> {
+    Vec::with_capacity(capacity.max(MIN_NON_ZERO_CAP))
+}
+
 pub(crate) enum BigDigits {
     Inline(Option<BigDigit>),
     Heap(Vec<BigDigit>),
@@ -72,7 +83,11 @@ impl BigDigits {
         match slice {
             &[] => BigDigits::ZERO,
             &[x] => BigDigits::Inline(Some(x)),
-            xs => BigDigits::Heap(xs.to_vec()),
+            xs => {
+                let mut vec = heap_with_capacity(xs.len());
+                vec.extend_from_slice(xs);
+                BigDigits::Heap(vec)
+            }
         }
     }
 
@@ -226,7 +241,7 @@ impl BigDigits {
             BigDigits::Inline(opt_x) => {
                 let capacity = usize::from(opt_x.is_some()) + additional;
                 if capacity > 1 {
-                    let mut vec = Vec::with_capacity(capacity);
+                    let mut vec = heap_with_capacity(capacity);
                     if let Some(x) = *opt_x {
                         vec.push(x);
                     }
@@ -247,7 +262,7 @@ impl BigDigits {
                     }
                 }
                 _ => {
-                    let mut xs = Vec::with_capacity(len);
+                    let mut xs = heap_with_capacity(len);
                     if let Some(x) = *x {
                         xs.push(x);
                     }
@@ -265,7 +280,7 @@ impl BigDigits {
             BigDigits::Inline(Some(x)) => {
                 let len = ys.len() + 1;
                 if len > 1 {
-                    let mut xs = Vec::with_capacity(len);
+                    let mut xs = heap_with_capacity(len);
                     xs.push(*x);
                     xs.extend_from_slice(ys);
                     *self = BigDigits::Heap(xs);
@@ -289,7 +304,7 @@ impl BigDigits {
                 }
                 if let Some(y) = iter.next() {
                     let len = iter.len().saturating_add(2);
-                    let mut xs = Vec::with_capacity(len);
+                    let mut xs = heap_with_capacity(len);
                     xs.push(x.unwrap());
                     xs.push(y);
                     xs.extend(iter);
@@ -346,4 +361,85 @@ impl core::ops::DerefMut for BigDigits {
             BigDigits::Heap(xs) => xs,
         }
     }
+}
+
+/// The capacity of a one digit `BigDigits` after `op`.
+#[cfg(test)]
+fn capacity_after(op: impl FnOnce(&mut BigDigits)) -> usize {
+    let mut x = BigDigits::from_digit(1);
+    op(&mut x);
+    x.capacity()
+}
+
+/// Spilling from inline to the heap should land on the capacity `Vec` would have allocated for
+/// itself, so that the next push doesn't immediately reallocate.
+#[test]
+fn spills_allocate_at_least_the_minimum() {
+    const MIN: usize = MIN_NON_ZERO_CAP;
+
+    assert_eq!(capacity_after(|x| x.push(2)), MIN, "push");
+    assert_eq!(capacity_after(|x| x.reserve(1)), MIN, "reserve");
+    assert_eq!(capacity_after(|x| x.resize(2, 0)), MIN, "resize");
+    assert_eq!(
+        capacity_after(|x| x.extend_from_slice(&[2])),
+        MIN,
+        "extend_from_slice"
+    );
+    assert_eq!(
+        capacity_after(|x| x.extend([2, 3].into_iter())),
+        MIN,
+        "extend"
+    );
+    assert_eq!(BigDigits::from_slice(&[1, 2]).capacity(), MIN, "from_slice");
+    assert_eq!(
+        BigDigits::from_slice(&[1, 2]).clone().capacity(),
+        MIN,
+        "clone"
+    );
+
+    // above the floor each site still asks for exactly what it needs
+    assert_eq!(capacity_after(|x| x.reserve(5)), 6, "reserve");
+    assert_eq!(capacity_after(|x| x.resize(6, 0)), 6, "resize");
+    assert_eq!(
+        capacity_after(|x| x.extend_from_slice(&[2, 3, 4, 5, 6])),
+        6,
+        "extend_from_slice"
+    );
+    assert_eq!(
+        capacity_after(|x| x.extend([2, 3, 4, 5, 6].into_iter())),
+        6,
+        "extend"
+    );
+    assert_eq!(
+        BigDigits::from_slice(&[1, 2, 3, 4, 5, 6]).capacity(),
+        6,
+        "from_slice"
+    );
+
+    // `from_vec` is the exception, it keeps the allocation it is given
+    assert_eq!(BigDigits::from_vec(vec![1, 2]).capacity(), 2, "from_vec");
+}
+
+/// A value that still fits inline shouldn't reach the heap at all.
+#[test]
+fn small_values_stay_inline() {
+    assert_eq!(capacity_after(|x| x.reserve(0)), 1, "reserve");
+    assert_eq!(capacity_after(|x| x.resize(1, 0)), 1, "resize");
+    assert_eq!(
+        capacity_after(|x| x.extend_from_slice(&[])),
+        1,
+        "extend_from_slice"
+    );
+    assert_eq!(
+        capacity_after(|x| x.extend(core::iter::empty())),
+        1,
+        "extend"
+    );
+
+    let mut x = BigDigits::ZERO;
+    x.push(1);
+    assert_eq!(x.capacity(), 1, "push");
+
+    assert_eq!(BigDigits::from_slice(&[1]).capacity(), 1, "from_slice");
+    assert_eq!(BigDigits::from_slice(&[]).capacity(), 1, "from_slice empty");
 }
