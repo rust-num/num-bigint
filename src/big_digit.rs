@@ -41,6 +41,14 @@ pub(crate) fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
     DoubleBigDigit::from(lo) | (DoubleBigDigit::from(hi) << BITS)
 }
 
+/// The smallest capacity a `Vec` allocates for itself, so that spilling from inline to the heap
+/// lands on the growth sequence `Vec::push` would have used rather than one realloc behind it.
+///
+/// This is `RawVec::MIN_NON_ZERO_CAP`, which is 4 for elements of 2 to 1024 bytes — `BigDigit` at
+/// either digit width:
+/// <https://github.com/rust-lang/rust/blob/e71c0f1e3395b10a8c331317be1a5c107bdf7b2e/library/alloc/src/raw_vec/mod.rs#L153-L166>
+const MIN_NON_ZERO_CAP: usize = 4;
+
 pub(crate) enum BigDigits {
     Inline(Option<BigDigit>),
     Heap(Vec<BigDigit>),
@@ -86,10 +94,7 @@ impl BigDigits {
         match &mut *self {
             BigDigits::Inline(x @ None) => *x = Some(y),
             BigDigits::Inline(Some(x)) => {
-                // Capacity 2 here would make growth run 2 -> 4 -> 8, one realloc more than
-                // `Vec::push` does on its own: its minimum non-zero capacity is 4 for
-                // `BigDigit`, at either digit width.
-                let mut xs = Vec::with_capacity(4);
+                let mut xs = Vec::with_capacity(MIN_NON_ZERO_CAP);
                 xs.push(*x);
                 xs.push(y);
                 *self = BigDigits::Heap(xs);
