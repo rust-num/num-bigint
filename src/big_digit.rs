@@ -166,7 +166,7 @@ impl BigDigits {
                 match **xs {
                     [] => *self = BigDigits::ZERO,
                     [x] => *self = BigDigits::Inline(Some(x)),
-                    _ => xs.shrink_to(xs.len() + 1),
+                    _ => xs.shrink_to((xs.len() + 1).max(MIN_NON_ZERO_CAP)),
                 }
             }
         }
@@ -197,13 +197,7 @@ impl BigDigits {
                     let len = xs.iter().rposition(|&d| d != 0).map_or(0, |i| i + 1);
                     xs.truncate(len);
                 }
-                if xs.len() < xs.capacity() / 2 {
-                    match **xs {
-                        [] => *self = BigDigits::ZERO,
-                        [x] => *self = BigDigits::Inline(Some(x)),
-                        _ => xs.shrink_to(xs.len() + 1),
-                    }
-                }
+                self.shrink();
             }
         }
     }
