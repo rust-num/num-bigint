@@ -44,17 +44,16 @@ pub(crate) fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
 /// The smallest capacity a `Vec` allocates for itself, so that spilling from inline to the heap
 /// lands on the growth sequence `Vec::push` would have used rather than one realloc behind it.
 ///
-/// This is `RawVec::MIN_NON_ZERO_CAP`, which is 4 for elements of 2 to 1024 bytes — `BigDigit` at
-/// either digit width:
+/// This follows the standard library's `fn min_non_zero_cap(size)`, which returns 4 for sizes of 2
+/// to 1024 bytes, including `BigDigit`'s size at either digit width.
 /// <https://github.com/rust-lang/rust/blob/e71c0f1e3395b10a8c331317be1a5c107bdf7b2e/library/alloc/src/raw_vec/mod.rs#L153-L166>
 const MIN_NON_ZERO_CAP: usize = 4;
 
 /// A heap buffer with room for at least `capacity` digits.
 ///
-/// `Vec::with_capacity` allocates exactly what it is asked for, while the methods that grow a
-/// `Vec` — `push`, `reserve`, `resize`, `extend` — never allocate less than [`MIN_NON_ZERO_CAP`],
-/// so going through this leaves an `Inline` -> `Heap` spill holding the allocation the same
-/// operation on a `Heap` would have produced.
+/// `Vec::with_capacity` allocates exactly what it is asked for, while methods like `Vec::push` use
+/// amortized growth, never less than `min_non_zero_cap(size)`. So when we're spilling from
+/// `Inline` to `Heap`, we use the same minimum capacity that we'd have with a pure `Vec`.
 #[inline]
 fn heap_with_capacity(capacity: usize) -> Vec<BigDigit> {
     Vec::with_capacity(capacity.max(MIN_NON_ZERO_CAP))
