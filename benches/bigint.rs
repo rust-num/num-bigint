@@ -66,6 +66,46 @@ fn fib2(n: usize) -> BigUint {
     f0
 }
 
+/// Accumulate a decimal integer 18 digits at a time, the shape of a decimal parser.
+/// `chunks` is chosen so the result brackets the `Inline` -> `Heap` transition.
+fn scalar_accumulate_bench(b: &mut Bencher, chunks: u32) {
+    let m = 10u64.pow(18);
+
+    b.iter(|| {
+        let mut x = BigUint::from(u64::MAX);
+        for _ in 0..chunks {
+            x *= m;
+            x += m - 1;
+        }
+        x
+    });
+}
+
+#[bench]
+fn scalar_accumulate_2_digits(b: &mut Bencher) {
+    scalar_accumulate_bench(b, 1);
+}
+
+#[bench]
+fn scalar_accumulate_3_digits(b: &mut Bencher) {
+    scalar_accumulate_bench(b, 2);
+}
+
+#[bench]
+fn scalar_accumulate_4_digits(b: &mut Bencher) {
+    scalar_accumulate_bench(b, 3);
+}
+
+#[bench]
+fn scalar_accumulate_6_digits(b: &mut Bencher) {
+    scalar_accumulate_bench(b, 5);
+}
+
+#[bench]
+fn scalar_accumulate_20_digits(b: &mut Bencher) {
+    scalar_accumulate_bench(b, 19);
+}
+
 #[bench]
 fn multiply_8_8(b: &mut Bencher) {
     multiply_bench(b, 1 << 8, 1 << 8);
