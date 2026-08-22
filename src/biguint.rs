@@ -25,6 +25,12 @@ mod convert;
 mod iter;
 mod monty;
 mod ntt;
+
+#[cfg(feature = "bench-internals")]
+#[doc(hidden)]
+pub fn __benchmark_ntt_plan_build<const PRIME: usize>(min_len: usize) -> (usize, usize, usize) {
+    ntt::benchmark_plan_build::<PRIME>(min_len)
+}
 mod power;
 mod roots;
 mod serde;
