@@ -41,6 +41,7 @@ pub const MUL_TRIPLES: &[(&[u32], &[u32], &[u32])] = &[
     (&[0, 0, 1], &[0, 0, 0, 1], &[0, 0, 0, 0, 0, 1]),
 ];
 
+#[allow(clippy::type_complexity)]
 pub const DIV_REM_QUADRUPLES: &[(&[u32], &[u32], &[u32], &[u32])] = &[
     (&[1], &[2], &[], &[1]),
     (&[3], &[2], &[1], &[1]),
