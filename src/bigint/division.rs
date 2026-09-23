@@ -6,7 +6,7 @@ use crate::{IsizePromotion, UsizePromotion};
 
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, CheckedEuclid, Euclid, Signed, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, CheckedRem, Euclid, Signed, ToPrimitive, Zero};
 
 forward_all_binop_to_ref_ref!(impl Div for BigInt, div);
 
@@ -444,6 +444,16 @@ impl CheckedDiv for BigInt {
             return None;
         }
         Some(self.div(v))
+    }
+}
+
+impl CheckedRem for BigInt {
+    #[inline]
+    fn checked_rem(&self, v: &BigInt) -> Option<BigInt> {
+        if v.is_zero() {
+            return None;
+        }
+        Some(self.rem(v))
     }
 }
 

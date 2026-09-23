@@ -10,7 +10,7 @@ use core::cmp::Ordering::{Equal, Greater, Less};
 use core::mem;
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use num_integer::Integer;
-use num_traits::{CheckedDiv, CheckedEuclid, Euclid, ToPrimitive, Zero};
+use num_traits::{CheckedDiv, CheckedEuclid, CheckedRem, Euclid, ToPrimitive, Zero};
 
 pub(super) const FAST_DIV_WIDE: bool = cfg!(any(target_arch = "x86", target_arch = "x86_64"));
 
@@ -781,6 +781,16 @@ impl CheckedDiv for BigUint {
             return None;
         }
         Some(self.div(v))
+    }
+}
+
+impl CheckedRem for BigUint {
+    #[inline]
+    fn checked_rem(&self, v: &BigUint) -> Option<BigUint> {
+        if v.is_zero() {
+            return None;
+        }
+        Some(self.rem(v))
     }
 }
 

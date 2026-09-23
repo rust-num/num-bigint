@@ -11,7 +11,7 @@ use core::ops::{Neg, Not};
 use core::str;
 
 use num_integer::{Integer, Roots};
-use num_traits::{ConstZero, Num, One, Pow, Signed, Zero};
+use num_traits::{CheckedNeg, ConstZero, Num, One, Pow, Signed, Zero};
 
 use self::Sign::{Minus, NoSign, Plus};
 
@@ -341,6 +341,13 @@ impl Neg for &BigInt {
     #[inline]
     fn neg(self) -> BigInt {
         -self.clone()
+    }
+}
+
+impl CheckedNeg for BigInt {
+    #[inline]
+    fn checked_neg(&self) -> Option<BigInt> {
+        Some(self.neg())
     }
 }
 
