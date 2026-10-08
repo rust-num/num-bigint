@@ -38,7 +38,7 @@ fi
 NO_STD_FEATURES=(serde)
 check_version 1.63 && NO_STD_FEATURES+=(rand_core_0_9 rand_0_9)
 check_version 1.85 && NO_STD_FEATURES+=(rand_core_0_10 rand_0_10)
-STD_FEATURES=(${NO_STD_FEATURES[*]} arbitrary quickcheck)
+STD_FEATURES=(${NO_STD_FEATURES[*]} arbitrary quickcheck proptest)
 echo "Testing supported features: ${STD_FEATURES[*]}"
 if [ -n "${NO_STD_FEATURES[*]}" ]; then
   echo " no_std supported features: ${NO_STD_FEATURES[*]}"

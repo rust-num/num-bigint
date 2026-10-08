@@ -95,9 +95,11 @@
 //!
 //! ### Arbitrary Big Integers
 //!
-//! `num-bigint` supports `arbitrary` and `quickcheck` features to implement
-//! [`arbitrary::Arbitrary`] and [`quickcheck::Arbitrary`], respectively, for both [`BigInt`] and
-//! [`BigUint`]. These are useful for fuzzing and other forms of randomized testing.
+//! `num-bigint` supports `arbitrary`, `quickcheck`, and `proptest` features to
+//! implement [`arbitrary::Arbitrary`], [`quickcheck::Arbitrary`], and
+//! [`proptest::arbitrary::Arbitrary`], respectively, for both `BigInt` and
+//! `BigUint`. These are useful for fuzzing and other forms of randomized
+//! testing.
 //!
 //! ### Serialization
 //!
