@@ -300,7 +300,7 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
                 }
 
                 ret_bits += bits_want;
-                bits -= bits_want;
+                bits -= digit_bits;
             }
 
             ret
