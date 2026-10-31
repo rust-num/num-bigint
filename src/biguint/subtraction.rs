@@ -37,14 +37,14 @@ cfg_32!(
 );
 
 // fallback for environments where we don't have a subborrow intrinsic
-// (copied from the standard library's `borrowing_sub`)
+// (copied from the 1.85 standard library's `borrowing_sub`)
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
 fn sbb(borrow: u8, lhs: BigDigit, rhs: BigDigit, out: &mut BigDigit) -> u8 {
     let (a, b) = lhs.overflowing_sub(rhs);
     let (c, d) = a.overflowing_sub(borrow as BigDigit);
     *out = c;
-    u8::from(b || d)
+    u8::from(b | d)
 }
 
 pub(super) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
