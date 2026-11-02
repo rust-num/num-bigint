@@ -80,6 +80,8 @@ impl Mul<u32> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl MulAssign for BigInt, u32, mul_assign);
+
 impl MulAssign<u32> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: u32) {
@@ -99,6 +101,8 @@ impl Mul<u64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl MulAssign for BigInt, u64, mul_assign);
+
 impl MulAssign<u64> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: u64) {
@@ -117,6 +121,8 @@ impl Mul<u128> for BigInt {
         BigInt::from_biguint(self.sign, self.data * other)
     }
 }
+
+forward_ref_assign_scalar!(impl MulAssign for BigInt, u128, mul_assign);
 
 impl MulAssign<u128> for BigInt {
     #[inline]
@@ -144,6 +150,8 @@ impl Mul<i32> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl MulAssign for BigInt, i32, mul_assign);
+
 impl MulAssign<i32> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: i32) {
@@ -169,6 +177,8 @@ impl Mul<i64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl MulAssign for BigInt, i64, mul_assign);
+
 impl MulAssign<i64> for BigInt {
     #[inline]
     fn mul_assign(&mut self, other: i64) {
@@ -193,6 +203,8 @@ impl Mul<i128> for BigInt {
         }
     }
 }
+
+forward_ref_assign_scalar!(impl MulAssign for BigInt, i128, mul_assign);
 
 impl MulAssign<i128> for BigInt {
     #[inline]

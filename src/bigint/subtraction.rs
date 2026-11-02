@@ -103,6 +103,8 @@ impl Sub<u32> for BigInt {
         }
     }
 }
+forward_ref_assign_scalar!(impl SubAssign for BigInt, u32, sub_assign);
+
 impl SubAssign<u32> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: u32) {
@@ -155,6 +157,8 @@ impl Sub<u64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl SubAssign for BigInt, u64, sub_assign);
+
 impl SubAssign<u64> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: u64) {
@@ -180,6 +184,8 @@ impl Sub<u128> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl SubAssign for BigInt, u128, sub_assign);
+
 impl SubAssign<u128> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: u128) {
@@ -203,6 +209,8 @@ impl Sub<i32> for BigInt {
         }
     }
 }
+forward_ref_assign_scalar!(impl SubAssign for BigInt, i32, sub_assign);
+
 impl SubAssign<i32> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: i32) {
@@ -236,6 +244,8 @@ impl Sub<i64> for BigInt {
         }
     }
 }
+forward_ref_assign_scalar!(impl SubAssign for BigInt, i64, sub_assign);
+
 impl SubAssign<i64> for BigInt {
     #[inline]
     fn sub_assign(&mut self, other: i64) {
@@ -269,6 +279,8 @@ impl Sub<i128> for BigInt {
         }
     }
 }
+
+forward_ref_assign_scalar!(impl SubAssign for BigInt, i128, sub_assign);
 
 impl SubAssign<i128> for BigInt {
     #[inline]

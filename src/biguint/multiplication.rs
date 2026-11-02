@@ -542,6 +542,8 @@ impl Mul<u32> for BigUint {
         self
     }
 }
+forward_ref_assign_scalar!(impl MulAssign for BigUint, u32, mul_assign);
+
 impl MulAssign<u32> for BigUint {
     #[inline]
     fn mul_assign(&mut self, other: u32) {
@@ -558,6 +560,8 @@ impl Mul<u64> for BigUint {
         self
     }
 }
+forward_ref_assign_scalar!(impl MulAssign for BigUint, u64, mul_assign);
+
 impl MulAssign<u64> for BigUint {
     cfg_digit!(
         #[inline]
@@ -586,6 +590,8 @@ impl Mul<u128> for BigUint {
         self
     }
 }
+
+forward_ref_assign_scalar!(impl MulAssign for BigUint, u128, mul_assign);
 
 impl MulAssign<u128> for BigUint {
     cfg_digit!(

@@ -43,6 +43,8 @@ impl Div<u32> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl DivAssign for BigInt, u32, div_assign);
+
 impl DivAssign<u32> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: u32) {
@@ -71,6 +73,8 @@ impl Div<u64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl DivAssign for BigInt, u64, div_assign);
+
 impl DivAssign<u64> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: u64) {
@@ -98,6 +102,8 @@ impl Div<u128> for BigInt {
         BigInt::from_biguint(self.sign, self.data / other)
     }
 }
+
+forward_ref_assign_scalar!(impl DivAssign for BigInt, u128, div_assign);
 
 impl DivAssign<u128> for BigInt {
     #[inline]
@@ -133,6 +139,8 @@ impl Div<i32> for BigInt {
         }
     }
 }
+
+forward_ref_assign_scalar!(impl DivAssign for BigInt, i32, div_assign);
 
 impl DivAssign<i32> for BigInt {
     #[inline]
@@ -171,6 +179,8 @@ impl Div<i64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl DivAssign for BigInt, i64, div_assign);
+
 impl DivAssign<i64> for BigInt {
     #[inline]
     fn div_assign(&mut self, other: i64) {
@@ -207,6 +217,8 @@ impl Div<i128> for BigInt {
         }
     }
 }
+
+forward_ref_assign_scalar!(impl DivAssign for BigInt, i128, div_assign);
 
 impl DivAssign<i128> for BigInt {
     #[inline]
@@ -274,6 +286,8 @@ impl Rem<u32> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl RemAssign for BigInt, u32, rem_assign);
+
 impl RemAssign<u32> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: u32) {
@@ -302,6 +316,8 @@ impl Rem<u64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl RemAssign for BigInt, u64, rem_assign);
+
 impl RemAssign<u64> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: u64) {
@@ -329,6 +345,8 @@ impl Rem<u128> for BigInt {
         BigInt::from_biguint(self.sign, self.data % other)
     }
 }
+
+forward_ref_assign_scalar!(impl RemAssign for BigInt, u128, rem_assign);
 
 impl RemAssign<u128> for BigInt {
     #[inline]
@@ -362,6 +380,8 @@ impl Rem<i32> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl RemAssign for BigInt, i32, rem_assign);
+
 impl RemAssign<i32> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i32) {
@@ -390,6 +410,8 @@ impl Rem<i64> for BigInt {
     }
 }
 
+forward_ref_assign_scalar!(impl RemAssign for BigInt, i64, rem_assign);
+
 impl RemAssign<i64> for BigInt {
     #[inline]
     fn rem_assign(&mut self, other: i64) {
@@ -417,6 +439,8 @@ impl Rem<i128> for BigInt {
         self % other.unsigned_abs()
     }
 }
+
+forward_ref_assign_scalar!(impl RemAssign for BigInt, i128, rem_assign);
 
 impl RemAssign<i128> for BigInt {
     #[inline]

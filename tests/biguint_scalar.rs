@@ -121,3 +121,26 @@ fn test_scalar_div_rem_zero() {
     catch_unwind(|| BigUint::one() / 0u32).unwrap_err();
     catch_unwind(|| BigUint::one() % 0u32).unwrap_err();
 }
+
+#[test]
+fn test_scalar_assign_ref_sub_underflow() {
+    catch_unwind(|| {
+        let mut x = BigUint::zero();
+        x -= &1u32;
+    })
+    .unwrap_err();
+}
+
+#[test]
+fn test_scalar_assign_ref_div_rem_zero() {
+    catch_unwind(|| {
+        let mut x = BigUint::one();
+        x /= &0u32;
+    })
+    .unwrap_err();
+    catch_unwind(|| {
+        let mut x = BigUint::one();
+        x %= &0u32;
+    })
+    .unwrap_err();
+}

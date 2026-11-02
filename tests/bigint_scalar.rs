@@ -155,3 +155,17 @@ fn test_scalar_div_rem_zero() {
     catch_unwind(|| BigInt::one() / 0u32).unwrap_err();
     catch_unwind(|| BigInt::one() % 0u32).unwrap_err();
 }
+
+#[test]
+fn test_scalar_assign_ref_div_rem_zero() {
+    catch_unwind(|| {
+        let mut x = BigInt::one();
+        x /= &0i32;
+    })
+    .unwrap_err();
+    catch_unwind(|| {
+        let mut x = BigInt::one();
+        x %= &0i32;
+    })
+    .unwrap_err();
+}

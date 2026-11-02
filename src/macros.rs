@@ -160,6 +160,17 @@ macro_rules! forward_val_assign_scalar {
     };
 }
 
+macro_rules! forward_ref_assign_scalar {
+    (impl $imp:ident for $res:ty, $scalar:ty, $method:ident) => {
+        impl $imp<&$scalar> for $res {
+            #[inline]
+            fn $method(&mut self, other: &$scalar) {
+                self.$method(*other);
+            }
+        }
+    };
+}
+
 /// use this if val_val_binop is already implemented and the reversed order is required
 macro_rules! forward_scalar_val_val_binop_commutative {
     (impl $imp:ident < $scalar:ty > for $res:ty, $method:ident) => {
@@ -342,6 +353,14 @@ macro_rules! promote_scalars_assign {
                 #[inline]
                 fn $method(&mut self, other: $scalar) {
                     self.$method(other as $promo);
+                }
+            }
+
+            impl $imp<&$scalar> for $res {
+                #[allow(clippy::cast_lossless)]
+                #[inline]
+                fn $method(&mut self, other: &$scalar) {
+                    self.$method(*other as $promo);
                 }
             }
         )*

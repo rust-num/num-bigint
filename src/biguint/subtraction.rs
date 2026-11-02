@@ -161,6 +161,8 @@ impl Sub<u32> for BigUint {
     }
 }
 
+forward_ref_assign_scalar!(impl SubAssign for BigUint, u32, sub_assign);
+
 impl SubAssign<u32> for BigUint {
     fn sub_assign(&mut self, other: u32) {
         sub2(&mut self.data, &[other as BigDigit]);
@@ -205,6 +207,8 @@ impl Sub<u64> for BigUint {
         self
     }
 }
+
+forward_ref_assign_scalar!(impl SubAssign for BigUint, u64, sub_assign);
 
 impl SubAssign<u64> for BigUint {
     cfg_digit!(
@@ -261,6 +265,8 @@ impl Sub<u128> for BigUint {
         self
     }
 }
+
+forward_ref_assign_scalar!(impl SubAssign for BigUint, u128, sub_assign);
 
 impl SubAssign<u128> for BigUint {
     cfg_digit!(

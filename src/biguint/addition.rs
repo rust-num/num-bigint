@@ -131,6 +131,8 @@ impl Add<u32> for BigUint {
     }
 }
 
+forward_ref_assign_scalar!(impl AddAssign for BigUint, u32, add_assign);
+
 impl AddAssign<u32> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u32) {
@@ -156,6 +158,8 @@ impl Add<u64> for BigUint {
         self
     }
 }
+
+forward_ref_assign_scalar!(impl AddAssign for BigUint, u64, add_assign);
 
 impl AddAssign<u64> for BigUint {
     cfg_digit!(
@@ -201,6 +205,8 @@ impl Add<u128> for BigUint {
         self
     }
 }
+
+forward_ref_assign_scalar!(impl AddAssign for BigUint, u128, add_assign);
 
 impl AddAssign<u128> for BigUint {
     cfg_digit!(

@@ -57,6 +57,9 @@ macro_rules! assert_scalar_assign_op {
             if let Some(right) = $right.$to() {
                 let mut left = $left.clone();
                 assert_eq!({ left $op right; left}, $expected);
+
+                let mut left = $left.clone();
+                assert_eq!({ left $op &right; left}, $expected);
             }
         )*
     };
