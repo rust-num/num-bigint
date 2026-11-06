@@ -220,136 +220,152 @@ struct NttPlan {
 }
 
 impl NttPlan {
+    fn ntt_len_to_radices(mut ntt_len: usize) -> [u32; 5] {
+        let m2 = ntt_len.trailing_zeros();
+        ntt_len >>= m2;
+        let mut m3 = 0;
+        while ntt_len % 3 == 0 {
+            ntt_len /= 3;
+            m3 += 1;
+        }
+        let mut m5 = 0;
+        while ntt_len % 5 == 0 {
+            ntt_len /= 5;
+            m5 += 1;
+        }
+
+        // Make sure `ntt_len` has no other factors besides 2, 3, and 5
+        assert_eq!(ntt_len, 1);
+
+        Self::ntt_len_factors_to_radices(m2, m3, m5)
+    }
+
+    fn ntt_len_factors_to_radices(mut m2: u32, mut m3: u32, m5: u32) -> [u32; 5] {
+        // radix-5 does not compete with other radices (2, 3, 4, 6).
+        let cnt5 = m5;
+
+        // Pick radix-6 and radix-4 greedily and assign the remaining factors to radix-2 and radix-3.
+        let cnt6 = m2.min(m3);
+        m2 -= cnt6;
+        m3 -= cnt6;
+        let cnt4 = m2 / 2;
+        m2 -= cnt4 * 2;
+        let [cnt2, cnt3] = [m2, m3];
+
+        [cnt2, cnt3, cnt4, cnt5, cnt6]
+    }
+
     fn build<const P: u64>(min_len: usize) -> Self {
-        assert!(min_len as u64 <= Arith::<P>::MAX_NTT_LEN);
-        let (mut len_max, mut len_max_cost, mut g) = (usize::MAX, usize::MAX, 1);
-        for m5 in 0..=Arith::<P>::FACTORS_5 {
-            for m3 in 0..=Arith::<P>::FACTORS_3 {
-                let len = 5u64.pow(m5) * 3u64.pow(m3);
-                if len >= 2 * min_len as u64 {
-                    break;
-                }
+        // Allowed values for naive multiplication chunk length (base case).
+        //
+        // Under the cost model, g = 2 and g = 3 cannot be optimal. If the NTT radix
+        // decomposition contains one of {4, 5, 6}, it can be exchanged with g to
+        // improve the cost. The combination g = 3 and NTT radix 4 is an exception,
+        // but g = 6 with NTT radix 2 is more favorable. If g is 2 or 3 and the
+        // decomposition contains only {2, 3}, those radices can instead be absorbed
+        // into g.
+        //
+        // Hence, we only consider g >= 4.
+        const G_MIN: usize = 4;
+        const G_MAX: usize = 9;
 
-                let (mut len, mut m2) = (len as usize, 0);
-                while len < min_len && m2 < Arith::<P>::FACTORS_2 {
-                    len *= 2;
-                    m2 += 1;
-                }
+        // Cost model for NTT length selection.
+        //
+        // For a candidate convolution length `len = g * m`, the estimated cost is
+        // `len * (G_COSTS[g - G_MIN] + sum(radix_counts[i] * RADIX_COSTS[i]))`.
+        // Each radix-r stage processes all `len` elements in `len / r` groups of
+        // r-point butterflies, so the cost of a stage is modeled as linear in
+        // `len`. The constants below represent the relative per-element costs of
+        // the naive base cases and radix butterflies and were calibrated
+        // empirically. `G_COSTS` covers g = G_MIN..=G_MAX, while `RADIX_COSTS`
+        // covers radix-2 through radix-6.
+        const G_COSTS: [u32; G_MAX - G_MIN + 1] = [218, 287, 337, 433, 564, 663];
+        const RADIX_COSTS: [u32; 5] = [458, 791, 756, 1230, 915];
 
-                if len >= min_len && len < len_max_cost {
-                    let (mut tmp, mut cost) = (len, 0);
-                    let mut g_new = 1;
+        // Short cases do not require an NTT.
+        // The threshold could be larger, but we keep it minimal for simplicity.
+        // (Short cases will not invoke the NTT anyway.)
+        if min_len <= G_MAX {
+            // Special case for short `min_len`.
+            let g = min_len.max(1);
+            return Self::from_params::<P>(g, g);
+        }
 
-                    // Cost model for NTT length selection.
-                    //
-                    // Each radix-R stage processes N elements in N/R groups of R-point
-                    // butterflies. The per-stage cost is approximated as N * weight / 100,
-                    // where weight reflects the butterfly's arithmetic cost and cache
-                    // behavior, calibrated empirically:
-                    //   - radix-2: weight 85 (small) / 100 (large)
-                    //   - radix-3: weight 100 (reference)
-                    //   - radix-4: weight 90 (small) / 100 (large)
-                    //   - radix-5: weight 156-186 (length-dependent)
-                    //   - radix-6: weight 110 (small) / 115 (large)
-                    //
-                    // The small/large threshold (2^20 elements) approximates L2 cache
-                    // residency. Radix-5 has the highest weight due to its mul-heavy
-                    // butterfly (5 modular multiplications vs. 1 for radix-3/4).
+        let max_ntt_len = usize::try_from(Arith::<P>::MAX_NTT_LEN).unwrap_or(usize::MAX);
+        assert!(min_len <= max_ntt_len.saturating_mul(G_MAX));
 
-                    let small_transform = len <= 1 << 20;
-                    let radix6_weight = if small_transform { 110 } else { 115 };
-                    let radix5_weight =
-                        156 + 30 * len.saturating_sub(5 << 14).min(1 << 16) / (1 << 16);
-                    let radix4_weight = if small_transform { 90 } else { 100 };
-                    let radix3_weight = 100;
-                    let radix2_weight = if small_transform { 85 } else { 100 };
-
-                    if len % 5 == 0 {
-                        (g_new, tmp, cost) = (5, tmp / 5, cost + len * 89 / 100);
-                    } else if m3 >= m2 + 2 {
-                        (g_new, tmp, cost) = (9, tmp / 9, cost + len * 180 / 100);
-                    } else if m2 >= m3 + 3 && (m2 - m3) % 2 == 1 {
-                        (g_new, tmp, cost) = (8, tmp / 8, cost + len * 130 / 100);
-                    } else if m2 >= m3 + 2 && m3 == 0 {
-                        (g_new, tmp, cost) = (4, tmp / 4, cost + len * 87 / 100);
-                    } else if m2 == 0 && m3 >= 1 {
-                        (g_new, tmp, cost) = (3, tmp / 3, cost + len * 86 / 100);
-                    } else if m3 == 0 && m2 >= 1 {
-                        (g_new, tmp, cost) = (2, tmp / 2, cost + len * 86 / 100);
-                    } else if len % 6 == 0 {
-                        (g_new, tmp, cost) = (6, tmp / 6, cost + len * 91 / 100);
+        // The NTT length `m` contains only factors of 2, 3, and 5, but the single
+        // base-case length `g` may have any factorization: it is handled directly
+        // by the naive quadratic kernel rather than by radix-specific NTT stages.
+        // Thus `g = 7` can contribute one factor of 7 to `len = g * m`, reducing
+        // padding for some input lengths without requiring a radix-7 NTT kernel.
+        let mut best: Option<(usize, usize, u128)> = None;
+        for g in G_MIN..=G_MAX {
+            let ntt_min_len = min_len / g + usize::from(min_len % g != 0);
+            for m5 in 0..=Arith::<P>::FACTORS_5 {
+                let pow5 = match 5usize.checked_pow(m5) {
+                    Some(pow5) => pow5,
+                    None => break,
+                };
+                for m3 in 0..=Arith::<P>::FACTORS_3 {
+                    // Compute the length of the transform
+                    let pow3 = match 3usize.checked_pow(m3) {
+                        Some(pow3) => pow3,
+                        None => break,
+                    };
+                    let mut ntt_len = match pow5.checked_mul(pow3) {
+                        Some(ntt_len) => ntt_len,
+                        None => break,
+                    };
+                    if ntt_len / 2 >= ntt_min_len {
+                        // Too much padding will not be computationally optimal
+                        break;
                     }
+                    let mut m2 = 0;
+                    while ntt_len < ntt_min_len && m2 < Arith::<P>::FACTORS_2 {
+                        ntt_len = match ntt_len.checked_mul(2) {
+                            Some(ntt_len) => ntt_len,
+                            None => break,
+                        };
+                        m2 += 1;
+                    }
+                    if ntt_len < ntt_min_len {
+                        continue;
+                    }
+                    let len = match g.checked_mul(ntt_len) {
+                        Some(len) => len,
+                        None => continue,
+                    };
 
-                    let (mut b6, mut b2) = (false, false);
-                    while tmp % 6 == 0 {
-                        (tmp, cost) = (tmp / 6, cost + len * radix6_weight / 100);
-                        b6 = true;
-                    }
-                    while tmp % 5 == 0 {
-                        (tmp, cost) = (tmp / 5, cost + len * radix5_weight / 100);
-                    }
-                    while tmp % 4 == 0 {
-                        (tmp, cost) = (tmp / 4, cost + len * radix4_weight / 100);
-                    }
-                    while tmp % 3 == 0 {
-                        (tmp, cost) = (tmp / 3, cost + len * radix3_weight / 100);
-                    }
-                    while tmp % 2 == 0 {
-                        (tmp, cost) = (tmp / 2, cost + len * radix2_weight / 100);
-                        b2 = true;
-                    }
+                    // Compute the cost of the transform
+                    let radix_counts = Self::ntt_len_factors_to_radices(m2, m3, m5);
+                    let unit_cost = G_COSTS[g - G_MIN]
+                        + radix_counts
+                            .into_iter()
+                            .zip(RADIX_COSTS)
+                            .map(|(radix_count, radix_cost)| radix_count * radix_cost)
+                            .sum::<u32>();
+                    let cost = len as u128 * u128::from(unit_cost);
 
-                    if b6 && b2 {
-                        // One radix-6 stage and the remaining radix-2 stage are
-                        // executed as radix-4 and radix-3 stages.
-                        cost -= len * radix6_weight / 100;
-                        cost -= len * radix2_weight / 100;
-                        cost += len * radix4_weight / 100;
-                        cost += len * radix3_weight / 100;
-                    }
-
-                    // Account for work that scales with transform length but is
-                    // independent of the chosen stage decomposition.
-                    cost += len * 4 / 100;
-                    if cost < len_max_cost {
-                        (len_max, len_max_cost, g) = (len, cost, g_new);
+                    // Record the transform with the minimum cost
+                    if best.map_or(true, |(_, _, best_cost)| cost < best_cost) {
+                        best = Some((len, g, cost));
                     }
                 }
             }
         }
+        let (best_len, best_g, _) = best.expect("NTT length is too large");
+        Self::from_params::<P>(best_len, best_g)
+    }
 
-        let (mut cnt6, mut cnt5, mut cnt4, mut cnt3, mut cnt2) = (0, 0, 0, 0, 0);
-        let mut tmp = len_max / g;
-        while tmp % 6 == 0 {
-            tmp /= 6;
-            cnt6 += 1;
-        }
-        while tmp % 5 == 0 {
-            tmp /= 5;
-            cnt5 += 1;
-        }
-        while tmp % 4 == 0 {
-            tmp /= 4;
-            cnt4 += 1;
-        }
-        while tmp % 3 == 0 {
-            tmp /= 3;
-            cnt3 += 1;
-        }
-        while tmp % 2 == 0 {
-            tmp /= 2;
-            cnt2 += 1;
-        }
-        while cnt6 > 0 && cnt2 > 0 {
-            cnt6 -= 1;
-            cnt2 -= 1;
-            cnt4 += 1;
-            cnt3 += 1;
-        }
-
+    fn from_params<const P: u64>(len: usize, g: usize) -> Self {
+        assert!(len % g == 0);
+        let ntt_len = len / g;
+        let [cnt2, cnt3, cnt4, cnt5, cnt6] = Self::ntt_len_to_radices(ntt_len);
         let s_list = {
-            let mut out = vec![];
-            let mut tmp = len_max;
+            let capacity = (cnt2 + cnt3 + cnt4 + cnt5 + cnt6) as usize;
+            let mut out = Vec::with_capacity(capacity);
+            let mut tmp = len;
             for _ in 0..cnt2 {
                 out.push((tmp, 2));
                 tmp /= 2;
@@ -374,9 +390,9 @@ impl NttPlan {
         };
 
         Self {
-            n: len_max,
+            n: len,
             g,
-            m: len_max / g,
+            m: ntt_len,
             last_radix: s_list.last().unwrap_or(&(1, 1)).1,
             s_list,
         }
