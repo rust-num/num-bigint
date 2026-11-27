@@ -44,7 +44,7 @@ fn sbb(borrow: u8, lhs: BigDigit, rhs: BigDigit, out: &mut BigDigit) -> u8 {
     let (a, b) = lhs.overflowing_sub(rhs);
     let (c, d) = a.overflowing_sub(borrow as BigDigit);
     *out = c;
-    u8::from(b || d)
+    u8::from(b | d)
 }
 
 pub(super) fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {

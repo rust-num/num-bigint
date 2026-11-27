@@ -44,7 +44,7 @@ fn adc(carry: u8, lhs: BigDigit, rhs: BigDigit, out: &mut BigDigit) -> u8 {
     let (a, b) = lhs.overflowing_add(rhs);
     let (c, d) = a.overflowing_add(carry as BigDigit);
     *out = c;
-    u8::from(b || d)
+    u8::from(b | d)
 }
 
 /// Two argument addition of raw slices, `a += b`, returning the carry.
